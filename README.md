@@ -1075,6 +1075,9 @@ let selectedAction = {
   2:null
 };
 
+let lastAction = {1:null,2:null};
+let blockSeal = {1:false,2:false};
+
 let locked = {
   1:false,
   2:false
@@ -1099,7 +1102,7 @@ const basicActions = {
   },
 
   attack:{
-    name:"攻撃",
+    name:"アタック",
     power:1,
     cost:1,
     type:"attack",
@@ -1123,7 +1126,7 @@ const basicActions = {
 const techniquePool = [
 
   {
-    name:"技1",
+    name:"ブリーチ",
     cost:4,
     power:2,
     pierce:true,
@@ -1134,7 +1137,7 @@ const techniquePool = [
   },
 
   {
-    name:"技2",
+    name:"カウンター",
     cost:2,
     power:0,
     pierce:false,
@@ -1164,7 +1167,12 @@ const techniquePool = [
     skill:"tech4",
     description:
       "ゲージ3消費 / 自分のHPを1回復"
-  }
+  },
+
+  {name:"フォーサイト",cost:1,power:0,pierce:false,type:"block",skill:"tech5",description:"ゲージ1消費 / ブロック状態 / 相手がチャージならゲージ+3"},
+  {name:"モーメンタム",cost:2,power:1,pierce:false,type:"attack",skill:"tech6",description:"ゲージ2消費 / 1ダメージ / 前のターンも技6なら2ダメージ"},
+  {name:"ランページ",cost:0,power:0,pierce:false,type:"special",skill:"tech7",description:"前のターンにチャージしていた場合のみ / ゲージ+8 / HP-3"},
+  {name:"技8",cost:0,power:0,pierce:false,type:"seal",skill:"tech8",description:"相手のゲージが7未満のとき使用可能 / 相手のブロック系技を封印"}
 
 ];
 
@@ -1391,6 +1399,11 @@ function setupBattle(){
 
   selectedAction[1] = null;
   selectedAction[2] = null;
+
+  lastAction[1] = null;
+  lastAction[2] = null;
+  blockSeal[1] = false;
+  blockSeal[2] = false;
 
   locked[1] = false;
   locked[2] = false;
@@ -1629,16 +1642,23 @@ function chooseAction(player,action){
   const data=getActionData(player,action);
   if(!data)return;
 
-  // 選択時点ではゲージを減らさない
+  // 技8でブロック系（通常ブロック・技5）が封印中
+  if(blockSeal[player] && (action === "block" || data.skill === "tech5"))return;
+
+  // 技7：前のターンにチャージしていた場合のみ
+  if(data.skill === "tech7" && (!lastAction[player] || lastAction[player].data.type !== "charge"))return;
+
+  // 技8：相手のゲージが7未満の場合のみ
+  if(data.skill === "tech8"){
+    const opponent = player === 1 ? 2 : 1;
+    if(gauge[opponent] >= 7)return;
+  }
+
   if(data.cost>gauge[player])return;
 
   selectedAction[player]={id:action,data:data};
-
   locked[player]=true;
-
   document.getElementById("player"+player+"Area").classList.add("locked");
-
-  // ゲージはここでは変更しない
 }
 
 
@@ -1760,6 +1780,12 @@ if(a2.cost>0){
   gauge[2]=Math.max(0,gauge[2]-a2.cost);
 }
   /* =========================
+     技8：ブロック系封印
+  ========================= */
+  if(a1.skill === "tech8" && gauge[2] < 7) blockSeal[2] = true;
+  if(a2.skill === "tech8" && gauge[1] < 7) blockSeal[1] = true;
+
+  /* =========================
      チャージ
   ========================= */
 
@@ -1784,6 +1810,12 @@ if(a2.cost>0){
 
   }
 
+
+  /* =========================
+     技5：ブロック＋条件付きゲージ回復
+  ========================= */
+  if(a1.skill === "tech5" && a2.type === "charge") gauge[1] = Math.min(10,gauge[1]+3);
+  if(a2.skill === "tech5" && a1.type === "charge") gauge[2] = Math.min(10,gauge[2]+3);
 
   /* =========================
      技4：回復
@@ -1864,6 +1896,9 @@ if(a2.cost>0){
   const attack2 =
     a2.type === "attack";
 
+  const effectiveBlock1 = a1.type === "block" && !blockSeal[1];
+  const effectiveBlock2 = a2.type === "block" && !blockSeal[2];
+
 
   /* =========================
      攻撃 vs ブロック
@@ -1871,7 +1906,7 @@ if(a2.cost>0){
 
   if(
     attack1 &&
-    a2.type === "block"
+    effectiveBlock2
   ){
 
     /*
@@ -1891,7 +1926,7 @@ if(a2.cost>0){
 
   else if(
     attack2 &&
-    a1.type === "block"
+    effectiveBlock1
   ){
 
     if(a2.pierce){
@@ -1981,6 +2016,22 @@ if(a2.cost>0){
 
 
   /* =========================
+     技6：連続使用
+  ========================= */
+  if(a1.skill === "tech6") damageTo2 += (lastAction[1] && lastAction[1].data.skill === "tech6") ? 2 : 1;
+  if(a2.skill === "tech6") damageTo1 += (lastAction[2] && lastAction[2].data.skill === "tech6") ? 2 : 1;
+
+  /* =========================
+     技7：ゲージ+8 / HP-3
+  ========================= */
+  if(a1.skill === "tech7"){ gauge[1]=Math.min(10,gauge[1]+8); hp[1]=Math.max(0,hp[1]-3); }
+  if(a2.skill === "tech7"){ gauge[2]=Math.min(10,gauge[2]+8); hp[2]=Math.max(0,hp[2]-3); }
+
+  // ゲージが7に到達したら技8の封印を解除
+  if(gauge[1] >= 7) blockSeal[1] = false;
+  if(gauge[2] >= 7) blockSeal[2] = false;
+
+  /* =========================
      演出
   ========================= */
 
@@ -2003,6 +2054,9 @@ if(a2.cost>0){
 
 
       updateBattleUI();
+
+      lastAction[1] = selectedAction[1];
+      lastAction[2] = selectedAction[2];
 
 
       if(
@@ -2136,12 +2190,15 @@ function playBattleEffect(
   const attack2 =
     a2.type === "attack";
 
+  const effectiveBlock1 = a1.type === "block" && !blockSeal[1];
+  const effectiveBlock2 = a2.type === "block" && !blockSeal[2];
+
 
   /* =========================
      ブロックシールド
   ========================= */
 
-  if(a1.type === "block"){
+  if(effectiveBlock1){
 
     const shield1 =
       document.createElement(
@@ -2158,7 +2215,7 @@ function playBattleEffect(
   }
 
 
-  if(a2.type === "block"){
+  if(effectiveBlock2){
 
     const shield2 =
       document.createElement(
@@ -2330,7 +2387,7 @@ function playBattleEffect(
 
 
         if(
-          a2.type === "block" &&
+          effectiveBlock2 &&
           !a1.pierce
         ){
 
@@ -2798,55 +2855,19 @@ function updateBattleUI(){
 ========================= */
 
 function updateDisabledActions(){
-
-  [1,2].forEach(
-    player => {
-
-      const techs =
-        player === 1
-          ? player1Techs
-          : player2Techs;
-
-
-      techs.forEach(
-        (tech,index) => {
-
-          const el =
-            document.getElementById(
-              `p${player}tech${index}`
-            );
-
-
-          if(!el || !tech){
-            return;
-          }
-
-
-          if(
-            tech.cost >
-            gauge[player]
-          ){
-
-            el.classList.add(
-              "disabled"
-            );
-
-          }
-
-          else{
-
-            el.classList.remove(
-              "disabled"
-            );
-
-          }
-
-        }
-      );
-
-    }
-  );
-
+  [1,2].forEach(player=>{
+    const techs = player===1 ? player1Techs : player2Techs;
+    techs.forEach((tech,index)=>{
+      const el=document.getElementById(`p${player}tech${index}`);
+      if(!el || !tech)return;
+      const opponent=player===1?2:1;
+      let disabled=tech.cost>gauge[player];
+      if(tech.skill==="tech7" && (!lastAction[player] || lastAction[player].data.type!=="charge")) disabled=true;
+      if(tech.skill==="tech8" && gauge[opponent]>=7) disabled=true;
+      if(blockSeal[player] && tech.skill==="tech5") disabled=true;
+      el.classList.toggle("disabled",disabled);
+    });
+  });
 }
 
 
