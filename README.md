@@ -211,6 +211,8 @@ body{
   transition:.2s;
 }
 
+.hpFill.hpDamage,.hpText.hpDamage{animation:hpDamage .42s ease-out !important;}
+
 .gaugeBar{
   width:100%;
   height:10px;
@@ -325,6 +327,16 @@ body{
   color:#4da6ff;
   background:#fff;
 }
+
+.momentumProjectile{
+  width:30px !important;
+  height:18px !important;
+  border-radius:65% 38% 65% 38% !important;
+  background:linear-gradient(135deg,#fff,#e9edf4 55%,#fff) !important;
+  box-shadow:0 0 8px #fff,0 0 18px rgba(255,255,255,.9),0 0 35px rgba(190,205,225,.7) !important;
+}
+.momentumProjectile.p1{transform:translate(-50%,-50%) rotate(20deg) scaleX(-1);}
+.momentumProjectile.p2{transform:translate(-50%,-50%) rotate(20deg);}
 
 
 /* =========================
@@ -562,6 +574,278 @@ body{
     font-size:13px;
   }
 
+}
+
+
+/* =========================
+   心理バトル：対戦ゲームUI強化
+========================= */
+body{
+  background:
+    radial-gradient(circle at 50% 45%, #20263a 0%, #0b0d14 48%, #05060a 100%);
+}
+
+#battleScreen{
+  background:
+    radial-gradient(circle at 50% 50%, rgba(90,120,255,.10), transparent 34%),
+    linear-gradient(135deg, rgba(255,70,90,.035), transparent 42%),
+    linear-gradient(315deg, rgba(60,150,255,.035), transparent 42%);
+}
+
+#battleScreen::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  opacity:.28;
+  background-image:
+    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+  background-size:40px 40px;
+  mask-image:linear-gradient(to bottom, transparent, black 18%, black 82%, transparent);
+}
+
+#battleScreen::after{
+  content:"";
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:55vw;
+  height:55vw;
+  max-width:700px;
+  max-height:700px;
+  transform:translate(-50%,-50%);
+  border:1px solid rgba(150,180,255,.10);
+  border-radius:50%;
+  box-shadow:0 0 80px rgba(80,110,255,.08), inset 0 0 80px rgba(80,110,255,.05);
+  pointer-events:none;
+}
+
+.playerArea{
+  width:300px;
+  padding:12px;
+  border:1px solid rgba(255,255,255,.16);
+  border-radius:18px;
+  background:linear-gradient(145deg, rgba(35,40,56,.92), rgba(12,14,22,.92));
+  box-shadow:0 14px 40px rgba(0,0,0,.38), inset 0 1px 0 rgba(255,255,255,.06);
+  backdrop-filter:blur(8px);
+  transition:transform .2s, box-shadow .2s, border-color .2s;
+}
+
+#player1Area{ border-color:rgba(255,75,90,.28); }
+#player2Area{ border-color:rgba(80,150,255,.28); }
+
+.playerArea.locked{
+  box-shadow:0 0 28px rgba(255,255,255,.08), 0 14px 40px rgba(0,0,0,.38);
+}
+
+.playerName{
+  letter-spacing:2px;
+  text-shadow:0 0 12px currentColor;
+}
+#player1Area .playerName{color:#ff6975;}
+#player2Area .playerName{color:#70aaff;}
+
+.hpBar{
+  height:18px;
+  border:1px solid rgba(255,255,255,.10);
+  background:#090b10;
+  box-shadow:inset 0 2px 5px rgba(0,0,0,.6);
+}
+.hpFill{
+  background:linear-gradient(90deg,#ff263f,#ff6875,#ff263f);
+  background-size:200% 100%;
+  box-shadow:0 0 12px rgba(255,50,70,.65);
+  transition:width .35s cubic-bezier(.2,.8,.2,1);
+  animation:hpFlow 2s linear infinite;
+}
+
+.gaugeBar{
+  height:12px;
+  border:1px solid rgba(255,255,255,.10);
+  background:#080b12;
+}
+.gaugeFill{
+  background:linear-gradient(90deg,#3f82ff,#7fe8ff,#3f82ff);
+  background-size:200% 100%;
+  box-shadow:0 0 10px rgba(70,170,255,.55);
+  transition:width .35s cubic-bezier(.2,.8,.2,1);
+  animation:gaugeFlow 1.7s linear infinite;
+}
+.gaugeFill.gaugeReady{
+  box-shadow:0 0 9px #68c9ff,0 0 22px rgba(70,160,255,.9),0 0 38px rgba(70,160,255,.5);
+  animation:gaugeFlow .8s linear infinite, gaugePulse .7s ease-in-out infinite alternate;
+}
+.gaugeFill.gaugeMax{
+  box-shadow:0 0 10px #fff,0 0 25px #6de4ff,0 0 50px rgba(80,180,255,.9);
+}
+
+.action{
+  border:1px solid rgba(255,255,255,.12);
+  background:linear-gradient(145deg,#252b3a,#151923);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
+  transition:transform .12s, filter .12s, box-shadow .12s, border-color .12s;
+}
+.action:hover{
+  transform:translateY(-2px);
+  border-color:rgba(130,180,255,.55);
+  box-shadow:0 0 16px rgba(80,150,255,.18), inset 0 1px 0 rgba(255,255,255,.08);
+}
+.action.disabled{filter:grayscale(.7);opacity:.22;}
+.playerArea.locked .action:hover{transform:none;}
+
+#countdown{
+  font-size:clamp(54px,8vw,92px);
+  letter-spacing:4px;
+  text-shadow:0 0 14px rgba(255,255,255,.9),0 0 40px rgba(100,150,255,.8);
+}
+#countdown.countPulse{animation:countPulse .65s cubic-bezier(.2,.9,.2,1);}
+#countdown.battleCall{
+  color:#fff;
+  font-size:clamp(42px,7vw,82px);
+  text-shadow:0 0 15px #fff,0 0 35px #5da5ff,0 0 70px #5da5ff;
+  animation:battleCall .9s cubic-bezier(.15,.9,.2,1) forwards;
+}
+
+#resultMessage{
+  min-height:0;
+  font-size:clamp(54px,10vw,120px);
+  font-weight:1000;
+  letter-spacing:7px;
+  text-transform:uppercase;
+  text-shadow:0 0 12px currentColor,0 0 35px currentColor,0 0 75px currentColor;
+}
+#resultMessage.resultShow{animation:resultReveal .9s cubic-bezier(.16,1,.3,1) forwards;}
+
+.battleActionLabel{
+  font-size:clamp(30px,4vw,52px);
+  padding:10px 18px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.07),transparent);
+  border-top:1px solid currentColor;
+  border-bottom:1px solid currentColor;
+}
+
+.battleProjectile{
+  width:26px;
+  height:26px;
+  box-shadow:0 0 10px 5px currentColor,0 0 28px 12px currentColor,0 0 55px 18px rgba(255,255,255,.35);
+}
+.battleProjectile::after{
+  content:"";
+  position:absolute;
+  width:90px;
+  height:10px;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  background:linear-gradient(90deg,transparent,currentColor,transparent);
+  filter:blur(5px);
+  opacity:.8;
+}
+
+.battleShield{
+  border-width:4px;
+  background:radial-gradient(circle,rgba(110,190,255,.22),rgba(70,130,255,.05) 45%,transparent 70%);
+}
+.battleShield.shieldBreak{animation:shieldBreak .45s ease-out forwards;}
+
+.battleImpact{
+  font-size:clamp(38px,6vw,72px);
+  letter-spacing:3px;
+}
+.battleImpact.damageText{
+  font-size:clamp(26px,4vw,48px);
+  margin-top:90px;
+}
+
+/* ヒット時の画面揺れ */
+#battleScreen.hitShake{animation:screenShake .28s linear;}
+
+/* 汎用エフェクト */
+.effectFlash,.effectRing,.effectSlash,.effectShockwave,.effectParticles,.effectHex,.effectAura,.effectLightning{
+  position:absolute;
+  left:50%;top:50%;
+  pointer-events:none;
+}
+.effectFlash{
+  width:100%;height:100%;
+  transform:translate(-50%,-50%);
+  background:radial-gradient(circle,rgba(255,255,255,.55),rgba(255,255,255,.08) 20%,transparent 55%);
+  animation:flashBurst .35s ease-out forwards;
+}
+.effectRing{
+  width:80px;height:80px;
+  border:4px solid currentColor;
+  border-radius:50%;
+  transform:translate(-50%,-50%) scale(.2);
+  box-shadow:0 0 18px currentColor, inset 0 0 18px currentColor;
+  animation:ringBurst .65s cubic-bezier(.15,.8,.2,1) forwards;
+}
+.effectSlash{
+  width:390px;height:18px;
+  border-radius:50%;
+  background:linear-gradient(90deg,transparent,#fff,currentColor,transparent);
+  box-shadow:0 0 12px currentColor,0 0 28px currentColor;
+  transform:translate(-50%,-50%) rotate(-25deg) scaleX(0);
+  animation:slashBurst .42s cubic-bezier(.2,.9,.2,1) forwards;
+}
+.effectShockwave{
+  width:60px;height:60px;
+  border:5px solid currentColor;
+  border-radius:50%;
+  transform:translate(-50%,-50%) scale(.2);
+  animation:shockwave .55s ease-out forwards;
+}
+.effectHex{
+  width:130px;height:130px;
+  border:3px solid currentColor;
+  clip-path:polygon(50% 0,93% 25%,93% 75%,50% 100%,7% 75%,7% 25%);
+  transform:translate(-50%,-50%) scale(.3) rotate(0deg);
+  box-shadow:0 0 20px currentColor;
+  animation:hexSeal .75s ease-out forwards;
+}
+.effectAura{
+  width:220px;height:220px;
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(255,255,255,.28),rgba(80,255,150,.12) 35%,transparent 70%);
+  box-shadow:0 0 35px rgba(80,255,150,.55);
+  transform:translate(-50%,-50%) scale(.35);
+  animation:auraHeal .8s ease-out forwards;
+}
+.effectLightning{
+  width:8px;height:260px;
+  background:linear-gradient(transparent,#fff,currentColor,transparent);
+  filter:drop-shadow(0 0 10px currentColor);
+  transform:translate(-50%,-50%) rotate(25deg) scaleY(.2);
+  animation:lightningStrike .42s ease-out forwards;
+}
+
+@keyframes hpDamage{0%{filter:brightness(1)}25%{filter:brightness(2.3)}55%{filter:brightness(.7)}100%{filter:brightness(1)}}
+@keyframes hpFlow{to{background-position:200% 0;}}
+@keyframes gaugeFlow{to{background-position:200% 0;}}
+@keyframes gaugePulse{from{filter:brightness(1)}to{filter:brightness(1.55)}}
+@keyframes countPulse{0%{opacity:0;transform:scale(1.8)}35%{opacity:1;transform:scale(.92)}100%{opacity:1;transform:scale(1)}}
+@keyframes battleCall{0%{opacity:0;transform:scale(1.7)}35%{opacity:1;transform:scale(.92)}100%{opacity:0;transform:scale(1.08)}}
+@keyframes resultReveal{0%{opacity:0;transform:scale(2.4) rotate(-4deg);filter:blur(10px)}55%{opacity:1;transform:scale(.92) rotate(1deg);filter:blur(0)}100%{opacity:1;transform:scale(1) rotate(0)}}
+@keyframes screenShake{0%,100%{transform:translate(0,0)}20%{transform:translate(-8px,4px)}40%{transform:translate(7px,-3px)}60%{transform:translate(-5px,-4px)}80%{transform:translate(5px,3px)}}
+@keyframes flashBurst{0%{opacity:0}20%{opacity:1}100%{opacity:0}}
+@keyframes ringBurst{0%{opacity:1;transform:translate(-50%,-50%) scale(.2)}100%{opacity:0;transform:translate(-50%,-50%) scale(3.4)}}
+@keyframes slashBurst{0%{opacity:0;transform:translate(-50%,-50%) rotate(-25deg) scaleX(0)}35%{opacity:1;transform:translate(-50%,-50%) rotate(-25deg) scaleX(1.1)}100%{opacity:0;transform:translate(-50%,-50%) rotate(-25deg) scaleX(1.35) translateX(30px)}}
+@keyframes shockwave{0%{opacity:1;transform:translate(-50%,-50%) scale(.2)}100%{opacity:0;transform:translate(-50%,-50%) scale(4.5)}}
+@keyframes hexSeal{0%{opacity:0;transform:translate(-50%,-50%) scale(.2) rotate(-25deg)}30%{opacity:1;transform:translate(-50%,-50%) scale(1) rotate(0)}100%{opacity:0;transform:translate(-50%,-50%) scale(1.25) rotate(15deg)}}
+@keyframes auraHeal{0%{opacity:0;transform:translate(-50%,-50%) scale(.25)}30%{opacity:1}100%{opacity:0;transform:translate(-50%,-50%) scale(1.45)}}
+@keyframes lightningStrike{0%{opacity:0;transform:translate(-50%,-50%) rotate(25deg) scaleY(.1)}35%{opacity:1;transform:translate(-50%,-50%) rotate(25deg) scaleY(1)}100%{opacity:0;transform:translate(-50%,-50%) rotate(25deg) scaleY(1.2)}}
+@keyframes shieldBreak{0%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(1.35);filter:brightness(2)}}
+
+@media(max-width:600px){
+  .playerArea{width:calc(50vw - 15px);min-width:170px;}
+  #player1Area{left:8px;bottom:8px;}
+  #player2Area{right:8px;top:8px;}
+  .actionList{gap:3px;}
+  .action{min-height:38px;}
+  .actionName{font-size:10px;}
+  .battleActionLabel{font-size:25px;padding:7px 10px;}
+  .effectSlash{width:250px;}
 }
 
 </style>
@@ -1076,6 +1360,9 @@ let selectedAction = {
 };
 
 let lastAction = {1:null,2:null};
+let lastLastAction = {1:null,2:null};
+// モーメンタムの「次の1回だけ2ダメージ」判定
+let momentumBonus = {1:false,2:false};
 let blockSeal = {1:false,2:false};
 
 let locked = {
@@ -1348,6 +1635,27 @@ let player2Techs = [];
 
 function confirmTech(){
 
+  // オンラインは自分（1P）だけ技を3つ選択
+  if(gameMode === "online"){
+    player1Techs =
+      selectedTechniques[1]
+        .map(index =>
+          techniquePool[index]
+        );
+
+    // オンライン側の相手技は通信実装時に受信する想定。
+    // 現在はバトル開始用に初期値を使用する。
+    player2Techs =
+      selectedTechniques[2]
+        .map(index =>
+          techniquePool[index]
+        );
+
+    setupBattle();
+    return;
+  }
+
+  // オフラインは従来どおり1P→2Pの順で選択
   if(selectingPlayer === 1){
 
     player1Techs =
@@ -1372,7 +1680,6 @@ function confirmTech(){
 
     return;
   }
-
 
   player2Techs =
     selectedTechniques[2]
@@ -1402,11 +1709,20 @@ function setupBattle(){
 
   lastAction[1] = null;
   lastAction[2] = null;
+  lastLastAction[1] = null;
+  lastLastAction[2] = null;
+  momentumBonus[1] = false;
+  momentumBonus[2] = false;
   blockSeal[1] = false;
   blockSeal[2] = false;
 
   locked[1] = false;
   locked[2] = false;
+
+  displayedHp[1] = 10;
+  displayedHp[2] = 10;
+  displayedGauge[1] = 0;
+  displayedGauge[2] = 0;
 
   updateBattleUI();
 
@@ -1483,51 +1799,42 @@ function startTurn(){
   locked[1] = false;
   locked[2] = false;
 
-  document
-    .getElementById("player1Area")
-    .classList.remove("locked");
-
-  document
-    .getElementById("player2Area")
-    .classList.remove("locked");
-
-  document
-    .getElementById("resultMessage")
-    .textContent = "";
+  document.getElementById("player1Area").classList.remove("locked");
+  document.getElementById("player2Area").classList.remove("locked");
+  document.getElementById("resultMessage").textContent = "";
 
   updateDisabledActions();
 
-  countdown = 3;
-
-  document
-    .getElementById("countdown")
-    .textContent =
-      countdown;
+  // 行動選択時間：10秒
+  countdown = 10;
+  const el = document.getElementById("countdown");
+  el.className = "countPulse";
+  el.textContent = "10";
 
   clearInterval(countdownTimer);
 
-  countdownTimer =
-    setInterval(()=>{
+  countdownTimer = setInterval(()=>{
+    countdown--;
 
-      countdown--;
+    if(countdown > 0){
+      el.className = "";
+      void el.offsetWidth;
+      el.className = "countPulse";
+      el.textContent = countdown;
+      return;
+    }
 
-      document
-        .getElementById("countdown")
-        .textContent =
-          countdown;
+    if(countdown === 0){
+      el.className = "battleCall";
+      el.textContent = "BATTLE!";
+      setTimeout(()=>{
+        if(countdown === 0) finishTurn();
+      },500);
+    }
 
-      if(countdown <= 0){
-
-        clearInterval(countdownTimer);
-
-        finishTurn();
-
-      }
-
-    },1000);
-
+    clearInterval(countdownTimer);
+  },1000);
 }
-
 
 /* =========================
    キー入力
@@ -1659,6 +1966,41 @@ function chooseAction(player,action){
   selectedAction[player]={id:action,data:data};
   locked[player]=true;
   document.getElementById("player"+player+"Area").classList.add("locked");
+
+  // 両者が決定したら、残り時間を待たず3秒カウントへ移行
+  if(selectedAction[1] && selectedAction[2]){
+    clearInterval(countdownTimer);
+    countdown = 3;
+    const el = document.getElementById("countdown");
+    if(el){
+      el.className = "";
+      void el.offsetWidth;
+      el.className = "countPulse";
+      el.textContent = "3";
+    }
+
+    countdownTimer = setInterval(()=>{
+      countdown--;
+      if(countdown > 0){
+        if(el){
+          el.className = "";
+          void el.offsetWidth;
+          el.className = "countPulse";
+          el.textContent = countdown;
+        }
+        return;
+      }
+
+      clearInterval(countdownTimer);
+      if(el){
+        el.className = "battleCall";
+        el.textContent = "BATTLE!";
+      }
+      setTimeout(()=>{
+        if(countdown === 0 && selectedAction[1] && selectedAction[2]) finishTurn();
+      },500);
+    },1000);
+  }
 }
 
 
@@ -1711,9 +2053,9 @@ function finishTurn(){
 
     selectedAction[1] = {
 
-      id:"block",
+      id:"charge",
 
-      data:basicActions.block
+      data:basicActions.charge
 
     };
 
@@ -1732,9 +2074,9 @@ function finishTurn(){
 
     selectedAction[2] = {
 
-      id:"block",
+      id:"charge",
 
-      data:basicActions.block
+      data:basicActions.charge
 
     };
 
@@ -1759,355 +2101,133 @@ function finishTurn(){
 ========================= */
 
 function resolveBattle(){
-
-  const a1 =
-    selectedAction[1].data;
-
-  const a2 =
-    selectedAction[2].data;
-
+  const a1 = selectedAction[1]?.data;
+  const a2 = selectedAction[2]?.data;
+  if(!a1 || !a2) return;
 
   let damageTo1 = 0;
-
   let damageTo2 = 0;
 
-// ターン終了時に選択した技のゲージを消費
-if(a1.cost>0){
-  gauge[1]=Math.max(0,gauge[1]-a1.cost);
-}
+  // 先に技のコストを消費
+  gauge[1] = Math.max(0, gauge[1] - Number(a1.cost || 0));
+  gauge[2] = Math.max(0, gauge[2] - Number(a2.cost || 0));
 
-if(a2.cost>0){
-  gauge[2]=Math.max(0,gauge[2]-a2.cost);
-}
-  /* =========================
-     技8：ブロック系封印
-  ========================= */
+  const attack1 = a1.type === "attack";
+  const attack2 = a2.type === "attack";
+  const block1 = a1.type === "block" && !blockSeal[1];
+  const block2 = a2.type === "block" && !blockSeal[2];
+  const reflect1 = a1.type === "reflect";
+  const reflect2 = a2.type === "reflect";
+
+  // 技8：相手のブロック系を封印
   if(a1.skill === "tech8" && gauge[2] < 7) blockSeal[2] = true;
   if(a2.skill === "tech8" && gauge[1] < 7) blockSeal[1] = true;
 
-  /* =========================
-     チャージ
-  ========================= */
-
-  if(a1.type === "charge"){
-
-    gauge[1] =
-      Math.min(
-        10,
-        gauge[1] + 1
-      );
-
-  }
-
-
-  if(a2.type === "charge"){
-
-    gauge[2] =
-      Math.min(
-        10,
-        gauge[2] + 1
-      );
-
-  }
-
-
-  /* =========================
-     技5：ブロック＋条件付きゲージ回復
-  ========================= */
-  if(a1.skill === "tech5" && a2.type === "charge") gauge[1] = Math.min(10,gauge[1]+3);
-  if(a2.skill === "tech5" && a1.type === "charge") gauge[2] = Math.min(10,gauge[2]+3);
-
-  /* =========================
-     技4：回復
-  ========================= */
-
-  if(a1.type === "heal"){
-
-    hp[1] =
-      Math.min(
-        10,
-        hp[1] + 1
-      );
-
-  }
-
-
-  if(a2.type === "heal"){
-
-    hp[2] =
-      Math.min(
-        10,
-        hp[2] + 1
-      );
-
-  }
-
-
-  /* =========================
-     技2：反射
-  ========================= */
-
-  if(a1.type === "reflect"){
-
-    if(a2.type === "attack"){
-
-      damageTo2 +=
-        a2.power;
-
-    }
-
-  }
-
-
-  if(a2.type === "reflect"){
-
-    if(a1.type === "attack"){
-
-      damageTo1 +=
-        a1.power;
-
-    }
-
-  }
-
-
-  /*
-    反射同士なら何も返さない
-  */
-
-  if(
-    a1.type === "reflect" &&
-    a2.type === "reflect"
-  ){
-
-    damageTo1 = 0;
-    damageTo2 = 0;
-
-  }
-
-
-  /* =========================
-     攻撃判定
-  ========================= */
-
-  const attack1 =
-    a1.type === "attack";
-
-  const attack2 =
-    a2.type === "attack";
-
-  const effectiveBlock1 = a1.type === "block" && !blockSeal[1];
-  const effectiveBlock2 = a2.type === "block" && !blockSeal[2];
-
-
-  /* =========================
-     攻撃 vs ブロック
-  ========================= */
-
-  if(
-    attack1 &&
-    effectiveBlock2
-  ){
-
-    /*
-      pierce=trueなら
-      ブロック無視
-    */
-
-    if(a1.pierce){
-
-      damageTo2 +=
-        a1.power;
-
-    }
-
-  }
-
-
-  else if(
-    attack2 &&
-    effectiveBlock1
-  ){
-
-    if(a2.pierce){
-
-      damageTo1 +=
-        a2.power;
-
-    }
-
-  }
-
-
-  /* =========================
-     攻撃 vs 攻撃
-  ========================= */
-
-  else if(
-    attack1 &&
-    attack2
-  ){
-
-    if(a1.power > a2.power){
-
-      damageTo2 +=
-        a1.power - a2.power;
-
-    }
-
-    else if(a2.power > a1.power){
-
-      damageTo1 +=
-        a2.power - a1.power;
-
-    }
-
-  }
-
-
-  /* =========================
-     攻撃 vs チャージ
-  ========================= */
-
-  if(
-    a1.type === "charge" &&
-    attack2
-  ){
-
-    damageTo1 +=
-      a2.power;
-
-  }
-
-
-  if(
-    a2.type === "charge" &&
-    attack1
-  ){
-
-    damageTo2 +=
-      a1.power;
-
-  }
-
-
-  /* =========================
-     技3
-  ========================= */
-
-  if(
-    a1.skill === "tech3" &&
-    a2.type === "charge"
-  ){
-
-    damageTo2 += 2;
-
-  }
-
-
-  if(
-    a2.skill === "tech3" &&
-    a1.type === "charge"
-  ){
-
-    damageTo1 += 2;
-
-  }
-
-
-  /* =========================
-     技6：連続使用
-  ========================= */
-  if(a1.skill === "tech6") damageTo2 += (lastAction[1] && lastAction[1].data.skill === "tech6") ? 2 : 1;
-  if(a2.skill === "tech6") damageTo1 += (lastAction[2] && lastAction[2].data.skill === "tech6") ? 2 : 1;
-
-  /* =========================
-     技7：ゲージ+8 / HP-3
-  ========================= */
-  if(a1.skill === "tech7"){ gauge[1]=Math.min(10,gauge[1]+8); hp[1]=Math.max(0,hp[1]-3); }
-  if(a2.skill === "tech7"){ gauge[2]=Math.min(10,gauge[2]+8); hp[2]=Math.max(0,hp[2]-3); }
-
-  // ゲージが7に到達したら技8の封印を解除
-  if(gauge[1] >= 7) blockSeal[1] = false;
-  if(gauge[2] >= 7) blockSeal[2] = false;
-
-  /* =========================
-     演出
-  ========================= */
-
-  playBattleEffect(
-    a1,
-    a2,
-    ()=>{
-
-      hp[1] =
-        Math.max(
-          0,
-          hp[1] - damageTo1
-        );
-
-      hp[2] =
-        Math.max(
-          0,
-          hp[2] - damageTo2
-        );
-
-
-      updateBattleUI();
-
-      lastAction[1] = selectedAction[1];
-      lastAction[2] = selectedAction[2];
-
-
-      if(
-        hp[1] <= 0 ||
-        hp[2] <= 0
-      ){
-
-        clearInterval(
-          countdownTimer
-        );
-
-
-        if(
-          hp[1] <= 0 &&
-          hp[2] <= 0
-        ){
-
-          showBattleResult(
-            "DRAW"
-          );
-
-        }
-
-        else if(
-          hp[1] <= 0
-        ){
-
-          showBattleResult(
-            "2P WIN"
-          );
-
-        }
-
-        else{
-
-          showBattleResult(
-            "1P WIN"
-          );
-
-        }
-
-        return;
-
+  // チャージ
+  if(a1.type === "charge") gauge[1] = Math.min(10, gauge[1] + 2);
+  if(a2.type === "charge") gauge[2] = Math.min(10, gauge[2] + 2);
+
+  // 技5：相手がチャージなら自分のゲージ+3
+  if(a1.skill === "tech5" && a2.type === "charge") gauge[1] = Math.min(10, gauge[1] + 3);
+  if(a2.skill === "tech5" && a1.type === "charge") gauge[2] = Math.min(10, gauge[2] + 3);
+
+  // 技4：HP+1
+  if(a1.skill === "tech4") hp[1] = Math.min(10, hp[1] + 1);
+  if(a2.skill === "tech4") hp[2] = Math.min(10, hp[2] + 1);
+
+  // カウンター：相手の攻撃を相手へ返す
+  if(reflect1 && attack2) damageTo2 += Number(a2.power || 0);
+  if(reflect2 && attack1) damageTo1 += Number(a1.power || 0);
+
+  // 攻撃同士は威力差で勝敗を決める
+  if(attack1 && attack2){
+    const p1 = Number(a1.power || 0);
+    const p2 = Number(a2.power || 0);
+    if(p1 > p2) damageTo2 += p1 - p2;
+    else if(p2 > p1) damageTo1 += p2 - p1;
+  }else{
+    if(attack1){
+      if(block2){
+        if(a1.pierce) damageTo2 += Number(a1.power || 0);
+      }else if(!reflect2){
+        damageTo2 += Number(a1.power || 0);
       }
-
-
-      startTurn();
-
     }
-  );
+    if(attack2){
+      if(block1){
+        if(a2.pierce) damageTo1 += Number(a2.power || 0);
+      }else if(!reflect1){
+        damageTo1 += Number(a2.power || 0);
+      }
+    }
+  }
 
+  // 技3：チャージ中の相手には追加2ダメージ
+  // ブロック・カウンター中には追加ダメージを入れない
+  if(a1.skill === "tech3" && a2.type === "charge" && !block2 && !reflect2) damageTo2 += 2;
+  if(a2.skill === "tech3" && a1.type === "charge" && !block1 && !reflect1) damageTo1 += 2;
+
+  // 技6：モーメンタムは「連続使用した次の1回」だけ2ダメージ。
+  // 例：1 → 2 → 1 → 2 → 1
+  const momentumDmg1 = a1.skill === "tech6" ? (momentumBonus[1] ? 2 : 1) : 0;
+  const momentumDmg2 = a2.skill === "tech6" ? (momentumBonus[2] ? 2 : 1) : 0;
+
+  if(a1.skill === "tech6" && !block2 && !reflect2){
+    if(attack2){
+      if(a2.skill === "tech6"){
+        // モーメンタム同士は、それぞれの今回の威力を比較
+        if(momentumDmg1 > momentumDmg2) damageTo2 = Math.max(damageTo2, momentumDmg1 - momentumDmg2);
+        else if(momentumDmg2 > momentumDmg1) damageTo1 = Math.max(damageTo1, momentumDmg2 - momentumDmg1);
+      }else{
+        damageTo2 = Math.max(damageTo2, momentumDmg1 - Number(a2.power || 0), 0);
+      }
+    }else{
+      damageTo2 = Math.max(damageTo2, momentumDmg1);
+    }
+  }
+
+  if(a2.skill === "tech6" && !block1 && !reflect1){
+    if(attack1){
+      if(a1.skill !== "tech6") damageTo1 = Math.max(damageTo1, momentumDmg2 - Number(a1.power || 0), 0);
+    }else{
+      damageTo1 = Math.max(damageTo1, momentumDmg2);
+    }
+  }
+
+  // 技7：前ターンチャージ後のみ使用可能。ゲージ+8、HP-3
+  if(a1.skill === "tech7"){
+    gauge[1] = Math.min(10, gauge[1] + 8);
+    hp[1] = Math.max(0, hp[1] - 3);
+  }
+  if(a2.skill === "tech7"){
+    gauge[2] = Math.min(10, gauge[2] + 8);
+    hp[2] = Math.max(0, hp[2] - 3);
+  }
+
+  playBattleEffect(a1,a2,()=>{
+    hp[1] = Math.max(0, hp[1] - damageTo1);
+    hp[2] = Math.max(0, hp[2] - damageTo2);
+
+    updateBattleUI();
+    // 今回モーメンタムなら、次回だけ2ダメージにする。
+    momentumBonus[1] = a1.skill === "tech6";
+    momentumBonus[2] = a2.skill === "tech6";
+
+    lastLastAction[1] = lastAction[1];
+    lastLastAction[2] = lastAction[2];
+    lastAction[1] = {id:selectedAction[1].id,data:a1};
+    lastAction[2] = {id:selectedAction[2].id,data:a2};
+
+    if(hp[1] <= 0 || hp[2] <= 0){
+      showBattleResult(
+        hp[1] <= 0 && hp[2] <= 0 ? "DRAW" :
+        hp[1] <= 0 ? "2P WIN" : "1P WIN"
+      );
+      return;
+    }
+
+    setTimeout(()=>startTurn(),250);
+  });
 }
 
 
@@ -2115,487 +2235,368 @@ if(a2.cost>0){
    バトル演出
 ========================= */
 
-function playBattleEffect(
-  a1,
-  a2,
-  callback
-){
-
-  let layer =
-    document.getElementById(
-      "battleEffectLayer"
-    );
-
-
+function playBattleEffect(a1,a2,callback){
+  let layer=document.getElementById("battleEffectLayer");
   if(!layer){
-
-    layer =
-      document.createElement(
-        "div"
-      );
-
-    layer.id =
-      "battleEffectLayer";
-
-    document
-      .getElementById(
-        "battleScreen"
-      )
-      .appendChild(layer);
-
+    layer=document.createElement("div");
+    layer.id="battleEffectLayer";
+    document.getElementById("battleScreen").appendChild(layer);
   }
+  layer.innerHTML="";
 
-
-  layer.innerHTML = "";
-
-
-  /* =========================
-     行動名
-  ========================= */
-
-  const label1 =
-    document.createElement(
-      "div"
-    );
-
-  const label2 =
-    document.createElement(
-      "div"
-    );
-
-
-  label1.className =
-    "battleActionLabel p1";
-
-  label2.className =
-    "battleActionLabel p2";
-
-
-  label1.textContent =
-    "1P　" +
-    (a1.name || "行動");
-
-  label2.textContent =
-    "2P　" +
-    (a2.name || "行動");
-
-
+  const label1=document.createElement("div");
+  const label2=document.createElement("div");
+  label1.className="battleActionLabel p1";
+  label2.className="battleActionLabel p2";
+  label1.textContent="1P　"+(a1.name||"行動");
+  label2.textContent="2P　"+(a2.name||"行動");
   layer.appendChild(label1);
   layer.appendChild(label2);
 
+  const attack1=a1.type==="attack";
+  const attack2=a2.type==="attack";
+  const block1=a1.type==="block"&&!blockSeal[1];
+  const block2=a2.type==="block"&&!blockSeal[2];
+  const ranged1=a1.skill==="tech6";
+  const ranged2=a2.skill==="tech6";
 
-  const attack1 =
-    a1.type === "attack";
-
-  const attack2 =
-    a2.type === "attack";
-
-  const effectiveBlock1 = a1.type === "block" && !blockSeal[1];
-  const effectiveBlock2 = a2.type === "block" && !blockSeal[2];
-
-
-  /* =========================
-     ブロックシールド
-  ========================= */
-
-  if(effectiveBlock1){
-
-    const shield1 =
-      document.createElement(
-        "div"
-      );
-
-    shield1.className =
-      "battleShield p1";
-
-    layer.appendChild(
-      shield1
-    );
-
+  // ===== 技7 ランページ：赤黒の暴走演出 =====
+  if(a1.skill==="tech7" || a2.skill==="tech7"){
+    const side=a1.skill==="tech7"?"p1":"p2";
+    const burst=document.createElement("div");
+    burst.className="effectFlash";
+    burst.style.background="radial-gradient(circle,rgba(255,40,55,.85),rgba(20,0,0,.75) 35%,transparent 72%)";
+    burst.style.mixBlendMode="screen";
+    layer.appendChild(burst);
+    const ring=document.createElement("div");
+    ring.className="effectRing";
+    ring.style.color="#ff263f";
+    ring.style.width="240px";
+    ring.style.height="240px";
+    ring.style.left=side==="p1"?"15%":"85%";
+    ring.style.top=side==="p1"?"75%":"25%";
+    layer.appendChild(ring);
+    showImpact(layer,"RAMPAGE!","hit");
+    flashScreen();
+    setTimeout(()=>{layer.innerHTML="";callback();},850);
+    return;
   }
 
-
-  if(effectiveBlock2){
-
-    const shield2 =
-      document.createElement(
-        "div"
-      );
-
-    shield2.className =
-      "battleShield p2";
-
-    layer.appendChild(
-      shield2
-    );
-
+  // ===== 技8：敵側を盾→封印X =====
+  if(a1.skill==="tech8" || a2.skill==="tech8"){
+    const target=a1.skill==="tech8"?"p2":"p1";
+    createSealEffect(layer,target);
+    setTimeout(()=>{layer.innerHTML="";callback();},900);
+    return;
   }
 
+  // ===== 技2 カウンター：使用者に銀盾 =====
+  if(a1.skill==="tech2" || a2.skill==="tech2"){
+    if(a1.skill==="tech2") createCounterShield(layer,"p1");
+    if(a2.skill==="tech2") createCounterShield(layer,"p2");
 
-  /* =========================
-     攻撃 vs 攻撃
-     中央で衝突
-  ========================= */
+    // 相手が攻撃なら、その攻撃が反射されたことを中央で表現
+    if(a1.skill==="tech2" && attack2){
+      setTimeout(()=>{
+        createReflectedSlash(layer,"p2");
+        showImpact(layer,"REFLECT!","reflect");
+      },260);
+    }
+    if(a2.skill==="tech2" && attack1){
+      setTimeout(()=>{
+        createReflectedSlash(layer,"p1");
+        showImpact(layer,"REFLECT!","reflect");
+      },260);
+    }
+    setTimeout(()=>{layer.innerHTML="";callback();},900);
+    return;
+  }
 
-  if(
-    attack1 &&
-    attack2
-  ){
+  // ===== ブロック / 技5 フォーサイト =====
+  if(block1 || block2){
+    if(block1) createShield(layer,"p1");
+    if(block2) createShield(layer,"p2");
+    if(a1.skill==="tech5" && a2.type==="charge") createChargeEffectAt(layer,"p2");
+    if(a2.skill==="tech5" && a1.type==="charge") createChargeEffectAt(layer,"p1");
 
-    const p1 =
-      document.createElement(
-        "div"
-      );
+    // ブリーチだけはブロックを貫通するため、盾の上から斬撃
+    if(attack1 && block2 && a1.pierce) createSlashAt(layer,"p2", "#ff5266");
+    if(attack2 && block1 && a2.pierce) createSlashAt(layer,"p1", "#5da5ff");
+    if((attack1&&!a1.pierce&&block2)||(attack2&&!a2.pierce&&block1)) showImpact(layer,"BLOCK!","blocked");
 
-    const p2 =
-      document.createElement(
-        "div"
-      );
+    setTimeout(()=>{layer.innerHTML="";callback();},900);
+    return;
+  }
 
+  // ===== 技4 回復 =====
+  if(a1.skill==="tech4" || a2.skill==="tech4"){
+    if(a1.skill==="tech4") createHealAt(layer,"p1");
+    if(a2.skill==="tech4") createHealAt(layer,"p2");
+    showImpact(layer,"+1 HP","heal");
+    setTimeout(()=>{layer.innerHTML="";callback();},850);
+    return;
+  }
 
-    p1.className =
-      "battleProjectile p1";
-
-    p2.className =
-      "battleProjectile p2";
-
-
-    layer.appendChild(p1);
-    layer.appendChild(p2);
-
-
-    let arrived = 0;
-
-
-    function projectileArrived(){
-
-      arrived++;
-
-      if(arrived === 2){
-
-        p1.remove();
-        p2.remove();
-
-        showImpact(
-          layer,
-          "CLASH!",
-          "clash"
-        );
-
-      }
-
+  // ===== 両者攻撃 =====
+  if(attack1 && attack2){
+    if(ranged1 && ranged2){
+      const p1=document.createElement("div");
+      const p2=document.createElement("div");
+      p1.className="battleProjectile p1 momentumProjectile";
+      p2.className="battleProjectile p2 momentumProjectile";
+      layer.appendChild(p1);layer.appendChild(p2);
+      let arrived=0;
+      const hitCenter=()=>{
+        arrived++;
+        if(arrived!==2)return;
+        p1.remove();p2.remove();
+        showImpact(layer,"CLASH!","clash");
+        createRing(layer,"#fff");
+        flashScreen();
+      };
+      animateProjectile(p1,false,650,hitCenter,true);
+      animateProjectile(p2,true,650,hitCenter,true);
+      setTimeout(()=>{layer.innerHTML="";callback();},950);
+      return;
     }
 
-
-    /*
-      ここでは中央まで飛ばす
-      ↓
-      両方が中央に到着
-      ↓
-      衝突演出
-    */
-
-    animateProjectile(
-      p1,
-      false,
-      650,
-      projectileArrived,
-      true
-    );
-
-    animateProjectile(
-      p2,
-      true,
-      650,
-      projectileArrived,
-      true
-    );
-
-
-    setTimeout(()=>{
-
-      layer.innerHTML = "";
-
-      callback();
-
-    },1050);
-
+    // 通常攻撃 / ブリーチ / 技3 は中央衝突
+    createSlashAt(layer,"center", "#ff5266");
+    createSlashAt(layer,"center", "#5da5ff", true);
+    if(a1.skill==="tech3" || a2.skill==="tech3") createShockwave(layer,"#fff16a");
+    setTimeout(()=>{showImpact(layer,"CLASH!","clash");flashScreen();},330);
+    setTimeout(()=>{layer.innerHTML="";callback();},850);
     return;
-
   }
 
-
-  /* =========================
-     1Pだけ攻撃
-  ========================= */
-
+  // ===== 1Pだけ攻撃 =====
   if(attack1){
-
-    let shield = null;
-
-
-    if(a2.type === "block"){
-
-      shield =
-        document.createElement(
-          "div"
-        );
-
-      shield.className =
-        "battleShield p2";
-
-      layer.appendChild(
-        shield
-      );
-
-    }
-
-
-    const projectile =
-      document.createElement(
-        "div"
-      );
-
-    projectile.className =
-      "battleProjectile p1";
-
-    layer.appendChild(
-      projectile
-    );
-
-
-    /*
-      重要：
-      攻撃側から相手側まで飛ばす
-    */
-
-    animateProjectile(
-      projectile,
-      false,
-      800,
-      ()=>{
-
+    if(ranged1){
+      const projectile=document.createElement("div");
+      projectile.className="battleProjectile p1 momentumProjectile";
+      layer.appendChild(projectile);
+      animateProjectile(projectile,false,720,()=>{
         projectile.remove();
-
-
-        if(shield){
-
-          shield.style.animation =
-            "shieldAppear .2s ease-out forwards";
-
+        if(block2 && !a1.pierce){
+          showImpact(layer,"BLOCK!","blocked");
+          createRing(layer,"#65b5ff");
+        }else{
+          showImpact(layer,"HIT!","hit");
+          createShockwave(layer,"#ffcf4d");
+          flashScreen();
         }
-
-
-        if(
-          effectiveBlock2 &&
-          !a1.pierce
-        ){
-
-          showImpact(
-            layer,
-            "BLOCK!",
-            "blocked"
-          );
-
-        }
-
-        else{
-
-          showImpact(
-            layer,
-            "HIT!",
-            "hit"
-          );
-
-        }
-
-      },
-      false
-    );
-
-
-    setTimeout(()=>{
-
-      layer.innerHTML = "";
-
-      callback();
-
-    },1200);
-
+      },false);
+    }else{
+      // チャージ中の相手なら相手側、それ以外は中央
+      const side=a2.type==="charge"?"p2":"center";
+      createSlashAt(layer,side,"#ff5266");
+      if(a1.skill==="tech3" && a2.type==="charge") createShockwave(layer,"#fff16a");
+      setTimeout(()=>{
+        if(block2 && !a1.pierce) showImpact(layer,"BLOCK!","blocked");
+        else {showImpact(layer,"HIT!","hit");flashScreen();}
+      },350);
+    }
+    setTimeout(()=>{layer.innerHTML="";callback();},1050);
     return;
-
   }
 
-
-  /* =========================
-     2Pだけ攻撃
-  ========================= */
-
+  // ===== 2Pだけ攻撃 =====
   if(attack2){
-
-    let shield = null;
-
-
-    if(a1.type === "block"){
-
-      shield =
-        document.createElement(
-          "div"
-        );
-
-      shield.className =
-        "battleShield p1";
-
-      layer.appendChild(
-        shield
-      );
-
-    }
-
-
-    const projectile =
-      document.createElement(
-        "div"
-      );
-
-    projectile.className =
-      "battleProjectile p2";
-
-    layer.appendChild(
-      projectile
-    );
-
-
-    animateProjectile(
-      projectile,
-      true,
-      800,
-      ()=>{
-
+    if(ranged2){
+      const projectile=document.createElement("div");
+      projectile.className="battleProjectile p2 momentumProjectile";
+      layer.appendChild(projectile);
+      animateProjectile(projectile,true,720,()=>{
         projectile.remove();
-
-
-        if(shield){
-
-          shield.style.animation =
-            "shieldAppear .2s ease-out forwards";
-
+        if(block1 && !a2.pierce){
+          showImpact(layer,"BLOCK!","blocked");
+          createRing(layer,"#65b5ff");
+        }else{
+          showImpact(layer,"HIT!","hit");
+          createShockwave(layer,"#ffcf4d");
+          flashScreen();
         }
-
-
-        if(
-          a1.type === "block" &&
-          !a2.pierce
-        ){
-
-          showImpact(
-            layer,
-            "BLOCK!",
-            "blocked"
-          );
-
-        }
-
-        else{
-
-          showImpact(
-            layer,
-            "HIT!",
-            "hit"
-          );
-
-        }
-
-      },
-      false
-    );
-
-
-    setTimeout(()=>{
-
-      layer.innerHTML = "";
-
-      callback();
-
-    },1200);
-
+      },false);
+    }else{
+      const side=a1.type==="charge"?"p1":"center";
+      createSlashAt(layer,side,"#5da5ff");
+      if(a2.skill==="tech3" && a1.type==="charge") createShockwave(layer,"#fff16a");
+      setTimeout(()=>{
+        if(block1 && !a2.pierce) showImpact(layer,"BLOCK!","blocked");
+        else {showImpact(layer,"HIT!","hit");flashScreen();}
+      },350);
+    }
+    setTimeout(()=>{layer.innerHTML="";callback();},1050);
     return;
-
   }
 
-
-  /* =========================
-     技2：反射演出
-  ========================= */
-
-  if(
-    a1.type === "reflect" ||
-    a2.type === "reflect"
-  ){
-
-    showImpact(
-      layer,
-      "REFLECT!",
-      "reflect"
-    );
-
-
-    setTimeout(()=>{
-
-      layer.innerHTML = "";
-
-      callback();
-
-    },700);
-
+  // チャージ
+  if(a1.type==="charge" || a2.type==="charge"){
+    if(a1.type==="charge") createChargeEffectAt(layer,"p1");
+    if(a2.type==="charge") createChargeEffectAt(layer,"p2");
+    setTimeout(()=>{layer.innerHTML="";callback();},750);
     return;
-
   }
 
-
-  /* =========================
-     技4：回復演出
-  ========================= */
-
-  if(
-    a1.type === "heal" ||
-    a2.type === "heal"
-  ){
-
-    showImpact(
-      layer,
-      "+1 HP",
-      "heal"
-    );
-
-
-    setTimeout(()=>{
-
-      layer.innerHTML = "";
-
-      callback();
-
-    },700);
-
-    return;
-
-  }
-
-
-  /* =========================
-     その他
-  ========================= */
-
-  setTimeout(()=>{
-
-    layer.innerHTML = "";
-
-    callback();
-
-  },700);
-
+  setTimeout(()=>{layer.innerHTML="";callback();},700);
 }
 
+function createSlashAt(layer,side,color,reverse=false){
+  const e=document.createElement("div");
+  e.className="effectSlash";
+  e.style.color=color;
+  if(side==="p1"){e.style.left="15%";e.style.top="75%";}
+  else if(side==="p2"){e.style.left="85%";e.style.top="25%";}
+  else {e.style.left="50%";e.style.top="50%";}
+  if(reverse) e.style.transform="translate(-50%,-50%) rotate(155deg) scaleX(0)";
+  layer.appendChild(e);
+  return e;
+}
+
+function createReflectedSlash(layer,side){
+  const color=side==="p1"?"#ff5266":"#5da5ff";
+  createSlashAt(layer,side,color);
+  createShockwave(layer,"#d9d9e8");
+}
+
+function createHealAt(layer,side){
+  const e=document.createElement("div");
+  e.className="effectAura";
+  e.style.left=side==="p1"?"15%":"85%";
+  e.style.top=side==="p1"?"75%":"25%";
+  layer.appendChild(e);
+}
+
+function createCounterShield(layer,side){
+  const shield=document.createElement("div");
+  shield.className="battleShield "+side+" counterShield";
+  shield.style.borderColor="#d9d9e8";
+  shield.style.boxShadow="0 0 22px rgba(230,230,255,.95), inset 0 0 18px rgba(210,210,230,.35)";
+  shield.style.background="radial-gradient(circle,rgba(220,220,235,.22),rgba(160,160,180,.06) 48%,transparent 72%)";
+  layer.appendChild(shield);
+  return shield;
+}
+
+function createChargeEffectAt(layer,side){
+  const e=document.createElement("div");
+  e.className="effectRing";
+  e.style.color="#ff8a24";
+  e.style.left=side==="p1"?"15%":"85%";
+  e.style.top=side==="p1"?"75%":"25%";
+  layer.appendChild(e);
+}
+
+function createSealEffect(layer,side){
+  const shield=createShield(layer,side);
+  shield.style.borderColor="#b36cff";
+  const cross=document.createElement("div");
+  cross.textContent="✕";
+  cross.style.position="absolute";
+  cross.style.left=side==="p1"?"15%":"85%";
+  cross.style.top=side==="p1"?"75%":"25%";
+  cross.style.transform="translate(-50%,-50%)";
+  cross.style.fontSize="110px";
+  cross.style.fontWeight="900";
+  cross.style.color="#c06cff";
+  cross.style.textShadow="0 0 15px #c06cff,0 0 35px #7a35ff";
+  cross.style.zIndex="20";
+  cross.style.pointerEvents="none";
+  layer.appendChild(cross);
+}
+
+function createShield(layer,side){
+  const shield=document.createElement("div");
+  shield.className="battleShield "+side;
+  layer.appendChild(shield);
+  return shield;
+}
+
+function createRing(layer,color){
+  const e=document.createElement("div");
+  e.className="effectRing";
+  e.style.color=color;
+  layer.appendChild(e);
+}
+
+function createShockwave(layer,color){
+  const e=document.createElement("div");
+  e.className="effectShockwave";
+  e.style.color=color;
+  layer.appendChild(e);
+}
+
+function createAura(layer){
+  const e=document.createElement("div");
+  e.className="effectAura";
+  layer.appendChild(e);
+}
+
+function flashScreen(){
+  const screen=document.getElementById("battleScreen");
+  if(!screen)return;
+  screen.classList.remove("hitShake");
+  void screen.offsetWidth;
+  screen.classList.add("hitShake");
+  setTimeout(()=>screen.classList.remove("hitShake"),300);
+}
+
+function createChargeEffect(layer){
+  createRing(layer,"#4da6ff");
+  const e=document.createElement("div");
+  e.className="effectFlash";
+  layer.appendChild(e);
+}
+
+function spawnTechniqueEffect(layer,action,player){
+  const skill=action&&action.skill;
+  const color=player===1?"#ff5266":"#5da5ff";
+  let e;
+  if(skill==="tech1"){
+    e=document.createElement("div");
+    e.className="effectSlash";
+    e.style.color=color;
+    e.style.top=player===1?"62%":"38%";
+    layer.appendChild(e);
+  }else if(skill==="tech2"){
+    e=document.createElement("div");
+    e.className="effectRing";
+    e.style.color="#d66cff";
+    layer.appendChild(e);
+  }else if(skill==="tech3"){
+    e=document.createElement("div");
+    e.className="effectLightning";
+    e.style.color="#fff16a";
+    e.style.left=player===1?"62%":"38%";
+    layer.appendChild(e);
+    createShockwave(layer,"#fff16a");
+  }else if(skill==="tech4"){
+    createAura(layer);
+  }else if(skill==="tech5"){
+    createShield(layer,player===1?"p1":"p2");
+  }else if(skill==="tech6"){
+    for(let i=0;i<3;i++){
+      const r=document.createElement("div");
+      r.className="effectRing";
+      r.style.color=color;
+      r.style.width=(70+i*35)+"px";
+      r.style.height=(70+i*35)+"px";
+      r.style.animationDelay=(i*.07)+"s";
+      layer.appendChild(r);
+    }
+  }else if(skill==="tech7"){
+    e=document.createElement("div");
+    e.className="effectFlash";
+    e.style.background="radial-gradient(circle,rgba(255,80,60,.9),rgba(255,30,60,.22) 22%,transparent 60%)";
+    layer.appendChild(e);
+    createShockwave(layer,"#ff334d");
+    flashScreen();
+  }else if(skill==="tech8"){
+    e=document.createElement("div");
+    e.className="effectHex";
+    e.style.color="#b36cff";
+    layer.appendChild(e);
+  }
+}
 
 /* =========================
    玉の移動
@@ -2717,138 +2718,88 @@ function animateProjectile(
    ヒット表示
 ========================= */
 
-function showImpact(
-  layer,
-  text,
-  cls
-){
+function showImpact(layer,text,cls){
+  if(!text)return;
+  const impact=document.createElement("div");
+  impact.className="battleImpact "+cls;
+  impact.textContent=text;
+  layer.appendChild(impact);
 
-  if(!text){
-    return;
+  if(cls==="hit"){
+    flashScreen();
+    createDamageNumber(layer);
   }
-
-
-  const impact =
-    document.createElement(
-      "div"
-    );
-
-
-  impact.className =
-    "battleImpact " + cls;
-
-
-  impact.textContent =
-    text;
-
-
-  layer.appendChild(
-    impact
-  );
-
-
-  setTimeout(()=>{
-
-    impact.remove();
-
-  },500);
-
+  setTimeout(()=>impact.remove(),550);
 }
 
+function createDamageNumber(layer){
+  const d=document.createElement("div");
+  d.className="battleImpact hit damageText";
+  d.textContent="IMPACT";
+  layer.appendChild(d);
+  setTimeout(()=>d.remove(),500);
+}
 
 /* =========================
    結果表示
 ========================= */
 
 function showBattleResult(text){
-
-  document
-    .getElementById(
-      "resultMessage"
-    )
-    .textContent =
-      text;
-
+  const el=document.getElementById("resultMessage");
+  el.className="";
+  el.textContent=text;
+  if(text==="1P WIN") el.style.color="#ff5b6b";
+  else if(text==="2P WIN") el.style.color="#63aaff";
+  else el.style.color="#fff";
+  void el.offsetWidth;
+  el.className="resultShow";
 }
-
 
 /* =========================
    UI更新
 ========================= */
 
+let displayedHp={1:10,2:10};
+let displayedGauge={1:0,2:0};
+
 function updateBattleUI(){
+  [1,2].forEach(player=>{
+    const hpText=document.getElementById("hp"+player+"Text");
+    const hpFill=document.getElementById("hp"+player+"Fill");
+    const gaugeText=document.getElementById("gauge"+player+"Text");
+    const gaugeFill=document.getElementById("gauge"+player+"Fill");
 
-  /* HP */
+    hpText.textContent=hp[player];
+    hpFill.style.width=(hp[player]*10)+"%";
 
-  document
-    .getElementById(
-      "hp1Text"
-    )
-    .textContent =
-      hp[1];
+    if(hp[player] < displayedHp[player]){
+      hpFill.classList.remove("hpDamage");
+      void hpFill.offsetWidth;
+      hpFill.classList.add("hpDamage");
+      hpText.classList.remove("hpDamage");
+      void hpText.offsetWidth;
+      hpText.classList.add("hpDamage");
+    }
 
-  document
-    .getElementById(
-      "hp2Text"
-    )
-    .textContent =
-      hp[2];
+    gaugeText.textContent=gauge[player];
+    gaugeFill.style.width=(gauge[player]*10)+"%";
+    gaugeFill.classList.toggle("gaugeReady",gauge[player]>=7);
+    gaugeFill.classList.toggle("gaugeMax",gauge[player]>=10);
 
+    if(gauge[player] > displayedGauge[player]){
+      gaugeFill.animate([
+        {filter:"brightness(1)",transform:"scaleY(1)"},
+        {filter:"brightness(2)",transform:"scaleY(1.6)"},
+        {filter:"brightness(1)",transform:"scaleY(1)"}
+      ],{duration:380,easing:"ease-out"});
+    }
 
-  document
-    .getElementById(
-      "hp1Fill"
-    )
-    .style.width =
-      (hp[1] * 10) + "%";
-
-
-  document
-    .getElementById(
-      "hp2Fill"
-    )
-    .style.width =
-      (hp[2] * 10) + "%";
-
-
-  /* ゲージ */
-
-  document
-    .getElementById(
-      "gauge1Text"
-    )
-    .textContent =
-      gauge[1];
-
-
-  document
-    .getElementById(
-      "gauge2Text"
-    )
-    .textContent =
-      gauge[2];
-
-
-  document
-    .getElementById(
-      "gauge1Fill"
-    )
-    .style.width =
-      (gauge[1] * 10) + "%";
-
-
-  document
-    .getElementById(
-      "gauge2Fill"
-    )
-    .style.width =
-      (gauge[2] * 10) + "%";
-
+    displayedHp[player]=hp[player];
+    displayedGauge[player]=gauge[player];
+  });
 
   updateDisabledActions();
-
 }
-
 
 /* =========================
    ゲージ不足技を暗くする
