@@ -1470,6 +1470,12 @@ body{
       if(p1Ready) window.receiveOnlineTechniques(1,p1Techniques);
       if(p2Ready) window.receiveOnlineTechniques(2,p2Techniques);
 
+      // 両者がREADYになったら、P1が共通の開始時刻をFirebaseへ送る。
+      // P1/P2とも同じstartAtを基準に約2秒後に1ターン目を開始する。
+      if(p1Ready && p2Ready){
+        window.startOnlineBattleIfReady();
+      }
+
       // 相手が確定しても、自分の技選択UIは触らない。
       if(gameMode === "online" && !onlineBattleStarted){
         const meReady = localPlayer === 1 ? p1Ready : p2Ready;
@@ -1857,11 +1863,11 @@ function maybeStartOnlineBattle(){
     onlineBattleStarted = true;
     onlineTurnNumber = 1;
     const button = document.getElementById("techConfirmButton");
-    if(button){ button.disabled=true; button.textContent="対戦開始…"; }
+    if(button){ button.disabled=true; button.textContent="READY!"; }
     const title = document.getElementById("techTitle");
-    if(title) title.textContent="対戦開始…";
+    if(title) title.textContent="READY! 2秒後に対戦開始…";
     const battle = {
-      phase:"starting", turn:1, startAt:Date.now()+1000,
+      phase:"starting", turn:1, startAt:Date.now()+2000,
       hp:{1:10,2:10}, gauge:{1:0,2:0},
       lastAction:{1:null,2:null}, lastLastAction:{1:null,2:null},
       momentumBonus:{1:false,2:false}, blockSeal:{1:false,2:false},
