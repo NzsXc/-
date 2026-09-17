@@ -838,6 +838,18 @@ body{
 @keyframes shieldBreak{0%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(1.35);filter:brightness(2)}}
 
 @media(max-width:600px){
+  /* スマホでは親のoverflow:hiddenに演出が隠れないよう、演出レイヤーを画面固定で前面表示 */
+  #battleEffectLayer{
+    position:fixed;
+    inset:0;
+    z-index:9999;
+    pointer-events:none;
+    overflow:visible;
+    transform:translateZ(0);
+    -webkit-transform:translateZ(0);
+    will-change:transform;
+  }
+
   .playerArea{
     width:calc(50vw - 15px);
     min-width:170px;
@@ -2918,7 +2930,7 @@ function playBattleEffect(a1,a2,callback){
           showImpact(layer,"BLOCK!","blocked");
           createRing(layer,"#65b5ff");
         }else{
-          showImpact(layer,"HIT!","hit");
+          showAttackHit(layer,a1);
           createShockwave(layer,"#ffcf4d");
           flashScreen();
         }
@@ -2930,7 +2942,7 @@ function playBattleEffect(a1,a2,callback){
       if(a1.skill==="tech3" && a2.type==="charge") createShockwave(layer,"#fff16a");
       setTimeout(()=>{
         if(block2 && !a1.pierce) showImpact(layer,"BLOCK!","blocked");
-        else {showImpact(layer,"HIT!","hit");flashScreen();}
+        else {showAttackHit(layer,a1);flashScreen();}
       },350);
     }
     setTimeout(()=>{layer.innerHTML="";callback();},1050);
@@ -2949,7 +2961,7 @@ function playBattleEffect(a1,a2,callback){
           showImpact(layer,"BLOCK!","blocked");
           createRing(layer,"#65b5ff");
         }else{
-          showImpact(layer,"HIT!","hit");
+          showAttackHit(layer,a2);
           createShockwave(layer,"#ffcf4d");
           flashScreen();
         }
@@ -2960,7 +2972,7 @@ function playBattleEffect(a1,a2,callback){
       if(a2.skill==="tech3" && a1.type==="charge") createShockwave(layer,"#fff16a");
       setTimeout(()=>{
         if(block1 && !a2.pierce) showImpact(layer,"BLOCK!","blocked");
-        else {showImpact(layer,"HIT!","hit");flashScreen();}
+        else {showAttackHit(layer,a2);flashScreen();}
       },350);
     }
     setTimeout(()=>{layer.innerHTML="";callback();},1050);
@@ -3255,6 +3267,15 @@ function animateProjectile(
    ヒット表示
 ========================= */
 
+function showAttackHit(layer,action){
+  const skill=action?.skill;
+  let name="ATTACK";
+  if(skill==="tech1") name="BLEACH";
+  else if(skill==="tech3") name="PUNISH";
+  else if(skill==="tech6") name="MOMENTUM";
+  showImpact(layer,"HIT! "+name,"hit");
+}
+
 function showImpact(layer,text,cls){
   if(!text)return;
   const impact=document.createElement("div");
@@ -3264,7 +3285,6 @@ function showImpact(layer,text,cls){
 
   if(cls==="hit"){
     flashScreen();
-    createDamageNumber(layer);
   }
   setTimeout(()=>impact.remove(),550);
 }
