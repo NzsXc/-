@@ -838,6 +838,7 @@ body{
 @keyframes shieldBreak{0%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(1.35);filter:brightness(2)}}
 
 @media(max-width:600px){
+  #battleCenter{z-index:20;}
   .playerArea{
     width:calc(50vw - 15px);
     min-width:170px;
@@ -1128,7 +1129,8 @@ body{
       <div
         id="p1tech0"
         class="action"
-        data-player="1">
+        data-player="1"
+        data-action="tech0">
 
         <div class="actionKey">
           Q
@@ -1144,7 +1146,8 @@ body{
       <div
         id="p1tech1"
         class="action"
-        data-player="1">
+        data-player="1"
+        data-action="tech1">
 
         <div class="actionKey">
           W
@@ -1160,7 +1163,8 @@ body{
       <div
         id="p1tech2"
         class="action"
-        data-player="1">
+        data-player="1"
+        data-action="tech2">
 
         <div class="actionKey">
           E
@@ -1298,7 +1302,8 @@ body{
       <div
         id="p2tech0"
         class="action"
-        data-player="2">
+        data-player="2"
+        data-action="tech0">
 
         <div class="actionKey">
           U
@@ -1314,7 +1319,8 @@ body{
       <div
         id="p2tech1"
         class="action"
-        data-player="2">
+        data-player="2"
+        data-action="tech1">
 
         <div class="actionKey">
           I
@@ -1330,7 +1336,8 @@ body{
       <div
         id="p2tech2"
         class="action"
-        data-player="2">
+        data-player="2"
+        data-action="tech2">
 
         <div class="actionKey">
           O
