@@ -749,6 +749,51 @@ body{
 }
 .battleShield.shieldBreak{animation:shieldBreak .45s ease-out forwards;}
 
+.shieldShard{
+  position:absolute;
+  left:15%;top:75%;
+  width:13px;height:4px;
+  border-radius:3px;
+  background:linear-gradient(90deg,#fff,#69aaff,transparent);
+  box-shadow:0 0 10px #69aaff,0 0 20px rgba(100,170,255,.9);
+  transform:translate(-50%,-50%);
+  animation:shieldShardBreak .55s ease-out forwards;
+  pointer-events:none;
+  z-index:8;
+}
+.shieldShard.p2{left:85%;top:25%;}
+
+.punishBurst{
+  position:absolute;
+  width:300px;height:300px;
+  transform:translate(-50%,-50%) scale(.2);
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(255,35,45,.95) 0%,rgba(110,0,12,.85) 25%,rgba(15,0,0,.9) 52%,transparent 72%);
+  box-shadow:0 0 35px #ff202f,0 0 90px rgba(70,0,0,.95),inset 0 0 35px #090000;
+  animation:punishBurst .72s cubic-bezier(.12,.9,.18,1) forwards;
+  pointer-events:none;
+}
+.punishSlash{
+  position:absolute;
+  width:500px;height:34px;
+  transform:translate(-50%,-50%) rotate(-25deg) scaleX(0);
+  border-radius:50%;
+  background:linear-gradient(90deg,transparent,#160000,#ff2438,#65000a,#080000,transparent);
+  box-shadow:0 0 18px #ff1d2e,0 0 42px #3b0005;
+  animation:punishSlash .5s cubic-bezier(.15,.9,.2,1) forwards;
+  pointer-events:none;
+}
+.punishRing{
+  position:absolute;
+  width:170px;height:170px;
+  border:9px solid #4a0008;
+  border-radius:50%;
+  box-shadow:0 0 20px #ff1e32,0 0 55px rgba(45,0,0,.95),inset 0 0 20px #ff1e32;
+  transform:translate(-50%,-50%) scale(.25);
+  animation:punishRing .65s ease-out forwards;
+  pointer-events:none;
+}
+
 .battleImpact{
   font-size:clamp(38px,6vw,72px);
   letter-spacing:3px;
@@ -836,6 +881,10 @@ body{
 @keyframes auraHeal{0%{opacity:0;transform:translate(-50%,-50%) scale(.25)}30%{opacity:1}100%{opacity:0;transform:translate(-50%,-50%) scale(1.45)}}
 @keyframes lightningStrike{0%{opacity:0;transform:translate(-50%,-50%) rotate(25deg) scaleY(.1)}35%{opacity:1;transform:translate(-50%,-50%) rotate(25deg) scaleY(1)}100%{opacity:0;transform:translate(-50%,-50%) rotate(25deg) scaleY(1.2)}}
 @keyframes shieldBreak{0%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(1.35);filter:brightness(2)}}
+@keyframes shieldShardBreak{0%{opacity:1;transform:translate(-50%,-50%) rotate(0deg) scale(1)}100%{opacity:0;transform:translate(calc(-50% + var(--sx)),calc(-50% + var(--sy))) rotate(180deg) scale(.25)}}
+@keyframes punishBurst{0%{opacity:0;transform:translate(-50%,-50%) scale(.2)}28%{opacity:1;transform:translate(-50%,-50%) scale(1.15)}100%{opacity:0;transform:translate(-50%,-50%) scale(1.55)}}
+@keyframes punishSlash{0%{opacity:0;transform:translate(-50%,-50%) rotate(-25deg) scaleX(0)}35%{opacity:1;transform:translate(-50%,-50%) rotate(-25deg) scaleX(1.15)}100%{opacity:0;transform:translate(-50%,-50%) rotate(-25deg) scaleX(1.45) translateX(35px)}}
+@keyframes punishRing{0%{opacity:0;transform:translate(-50%,-50%) scale(.25)}25%{opacity:1;transform:translate(-50%,-50%) scale(1.1)}100%{opacity:0;transform:translate(-50%,-50%) scale(2.7)}}
 
 @media(max-width:600px){
   /* スマホでは親のoverflow:hiddenに演出が隠れないよう、演出レイヤーを画面固定で前面表示 */
@@ -2773,6 +2822,12 @@ if(gauge[2] >= 7){
       return;
     }
 
+    // オフラインでもHPが0になったら、次ターンを開始しない。
+    if(battleResult){
+      showBattleResult(battleResult);
+      return;
+    }
+
     setTimeout(()=>startTurn(),250);
   });
 }
@@ -2863,14 +2918,34 @@ function playBattleEffect(a1,a2,callback){
 
   // ===== ブロック / 技5 フォーサイト =====
   if(block1 || block2){
-    if(block1) createShield(layer,"p1");
-    if(block2) createShield(layer,"p2");
+    const shield1 = block1 ? createShield(layer,"p1") : null;
+    const shield2 = block2 ? createShield(layer,"p2") : null;
     if(a1.skill==="tech5" && a2.type==="charge") createChargeEffectAt(layer,"p2");
     if(a2.skill==="tech5" && a1.type==="charge") createChargeEffectAt(layer,"p1");
 
-    // ブリーチだけはブロックを貫通するため、盾の上から斬撃
-    if(attack1 && block2 && a1.pierce) createSlashAt(layer,"p2", "#ff5266");
-    if(attack2 && block1 && a2.pierce) createSlashAt(layer,"p1", "#5da5ff");
+    // ブリーチだけはブロックを貫通。斬撃が盾を割る演出を追加。
+    if(attack1 && block2 && a1.pierce){
+      createSlashAt(layer,"p2", "#ff5266");
+      setTimeout(()=>{
+        if(shield2){
+          shield2.classList.add("shieldBreak");
+          createShieldShards(layer,"p2");
+        }
+        createShockwave(layer,"#ff5266");
+        showImpact(layer,"BREAK!","hit");
+      },260);
+    }
+    if(attack2 && block1 && a2.pierce){
+      createSlashAt(layer,"p1", "#5da5ff");
+      setTimeout(()=>{
+        if(shield1){
+          shield1.classList.add("shieldBreak");
+          createShieldShards(layer,"p1");
+        }
+        createShockwave(layer,"#5da5ff");
+        showImpact(layer,"BREAK!","hit");
+      },260);
+    }
     if((attack1&&!a1.pierce&&block2)||(attack2&&!a2.pierce&&block1)) showImpact(layer,"BLOCK!","blocked");
 
     setTimeout(()=>{layer.innerHTML="";callback();},900);
@@ -2930,20 +3005,27 @@ function playBattleEffect(a1,a2,callback){
           showImpact(layer,"BLOCK!","blocked");
           createRing(layer,"#65b5ff");
         }else{
-          showAttackHit(layer,a1);
+          showImpact(layer,"HIT!","hit");
           createShockwave(layer,"#ffcf4d");
           flashScreen();
         }
       },false);
     }else{
-      // チャージ中の相手なら相手側、それ以外は中央
+      // チャージ中の相手へのパニッシュは専用の強化演出
       const side=a2.type==="charge"?"p2":"center";
-      createSlashAt(layer,side,"#ff5266");
-      if(a1.skill==="tech3" && a2.type==="charge") createShockwave(layer,"#fff16a");
-      setTimeout(()=>{
-        if(block2 && !a1.pierce) showImpact(layer,"BLOCK!","blocked");
-        else {showAttackHit(layer,a1);flashScreen();}
-      },350);
+      if(a1.skill==="tech3" && a2.type==="charge"){
+        createPunishEffectAt(layer,"p2");
+        setTimeout(()=>{
+          showImpact(layer,"PUNISH!","hit");
+          flashScreen(420);
+        },380);
+      }else{
+        createSlashAt(layer,side,"#ff5266");
+        setTimeout(()=>{
+          if(block2 && !a1.pierce) showImpact(layer,"BLOCK!","blocked");
+          else {showImpact(layer,"HIT!","hit");flashScreen();}
+        },350);
+      }
     }
     setTimeout(()=>{layer.innerHTML="";callback();},1050);
     return;
@@ -2961,19 +3043,26 @@ function playBattleEffect(a1,a2,callback){
           showImpact(layer,"BLOCK!","blocked");
           createRing(layer,"#65b5ff");
         }else{
-          showAttackHit(layer,a2);
+          showImpact(layer,"HIT!","hit");
           createShockwave(layer,"#ffcf4d");
           flashScreen();
         }
       },false);
     }else{
       const side=a1.type==="charge"?"p1":"center";
-      createSlashAt(layer,side,"#5da5ff");
-      if(a2.skill==="tech3" && a1.type==="charge") createShockwave(layer,"#fff16a");
-      setTimeout(()=>{
-        if(block1 && !a2.pierce) showImpact(layer,"BLOCK!","blocked");
-        else {showAttackHit(layer,a2);flashScreen();}
-      },350);
+      if(a2.skill==="tech3" && a1.type==="charge"){
+        createPunishEffectAt(layer,"p1");
+        setTimeout(()=>{
+          showImpact(layer,"PUNISH!","hit");
+          flashScreen(420);
+        },380);
+      }else{
+        createSlashAt(layer,side,"#5da5ff");
+        setTimeout(()=>{
+          if(block1 && !a2.pierce) showImpact(layer,"BLOCK!","blocked");
+          else {showImpact(layer,"HIT!","hit");flashScreen();}
+        },350);
+      }
     }
     setTimeout(()=>{layer.innerHTML="";callback();},1050);
     return;
@@ -3053,6 +3142,41 @@ function createSealEffect(layer,side){
   layer.appendChild(cross);
 }
 
+function createShieldShards(layer,side){
+  for(let i=0;i<7;i++){
+    const shard=document.createElement("div");
+    shard.className="shieldShard "+side;
+    const angle=(i/7)*Math.PI*2;
+    shard.style.setProperty("--sx",Math.cos(angle)*95+"px");
+    shard.style.setProperty("--sy",Math.sin(angle)*95+"px");
+    layer.appendChild(shard);
+  }
+}
+
+function createPunishEffectAt(layer,side){
+  const x=side==="p1"?"15%":"85%";
+  const y=side==="p1"?"75%":"25%";
+
+  const burst=document.createElement("div");
+  burst.className="punishBurst";
+  burst.style.left=x;
+  burst.style.top=y;
+  layer.appendChild(burst);
+
+  const slash=document.createElement("div");
+  slash.className="punishSlash";
+  slash.style.left=x;
+  slash.style.top=y;
+  if(side==="p2") slash.style.transform="translate(-50%,-50%) rotate(25deg) scaleX(0)";
+  layer.appendChild(slash);
+
+  const ring=document.createElement("div");
+  ring.className="punishRing";
+  ring.style.left=x;
+  ring.style.top=y;
+  layer.appendChild(ring);
+}
+
 function createShield(layer,side){
   const shield=document.createElement("div");
   shield.className="battleShield "+side;
@@ -3080,13 +3204,13 @@ function createAura(layer){
   layer.appendChild(e);
 }
 
-function flashScreen(){
+function flashScreen(duration=300){
   const screen=document.getElementById("battleScreen");
   if(!screen)return;
   screen.classList.remove("hitShake");
   void screen.offsetWidth;
   screen.classList.add("hitShake");
-  setTimeout(()=>screen.classList.remove("hitShake"),300);
+  setTimeout(()=>screen.classList.remove("hitShake"),duration);
 }
 
 function createChargeEffect(layer){
@@ -3267,15 +3391,6 @@ function animateProjectile(
    ヒット表示
 ========================= */
 
-function showAttackHit(layer,action){
-  const skill=action?.skill;
-  let name="ATTACK";
-  if(skill==="tech1") name="BLEACH";
-  else if(skill==="tech3") name="PUNISH";
-  else if(skill==="tech6") name="MOMENTUM";
-  showImpact(layer,"HIT! "+name,"hit");
-}
-
 function showImpact(layer,text,cls){
   if(!text)return;
   const impact=document.createElement("div");
@@ -3285,6 +3400,7 @@ function showImpact(layer,text,cls){
 
   if(cls==="hit"){
     flashScreen();
+    createDamageNumber(layer);
   }
   setTimeout(()=>impact.remove(),550);
 }
