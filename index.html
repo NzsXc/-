@@ -302,7 +302,7 @@ body{
 #battleEffectLayer{
   position:absolute;
   inset:0;
-  z-index:4;
+  z-index:30;
   pointer-events:none;
   overflow:hidden;
 }
@@ -838,7 +838,6 @@ body{
 @keyframes shieldBreak{0%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(1.35);filter:brightness(2)}}
 
 @media(max-width:600px){
-  #battleCenter{z-index:20;}
   .playerArea{
     width:calc(50vw - 15px);
     min-width:170px;
@@ -1922,31 +1921,84 @@ function receiveOnlineAction(player, actionId, timestamp, turnNumber){
   const area=document.getElementById("player"+player+"Area");
   if(area) area.classList.add("locked");
 
-  // オンラインではP1が両者の行動を解決する。
+  // オンラインではP1が両者の行動が揃ったことを確認し、
+  // Firebaseで共通の開始時刻を発行する。
   if(selectedAction[1] && selectedAction[2] && window.onlineBattle.localPlayer === 1){
-    finishTurn();
+    startOnlineBattleCountdownIfReady();
   }
+}
+
+function beginOnlineBattleCountdown(startAt){
+  if(gameMode !== "online") return;
+  if(!Number.isFinite(Number(startAt))) return;
+
+  const target = Number(startAt);
+  onlineCountdownStarted = true;
+  clearInterval(countdownTimer);
+  clearTimeout(window._onlineCountdownTimeout);
+  countdownTimer = null;
+
+  const el = document.getElementById("countdown");
+
+  const show = value => {
+    if(!el) return;
+    el.className = "";
+    void el.offsetWidth;
+    el.className = "countPulse";
+    el.textContent = String(value);
+  };
+
+  const tick = () => {
+    const remainingMs = target - Date.now();
+
+    if(remainingMs > 0){
+      show(Math.min(3, Math.ceil(remainingMs / 1000)));
+      countdownTimer = setTimeout(tick, Math.max(50, remainingMs % 1000 || 50));
+      return;
+    }
+
+    countdownTimer = null;
+    countdown = 0;
+
+    if(el){
+      el.className = "battleCall";
+      el.textContent = "BATTLE!";
+    }
+
+    clearTimeout(window._onlineCountdownTimeout);
+    window._onlineCountdownTimeout = setTimeout(()=>{
+      if(gameMode === "online" && window.onlineBattle.localPlayer === 1 &&
+         selectedAction[1] && selectedAction[2]){
+        finishTurn();
+      }
+    },500);
+  };
+
+  tick();
 }
 
 function startOnlineBattleCountdownIfReady(){
   if(gameMode !== "online") return;
   if(!selectedAction[1] || !selectedAction[2]) return;
   if(onlineCountdownStarted) return;
-  onlineCountdownStarted = true;
-  clearInterval(countdownTimer);
-  countdown=3;
-  const el=document.getElementById("countdown");
-  if(el){ el.className="countPulse"; el.textContent="3"; }
-  countdownTimer=setInterval(()=>{
-    countdown--;
-    if(countdown>0){
-      if(el){ el.className="countPulse"; el.textContent=countdown; }
-      return;
+
+  // P1だけが共通の開始時刻をFirebaseへ発行する。
+  if(window.onlineBattle.localPlayer !== 1) return;
+
+  const startAt = Date.now() + 3000;
+  const battle = {
+    phase: "countdown",
+    turn: onlineTurnNumber,
+    startAt,
+    actions: {
+      1: {id: selectedAction[1].id, data: selectedAction[1].data},
+      2: {id: selectedAction[2].id, data: selectedAction[2].data}
     }
-    clearInterval(countdownTimer);
-    if(el){ el.className="battleCall"; el.textContent="BATTLE!"; }
-    setTimeout(()=>{ if(countdown===0 && selectedAction[1] && selectedAction[2] && window.onlineBattle.localPlayer===1) finishTurn(); },500);
-  },1000);
+  };
+
+  onlineCountdownStarted = true;
+  window.onlineBattle.publishBattleState(battle).catch(console.error);
+  beginOnlineBattleCountdown(startAt);
 }
 
 function receiveOnlineBattleState(state){
@@ -1954,6 +2006,24 @@ function receiveOnlineBattleState(state){
   const turn=Number(state.turn||0);
   if(!turn) return;
   onlineTurnNumber=turn;
+
+  // 両端末が同じFirebaseのstartAtを基準に3→2→1→BATTLE!を表示する。
+  if(state.phase === "countdown" && Number.isFinite(Number(state.startAt))){
+    const a1 = state.actions?.[1];
+    const a2 = state.actions?.[2];
+
+    if(a1?.data && a2?.data){
+      selectedAction[1] = {id:a1.id, data:a1.data};
+      selectedAction[2] = {id:a2.id, data:a2.data};
+      locked[1] = true;
+      locked[2] = true;
+      document.getElementById("player1Area")?.classList.add("locked");
+      document.getElementById("player2Area")?.classList.add("locked");
+    }
+
+    beginOnlineBattleCountdown(Number(state.startAt));
+    return;
+  }
 
   if(state.phase === "starting" || state.phase === "battle"){
     if(!onlineBattleStarted){
@@ -2713,8 +2783,10 @@ function playBattleEffect(a1,a2,callback){
   const label2=document.createElement("div");
   label1.className="battleActionLabel p1";
   label2.className="battleActionLabel p2";
-  label1.textContent="1P　"+(a1.name||"行動");
-  label2.textContent="2P　"+(a2.name||"行動");
+  const action1Name = a1?.name || selectedAction[1]?.data?.name || "";
+  const action2Name = a2?.name || selectedAction[2]?.data?.name || "";
+  label1.textContent="1P　"+action1Name;
+  label2.textContent="2P　"+action2Name;
   layer.appendChild(label1);
   layer.appendChild(label2);
 
