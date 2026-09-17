@@ -1458,20 +1458,71 @@ body{
       }
 
       // 両者の技決定を確認してからバトルへ進む
-      const p1Ready = !!(p1 && p1.ready && Array.isArray(p1.techniques) && p1.techniques.length === 3);
-      const p2Ready = !!(p2 && p2.ready && Array.isArray(p2.techniques) && p2.techniques.length === 3);
+// =========================
+// 両者の技決定を確認
+// =========================
 
-      if(p1Ready){
-        window.receiveOnlineTechniques(1, p1.techniques);
-      }
-      if(p2Ready){
-        window.receiveOnlineTechniques(2, p2.techniques);
-      }
+// Firebaseでは配列がオブジェクトとして返る場合があるため、
+// 必ず配列に変換する
+function normalizeTechniques(value){
 
-      if(p1Ready && p2Ready && window.startOnlineBattleIfReady){
-        window.startOnlineBattleIfReady();
-      }
+  if(Array.isArray(value)){
+    return value;
+  }
 
+  if(value && typeof value === "object"){
+    return Object.keys(value)
+      .sort((a,b) => Number(a) - Number(b))
+      .map(key => value[key]);
+  }
+
+  return [];
+}
+
+const p1TechIndices =
+  normalizeTechniques(p1 && p1.techniques);
+
+const p2TechIndices =
+  normalizeTechniques(p2 && p2.techniques);
+
+const p1Ready =
+  !!(
+    p1 &&
+    p1.ready === true &&
+    p1TechIndices.length === 3
+  );
+
+const p2Ready =
+  !!(
+    p2 &&
+    p2.ready === true &&
+    p2TechIndices.length === 3
+  );
+
+// 1Pの技を受信
+if(p1Ready){
+  window.receiveOnlineTechniques(
+    1,
+    p1TechIndices
+  );
+}
+
+// 2Pの技を受信
+if(p2Ready){
+  window.receiveOnlineTechniques(
+    2,
+    p2TechIndices
+  );
+}
+
+// 両者が決定したらバトル開始
+if(
+  p1Ready &&
+  p2Ready &&
+  window.startOnlineBattleIfReady
+){
+  window.startOnlineBattleIfReady();
+}
       // 相手の行動を受信
       const opponent = localPlayer === 1 ? 2 : 1;
       const turn = window.onlineTurnNumber || 0;
@@ -1809,13 +1860,41 @@ function receiveOnlineTechniques(player, indices){
 }
 
 function maybeStartOnlineBattle(){
-  if(gameMode !== "online") return;
-  if(player1Techs.length !== 3 || player2Techs.length !== 3) return;
-  if(onlineBattleStarted) return;
+
+  if(gameMode !== "online"){
+    return;
+  }
+
+  if(player1Techs.length !== 3){
+    return;
+  }
+
+  if(player2Techs.length !== 3){
+    return;
+  }
+
+  if(onlineBattleStarted){
+    return;
+  }
+
+  console.log(
+    "オンライン対戦開始",
+    {
+      player1Techs,
+      player2Techs
+    }
+  );
 
   onlineBattleStarted = true;
-  document.getElementById("techConfirmButton").disabled = false;
-  document.getElementById("techConfirmButton").textContent = "決定";
+
+  const button =
+    document.getElementById("techConfirmButton");
+
+  if(button){
+    button.disabled = false;
+    button.textContent = "決定";
+  }
+
   setupBattle();
 }
 
