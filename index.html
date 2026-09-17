@@ -1799,7 +1799,12 @@ function receiveOnlineTechniques(player, indices){
   if(player === 1) player1Techs = techs;
   else player2Techs = techs;
 
-  if(gameMode === "online") setupActionNames();
+  // 片方だけ届いた段階では setupActionNames() を呼ばない。
+  // 相手側の技配列がまだ空だと .name 参照で例外になり、
+  // Firebase の受信処理そのものが途中で止まってしまうため。
+  if(gameMode === "online" && player1Techs.length === 3 && player2Techs.length === 3){
+    setupActionNames();
+  }
   maybeStartOnlineBattle();
 }
 
