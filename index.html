@@ -838,14 +838,27 @@ body{
 @keyframes shieldBreak{0%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(1.35);filter:brightness(2)}}
 
 @media(max-width:600px){
-  .playerArea{width:calc(50vw - 15px);min-width:170px;}
+  .playerArea{
+    width:calc(50vw - 15px);
+    min-width:170px;
+    z-index:10;
+    touch-action:manipulation;
+  }
   #player1Area{left:8px;bottom:8px;}
   #player2Area{right:8px;top:8px;}
-  .actionList{gap:3px;}
-  .action{min-height:38px;}
+  .actionList{gap:4px;}
+  .action{
+    min-height:48px;
+    touch-action:manipulation;
+    -webkit-tap-highlight-color:transparent;
+    user-select:none;
+    -webkit-user-select:none;
+  }
   .actionName{font-size:10px;}
+  .actionKey{font-size:9px;}
   .battleActionLabel{font-size:25px;padding:7px 10px;}
   .effectSlash{width:250px;}
+  #battleCenter{z-index:3;pointer-events:none;}
 }
 
 </style>
