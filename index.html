@@ -1346,7 +1346,6 @@ body{
     get,
     onValue,
     update,
-    remove,
     runTransaction
   } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js";
 
@@ -1367,6 +1366,16 @@ body{
   let localPlayer = null;
   let onlineStarted = false;
   let roomListener = null;
+
+  function normalizeTechniques(value){
+    if(Array.isArray(value)) return value.slice();
+    if(value && typeof value === "object"){
+      return Object.keys(value)
+        .sort((a,b) => Number(a) - Number(b))
+        .map(key => value[key]);
+    }
+    return [];
+  }
 
   window.onlineBattle = {
     get roomCode(){ return roomCode; },
@@ -1409,11 +1418,9 @@ body{
         roomCode = code;
         localPlayer = 2;
         onlineStarted = true;
-
         await update(ref(db, "rooms/" + roomCode), {
           "players/2/joined": true
         });
-
         alert("部屋に参加しました！");
       }
 
@@ -1423,68 +1430,125 @@ body{
 
     async sendTechniques(indices){
       if(!onlineStarted || !roomCode || !localPlayer)return;
-      await set(ref(db, `rooms/${roomCode}/players/${localPlayer}/techniques`), indices);
-      await set(ref(db, `rooms/${roomCode}/players/${localPlayer}/ready`), true);
+      await update(ref(db, `rooms/${roomCode}/players/${localPlayer}`), {
+        techniques: indices,
+        ready: true
+      });
     },
 
     async requestBattleStart(){
       if(!onlineStarted || !roomCode)return;
-
       const roomRef = ref(db, "rooms/" + roomCode);
 
       await runTransaction(roomRef, current => {
         if(!current || !current.players)return current;
-
         const p1 = current.players["1"];
         const p2 = current.players["2"];
+        const p1Ready = !!(p1 && p1.joined && p1.ready === true && normalizeTechniques(p1.techniques).length === 3);
+        const p2Ready = !!(p2 && p2.joined && p2.ready === true && normalizeTechniques(p2.techniques).length === 3);
 
-        const p1Ready = !!(
-          p1 &&
-          p1.ready === true &&
-          normalizeTechniques(p1.techniques).length === 3
-        );
+        if(!p1Ready || !p2Ready)return current;
+        if(current.match)return current;
 
-        const p2Ready = !!(
-          p2 &&
-          p2.ready === true &&
-          normalizeTechniques(p2.techniques).length === 3
-        );
+        const battleStartAt = Date.now() + 3500;
+        current.match = {
+          phase: "battleCountdown",
+          turn: 1,
+          battleStartAt,
+          turnStartAt: battleStartAt + 500,
+          actionBattleAt: null,
+          resolvingTurn: null,
+          state: {
+            hp1: 10, hp2: 10,
+            gauge1: 0, gauge2: 0,
+            lastAction1: null, lastAction2: null,
+            lastLastAction1: null, lastLastAction2: null,
+            momentumBonus1: false, momentumBonus2: false,
+            blockSeal1: false, blockSeal2: false
+          },
+          actions: {}
+        };
+        return current;
+      });
+    },
 
-        if(p1Ready && p2Ready && !current.battleStartAt){
-          // 両者が決定した時刻を共通化する。
-          // 受信の速さに左右されず、両端末で同じ3カウントになる。
-          current.battleStartAt = Date.now() + 3500;
-        }
-
+    async activateFirstTurn(turnNumber){
+      if(!onlineStarted || !roomCode)return;
+      await runTransaction(ref(db, "rooms/" + roomCode), current => {
+        const match = current && current.match;
+        if(!match || Number(match.turn) !== Number(turnNumber))return current;
+        if(match.phase === "battleCountdown") match.phase = "battle";
         return current;
       });
     },
 
     async sendAction(actionId, turnNumber){
       if(!onlineStarted || !roomCode || !localPlayer)return;
-      await set(ref(db, `rooms/${roomCode}/turns/${turnNumber}/actions/${localPlayer}`), {
+      if(!Number.isFinite(Number(turnNumber)) || Number(turnNumber) < 1)return;
+      await set(ref(db, `rooms/${roomCode}/match/actions/${Number(turnNumber)}/${localPlayer}`), {
         id: actionId,
         time: Date.now()
       });
     },
 
-    async clearActions(turnNumber){
+    async requestActionBattle(turnNumber){
       if(!onlineStarted || !roomCode)return;
-      await remove(ref(db, `rooms/${roomCode}/turns/${turnNumber}/actions`));
+      const roomRef = ref(db, "rooms/" + roomCode);
+      await runTransaction(roomRef, current => {
+        const match = current && current.match;
+        if(!match || match.phase !== "battle" || Number(match.turn) !== Number(turnNumber))return current;
+        const actions = match.actions && match.actions[String(turnNumber)];
+        if(!actions || !actions["1"] || !actions["2"])return current;
+        if(match.actionBattleAt)return current;
+        match.actionBattleAt = Date.now() + 3000;
+        return current;
+      });
+    },
+
+    async claimResolve(turnNumber){
+      if(!onlineStarted || !roomCode)return false;
+      const roomRef = ref(db, "rooms/" + roomCode);
+      let claimed = false;
+      await runTransaction(roomRef, current => {
+        const match = current && current.match;
+        if(!match || match.phase !== "battle" || Number(match.turn) !== Number(turnNumber))return current;
+        if(match.resolvingTurn || !match.actionBattleAt || Date.now() < Number(match.actionBattleAt))return current;
+        const actions = match.actions && match.actions[String(turnNumber)];
+        if(!actions || !actions["1"] || !actions["2"])return current;
+        match.resolvingTurn = Number(turnNumber);
+        claimed = true;
+        return current;
+      });
+      return claimed;
+    },
+
+    async publishResolvedState(turnNumber, state, resultText){
+      if(!onlineStarted || !roomCode)return;
+      const base = `rooms/${roomCode}/match`;
+      if(resultText){
+        await update(ref(db, base), {
+          phase: "finished",
+          result: resultText,
+          state,
+          resolvingTurn: null,
+          actionBattleAt: null
+        });
+        return;
+      }
+
+      const nextTurn = Number(turnNumber) + 1;
+      const nextTurnStartAt = Date.now() + 250;
+      await update(ref(db, base), {
+        phase: "battle",
+        turn: nextTurn,
+        turnStartAt: nextTurnStartAt,
+        actionBattleAt: null,
+        resolvingTurn: null,
+        actions: {},
+        state
+      });
     }
   };
-
-  function normalizeTechniques(value){
-    if(Array.isArray(value)) return value.slice();
-
-    if(value && typeof value === "object"){
-      return Object.keys(value)
-        .sort((a,b) => Number(a) - Number(b))
-        .map(key => value[key]);
-    }
-
-    return [];
-  }
 
   function listenRoom(){
     if(roomListener) roomListener();
@@ -1495,65 +1559,25 @@ body{
 
       const p1 = data.players && data.players["1"];
       const p2 = data.players && data.players["2"];
-
       const opponent = localPlayer === 1 ? 2 : 1;
       const opponentData = data.players && data.players[String(opponent)];
+      const opponentTechniques = normalizeTechniques(opponentData && opponentData.techniques);
 
-      // 相手の技を受信。Firebaseが配列をオブジェクトとして返しても対応する。
-      const opponentTechniques = normalizeTechniques(
-        opponentData && opponentData.techniques
-      );
-
-      if(opponentTechniques.length === 3){
-        window.receiveOnlineTechniques(
-          opponent,
-          opponentTechniques
-        );
+      if(opponentTechniques.length === 3 && window.receiveOnlineTechniques){
+        window.receiveOnlineTechniques(opponent, opponentTechniques);
       }
 
       const p1Techniques = normalizeTechniques(p1 && p1.techniques);
       const p2Techniques = normalizeTechniques(p2 && p2.techniques);
+      const p1Ready = !!(p1 && p1.ready === true && p1Techniques.length === 3);
+      const p2Ready = !!(p2 && p2.ready === true && p2Techniques.length === 3);
 
-      const p1Ready = !!(
-        p1 &&
-        p1.ready === true &&
-        p1Techniques.length === 3
-      );
-
-      const p2Ready = !!(
-        p2 &&
-        p2.ready === true &&
-        p2Techniques.length === 3
-      );
-
-      // 両者の技決定を確認したら、片方だけが共通開始時刻を作る。
-      if(p1Ready && p2Ready){
-        if(data.battleStartAt){
-          if(window.beginOnlineBattleCountdown){
-            window.beginOnlineBattleCountdown(Number(data.battleStartAt));
-          }
-        }else{
-          window.onlineBattle.requestBattleStart().catch(err=>{
-            console.error("オンライン対戦開始時刻の設定に失敗:", err);
-          });
-        }
+      if(p1Ready && p2Ready && !data.match){
+        window.onlineBattle.requestBattleStart().catch(err => console.error("対戦開始準備エラー:", err));
       }
 
-      // 相手の行動を受信
-      const turn = window.onlineTurnNumber || 0;
-      const remoteAction =
-        data.turns &&
-        data.turns[String(turn)] &&
-        data.turns[String(turn)].actions &&
-        data.turns[String(turn)].actions[String(opponent)];
-
-      if(remoteAction && window.receiveOnlineAction){
-        window.receiveOnlineAction(
-          opponent,
-          remoteAction.id,
-          remoteAction.time,
-          turn
-        );
+      if(data.match && window.syncOnlineMatch){
+        window.syncOnlineMatch(data.match);
       }
     });
   }
@@ -1730,7 +1754,12 @@ function selectMode(mode){
   if(mode === "online"){
     onlineBattleStarted = false;
     onlineCountdownStarted = false;
+    onlineActionBattleAt = 0;
+    onlineResolvedTurn = 0;
+    onlineBattleStarted = false;
     clearInterval(countdownTimer);
+    if(typeof countdownTimer === "number") clearTimeout(countdownTimer);
+    countdownTimer = null;
     onlineTurnNumber = 0;
     if(!window.onlineBattle){
       alert("Firebaseの読み込みが完了していません。もう一度お試しください。");
@@ -1965,10 +1994,8 @@ window.beginOnlineBattleCountdown = beginOnlineBattleCountdown;
 function receiveOnlineAction(player, actionId, timestamp, turnNumber){
   if(gameMode !== "online") return;
   if(player === window.onlineBattle.localPlayer) return;
-  if(Number(turnNumber) !== onlineTurnNumber) return;
-  if(!timestamp) return;
-  if(selectedAction[player]) return;
-
+  if(Number(turnNumber) !== Number(onlineTurnNumber)) return;
+  if(!timestamp || selectedAction[player]) return;
   const data = getActionData(player, actionId);
   if(!data) return;
 
@@ -1977,60 +2004,196 @@ function receiveOnlineAction(player, actionId, timestamp, turnNumber){
   locked[player] = true;
   document.getElementById("player"+player+"Area").classList.add("locked");
   receivingOnlineAction = false;
-
-  startOnlineBattleCountdownIfReady();
 }
 
-function startOnlineBattleCountdownIfReady(){
+let onlineActionBattleAt = 0;
+let onlineResolvedTurn = 0;
+
+function applyOnlineState(state){
+  if(!state) return;
+  hp[1] = Number(state.hp1 ?? hp[1]);
+  hp[2] = Number(state.hp2 ?? hp[2]);
+  gauge[1] = Number(state.gauge1 ?? gauge[1]);
+  gauge[2] = Number(state.gauge2 ?? gauge[2]);
+  momentumBonus[1] = !!state.momentumBonus1;
+  momentumBonus[2] = !!state.momentumBonus2;
+  blockSeal[1] = !!state.blockSeal1;
+  blockSeal[2] = !!state.blockSeal2;
+
+  const makeLast = (player,id) => {
+    if(!id) return null;
+    const data = getActionData(player,id);
+    return data ? {id,data} : null;
+  };
+  lastAction[1] = makeLast(1,state.lastAction1);
+  lastAction[2] = makeLast(2,state.lastAction2);
+  lastLastAction[1] = makeLast(1,state.lastLastAction1);
+  lastLastAction[2] = makeLast(2,state.lastLastAction2);
+  updateBattleUI();
+}
+
+function getOnlineStateForFirebase(){
+  return {
+    hp1: hp[1], hp2: hp[2],
+    gauge1: gauge[1], gauge2: gauge[2],
+    lastAction1: lastAction[1]?.id || null,
+    lastAction2: lastAction[2]?.id || null,
+    lastLastAction1: lastLastAction[1]?.id || null,
+    lastLastAction2: lastLastAction[2]?.id || null,
+    momentumBonus1: !!momentumBonus[1],
+    momentumBonus2: !!momentumBonus[2],
+    blockSeal1: !!blockSeal[1],
+    blockSeal2: !!blockSeal[2]
+  };
+}
+
+function syncOnlineMatch(match){
+  if(gameMode !== "online" || !match)return;
+
+  if(match.state) applyOnlineState(match.state);
+
+  if(match.phase === "finished"){
+    clearInterval(countdownTimer);
+    if(typeof countdownTimer === "number") clearTimeout(countdownTimer);
+    countdownTimer = null;
+    onlineCountdownStarted = false;
+    if(match.result) showBattleResult(match.result);
+    return;
+  }
+
+  const turn = Number(match.turn || 0);
+  if(turn < 1)return;
+  onlineTurnNumber = turn;
+
+  if(match.phase === "battleCountdown" && Number.isFinite(Number(match.battleStartAt))){
+    beginOnlineBattleCountdown(Number(match.battleStartAt), Number(match.turnStartAt));
+    return;
+  }
+
+  if(match.phase !== "battle")return;
+
+  const actions = match.actions && match.actions[String(turn)] || {};
+  [1,2].forEach(player => {
+    const action = actions[String(player)];
+    if(action && action.id && !selectedAction[player]){
+      const data = getActionData(player,action.id);
+      if(data){
+        receivingOnlineAction = true;
+        selectedAction[player] = {id:action.id,data};
+        locked[player] = true;
+        document.getElementById("player"+player+"Area").classList.add("locked");
+        receivingOnlineAction = false;
+      }
+    }
+  });
+
+  if(actions["1"] && actions["2"] && !match.actionBattleAt){
+    window.onlineBattle.requestActionBattle(turn).catch(err=>console.error("行動開始時刻設定エラー:",err));
+  }
+
+  if(match.actionBattleAt){
+    startOnlineBattleCountdownIfReady(Number(match.actionBattleAt));
+  }else if(!onlineTurnStartedAt || onlineTurnStartedAt !== Number(match.turnStartAt)){
+    if(Number.isFinite(Number(match.turnStartAt))) startTurn(turn,Number(match.turnStartAt));
+  }
+}
+window.syncOnlineMatch = syncOnlineMatch;
+
+function beginOnlineBattleCountdown(startAt, turnStartAt = null){
   if(gameMode !== "online") return;
-  if(!selectedAction[1] || !selectedAction[2]) return;
-  if(onlineCountdownStarted) return;
+  if(onlineBattleStarted) return;
+  if(!Number.isFinite(Number(startAt))) return;
+
+  onlineBattleStarted = true;
+  clearInterval(countdownTimer);
+  if(typeof countdownTimer === "number") clearTimeout(countdownTimer);
+  countdownTimer = null;
+  setupBattle(false);
+
+  const el = document.getElementById("countdown");
+  const target = Number(startAt);
+  const nextTurnAt = Number(turnStartAt || (target + 500));
+
+  const show = value => {
+    if(!el)return;
+    el.className = "countPulse";
+    void el.offsetWidth;
+    el.textContent = String(value);
+  };
+
+  const tick = () => {
+    const remaining = target - Date.now();
+    if(remaining > 0){
+      show(Math.min(3,Math.ceil(remaining/1000)));
+      countdownTimer = setTimeout(tick,Math.min(250,Math.max(50,remaining)));
+      return;
+    }
+    countdownTimer = null;
+    if(el){el.className="battleCall";el.textContent="BATTLE!";}
+    const wait = Math.max(0,nextTurnAt-Date.now());
+    setTimeout(async()=>{
+      if(gameMode !== "online")return;
+      try{
+        await window.onlineBattle.activateFirstTurn(1);
+      }catch(err){
+        console.error("1ターン目開始状態の同期エラー:",err);
+      }
+      startTurn(1,nextTurnAt);
+    },wait);
+  };
+  tick();
+}
+window.beginOnlineBattleCountdown = beginOnlineBattleCountdown;
+
+function startOnlineBattleCountdownIfReady(sharedAt = null){
+  if(gameMode !== "online")return;
+  if(!selectedAction[1] || !selectedAction[2])return;
+
+  if(sharedAt !== null){
+    const at = Number(sharedAt);
+    if(!Number.isFinite(at))return;
+    if(onlineActionBattleAt === at)return;
+    onlineActionBattleAt = at;
+  }else{
+    if(onlineActionBattleAt)return;
+    window.onlineBattle.requestActionBattle(onlineTurnNumber).catch(err=>console.error("行動開始要求エラー:",err));
+    return;
+  }
 
   onlineCountdownStarted = true;
-
   clearInterval(countdownTimer);
   if(typeof countdownTimer === "number") clearTimeout(countdownTimer);
   countdownTimer = null;
 
   const el = document.getElementById("countdown");
-
   const show = value => {
-    if(!el) return;
-    el.className = "";
+    if(!el)return;
+    el.className="countPulse";
     void el.offsetWidth;
-    el.className = "countPulse";
-    el.textContent = String(value);
+    el.textContent=String(value);
   };
 
-  // 両者の行動が揃った後だけ、3→2→1→BATTLEを1回だけ実行する。
-  show(3);
-
-  const timer2 = setTimeout(() => {
-    show(2);
-
-    const timer1 = setTimeout(() => {
-      show(1);
-
-      const battleTimer = setTimeout(() => {
-        if(el){
-          el.className = "battleCall";
-          el.textContent = "BATTLE!";
-        }
-
-        setTimeout(() => {
-          if(selectedAction[1] && selectedAction[2]){
-            finishTurn();
-          }
-        }, 500);
-      }, 1000);
-
-      countdownTimer = battleTimer;
-    }, 1000);
-
-    countdownTimer = timer1;
-  }, 1000);
-
-  countdownTimer = timer2;
+  const tick = () => {
+    const remaining = onlineActionBattleAt - Date.now();
+    if(remaining > 0){
+      show(Math.min(3,Math.ceil(remaining/1000)));
+      countdownTimer=setTimeout(tick,Math.min(250,Math.max(50,remaining)));
+      return;
+    }
+    countdownTimer=null;
+    if(el){el.className="battleCall";el.textContent="BATTLE!";}
+    setTimeout(async()=>{
+      if(!selectedAction[1] || !selectedAction[2])return;
+      const turn = onlineTurnNumber;
+      if(onlineResolvedTurn === turn)return;
+      const claimed = await window.onlineBattle.claimResolve(turn);
+      if(claimed){
+        onlineResolvedTurn = turn;
+        resolveBattle();
+      }
+    },500);
+  };
+  tick();
 }
 
 window.receiveOnlineTechniques = receiveOnlineTechniques;
@@ -2197,56 +2360,89 @@ function setupActionNames(){
    ターン開始
 ========================= */
 
-function startTurn(){
-
+function startTurn(sharedTurn = null, sharedStartAt = null){
   clearInterval(countdownTimer);
   if(typeof countdownTimer === "number") clearTimeout(countdownTimer);
   countdownTimer = null;
 
   onlineCountdownStarted = false;
-  onlineTurnStartedAt = Date.now();
-  if(gameMode === "online") onlineTurnNumber++;
 
+  if(gameMode === "online"){
+    const turn = Number(sharedTurn || onlineTurnNumber || 1);
+    onlineTurnNumber = turn;
+    onlineTurnStartedAt = Number(sharedStartAt || Date.now());
+
+    selectedAction[1] = null;
+    selectedAction[2] = null;
+    locked[1] = false;
+    locked[2] = false;
+    document.getElementById("player1Area").classList.remove("locked");
+    document.getElementById("player2Area").classList.remove("locked");
+    document.getElementById("resultMessage").textContent = "";
+    updateDisabledActions();
+
+    const el = document.getElementById("countdown");
+    const tick = () => {
+      const remaining = onlineTurnStartedAt - Date.now();
+      if(remaining > 0){
+        const value = Math.min(10, Math.ceil(remaining / 1000));
+        if(el){
+          el.className = "countPulse";
+          el.textContent = String(value);
+        }
+        countdownTimer = setTimeout(tick, Math.min(250, Math.max(50, remaining)));
+        return;
+      }
+
+      countdownTimer = null;
+      countdown = 10;
+      if(el){
+        el.className = "countPulse";
+        el.textContent = "10";
+      }
+
+      const deadline = onlineTurnStartedAt + 10000;
+      const actionTick = () => {
+        const left = deadline - Date.now();
+        if(left <= 0){
+          if(el){ el.className = "battleCall"; el.textContent = "BATTLE!"; }
+          setTimeout(() => finishTurn(), 500);
+          return;
+        }
+        const value = Math.min(10, Math.ceil(left / 1000));
+        if(el){
+          el.className = "countPulse";
+          el.textContent = String(value);
+        }
+        countdownTimer = setTimeout(actionTick, Math.min(250, Math.max(50, left % 1000 || 250)));
+      };
+      actionTick();
+    };
+    tick();
+    return;
+  }
+
+  onlineTurnStartedAt = Date.now();
   selectedAction[1] = null;
   selectedAction[2] = null;
-
   locked[1] = false;
   locked[2] = false;
-
   document.getElementById("player1Area").classList.remove("locked");
   document.getElementById("player2Area").classList.remove("locked");
   document.getElementById("resultMessage").textContent = "";
-
   updateDisabledActions();
-
-  // 行動選択時間：10秒
   countdown = 10;
   const el = document.getElementById("countdown");
   el.className = "countPulse";
   el.textContent = "10";
-
-  clearInterval(countdownTimer);
-
   countdownTimer = setInterval(()=>{
     countdown--;
-
     if(countdown > 0){
-      el.className = "";
-      void el.offsetWidth;
-      el.className = "countPulse";
-      el.textContent = countdown;
-      return;
+      el.className = ""; void el.offsetWidth; el.className = "countPulse"; el.textContent = countdown; return;
     }
-
-    if(countdown === 0){
-      el.className = "battleCall";
-      el.textContent = "BATTLE!";
-      setTimeout(()=>{
-        if(countdown === 0) finishTurn();
-      },500);
-    }
-
+    el.className = "battleCall"; el.textContent = "BATTLE!";
     clearInterval(countdownTimer);
+    setTimeout(()=>{ if(countdown === 0) finishTurn(); },500);
   },1000);
 }
 
@@ -2487,17 +2683,15 @@ function finishTurn(){
     const me = window.onlineBattle.localPlayer;
 
     if(!selectedAction[me]){
-      selectedAction[me] = {
-        id:"charge",
-        data:basicActions.charge
-      };
+      selectedAction[me] = {id:"charge", data:basicActions.charge};
       locked[me] = true;
       document.getElementById("player"+me+"Area").classList.add("locked");
       window.onlineBattle.sendAction("charge", onlineTurnNumber).catch(err=>console.error(err));
     }
 
-    if(!selectedAction[1] || !selectedAction[2]) return;
-    resolveBattle();
+    if(selectedAction[1] && selectedAction[2]){
+      startOnlineBattleCountdownIfReady();
+    }
     return;
   }
 
@@ -2653,18 +2847,35 @@ if(gauge[2] >= 7){
     lastAction[2] = {id:selectedAction[2].id,data:a2};
 
     if(hp[1] <= 0 || hp[2] <= 0){
-      showBattleResult(
+      const resultText =
         hp[1] <= 0 && hp[2] <= 0 ? "DRAW" :
-        hp[1] <= 0 ? "2P WIN" : "1P WIN"
-      );
+        hp[1] <= 0 ? "2P WIN" : "1P WIN";
+
+      showBattleResult(resultText);
+
+      if(gameMode === "online"){
+        window.onlineBattle.publishResolvedState(
+          onlineTurnNumber,
+          getOnlineStateForFirebase(),
+          resultText
+        ).catch(err=>console.error("結果同期エラー:",err));
+      }
       return;
     }
 
     if(gameMode === "online"){
-    window.onlineBattle.clearActions(onlineTurnNumber).catch(err=>console.error(err));
-  }
+      const state = getOnlineStateForFirebase();
+      onlineActionBattleAt = 0;
+      onlineCountdownStarted = false;
+      window.onlineBattle.publishResolvedState(
+        onlineTurnNumber,
+        state,
+        null
+      ).catch(err=>console.error("ターン同期エラー:",err));
+      return;
+    }
 
-  setTimeout(()=>startTurn(),250);
+    setTimeout(()=>startTurn(),250);
   });
 }
 
