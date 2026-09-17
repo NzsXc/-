@@ -1485,19 +1485,74 @@ const p1TechIndices =
 const p2TechIndices =
   normalizeTechniques(p2 && p2.techniques);
 
+function normalizeTechniques(value){
+
+  if(Array.isArray(value)){
+    return value;
+  }
+
+  if(value && typeof value === "object"){
+    return Object.keys(value)
+      .sort((a, b) => Number(a) - Number(b))
+      .map(key => value[key]);
+  }
+
+  return [];
+}
+
+const p1Techniques = normalizeTechniques(
+  p1 && p1.techniques
+);
+
+const p2Techniques = normalizeTechniques(
+  p2 && p2.techniques
+);
+
 const p1Ready =
   !!(
     p1 &&
     p1.ready === true &&
-    p1TechIndices.length === 3
+    p1Techniques.length === 3
   );
 
 const p2Ready =
   !!(
     p2 &&
     p2.ready === true &&
-    p2TechIndices.length === 3
+    p2Techniques.length === 3
   );
+
+console.log(
+  "オンライン準備状態",
+  {
+    p1Ready,
+    p2Ready,
+    p1Techniques,
+    p2Techniques
+  }
+);
+
+if(p1Ready){
+  window.receiveOnlineTechniques(
+    1,
+    p1Techniques
+  );
+}
+
+if(p2Ready){
+  window.receiveOnlineTechniques(
+    2,
+    p2Techniques
+  );
+}
+
+if(
+  p1Ready &&
+  p2Ready &&
+  window.startOnlineBattleIfReady
+){
+  window.startOnlineBattleIfReady();
+}
 
 // 1Pの技を受信
 if(p1Ready){
@@ -1844,18 +1899,67 @@ let onlineBattleStarted = false;
 let receivingOnlineAction = false;
 
 function receiveOnlineTechniques(player, indices){
-  const techs = indices.map(index => techniquePool[index]).filter(Boolean);
-  if(techs.length !== 3) return;
 
-  if(player === 1) player1Techs = techs;
-  else player2Techs = techs;
+  // Firebaseから配列ではなくオブジェクトで届く場合にも対応
+  let list = [];
 
-  // 片方だけ届いた段階では setupActionNames() を呼ばない。
-  // 相手側の技配列がまだ空だと .name 参照で例外になり、
-  // Firebase の受信処理そのものが途中で止まってしまうため。
-  if(gameMode === "online" && player1Techs.length === 3 && player2Techs.length === 3){
+  if(Array.isArray(indices)){
+    list = indices.slice();
+  }else if(indices && typeof indices === "object"){
+    list = Object.keys(indices)
+      .sort((a, b) => Number(a) - Number(b))
+      .map(key => indices[key]);
+  }
+
+  console.log(
+    "オンライン技受信",
+    "player:", player,
+    "indices:", list
+  );
+
+  const techs = list
+    .map(index => techniquePool[Number(index)])
+    .filter(Boolean);
+
+  console.log(
+    "変換後techs:",
+    techs,
+    "個数:",
+    techs.length
+  );
+
+  if(techs.length !== 3){
+    console.warn(
+      "技が3個になっていません",
+      player,
+      list,
+      techs
+    );
+    return;
+  }
+
+  if(player === 1){
+    player1Techs = techs;
+  }else{
+    player2Techs = techs;
+  }
+
+  console.log(
+    "現在の技数",
+    "P1:", player1Techs.length,
+    "P2:", player2Techs.length
+  );
+
+  // 両者3個揃った
+  if(
+    gameMode === "online" &&
+    player1Techs.length === 3 &&
+    player2Techs.length === 3
+  ){
+    console.log("両者の技が3個揃った！");
     setupActionNames();
   }
+
   maybeStartOnlineBattle();
 }
 
