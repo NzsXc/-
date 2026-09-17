@@ -1909,48 +1909,55 @@ function maybeStartOnlineBattle(){
 }
 
 function beginOnlineBattleCountdown(startAt){
-  if(gameMode !== "online")return;
-  if(onlineBattleStarted)return;
-  if(!Number.isFinite(startAt))return;
+  if(gameMode !== "online") return;
+  if(onlineBattleStarted) return;
+  if(!Number.isFinite(startAt)) return;
 
-  // 同じbattleStartAtを両端末が使うので、ネットワーク遅延があっても
-  // カウントが途中から始まったり、片方だけ先にゲーム開始したりしない。
+  // Firebaseから同じ開始時刻が何度通知されても、ここは一度だけ実行する。
   onlineBattleStarted = true;
 
   clearInterval(countdownTimer);
+  countdownTimer = null;
 
-  // バトル状態だけ先に準備する。10秒の行動タイマーはまだ開始しない。
+  // バトル画面だけ準備する。ここでは10秒タイマーを開始しない。
   setupBattle(false);
 
   const el = document.getElementById("countdown");
-  const tick = () => {
-    const remaining = Math.ceil((startAt - Date.now()) / 1000);
+  const show = value => {
+    if(!el) return;
+    el.className = "";
+    void el.offsetWidth;
+    el.className = "countPulse";
+    el.textContent = String(value);
+  };
 
-    if(remaining > 0){
-      if(el){
-        el.className = "";
-        void el.offsetWidth;
-        el.className = "countPulse";
-        el.textContent = String(Math.min(3, remaining));
-      }
+  // 開始時刻までの残りを1秒単位で表示する。
+  // setInterval(100ms)で同じ数字を何度も描画しない。
+  const tick = () => {
+    const remainingMs = startAt - Date.now();
+
+    if(remainingMs > 0){
+      const value = Math.min(3, Math.ceil(remainingMs / 1000));
+      show(value);
+      const next = Math.max(50, remainingMs - (value - 1) * 1000);
+      countdownTimer = setTimeout(tick, next);
       return;
     }
 
-    clearInterval(countdownTimer);
+    countdownTimer = null;
 
     if(el){
       el.className = "battleCall";
       el.textContent = "BATTLE!";
     }
 
-    // BATTLE! を表示してから行動選択タイマーを開始。
-    setTimeout(()=>{
-      if(gameMode === "online")startTurn();
-    },500);
+    // BATTLE! を0.5秒表示してから、1ターン目の10秒を開始。
+    setTimeout(() => {
+      if(gameMode === "online") startTurn();
+    }, 500);
   };
 
   tick();
-  countdownTimer = setInterval(tick,100);
 }
 
 window.beginOnlineBattleCountdown = beginOnlineBattleCountdown;
@@ -1975,41 +1982,55 @@ function receiveOnlineAction(player, actionId, timestamp, turnNumber){
 }
 
 function startOnlineBattleCountdownIfReady(){
+  if(gameMode !== "online") return;
   if(!selectedAction[1] || !selectedAction[2]) return;
   if(onlineCountdownStarted) return;
+
   onlineCountdownStarted = true;
 
   clearInterval(countdownTimer);
-  countdown = 3;
+  if(typeof countdownTimer === "number") clearTimeout(countdownTimer);
+  countdownTimer = null;
+
   const el = document.getElementById("countdown");
-  if(el){
+
+  const show = value => {
+    if(!el) return;
     el.className = "";
     void el.offsetWidth;
     el.className = "countPulse";
-    el.textContent = "3";
-  }
+    el.textContent = String(value);
+  };
 
-  countdownTimer = setInterval(()=>{
-    countdown--;
-    if(countdown > 0){
-      if(el){
-        el.className = "";
-        void el.offsetWidth;
-        el.className = "countPulse";
-        el.textContent = countdown;
-      }
-      return;
-    }
+  // 両者の行動が揃った後だけ、3→2→1→BATTLEを1回だけ実行する。
+  show(3);
 
-    clearInterval(countdownTimer);
-    if(el){
-      el.className = "battleCall";
-      el.textContent = "BATTLE!";
-    }
-    setTimeout(()=>{
-      if(countdown === 0 && selectedAction[1] && selectedAction[2]) finishTurn();
-    },500);
-  },1000);
+  const timer2 = setTimeout(() => {
+    show(2);
+
+    const timer1 = setTimeout(() => {
+      show(1);
+
+      const battleTimer = setTimeout(() => {
+        if(el){
+          el.className = "battleCall";
+          el.textContent = "BATTLE!";
+        }
+
+        setTimeout(() => {
+          if(selectedAction[1] && selectedAction[2]){
+            finishTurn();
+          }
+        }, 500);
+      }, 1000);
+
+      countdownTimer = battleTimer;
+    }, 1000);
+
+    countdownTimer = timer1;
+  }, 1000);
+
+  countdownTimer = timer2;
 }
 
 window.receiveOnlineTechniques = receiveOnlineTechniques;
@@ -2177,6 +2198,10 @@ function setupActionNames(){
 ========================= */
 
 function startTurn(){
+
+  clearInterval(countdownTimer);
+  if(typeof countdownTimer === "number") clearTimeout(countdownTimer);
+  countdownTimer = null;
 
   onlineCountdownStarted = false;
   onlineTurnStartedAt = Date.now();
