@@ -1337,6 +1337,151 @@ body{
 </div>
 
 
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+  import {
+    getDatabase,
+    ref,
+    set,
+    get,
+    onValue,
+    update,
+    remove
+  } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyC0SM6Z5NucrrG7jDy7uQ51QEHCbKghgFE",
+    authDomain: "psy-5d3d1.firebaseapp.com",
+    databaseURL: "https://psy-5d3d1-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "psy-5d3d1",
+    storageBucket: "psy-5d3d1.firebasestorage.app",
+    messagingSenderId: "1073764928812",
+    appId: "1:1073764928812:web:a479a33f95edfedbb9f089"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  let roomCode = null;
+  let localPlayer = null;
+  let onlineStarted = false;
+  let roomListener = null;
+
+  window.onlineBattle = {
+    get roomCode(){ return roomCode; },
+    get localPlayer(){ return localPlayer; },
+    get active(){ return onlineStarted; },
+
+    async start(){
+      const create = confirm("新しい部屋を作りますか？\n\nOK：部屋を作る\nキャンセル：部屋コードで参加");
+
+      if(create){
+        roomCode = String(Math.floor(100000 + Math.random() * 900000));
+        localPlayer = 1;
+        onlineStarted = true;
+
+        await set(ref(db, "rooms/" + roomCode), {
+          createdAt: Date.now(),
+          players: { "1": { joined: true } }
+        });
+
+        alert("部屋を作りました！\n\n部屋コード：" + roomCode + "\n\n相手にこの6桁のコードを伝えてください。");
+      }else{
+        const code = prompt("参加する部屋の6桁コードを入力してください。");
+        if(!code || !/^\d{6}$/.test(code)){
+          alert("6桁の部屋コードを入力してください。");
+          return false;
+        }
+
+        const snap = await get(ref(db, "rooms/" + code));
+        if(!snap.exists()){
+          alert("その部屋は見つかりません。");
+          return false;
+        }
+
+        const data = snap.val();
+        if(data.players && data.players["2"] && data.players["2"].joined){
+          alert("その部屋は満員です。");
+          return false;
+        }
+
+        roomCode = code;
+        localPlayer = 2;
+        onlineStarted = true;
+
+        await update(ref(db, "rooms/" + roomCode), {
+          "players/2/joined": true
+        });
+
+        alert("部屋に参加しました！");
+      }
+
+      listenRoom();
+      return true;
+    },
+
+    async sendTechniques(indices){
+      if(!onlineStarted || !roomCode || !localPlayer)return;
+      await set(ref(db, `rooms/${roomCode}/players/${localPlayer}/techniques`), indices);
+      await set(ref(db, `rooms/${roomCode}/players/${localPlayer}/ready`), true);
+    },
+
+    async sendAction(actionId, turnNumber){
+      if(!onlineStarted || !roomCode || !localPlayer)return;
+      await set(ref(db, `rooms/${roomCode}/turns/${turnNumber}/actions/${localPlayer}`), {
+        id: actionId,
+        time: Date.now()
+      });
+    },
+
+    async clearActions(turnNumber){
+      if(!onlineStarted || !roomCode)return;
+      await remove(ref(db, `rooms/${roomCode}/turns/${turnNumber}/actions`));
+    }
+  };
+
+  function listenRoom(){
+    if(roomListener) roomListener();
+
+    roomListener = onValue(ref(db, "rooms/" + roomCode), snap => {
+      const data = snap.val();
+      if(!data || !window.onlineBattle.active)return;
+
+      const p1 = data.players && data.players["1"];
+      const p2 = data.players && data.players["2"];
+
+      if(localPlayer === 1 && p2 && p2.joined){
+        const title = document.getElementById("techTitle");
+        if(title && !title.textContent.includes("技")){
+          title.textContent = "オンライン：技を3つ選択";
+        }
+      }
+
+      // 相手の技3つを受信
+      const opponent = localPlayer === 1 ? 2 : 1;
+      const opponentData = data.players && data.players[String(opponent)];
+      if(opponentData && Array.isArray(opponentData.techniques)){
+        const techs = opponentData.techniques
+          .map(i => window.techniquePoolForOnline ? window.techniquePoolForOnline[i] : null)
+          .filter(Boolean);
+        if(techs.length === 3){
+          if(opponent === 1) window.receiveOnlineTechniques(1, opponentData.techniques);
+          else window.receiveOnlineTechniques(2, opponentData.techniques);
+        }
+      }
+
+      // 相手の行動を受信
+      const turn = window.onlineTurnNumber || 0;
+      const remoteAction = data.turns && data.turns[String(turn)] && data.turns[String(turn)].actions && data.turns[String(turn)].actions[String(opponent)];
+      if(remoteAction && window.receiveOnlineAction){
+        window.receiveOnlineAction(opponent, remoteAction.id, remoteAction.time, turn);
+      }
+    });
+  }
+
+  console.log("心理バトル Firebase接続成功");
+</script>
+
 <script>
 
 
@@ -1435,7 +1580,7 @@ const techniquePool = [
   },
 
   {
-    name:"技3",
+    name:"パニッシュ",
     cost:5,
     power:2,
     pierce:false,
@@ -1446,7 +1591,7 @@ const techniquePool = [
   },
 
   {
-    name:"技4",
+    name:"ヒール",
     cost:3,
     power:0,
     pierce:false,
@@ -1459,9 +1604,11 @@ const techniquePool = [
   {name:"フォーサイト",cost:1,power:0,pierce:false,type:"block",skill:"tech5",description:"ゲージ1消費 / ブロック状態 / 相手がチャージならゲージ+3"},
   {name:"モーメンタム",cost:2,power:1,pierce:false,type:"attack",skill:"tech6",description:"ゲージ2消費 / 1ダメージ / 前のターンも技6なら2ダメージ"},
   {name:"ランページ",cost:0,power:0,pierce:false,type:"special",skill:"tech7",description:"前のターンにチャージしていた場合のみ / ゲージ+8 / HP-3"},
-  {name:"技8",cost:0,power:0,pierce:false,type:"seal",skill:"tech8",description:"相手のゲージが7未満のとき使用可能 / 相手のブロック系技を封印"}
+  {name:"アンチガード",cost:0,power:0,pierce:false,type:"seal",skill:"tech8",description:"相手のゲージが7未満のとき使用可能 / 相手のブロック系技を封印"}
 
 ];
+
+window.techniquePoolForOnline = techniquePool;
 
 
 /* =========================
@@ -1495,35 +1642,38 @@ function selectMode(mode){
 
   gameMode = mode;
 
-  selectingPlayer = 1;
-
   selectedTechniques[1] = [0,1,2];
   selectedTechniques[2] = [0,1,2];
 
-  showScreen("techScreen");
+  if(mode === "online"){
+    onlineBattleStarted = false;
+    onlineTurnNumber = 0;
+    if(!window.onlineBattle){
+      alert("Firebaseの読み込みが完了していません。もう一度お試しください。");
+      return;
+    }
 
-  document
-    .getElementById("techConfirmButton")
-    .textContent = "次へ";
+    window.onlineBattle.start().then(ok=>{
+      if(!ok) return;
 
-  if(mode === "offline"){
-
-    document
-      .getElementById("techTitle")
-      .textContent =
-        "1P：技を3つ選択";
-
-  }else{
-
-    document
-      .getElementById("techTitle")
-      .textContent =
-        "技を3つ選択";
-
+      selectingPlayer = window.onlineBattle.localPlayer;
+      showScreen("techScreen");
+      document.getElementById("techConfirmButton").textContent = "決定";
+      document.getElementById("techTitle").textContent =
+        "オンライン：技を3つ選択";
+      updateTechniqueDisplay();
+    }).catch(err=>{
+      console.error(err);
+      alert("オンライン接続に失敗しました。Firebaseの設定を確認してください。");
+    });
+    return;
   }
 
+  selectingPlayer = 1;
+  showScreen("techScreen");
+  document.getElementById("techConfirmButton").textContent = "次へ";
+  document.getElementById("techTitle").textContent = "1P：技を3つ選択";
   updateTechniqueDisplay();
-
 }
 
 
@@ -1633,25 +1783,113 @@ let player2Techs = [];
    技決定
 ========================= */
 
+let onlineTurnStartedAt = 0;
+let onlineTurnNumber = 0;
+let onlineCountdownStarted = false;
+let onlineBattleStarted = false;
+let receivingOnlineAction = false;
+
+function receiveOnlineTechniques(player, indices){
+  const techs = indices.map(index => techniquePool[index]).filter(Boolean);
+  if(techs.length !== 3) return;
+
+  if(player === 1) player1Techs = techs;
+  else player2Techs = techs;
+
+  if(gameMode === "online") setupActionNames();
+  maybeStartOnlineBattle();
+}
+
+function maybeStartOnlineBattle(){
+  if(gameMode !== "online") return;
+  if(player1Techs.length !== 3 || player2Techs.length !== 3) return;
+  if(onlineBattleStarted) return;
+
+  onlineBattleStarted = true;
+  document.getElementById("techConfirmButton").disabled = false;
+  setupBattle();
+}
+
+function receiveOnlineAction(player, actionId, timestamp, turnNumber){
+  if(gameMode !== "online") return;
+  if(player === window.onlineBattle.localPlayer) return;
+  if(Number(turnNumber) !== onlineTurnNumber) return;
+  if(!timestamp) return;
+  if(selectedAction[player]) return;
+
+  const data = getActionData(player, actionId);
+  if(!data) return;
+
+  receivingOnlineAction = true;
+  selectedAction[player] = {id:actionId, data:data};
+  locked[player] = true;
+  document.getElementById("player"+player+"Area").classList.add("locked");
+  receivingOnlineAction = false;
+
+  startOnlineBattleCountdownIfReady();
+}
+
+function startOnlineBattleCountdownIfReady(){
+  if(!selectedAction[1] || !selectedAction[2]) return;
+  if(onlineCountdownStarted) return;
+  onlineCountdownStarted = true;
+
+  clearInterval(countdownTimer);
+  countdown = 3;
+  const el = document.getElementById("countdown");
+  if(el){
+    el.className = "";
+    void el.offsetWidth;
+    el.className = "countPulse";
+    el.textContent = "3";
+  }
+
+  countdownTimer = setInterval(()=>{
+    countdown--;
+    if(countdown > 0){
+      if(el){
+        el.className = "";
+        void el.offsetWidth;
+        el.className = "countPulse";
+        el.textContent = countdown;
+      }
+      return;
+    }
+
+    clearInterval(countdownTimer);
+    if(el){
+      el.className = "battleCall";
+      el.textContent = "BATTLE!";
+    }
+    setTimeout(()=>{
+      if(countdown === 0 && selectedAction[1] && selectedAction[2]) finishTurn();
+    },500);
+  },1000);
+}
+
+window.receiveOnlineTechniques = receiveOnlineTechniques;
+window.receiveOnlineAction = receiveOnlineAction;
+
 function confirmTech(){
 
-  // オンラインは自分（1P）だけ技を3つ選択
   if(gameMode === "online"){
-    player1Techs =
-      selectedTechniques[1]
-        .map(index =>
-          techniquePool[index]
-        );
+    const me = window.onlineBattle.localPlayer;
+    const myIndices = selectedTechniques[me].slice();
+    const myTechs = myIndices.map(index => techniquePool[index]);
 
-    // オンライン側の相手技は通信実装時に受信する想定。
-    // 現在はバトル開始用に初期値を使用する。
-    player2Techs =
-      selectedTechniques[2]
-        .map(index =>
-          techniquePool[index]
-        );
+    if(me === 1) player1Techs = myTechs;
+    else player2Techs = myTechs;
 
-    setupBattle();
+    window.onlineBattle.sendTechniques(myIndices).catch(err=>{
+      console.error(err);
+      alert("技の送信に失敗しました。");
+    });
+
+    document.getElementById("techConfirmButton").disabled = true;
+    document.getElementById("techConfirmButton").textContent = "相手を待っています…";
+    document.getElementById("techTitle").textContent = "相手の技選択を待っています…";
+
+    maybeStartOnlineBattle();
     return;
   }
 
@@ -1792,6 +2030,10 @@ function setupActionNames(){
 ========================= */
 
 function startTurn(){
+
+  onlineCountdownStarted = false;
+  onlineTurnStartedAt = Date.now();
+  if(gameMode === "online") onlineTurnNumber++;
 
   selectedAction[1] = null;
   selectedAction[2] = null;
@@ -1944,6 +2186,7 @@ document.addEventListener(
 ========================= */
 
 function chooseAction(player,action){
+  if(gameMode === "online" && player !== window.onlineBattle.localPlayer)return;
   if(locked[player])return;
 
   const data=getActionData(player,action);
@@ -1951,6 +2194,15 @@ function chooseAction(player,action){
 
   // 技8でブロック系（通常ブロック・技5）が封印中
   if(blockSeal[player] && (action === "block" || data.skill === "tech5"))return;
+
+  // ブロックの連続使用は禁止
+  if(
+    action === "block" &&
+    lastAction[player] &&
+    lastAction[player].data.type === "block"
+  ){
+    return;
+  }
 
   // 技7：前のターンにチャージしていた場合のみ
   if(data.skill === "tech7" && (!lastAction[player] || lastAction[player].data.type !== "charge"))return;
@@ -1966,6 +2218,16 @@ function chooseAction(player,action){
   selectedAction[player]={id:action,data:data};
   locked[player]=true;
   document.getElementById("player"+player+"Area").classList.add("locked");
+
+  if(gameMode === "online" && !receivingOnlineAction){
+    window.onlineBattle.sendAction(action, onlineTurnNumber).catch(err=>console.error(err));
+  }
+
+  // オンラインはFirebase経由で両者の行動が揃ったら開始
+  if(gameMode === "online"){
+    startOnlineBattleCountdownIfReady();
+    return;
+  }
 
   // 両者が決定したら、残り時間を待たず3秒カウントへ移行
   if(selectedAction[1] && selectedAction[2]){
@@ -2049,50 +2311,43 @@ function getActionData(player,action){
 
 function finishTurn(){
 
-  if(!selectedAction[1]){
+  if(gameMode === "online"){
+    const me = window.onlineBattle.localPlayer;
 
-    selectedAction[1] = {
+    if(!selectedAction[me]){
+      selectedAction[me] = {
+        id:"charge",
+        data:basicActions.charge
+      };
+      locked[me] = true;
+      document.getElementById("player"+me+"Area").classList.add("locked");
+      window.onlineBattle.sendAction("charge", onlineTurnNumber).catch(err=>console.error(err));
+    }
 
-      id:"charge",
-
-      data:basicActions.charge
-
-    };
-
-    locked[1] = true;
-
-    document
-      .getElementById(
-        "player1Area"
-      )
-      .classList.add("locked");
-
+    if(!selectedAction[1] || !selectedAction[2]) return;
+    resolveBattle();
+    return;
   }
 
+  if(!selectedAction[1]){
+    selectedAction[1] = {
+      id:"charge",
+      data:basicActions.charge
+    };
+    locked[1] = true;
+    document.getElementById("player1Area").classList.add("locked");
+  }
 
   if(!selectedAction[2]){
-
     selectedAction[2] = {
-
       id:"charge",
-
       data:basicActions.charge
-
     };
-
     locked[2] = true;
-
-    document
-      .getElementById(
-        "player2Area"
-      )
-      .classList.add("locked");
-
+    document.getElementById("player2Area").classList.add("locked");
   }
 
-
   resolveBattle();
-
 }
 
 
@@ -2203,7 +2458,14 @@ function resolveBattle(){
     gauge[2] = Math.min(10, gauge[2] + 8);
     hp[2] = Math.max(0, hp[2] - 3);
   }
+// 相手のゲージが7以上になった時だけブロック封印を解除
+if(gauge[1] >= 7){
+  blockSeal[2] = false;
+}
 
+if(gauge[2] >= 7){
+  blockSeal[1] = false;
+}
   playBattleEffect(a1,a2,()=>{
     hp[1] = Math.max(0, hp[1] - damageTo1);
     hp[2] = Math.max(0, hp[2] - damageTo2);
@@ -2226,7 +2488,11 @@ function resolveBattle(){
       return;
     }
 
-    setTimeout(()=>startTurn(),250);
+    if(gameMode === "online"){
+    window.onlineBattle.clearActions(onlineTurnNumber).catch(err=>console.error(err));
+  }
+
+  setTimeout(()=>startTurn(),250);
   });
 }
 
@@ -2818,6 +3084,19 @@ function updateDisabledActions(){
       if(blockSeal[player] && tech.skill==="tech5") disabled=true;
       el.classList.toggle("disabled",disabled);
     });
+
+    // 通常ブロックの連続使用を禁止
+    const blockEl = document.querySelector(
+      `#player${player}Area [data-action="block"]`
+    );
+
+    if(blockEl){
+      const blockDisabled =
+        lastAction[player] &&
+        lastAction[player].data.type === "block";
+
+      blockEl.classList.toggle("disabled", blockDisabled);
+    }
   });
 }
 
