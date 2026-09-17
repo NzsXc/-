@@ -1457,20 +1457,23 @@ body{
         }
       }
 
-      // 相手の技3つを受信
-      const opponent = localPlayer === 1 ? 2 : 1;
-      const opponentData = data.players && data.players[String(opponent)];
-      if(opponentData && Array.isArray(opponentData.techniques)){
-        const techs = opponentData.techniques
-          .map(i => window.techniquePoolForOnline ? window.techniquePoolForOnline[i] : null)
-          .filter(Boolean);
-        if(techs.length === 3){
-          if(opponent === 1) window.receiveOnlineTechniques(1, opponentData.techniques);
-          else window.receiveOnlineTechniques(2, opponentData.techniques);
-        }
+      // 両者の技決定を確認してからバトルへ進む
+      const p1Ready = !!(p1 && p1.ready && Array.isArray(p1.techniques) && p1.techniques.length === 3);
+      const p2Ready = !!(p2 && p2.ready && Array.isArray(p2.techniques) && p2.techniques.length === 3);
+
+      if(p1Ready){
+        window.receiveOnlineTechniques(1, p1.techniques);
+      }
+      if(p2Ready){
+        window.receiveOnlineTechniques(2, p2.techniques);
+      }
+
+      if(p1Ready && p2Ready && window.startOnlineBattleIfReady){
+        window.startOnlineBattleIfReady();
       }
 
       // 相手の行動を受信
+      const opponent = localPlayer === 1 ? 2 : 1;
       const turn = window.onlineTurnNumber || 0;
       const remoteAction = data.turns && data.turns[String(turn)] && data.turns[String(turn)].actions && data.turns[String(turn)].actions[String(opponent)];
       if(remoteAction && window.receiveOnlineAction){
@@ -1807,8 +1810,12 @@ function maybeStartOnlineBattle(){
 
   onlineBattleStarted = true;
   document.getElementById("techConfirmButton").disabled = false;
+  document.getElementById("techConfirmButton").textContent = "決定";
   setupBattle();
 }
+
+// Firebase側のready状態からも開始判定できるようにする
+window.startOnlineBattleIfReady = maybeStartOnlineBattle;
 
 function receiveOnlineAction(player, actionId, timestamp, turnNumber){
   if(gameMode !== "online") return;
