@@ -62,7 +62,9 @@ body{
 ========================= */
 
 #modeScreen{
-  gap:25px;
+  position:relative;
+  padding:24px;
+  overflow:hidden;
 }
 
 .screenTitle{
@@ -70,23 +72,198 @@ body{
   margin-bottom:20px;
 }
 
-.modeButton,
-.confirmButton{
-  width:280px;
-  padding:18px;
-  border:2px solid #555;
-  border-radius:14px;
-  background:#222;
+.modeChoiceBox{
+  width:min(720px,78vw);
+  min-height:120px;
+  display:grid;
+  grid-template-columns:1fr 44px 1fr;
+  align-items:stretch;
+  border:2px solid rgba(255,255,255,.18);
+  border-radius:22px;
+  overflow:hidden;
+  background:rgba(24,24,32,.92);
+  box-shadow:0 18px 55px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.05);
+}
+
+.modeChoiceButton{
+  border:0;
+  background:transparent;
   color:white;
-  font-size:22px;
-  font-weight:bold;
+  font-size:clamp(20px,3vw,30px);
+  font-weight:900;
+  cursor:pointer;
+  touch-action:manipulation;
+  transition:.15s;
+}
+
+.modeChoiceButton:hover,
+.modeChoiceButton:active{
+  background:rgba(255,255,255,.08);
+}
+
+.modeSlash{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:#8d8d9a;
+  font-size:clamp(28px,4vw,42px);
+  font-weight:300;
+}
+
+.modeBottomButton{
+  position:absolute;
+  left:20px;
+  bottom:18px;
+  width:54px;
+  height:54px;
+  border:1px solid rgba(255,255,255,.18);
+  border-radius:14px;
+  background:#1b1b22;
+  color:white;
+  font-size:25px;
+  cursor:pointer;
+  box-shadow:0 8px 22px rgba(0,0,0,.35);
+  touch-action:manipulation;
+}
+
+.modeSquareButton{
+  position:absolute;
+  right:18px;
+  bottom:18px;
+  width:76px;
+  height:76px;
+  border:2px solid rgba(255,255,255,.18);
+  border-radius:16px;
+  background:#1b1b22;
+  color:white;
+  font-size:32px;
+  cursor:pointer;
+  box-shadow:0 10px 28px rgba(0,0,0,.4);
+  touch-action:manipulation;
+}
+
+.modeBottomButton:hover,
+.modeSquareButton:hover{
+  background:#292933;
+}
+
+/* =========================
+   オンラインメニュー
+========================= */
+
+#onlineScreen{
+  position:relative;
+  padding:24px;
+  overflow:hidden;
+}
+
+.onlineMenu{
+  width:min(720px,82vw);
+  margin-top:3vh;
+  display:grid;
+  gap:14px;
+}
+
+.onlineMainButton{
+  width:100%;
+  min-height:72px;
+  border:2px solid rgba(255,255,255,.16);
+  border-radius:18px;
+  background:linear-gradient(145deg,#252833,#171922);
+  color:white;
+  font-size:clamp(19px,2.6vw,27px);
+  font-weight:900;
+  cursor:pointer;
+  box-shadow:0 10px 28px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.05);
+  touch-action:manipulation;
+}
+
+.onlineMainButton:hover,
+.onlineMainButton:active{
+  background:linear-gradient(145deg,#303544,#1c1f2a);
+  transform:translateY(-1px);
+}
+
+.onlineSubRow{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px;
+}
+
+.onlineSubButton{
+  width:100%;
+  min-height:54px;
+  border:2px solid rgba(255,255,255,.14);
+  border-radius:16px;
+  background:#191b24;
+  color:white;
+  font-size:clamp(28px,4vw,42px);
+  cursor:pointer;
+  touch-action:manipulation;
+}
+
+.onlineSubButton:hover,
+.onlineSubButton:active{
+  background:#272a36;
+}
+
+.onlineBackButton{
+  position:absolute;
+  left:18px;
+  bottom:18px;
+  border:1px solid rgba(255,255,255,.15);
+  border-radius:12px;
+  background:#191b22;
+  color:#ddd;
+  padding:10px 18px;
+  font-size:15px;
   cursor:pointer;
 }
 
-.modeButton:hover,
-.confirmButton:hover{
-  background:#333;
+/* =========================
+   TIP画面
+========================= */
+
+#tipScreen{
+  position:relative;
+  padding:24px;
 }
+
+.tipGrid{
+  width:min(820px,84vw);
+  height:min(52vh,460px);
+  margin-top:2vh;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  grid-template-rows:1fr 1fr;
+  gap:10px;
+}
+
+.tipSlot{
+  border:1px solid rgba(255,255,255,.16);
+  border-radius:16px;
+  background:rgba(24,26,34,.72);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.04);
+}
+
+.tipBackButton{
+  margin-top:16px;
+  border:1px solid rgba(255,255,255,.16);
+  border-radius:12px;
+  background:#191b22;
+  color:#ddd;
+  padding:10px 24px;
+  font-size:16px;
+  cursor:pointer;
+}
+
+/* =========================
+   オンライン対戦開始
+========================= */
+
+/* =========================
+   オンライン対戦開始
+========================= */
 
 
 /* =========================
@@ -94,54 +271,96 @@ body{
 ========================= */
 
 .techSelect{
-  display:flex;
-  flex-direction:column;
-  gap:18px;
-  margin-bottom:15px;
+  width:min(820px,86vw);
+  margin:2vh auto 0;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  grid-template-rows:1fr 1fr;
+  gap:14px;
 }
 
-.techRow{
-  display:flex;
+.techCard{
+  min-height:150px;
+  position:relative;
+  display:grid;
+  grid-template-columns:42px 1fr 42px;
   align-items:center;
-  gap:15px;
+  gap:8px;
+  padding:12px;
+  border:2px solid rgba(255,255,255,.14);
+  border-radius:18px;
+  background:linear-gradient(145deg,#252833,#171922);
+  box-shadow:0 10px 26px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.05);
 }
+
+.techCard:nth-child(1){grid-column:1;grid-row:1;}
+.techCard:nth-child(2){grid-column:2;grid-row:1;}
+.techCard:nth-child(3){grid-column:1;grid-row:2;}
 
 .techArrow{
-  width:45px;
-  height:45px;
-  border:1px solid #555;
-  border-radius:10px;
-  background:#222;
+  width:42px;
+  height:58px;
+  border:1px solid rgba(255,255,255,.16);
+  border-radius:11px;
+  background:#1b1d26;
   color:white;
-  font-size:25px;
+  font-size:23px;
   cursor:pointer;
+  touch-action:manipulation;
+}
+
+.techArrow:hover,
+.techArrow:active{
+  background:#303442;
+}
+
+.techCardBody{
+  min-width:0;
+  text-align:center;
 }
 
 .techIcon{
-  width:100px;
-  height:70px;
-  border:2px solid #666;
-  border-radius:12px;
-  background:#222;
+  width:100%;
+  min-height:40px;
   display:flex;
   align-items:center;
   justify-content:center;
-  font-weight:bold;
+  font-size:clamp(18px,2.4vw,25px);
+  font-weight:900;
+  overflow-wrap:anywhere;
+}
+
+.techCardDescription{
+  margin-top:8px;
+  color:#c9c9d1;
+  font-size:clamp(11px,1.4vw,14px);
+  line-height:1.45;
+  text-align:left;
 }
 
 #techDescription{
-  width:90%;
-  max-width:600px;
-  min-height:100px;
-  margin:5px auto 20px;
-  padding:12px 16px;
-  border:1px solid #555;
-  border-radius:12px;
-  background:#1b1b1b;
-  color:#ddd;
-  font-size:15px;
-  line-height:1.7;
-  text-align:left;
+  display:none;
+}
+
+#techConfirmButton{
+  grid-column:2;
+  grid-row:2;
+  align-self:stretch;
+  justify-self:stretch;
+  width:auto;
+  min-height:150px;
+  padding:18px;
+  border:2px solid rgba(255,255,255,.18);
+  border-radius:18px;
+  background:linear-gradient(145deg,#303546,#1a1d27);
+  font-size:clamp(20px,2.8vw,30px);
+  font-weight:900;
+  cursor:pointer;
+  touch-action:manipulation;
+}
+
+#techConfirmButton:hover{
+  background:linear-gradient(145deg,#3a4052,#222633);
 }
 
 
@@ -566,12 +785,85 @@ body{
     font-size:10px;
   }
 
-  .techIcon{
-    width:85px;
+  .modeChoiceBox{
+    width:min(92vw,520px);
+    min-height:190px;
+    grid-template-columns:1fr;
+    grid-template-rows:1fr 34px 1fr;
   }
 
-  #techDescription{
-    font-size:13px;
+  .modeSlash{
+    min-height:34px;
+  }
+
+  .modeBottomButton{
+    left:10px;
+    bottom:10px;
+    width:48px;
+    height:48px;
+    font-size:22px;
+    border-radius:12px;
+  }
+
+  .modeSquareButton{
+    right:10px;
+    bottom:10px;
+    width:64px;
+    height:64px;
+    font-size:27px;
+    border-radius:14px;
+  }
+
+  .onlineMenu{
+    width:88vw;
+    margin-top:1vh;
+    gap:10px;
+  }
+
+  .onlineMainButton{
+    min-height:64px;
+  }
+
+  .onlineSubRow{
+    gap:10px;
+  }
+
+  .onlineSubButton{
+    min-height:48px;
+  }
+
+  .tipGrid{
+    width:92vw;
+    height:52vh;
+    gap:7px;
+  }
+
+  .techSelect{
+    width:92vw;
+    gap:9px;
+  }
+
+  .techCard{
+    min-height:145px;
+    grid-template-columns:36px 1fr 36px;
+    gap:5px;
+    padding:8px;
+    border-radius:14px;
+  }
+
+  .techArrow{
+    width:36px;
+    height:52px;
+    font-size:20px;
+  }
+
+  .techCardDescription{
+    font-size:11px;
+  }
+
+  #techConfirmButton{
+    min-height:145px;
+    padding:12px 8px;
   }
 
 }
@@ -954,21 +1246,63 @@ body{
 
 <div id="modeScreen" class="screen">
 
-  <div class="screenTitle">
-    バトルモード
+  <div class="modeChoiceBox" aria-label="バトルモード選択">
+    <button class="modeChoiceButton" onclick="selectMode('offline')">
+      オフライン
+    </button>
+
+    <div class="modeSlash">/</div>
+
+    <button class="modeChoiceButton" onclick="selectMode('online')">
+      オンライン
+    </button>
   </div>
 
-  <button
-    class="modeButton"
-    onclick="selectMode('offline')">
-    オフライン
-  </button>
+  <button class="modeBottomButton" aria-label="TIPを開く" onclick="showScreen('tipScreen')">📣</button>
+  <button class="modeSquareButton" aria-label="メニュー">□</button>
 
-  <button
-    class="modeButton"
-    onclick="selectMode('online')">
-    オンライン
-  </button>
+</div>
+
+
+<!-- =========================
+     オンラインメニュー
+========================= -->
+
+<div id="onlineScreen" class="screen">
+
+  <div class="screenTitle">オンライン</div>
+
+  <div class="onlineMenu">
+    <button class="onlineMainButton" onclick="startOnlineMatch('random')">ランダム対戦</button>
+    <button class="onlineMainButton" onclick="startOnlineMatch('friend')">友達対戦</button>
+
+    <div class="onlineSubRow">
+      <button class="onlineSubButton" aria-label="ランキング">👑</button>
+      <button class="onlineSubButton" aria-label="観戦">👁</button>
+    </div>
+  </div>
+
+  <button class="onlineBackButton" onclick="showScreen('modeScreen')">戻る</button>
+
+</div>
+
+
+<!-- =========================
+     TIP画面
+========================= -->
+
+<div id="tipScreen" class="screen">
+
+  <div class="screenTitle">TIP</div>
+
+  <div class="tipGrid" aria-label="TIP一覧">
+    <div class="tipSlot"></div>
+    <div class="tipSlot"></div>
+    <div class="tipSlot"></div>
+    <div class="tipSlot"></div>
+  </div>
+
+  <button class="tipBackButton" onclick="showScreen('modeScreen')">戻る</button>
 
 </div>
 
@@ -979,97 +1313,43 @@ body{
 
 <div id="techScreen" class="screen">
 
-  <div id="techTitle"
-       class="screenTitle">
-    1P：技を3つ選択
-  </div>
-
+  <div id="techTitle" class="screenTitle">1P：技を3つ選択</div>
 
   <div class="techSelect">
 
-    <div class="techRow">
-
-      <button
-        class="techArrow"
-        onclick="changeTech(0,-1)">
-        ＜
-      </button>
-
-      <div
-        id="techIcon0"
-        class="techIcon">
-        技1
+    <div class="techCard">
+      <button class="techArrow" onclick="changeTech(0,-1)" aria-label="前の技">＜</button>
+      <div class="techCardBody">
+        <div id="techIcon0" class="techIcon">技1</div>
+        <div id="techCardDescription0" class="techCardDescription"></div>
       </div>
-
-      <button
-        class="techArrow"
-        onclick="changeTech(0,1)">
-        ＞
-      </button>
-
+      <button class="techArrow" onclick="changeTech(0,1)" aria-label="次の技">＞</button>
     </div>
 
-
-    <div class="techRow">
-
-      <button
-        class="techArrow"
-        onclick="changeTech(1,-1)">
-        ＜
-      </button>
-
-      <div
-        id="techIcon1"
-        class="techIcon">
-        技2
+    <div class="techCard">
+      <button class="techArrow" onclick="changeTech(1,-1)" aria-label="前の技">＜</button>
+      <div class="techCardBody">
+        <div id="techIcon1" class="techIcon">技2</div>
+        <div id="techCardDescription1" class="techCardDescription"></div>
       </div>
-
-      <button
-        class="techArrow"
-        onclick="changeTech(1,1)">
-        ＞
-      </button>
-
+      <button class="techArrow" onclick="changeTech(1,1)" aria-label="次の技">＞</button>
     </div>
 
-
-    <div class="techRow">
-
-      <button
-        class="techArrow"
-        onclick="changeTech(2,-1)">
-        ＜
-      </button>
-
-      <div
-        id="techIcon2"
-        class="techIcon">
-        技3
+    <div class="techCard">
+      <button class="techArrow" onclick="changeTech(2,-1)" aria-label="前の技">＜</button>
+      <div class="techCardBody">
+        <div id="techIcon2" class="techIcon">技3</div>
+        <div id="techCardDescription2" class="techCardDescription"></div>
       </div>
-
-      <button
-        class="techArrow"
-        onclick="changeTech(2,1)">
-        ＞
-      </button>
-
+      <button class="techArrow" onclick="changeTech(2,1)" aria-label="次の技">＞</button>
     </div>
+
+    <button id="techConfirmButton" class="confirmButton" onclick="confirmTech()">次へ</button>
 
   </div>
 
-
-  <!-- 技の説明 -->
-
-  <div id="techDescription">
-  </div>
-
-
-  <button
-    id="techConfirmButton"
-    class="confirmButton"
-    onclick="confirmTech()">
-    次へ
-  </button>
+  <!-- 旧説明欄は互換用に残し、表示は技ボタン内へ統合 -->
+  <div id="techDescription"></div>
 
 </div>
 
@@ -1743,6 +2023,43 @@ function showScreen(id){
 
 let gameMode = null;
 
+let onlineMatchType = null;
+
+function startOnlineMatch(type){
+  onlineMatchType = type;
+  gameMode = "online";
+  onlineBattleStarted = false;
+  onlineTurnNumber = 0;
+
+  if(!window.onlineBattle){
+    alert("Firebaseの読み込みが完了していません。もう一度お試しください。");
+    return;
+  }
+
+  window.onlineBattle.start().then(ok=>{
+    if(!ok) return;
+
+    selectingPlayer = window.onlineBattle.localPlayer;
+    onlineTechConfirmed = false;
+    showScreen("techScreen");
+    document.querySelectorAll("#techScreen .techArrow").forEach(el=>{
+      el.disabled = false;
+      el.style.pointerEvents = "auto";
+    });
+    const button = document.getElementById("techConfirmButton");
+    if(button){
+      button.disabled = false;
+      button.textContent = "決定";
+    }
+    document.getElementById("techTitle").textContent =
+      "オンライン：技を3つ選択";
+    updateTechniqueDisplay();
+  }).catch(err=>{
+    console.error(err);
+    alert("オンライン接続に失敗しました。Firebaseの設定を確認してください。");
+  });
+}
+
 function selectMode(mode){
 
   gameMode = mode;
@@ -1751,32 +2068,7 @@ function selectMode(mode){
   selectedTechniques[2] = [0,1,2];
 
   if(mode === "online"){
-    onlineBattleStarted = false;
-    onlineTurnNumber = 0;
-    if(!window.onlineBattle){
-      alert("Firebaseの読み込みが完了していません。もう一度お試しください。");
-      return;
-    }
-
-    window.onlineBattle.start().then(ok=>{
-      if(!ok) return;
-
-      selectingPlayer = window.onlineBattle.localPlayer;
-      onlineTechConfirmed = false;
-      showScreen("techScreen");
-      document.querySelectorAll("#techScreen .techArrow").forEach(el=>{
-        el.disabled = false;
-        el.style.pointerEvents = "auto";
-      });
-      document.getElementById("techConfirmButton").disabled = false;
-      document.getElementById("techConfirmButton").textContent = "決定";
-      document.getElementById("techTitle").textContent =
-        "オンライン：技を3つ選択";
-      updateTechniqueDisplay();
-    }).catch(err=>{
-      console.error(err);
-      alert("オンライン接続に失敗しました。Firebaseの設定を確認してください。");
-    });
+    showScreen("onlineScreen");
     return;
   }
 
@@ -1847,41 +2139,24 @@ function updateTechniqueDisplay(){
   selectedTechniques[selectingPlayer]
     .forEach((index,slot)=>{
 
-      const tech =
-        techniquePool[index];
+      const tech = techniquePool[index];
+      const nameEl = document.getElementById("techIcon" + slot);
+      const descEl = document.getElementById("techCardDescription" + slot);
 
-      document
-        .getElementById(
-          "techIcon" + slot
-        )
-        .textContent =
-          tech.name;
+      if(nameEl) nameEl.textContent = tech.name;
+      if(descEl) descEl.textContent = tech.description;
 
     });
 
-
-  const descriptions =
-    selectedTechniques[selectingPlayer]
+  // 旧UIとの互換用。現在は表示しない。
+  const oldDescription = document.getElementById("techDescription");
+  if(oldDescription){
+    oldDescription.innerHTML = selectedTechniques[selectingPlayer]
       .map(index => {
-
-        const tech =
-          techniquePool[index];
-
-        return `
-          <div>
-            <strong>${tech.name}</strong>：
-            ${tech.description}
-          </div>
-        `;
-
-      })
-      .join("");
-
-  document
-    .getElementById("techDescription")
-    .innerHTML =
-      descriptions;
-
+        const tech = techniquePool[index];
+        return `<div><strong>${tech.name}</strong>：${tech.description}</div>`;
+      }).join("");
+  }
 }
 
 
@@ -2086,6 +2361,30 @@ function receiveOnlineBattleState(state){
     return;
   }
 
+  // オンライン演出イベント。P2はFirebaseで受け取った瞬間に再生する。
+  // P1はresolveBattle()側ですでに自端末の演出を再生しているため重複させない。
+  if(state.phase === "effect" && Number(state.resolvedTurn || 0) > 0){
+    const effectTurn = Number(state.resolvedTurn);
+    if(effectTurn <= Number(window._lastOnlineEffectTurn || 0)) return;
+    window._lastOnlineEffectTurn = effectTurn;
+
+    const a1 = state.actions?.[1];
+    const a2 = state.actions?.[2];
+    if(window.onlineBattle.localPlayer === 2 && a1?.data && a2?.data){
+      blockSeal = state.blockSeal || blockSeal;
+      playBattleEffect(a1.data,a2.data,()=>{
+        hp={1:Number(state.hp?.[1] ?? hp[1]),2:Number(state.hp?.[2] ?? hp[2])};
+        gauge={1:Number(state.gauge?.[1] ?? gauge[1]),2:Number(state.gauge?.[2] ?? gauge[2])};
+        lastAction=state.lastAction||lastAction;
+        lastLastAction=state.lastLastAction||lastLastAction;
+        momentumBonus=state.momentumBonus||momentumBonus;
+        blockSeal=state.blockSeal||blockSeal;
+        updateBattleUI();
+      });
+    }
+    return;
+  }
+
   if(state.phase === "starting" || state.phase === "battle"){
     if(!onlineBattleStarted){
       onlineBattleStarted=true;
@@ -2138,7 +2437,12 @@ function receiveOnlineBattleState(state){
         },wait);
       }
     }else if(a1 && a2){
-      playBattleEffect(a1,a2,apply);
+      if(Number(state.resolvedTurn) <= Number(window._lastOnlineEffectTurn || 0)){
+        apply();
+      }else{
+        window._lastOnlineEffectTurn=Number(state.resolvedTurn);
+        playBattleEffect(a1,a2,apply);
+      }
     }else{
       apply();
     }
@@ -2683,14 +2987,17 @@ function resolveBattle(){
 
   const attack1 = a1.type === "attack";
   const attack2 = a2.type === "attack";
-  const block1 = a1.type === "block" && !blockSeal[1];
-  const block2 = a2.type === "block" && !blockSeal[2];
   const reflect1 = a1.type === "reflect";
   const reflect2 = a2.type === "reflect";
 
-  // 技8：相手のブロック系を封印
+  // 技8：アンチガードの封印判定は「技を選んだ時点の相手ゲージ」で決まる。
+  // chooseAction() ですでに7以上なら選択できないため、ここでも同じ条件で封印する。
+  // 重要：block1 / block2 を計算する“前”に封印状態を反映する。
   if(a1.skill === "tech8" && gauge[2] < 7) blockSeal[2] = true;
   if(a2.skill === "tech8" && gauge[1] < 7) blockSeal[1] = true;
+
+  const block1 = a1.type === "block" && !blockSeal[1];
+  const block2 = a2.type === "block" && !blockSeal[2];
 
   // チャージ
   if(a1.type === "charge") gauge[1] = Math.min(10, gauge[1] + 2);
@@ -2772,14 +3079,40 @@ function resolveBattle(){
     gauge[2] = Math.min(10, gauge[2] + 8);
     hp[2] = Math.max(0, hp[2] - 3);
   }
-// 相手のゲージが7以上になった時だけブロック封印を解除
-if(gauge[1] >= 7){
-  blockSeal[2] = false;
-}
+  // このターンの処理で相手ゲージが7以上になった場合だけ解除する。
+  // 7未満なら、既存の封印状態をそのまま維持する。
+  if(blockSeal[2] && gauge[1] >= 7){
+    blockSeal[2] = false;
+  }
+  if(blockSeal[1] && gauge[2] >= 7){
+    blockSeal[1] = false;
+  }
 
-if(gauge[2] >= 7){
-  blockSeal[1] = false;
-}
+  // オンラインではP2側にも確実に同じ演出を出すため、
+  // このターンの演出イベントを先にFirebaseへ通知する。
+  // P1は自端末で直後に演出するので二重再生を抑止する。
+  const onlineEffectTurn = gameMode === "online" ? onlineTurnNumber : 0;
+  if(gameMode === "online"){
+    window._onlineLocalEffectTurn = onlineEffectTurn;
+    const effectState = {
+      phase: "effect",
+      turn: onlineEffectTurn,
+      resolvedTurn: onlineEffectTurn,
+      actions:{
+        1:{id:selectedAction[1].id,data:a1},
+        2:{id:selectedAction[2].id,data:a2}
+      },
+      hp:{1:hp[1],2:hp[2]},
+      gauge:{1:gauge[1],2:gauge[2]},
+      lastAction,
+      lastLastAction,
+      momentumBonus,
+      blockSeal,
+      result:""
+    };
+    window.onlineBattle.publishBattleState(effectState).catch(console.error);
+  }
+
   playBattleEffect(a1,a2,()=>{
     hp[1] = Math.max(0, hp[1] - damageTo1);
     hp[2] = Math.max(0, hp[2] - damageTo2);
@@ -3499,8 +3832,9 @@ function updateDisabledActions(){
 
     if(blockEl){
       const blockDisabled =
-        lastAction[player] &&
-        lastAction[player].data.type === "block";
+        (blockSeal[player]) ||
+        (lastAction[player] &&
+         lastAction[player].data.type === "block");
 
       blockEl.classList.toggle("disabled", blockDisabled);
     }
