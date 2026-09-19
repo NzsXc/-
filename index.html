@@ -102,12 +102,22 @@ body{
 }
 
 .modeSlash{
+  position:relative;
   display:flex;
   align-items:center;
   justify-content:center;
-  color:#8d8d9a;
-  font-size:clamp(28px,4vw,42px);
-  font-weight:300;
+}
+
+.modeSlash::before{
+  content:"";
+  display:block;
+  width:2px;
+  height:62%;
+  min-height:46px;
+  background:rgba(255,255,255,.92);
+  box-shadow:0 0 8px rgba(255,255,255,.28);
+  transform:rotate(18deg);
+  border-radius:999px;
 }
 
 .modeBottomButton{
@@ -229,21 +239,70 @@ body{
   padding:24px;
 }
 
-.tipGrid{
-  width:min(820px,84vw);
-  height:min(52vh,460px);
-  margin-top:2vh;
+.tipNav{
+  position:absolute;
+  top:18px;
+  left:50%;
+  transform:translateX(-50%);
+  width:min(360px,58vw);
   display:grid;
-  grid-template-columns:1fr 1fr;
-  grid-template-rows:1fr 1fr;
-  gap:10px;
+  grid-template-columns:repeat(4,1fr);
+  gap:6px;
+  z-index:5;
 }
 
-.tipSlot{
+.tipNavButton{
+  aspect-ratio:1/1;
+  border:1px solid rgba(255,255,255,.16);
+  border-radius:12px;
+  background:rgba(24,26,34,.92);
+  color:#fff;
+  font-size:clamp(11px,1.6vw,16px);
+  font-weight:900;
+  cursor:pointer;
+  touch-action:manipulation;
+  transition:transform .2s,background .2s,border-color .2s;
+}
+
+.tipNavButton.active{
+  background:rgba(255,255,255,.14);
+  border-color:rgba(255,255,255,.5);
+  transform:translateY(-2px);
+}
+
+.tipViewport{
+  width:min(820px,84vw);
+  height:min(52vh,460px);
+  margin-top:92px;
+  overflow:hidden;
+  border-radius:16px;
+}
+
+.tipPages{
+  height:100%;
+  display:flex;
+  transition:transform .45s cubic-bezier(.2,.8,.2,1);
+  will-change:transform;
+}
+
+.tipPage{
+  flex:0 0 100%;
+  height:100%;
+  padding:4px;
+}
+
+.tipPageInner{
+  width:100%;
+  height:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
   border:1px solid rgba(255,255,255,.16);
   border-radius:16px;
   background:rgba(24,26,34,.72);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.04);
+  font-size:clamp(20px,4vw,34px);
+  font-weight:900;
 }
 
 .tipBackButton{
@@ -255,6 +314,62 @@ body{
   padding:10px 24px;
   font-size:16px;
   cursor:pointer;
+}
+
+/* =========================
+   観戦UI
+========================= */
+
+.spectatorList{
+  width:min(720px,88vw);
+  max-height:62vh;
+  overflow:auto;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  margin-top:8px;
+  padding:4px;
+}
+
+.spectatorRow{
+  width:100%;
+  min-height:62px;
+  display:grid;
+  grid-template-columns:1fr auto 1fr;
+  align-items:center;
+  gap:10px;
+  padding:10px 16px;
+  border:1px solid rgba(255,255,255,.15);
+  border-radius:15px;
+  background:linear-gradient(145deg,#252833,#171922);
+  color:#fff;
+  cursor:pointer;
+  touch-action:manipulation;
+}
+
+.spectatorRow:hover,.spectatorRow:active{background:#2b2f3b;}
+.spectatorPlayer{text-align:center;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.spectatorVs{font-weight:1000;color:#ddd;}
+.spectatorEmpty{opacity:.65;text-align:center;padding:28px 10px;}
+.spectatorTitle{display:flex;gap:12px;align-items:center;}
+.spectatorBattleMirror{position:absolute;inset:0;pointer-events:none;}
+
+#battleScreen.spectatorMode .action{pointer-events:none;filter:brightness(.65);cursor:default;}
+#battleScreen.spectatorMode .action:hover{transform:none;box-shadow:none;}
+#battleScreen.spectatorMode #player1Area,#battleScreen.spectatorMode #player2Area{pointer-events:none;}
+.spectatorBadge{position:absolute;top:14px;left:50%;transform:translateX(-50%);z-index:100;display:none;align-items:center;gap:10px;padding:7px 10px 7px 12px;border:1px solid rgba(255,255,255,.2);border-radius:999px;background:rgba(7,9,14,.82);backdrop-filter:blur(8px);box-shadow:0 8px 25px rgba(0,0,0,.3);font-size:12px;white-space:nowrap;}
+.spectatorBadge button{border:1px solid rgba(255,255,255,.18);border-radius:999px;background:#252833;color:#fff;padding:5px 9px;cursor:pointer;}
+.spectatorReadOnly{position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:50;padding:6px 12px;border:1px solid rgba(255,255,255,.18);border-radius:999px;background:rgba(10,12,18,.75);font-size:12px;opacity:.8;}
+
+#spectatorScreen .onlineBackButton{z-index:100;pointer-events:auto;}
+#spectatorScreen .playerArea{pointer-events:none;}
+#spectatorScreen .action{pointer-events:none;}
+
+@media(max-width:600px){
+  .tipNav{top:10px;width:min(300px,68vw);gap:4px;}
+  .tipViewport{width:92vw;height:52vh;margin-top:76px;}
+  .spectatorList{width:92vw;max-height:66vh;}
+  .spectatorRow{min-height:56px;padding:8px 10px;font-size:13px;}
 }
 
 /* =========================
@@ -500,6 +615,22 @@ body{
   justify-content:center;
   z-index:3;
   pointer-events:none;
+}
+
+.onlineTechniqueDescription{
+  display:none;
+  max-width:min(72vw,420px);
+  margin-top:14px;
+  padding:8px 12px;
+  border:1px solid rgba(255,255,255,.18);
+  border-radius:10px;
+  background:rgba(8,10,16,.82);
+  color:#e8e8ef;
+  font-size:12px;
+  line-height:1.45;
+  text-align:center;
+  box-shadow:0 8px 24px rgba(0,0,0,.28);
+  backdrop-filter:blur(6px);
 }
 
 #countdown{
@@ -927,6 +1058,10 @@ body{
 #player1Area{ border-color:rgba(255,75,90,.28); }
 #player2Area{ border-color:rgba(80,150,255,.28); }
 
+/* 2Pはバトル画面が実際に表示されている時だけ表示 */
+#player2Area{display:none;}
+#battleScreen.active #player2Area{display:block;}
+
 .playerArea.locked{
   box-shadow:0 0 28px rgba(255,255,255,.08), 0 14px 40px rgba(0,0,0,.38);
 }
@@ -1099,6 +1234,33 @@ body{
 #battleScreen.hitShake{animation:screenShake .28s linear;}
 
 /* 汎用エフェクト */
+.damageNumber{
+  position:fixed;
+  z-index:100000;
+  font-size:clamp(26px,4vw,48px);
+  font-weight:1000;
+  color:#fff;
+  text-shadow:0 0 8px #ff4f61,0 0 22px rgba(255,70,90,.8);
+  pointer-events:none;
+  animation:damageFloat .72s cubic-bezier(.15,.8,.2,1) forwards;
+}
+
+.hitBrightness{
+  animation:hitBrightness .22s ease-out;
+}
+
+@keyframes damageFloat{
+  0%{opacity:0;transform:translate(-50%,8px) scale(.7)}
+  20%{opacity:1;transform:translate(-50%,0) scale(1.12)}
+  100%{opacity:0;transform:translate(-50%,-46px) scale(1)}
+}
+
+@keyframes hitBrightness{
+  0%{filter:brightness(1)}
+  35%{filter:brightness(1.28)}
+  100%{filter:brightness(1)}
+}
+
 .effectFlash,.effectRing,.effectSlash,.effectShockwave,.effectParticles,.effectHex,.effectAura,.effectLightning{
   position:absolute;
   left:50%;top:50%;
@@ -1215,6 +1377,7 @@ body{
 }
 
 </style>
+<!-- PSYCHO_BATTLE_FLOW_FIX_20260919 -->
 </head>
 
 
@@ -1251,7 +1414,7 @@ body{
       オフライン
     </button>
 
-    <div class="modeSlash">/</div>
+    <div class="modeSlash" aria-hidden="true"></div>
 
     <button class="modeChoiceButton" onclick="selectMode('online')">
       オンライン
@@ -1278,12 +1441,38 @@ body{
 
     <div class="onlineSubRow">
       <button class="onlineSubButton" aria-label="ランキング">👑</button>
-      <button class="onlineSubButton" aria-label="観戦">👁</button>
+      <button class="onlineSubButton" aria-label="観戦" onclick="openSpectatorList()">👁</button>
     </div>
   </div>
 
   <button class="onlineBackButton" onclick="showScreen('modeScreen')">戻る</button>
 
+</div>
+
+
+<!-- =========================
+     観戦一覧画面
+========================= -->
+
+<div id="spectatorListScreen" class="screen">
+  <div class="screenTitle">観戦</div>
+  <div id="spectatorList" class="spectatorList">
+    <div class="spectatorEmpty">現在観戦できる対戦はありません。</div>
+  </div>
+  <button class="onlineBackButton" onclick="closeSpectatorList()">戻る</button>
+</div>
+
+
+<!-- =========================
+     観戦画面
+========================= -->
+
+<div id="spectatorScreen" class="screen">
+  <div class="screenTitle spectatorTitle">観戦中 <span id="spectatorMatchTitle"></span></div>
+  <div id="spectatorBattleMirror" class="spectatorBattleMirror">
+    <div class="spectatorReadOnly">観戦モード</div>
+  </div>
+  <button class="onlineBackButton" onclick="leaveSpectator()">観戦を終了</button>
 </div>
 
 
@@ -1295,11 +1484,20 @@ body{
 
   <div class="screenTitle">TIP</div>
 
-  <div class="tipGrid" aria-label="TIP一覧">
-    <div class="tipSlot"></div>
-    <div class="tipSlot"></div>
-    <div class="tipSlot"></div>
-    <div class="tipSlot"></div>
+  <div class="tipNav" aria-label="TIPページ">
+    <button class="tipNavButton active" data-page="0" onclick="showTipPage(0)">1</button>
+    <button class="tipNavButton" data-page="1" onclick="showTipPage(1)">2</button>
+    <button class="tipNavButton" data-page="2" onclick="showTipPage(2)">3</button>
+    <button class="tipNavButton" data-page="3" onclick="showTipPage(3)">4</button>
+  </div>
+
+  <div class="tipViewport" aria-label="TIP内容">
+    <div class="tipPages" id="tipPages">
+      <section class="tipPage"><div class="tipPageInner">TIP 1</div></section>
+      <section class="tipPage"><div class="tipPageInner">TIP 2</div></section>
+      <section class="tipPage"><div class="tipPageInner">TIP 3</div></section>
+      <section class="tipPage"><div class="tipPageInner">TIP 4</div></section>
+    </div>
   </div>
 
   <button class="tipBackButton" onclick="showScreen('modeScreen')">戻る</button>
@@ -1531,6 +1729,8 @@ body{
 
     <div id="resultMessage">
     </div>
+
+    <div id="onlineTechniqueDescription" class="onlineTechniqueDescription"></div>
 
   </div>
 
@@ -1802,6 +2002,29 @@ body{
     async publishBattleState(state){
       if(!onlineStarted || !roomCode)return;
       await set(ref(db, `rooms/${roomCode}/battle`), state);
+    },
+
+    async listActiveBattles(){
+      const snap=await get(ref(db,"rooms"));
+      const rooms=snap.val() || {};
+      return Object.entries(rooms).filter(([code,room])=>{
+        const b=room && room.battle;
+        const p1=room?.players?.["1"]?.joined;
+        const p2=room?.players?.["2"]?.joined;
+        if(!p1 || !p2 || !b)return false;
+        if(b.phase === "finished")return false;
+        return true;
+      }).map(([code,room])=>({
+        roomCode:code,
+        p1:room?.players?.["1"]?.name || "プレイヤー1",
+        p2:room?.players?.["2"]?.name || "プレイヤー2",
+        battle:room.battle
+      }));
+    },
+
+    watchRoom(roomCodeToWatch, callback){
+      const stop=onValue(ref(db,`rooms/${roomCodeToWatch}`),snap=>callback(snap.val()));
+      return stop;
     }
   };
 
@@ -1997,6 +2220,22 @@ window.techniquePoolForOnline = techniquePool;
 
 
 /* =========================
+   TIPページ切り替え
+========================= */
+
+function showTipPage(page){
+  const pages=document.getElementById("tipPages");
+  if(pages){
+    const index=Math.max(0,Math.min(3,Number(page)||0));
+    pages.style.transform=`translateX(-${index*100}%)`;
+  }
+  document.querySelectorAll(".tipNavButton").forEach((button,index)=>{
+    button.classList.toggle("active",index===Number(page));
+  });
+}
+
+
+/* =========================
    画面切り替え
 ========================= */
 
@@ -2014,6 +2253,8 @@ function showScreen(id){
     .getElementById(id)
     .classList.add("active");
 
+  syncBattleBGM(id);
+
 }
 
 
@@ -2024,6 +2265,197 @@ function showScreen(id){
 let gameMode = null;
 
 let onlineMatchType = null;
+
+let spectatorActive = false;
+let spectatorRoomCode = null;
+let spectatorListener = null;
+let spectatorRoomsListener = null;
+
+async function openSpectatorList(){
+  gameMode="spectator";
+  spectatorActive=false;
+  spectatorRoomCode=null;
+  showScreen("spectatorListScreen");
+  const list=document.getElementById("spectatorList");
+  if(list)list.innerHTML='<div class="spectatorEmpty">対戦を読み込んでいます…</div>';
+  try{
+    const rooms=await window.onlineBattle.listActiveBattles();
+    renderSpectatorList(rooms);
+  }catch(err){
+    console.error(err);
+    if(list)list.innerHTML='<div class="spectatorEmpty">対戦一覧を取得できませんでした。</div>';
+  }
+}
+
+function renderSpectatorList(rooms){
+  const list=document.getElementById("spectatorList");
+  if(!list)return;
+  list.innerHTML="";
+  if(!rooms.length){
+    list.innerHTML='<div class="spectatorEmpty">現在観戦できる対戦はありません。</div>';
+    return;
+  }
+  rooms.forEach(room=>{
+    const row=document.createElement("button");
+    row.className="spectatorRow";
+    row.innerHTML=`<span class="spectatorPlayer"></span><span class="spectatorVs">VS</span><span class="spectatorPlayer"></span>`;
+    row.children[0].textContent=room.p1;
+    row.children[2].textContent=room.p2;
+    row.addEventListener("click",()=>enterSpectator(room.roomCode,room.p1,room.p2));
+    list.appendChild(row);
+  });
+}
+
+async function enterSpectator(code,p1,p2){
+  if(spectatorListener){spectatorListener();spectatorListener=null;}
+  spectatorActive=true;
+  spectatorRoomCode=code;
+  gameMode="spectator";
+  onlineBattleStarted=true;
+  onlineTurnNumber=0;
+  const title=document.getElementById("spectatorMatchTitle");
+  if(title)title.textContent=`${p1} VS ${p2}`;
+  showScreen("battleScreen");
+  document.getElementById("battleScreen")?.classList.add("spectatorMode");
+  let badge=document.getElementById("spectatorBadge");
+  if(!badge){
+    badge=document.createElement("div");
+    badge.id="spectatorBadge";
+    badge.className="spectatorBadge";
+    badge.innerHTML='<span>観戦モード</span><button type="button" onclick="leaveSpectator()">観戦を終了</button>';
+    document.getElementById("battleScreen").appendChild(badge);
+  }
+  badge.querySelector("span").textContent=`観戦：${p1} VS ${p2}`;
+  const names=document.querySelectorAll("#battleScreen .playerName");
+  if(names[0])names[0].textContent=p1;
+  if(names[1])names[1].textContent=p2;
+  badge.style.display="flex";
+  spectatorListener=window.onlineBattle.watchRoom(code,data=>{
+    if(!spectatorActive || !data)return;
+    const battle=data.battle;
+    if(!battle)return;
+    // 観戦者はFirebaseのbattle状態だけを読む。操作系は一切呼ばない。
+    receiveSpectatorBattleState(battle,data);
+  });
+}
+
+function receiveSpectatorBattleState(state,roomData){
+  if(!spectatorActive || !state)return;
+  gameMode="spectator";
+  const turn=Number(state.turn||0);
+  if(turn)onlineTurnNumber=turn;
+
+  if(state.phase==="starting" || state.phase==="battle"){
+    if(state.hp){hp={1:Number(state.hp[1]??hp[1]),2:Number(state.hp[2]??hp[2])};}
+    if(state.gauge){gauge={1:Number(state.gauge[1]??gauge[1]),2:Number(state.gauge[2]??gauge[2])};}
+    if(state.actions?.[1]?.data && state.actions?.[2]?.data){
+      selectedAction[1]={id:state.actions[1].id,data:state.actions[1].data};
+      selectedAction[2]={id:state.actions[2].id,data:state.actions[2].data};
+    }
+    updateSpectatorBattleUI();
+    if(state.phase==="starting" && Number.isFinite(Number(state.startAt))){
+      const startAt=Number(state.startAt);
+      clearTimeout(window._spectatorStartTimer);
+      window._spectatorStartTimer=setTimeout(()=>{
+        if(!spectatorActive)return;
+        updateSpectatorBattleUI();
+      },Math.max(0,startAt-Date.now()));
+    }
+    return;
+  }
+
+  if(state.phase==="countdown" && Number.isFinite(Number(state.startAt))){
+    if(state.actions?.[1]?.data && state.actions?.[2]?.data){
+      selectedAction[1]={id:state.actions[1].id,data:state.actions[1].data};
+      selectedAction[2]={id:state.actions[2].id,data:state.actions[2].data};
+    }
+    beginSpectatorCountdown(Number(state.startAt));
+    return;
+  }
+
+  if(state.phase==="effect" && Number(state.resolvedTurn||0)>0){
+    const effectTurn=Number(state.resolvedTurn);
+    if(effectTurn<=Number(window._lastSpectatorEffectTurn||0))return;
+    window._lastSpectatorEffectTurn=effectTurn;
+    const a1=state.actions?.[1]?.data;
+    const a2=state.actions?.[2]?.data;
+    if(a1&&a2){
+      selectedAction[1]={id:state.actions[1].id,data:a1};
+      selectedAction[2]={id:state.actions[2].id,data:a2};
+      setTimeout(()=>{
+        if(!spectatorActive)return;
+        playBattleEffect(a1,a2,()=>{
+          hp={1:Number(state.hp?.[1]??hp[1]),2:Number(state.hp?.[2]??hp[2])};
+          gauge={1:Number(state.gauge?.[1]??gauge[1]),2:Number(state.gauge?.[2]??gauge[2])};
+          updateSpectatorBattleUI();
+        },Number(state.damageTo1||0),Number(state.damageTo2||0),true);
+      },1000);
+    }
+    return;
+  }
+
+  if(state.phase==="finished"){
+    hp={1:Number(state.hp?.[1]??hp[1]),2:Number(state.hp?.[2]??hp[2])};
+    gauge={1:Number(state.gauge?.[1]??gauge[1]),2:Number(state.gauge?.[2]??gauge[2])};
+    updateSpectatorBattleUI();
+    showBattleResult(state.result||"");
+  }
+}
+
+function beginSpectatorCountdown(startAt){
+  const el=document.getElementById("countdown");
+  clearTimeout(window._spectatorCountdownTimer);
+  const target=Number(startAt);
+  const tick=()=>{
+    if(!spectatorActive)return;
+    const ms=target-Date.now();
+    if(ms>0){
+      if(el){el.className="countPulse";el.textContent=String(Math.min(3,Math.ceil(ms/1000)));}
+      window._spectatorCountdownTimer=setTimeout(tick,Math.min(100,Math.max(30,ms%1000||100)));
+      return;
+    }
+    if(el){el.className="battleCall";el.textContent="BATTLE!";}
+  };
+  tick();
+}
+
+function updateSpectatorBattleUI(){
+  showScreen("battleScreen");
+  document.getElementById("battleScreen")?.classList.add("spectatorMode");
+  const screen=document.getElementById("spectatorScreen");
+  if(!screen)return;
+  const set=(id,val)=>{const e=document.getElementById(id);if(e)e.textContent=val;};
+  set("hp1Text",hp[1]); set("hp2Text",hp[2]);
+  set("gauge1Text",gauge[1]); set("gauge2Text",gauge[2]);
+  const h1=document.getElementById("hp1Fill"),h2=document.getElementById("hp2Fill");
+  const g1=document.getElementById("gauge1Fill"),g2=document.getElementById("gauge2Fill");
+  if(h1)h1.style.width=(hp[1]*10)+"%"; if(h2)h2.style.width=(hp[2]*10)+"%";
+  if(g1)g1.style.width=(gauge[1]*10)+"%"; if(g2)g2.style.width=(gauge[2]*10)+"%";
+  document.querySelectorAll("#spectatorScreen .action").forEach(el=>{el.style.pointerEvents="none";});
+}
+
+function leaveSpectator(){
+  spectatorActive=false;
+  spectatorRoomCode=null;
+  if(spectatorListener){spectatorListener();spectatorListener=null;}
+  clearTimeout(window._spectatorStartTimer);
+  clearTimeout(window._spectatorCountdownTimer);
+  clearOnlineTechniqueDescription();
+  document.getElementById("battleScreen")?.classList.remove("spectatorMode");
+  const names=document.querySelectorAll("#battleScreen .playerName");
+  if(names[0])names[0].textContent="1P";
+  if(names[1])names[1].textContent="2P";
+  const badge=document.getElementById("spectatorBadge");
+  if(badge)badge.style.display="none";
+  gameMode=null;
+  showScreen("onlineScreen");
+}
+
+function closeSpectatorList(){
+  if(spectatorRoomsListener){spectatorRoomsListener();spectatorRoomsListener=null;}
+  gameMode=null;
+  showScreen("onlineScreen");
+}
 
 function startOnlineMatch(type){
   onlineMatchType = type;
@@ -2361,8 +2793,7 @@ function receiveOnlineBattleState(state){
     return;
   }
 
-  // オンライン演出イベント。P2はFirebaseで受け取った瞬間に再生する。
-  // P1はresolveBattle()側ですでに自端末の演出を再生しているため重複させない。
+  // オンライン演出：1P/2Pとも同じ技公開時刻・演出開始時刻を使う。
   if(state.phase === "effect" && Number(state.resolvedTurn || 0) > 0){
     const effectTurn = Number(state.resolvedTurn);
     if(effectTurn <= Number(window._lastOnlineEffectTurn || 0)) return;
@@ -2370,18 +2801,37 @@ function receiveOnlineBattleState(state){
 
     const a1 = state.actions?.[1];
     const a2 = state.actions?.[2];
-    if(window.onlineBattle.localPlayer === 2 && a1?.data && a2?.data){
-      blockSeal = state.blockSeal || blockSeal;
-      playBattleEffect(a1.data,a2.data,()=>{
-        hp={1:Number(state.hp?.[1] ?? hp[1]),2:Number(state.hp?.[2] ?? hp[2])};
-        gauge={1:Number(state.gauge?.[1] ?? gauge[1]),2:Number(state.gauge?.[2] ?? gauge[2])};
-        lastAction=state.lastAction||lastAction;
-        lastLastAction=state.lastLastAction||lastLastAction;
-        momentumBonus=state.momentumBonus||momentumBonus;
-        blockSeal=state.blockSeal||blockSeal;
-        updateBattleUI();
-      });
-    }
+    if(!a1?.data || !a2?.data) return;
+
+    blockSeal = state.blockSeal || blockSeal;
+    showTechniqueReveal(a1.data,a2.data);
+
+    const effectStartAt=Number(state.effectStartAt || (Date.now()+1000));
+    clearTimeout(window._onlineEffectStartTimeout);
+    window._onlineEffectStartTimeout=setTimeout(()=>{
+      if(gameMode!=="online" || Number(onlineTurnNumber)!==Number(state.turn))return;
+      playBattleSituationSE(
+        a1.data,
+        a2.data,
+        Number(state.damageTo1||0),
+        Number(state.damageTo2||0)
+      );
+      playBattleEffect(
+        a1.data,
+        a2.data,
+        ()=>{
+          hp={1:Number(state.hp?.[1] ?? hp[1]),2:Number(state.hp?.[2] ?? hp[2])};
+          gauge={1:Number(state.gauge?.[1] ?? gauge[1]),2:Number(state.gauge?.[2] ?? gauge[2])};
+          lastAction=state.lastAction||lastAction;
+          lastLastAction=state.lastLastAction||lastLastAction;
+          momentumBonus=state.momentumBonus||momentumBonus;
+          blockSeal=state.blockSeal||blockSeal;
+          updateBattleUI();
+        },
+        Number(state.damageTo1||0),
+        Number(state.damageTo2||0)
+      );
+    },Math.max(0,effectStartAt-Date.now()));
     return;
   }
 
@@ -2441,7 +2891,19 @@ function receiveOnlineBattleState(state){
         apply();
       }else{
         window._lastOnlineEffectTurn=Number(state.resolvedTurn);
-        playBattleEffect(a1,a2,apply);
+        playBattleSituationSE(
+          a1,
+          a2,
+          Number(state.damageTo1 || 0),
+          Number(state.damageTo2 || 0)
+        );
+        playBattleEffect(
+          a1,
+          a2,
+          apply,
+          Number(state.damageTo1 || 0),
+          Number(state.damageTo2 || 0)
+        );
       }
     }else{
       apply();
@@ -2450,6 +2912,9 @@ function receiveOnlineBattleState(state){
 }
 
 function setupBattleFromOnlineState(state){
+  document.getElementById("battleScreen")?.classList.remove("spectatorMode");
+  const spectatorBadge=document.getElementById("spectatorBadge");
+  if(spectatorBadge)spectatorBadge.style.display="none";
   selectedAction[1]=null; selectedAction[2]=null;
   locked[1]=false; locked[2]=false;
   displayedHp[1]=hp[1]; displayedHp[2]=hp[2];
@@ -2565,6 +3030,10 @@ function confirmTech(){
 
 function setupBattle(){
 
+  document.getElementById("battleScreen")?.classList.remove("spectatorMode");
+  const spectatorBadge=document.getElementById("spectatorBadge");
+  if(spectatorBadge)spectatorBadge.style.display="none";
+
   hp[1] = 10;
   hp[2] = 10;
 
@@ -2673,6 +3142,7 @@ function startTurn(){
   document.getElementById("player1Area").classList.remove("locked");
   document.getElementById("player2Area").classList.remove("locked");
   document.getElementById("resultMessage").textContent = "";
+  clearOnlineTechniqueDescription();
 
   updateDisabledActions();
 
@@ -2810,6 +3280,64 @@ document.addEventListener(
 );
 
 
+function updateOnlineTechniqueDescription(){
+  // 選択中の自分の技説明（オンラインの選択中UI）
+  const el=document.getElementById("onlineTechniqueDescription");
+  if(!el)return;
+  if(gameMode!=="online" || !selectedAction[window.onlineBattle?.localPlayer]){
+    el.style.display="none";
+    el.textContent="";
+    return;
+  }
+  const me=window.onlineBattle.localPlayer;
+  const data=selectedAction[me]?.data;
+  if(!data){
+    el.style.display="none";
+    el.textContent="";
+    return;
+  }
+  el.textContent=`${data.name || "選択した技"}：${data.description || ""}`;
+  el.style.display="block";
+}
+
+function showTechniqueReveal(a1,a2){
+  // BATTLE!後は、技演出で元々使っていた「battleActionLabel」を
+  // 1秒間だけ先に表示する。説明文は表示しない。
+  const descEl=document.getElementById("onlineTechniqueDescription");
+  if(descEl){
+    descEl.style.display="none";
+    descEl.textContent="";
+  }
+
+  const layer=document.getElementById("battleEffectLayer");
+  if(!layer)return;
+
+  // 技演出側で元々使っていた技名表示処理を、そのままここへ移動。
+  layer.innerHTML="";
+
+  const label1=document.createElement("div");
+  const label2=document.createElement("div");
+  label1.className="battleActionLabel p1";
+  label2.className="battleActionLabel p2";
+
+  const action1Name = a1?.name || selectedAction[1]?.data?.name || "";
+  const action2Name = a2?.name || selectedAction[2]?.data?.name || "";
+
+  label1.textContent="1P　"+action1Name;
+  label2.textContent="2P　"+action2Name;
+
+  layer.appendChild(label1);
+  layer.appendChild(label2);
+}
+
+function clearOnlineTechniqueDescription(){
+  const el=document.getElementById("onlineTechniqueDescription");
+  if(el){el.style.display="none";el.textContent="";}
+  const reveal=document.getElementById("battleTechniqueRevealNames");
+  if(reveal)reveal.style.display="none";
+}
+
+
 /* =========================
    行動選択
 ========================= */
@@ -2847,6 +3375,9 @@ function chooseAction(player,action){
   selectedAction[player]={id:action,data:data};
   locked[player]=true;
   document.getElementById("player"+player+"Area").classList.add("locked");
+
+  if(gameMode === "online") updateOnlineTechniqueDescription();
+  else clearOnlineTechniqueDescription();
 
   if(gameMode === "online" && !receivingOnlineAction){
     window.onlineBattle.sendAction(action, onlineTurnNumber).catch(err=>console.error(err));
@@ -2887,9 +3418,10 @@ function chooseAction(player,action){
         el.className = "battleCall";
         el.textContent = "BATTLE!";
       }
+      // オフライン：3 → 2 → 1 → BATTLE! → 技名だけ公開 → 1秒 → 演出 → ダメージ数値
       setTimeout(()=>{
         if(countdown === 0 && selectedAction[1] && selectedAction[2]) finishTurn();
-      },500);
+      },300);
     },1000);
   }
 }
@@ -3073,12 +3605,15 @@ function resolveBattle(){
   // 技7：前ターンチャージ後のみ使用可能。ゲージ+8、HP-3
   if(a1.skill === "tech7"){
     gauge[1] = Math.min(10, gauge[1] + 8);
-    hp[1] = Math.max(0, hp[1] - 3);
   }
   if(a2.skill === "tech7"){
     gauge[2] = Math.min(10, gauge[2] + 8);
-    hp[2] = Math.max(0, hp[2] - 3);
   }
+
+  // ランページの自傷ダメージも表示対象にする。
+  if(a1.skill === "tech7") damageTo1 += 3;
+  if(a2.skill === "tech7") damageTo2 += 3;
+
   // このターンの処理で相手ゲージが7以上になった場合だけ解除する。
   // 7未満なら、既存の封印状態をそのまま維持する。
   if(blockSeal[2] && gauge[1] >= 7){
@@ -3088,22 +3623,28 @@ function resolveBattle(){
     blockSeal[1] = false;
   }
 
-  // オンラインではP2側にも確実に同じ演出を出すため、
-  // このターンの演出イベントを先にFirebaseへ通知する。
-  // P1は自端末で直後に演出するので二重再生を抑止する。
+  // 技公開：オフライン/オンライン共通。
+  // オンラインはFirebaseへ「技公開時点＋1秒」の絶対時刻を送る。
+  showTechniqueReveal(a1,a2);
   const onlineEffectTurn = gameMode === "online" ? onlineTurnNumber : 0;
+  const effectStartAt = Date.now() + 1000;
   if(gameMode === "online"){
     window._onlineLocalEffectTurn = onlineEffectTurn;
+    // 自分が発行したeffectをFirebase受信側で二重再生しない。
+    window._lastOnlineEffectTurn = onlineEffectTurn;
     const effectState = {
       phase: "effect",
       turn: onlineEffectTurn,
       resolvedTurn: onlineEffectTurn,
+      effectStartAt,
       actions:{
         1:{id:selectedAction[1].id,data:a1},
         2:{id:selectedAction[2].id,data:a2}
       },
       hp:{1:hp[1],2:hp[2]},
       gauge:{1:gauge[1],2:gauge[2]},
+      damageTo1,
+      damageTo2,
       lastAction,
       lastLastAction,
       momentumBonus,
@@ -3113,6 +3654,11 @@ function resolveBattle(){
     window.onlineBattle.publishBattleState(effectState).catch(console.error);
   }
 
+  // 技公開から1秒後に演出開始。
+  setTimeout(()=>{
+  // 技名公開1秒後、実際の演出開始と同時にSEを鳴らす。
+  clearOnlineTechniqueDescription();
+  playBattleSituationSE(a1,a2,damageTo1,damageTo2);
   playBattleEffect(a1,a2,()=>{
     hp[1] = Math.max(0, hp[1] - damageTo1);
     hp[2] = Math.max(0, hp[2] - damageTo2);
@@ -3162,7 +3708,8 @@ function resolveBattle(){
     }
 
     setTimeout(()=>startTurn(),250);
-  });
+  }, damageTo1, damageTo2);
+  },1000);
 }
 
 
@@ -3170,7 +3717,120 @@ function resolveBattle(){
    バトル演出
 ========================= */
 
-function playBattleEffect(a1,a2,callback){
+let battleSEUnlocked=false;
+
+function unlockBattleSE(){
+  if(battleSEUnlocked)return;
+  const ids=[
+    "seBleach","seShieldBreak","seCounter","seAntiGuard",
+    "seMomentum","seRampage","sePunish","seFinisher","seAttackClash"
+  ];
+
+  ids.forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el)return;
+    try{
+      el.muted=true;
+      el.currentTime=0;
+      const p=el.play();
+      if(p && typeof p.then === "function"){
+        p.then(()=>{
+          el.pause();
+          el.currentTime=0;
+          el.muted=false;
+        }).catch(()=>{
+          el.muted=false;
+        });
+      }else{
+        el.pause();
+        el.currentTime=0;
+        el.muted=false;
+      }
+    }catch(e){
+      el.muted=false;
+    }
+  });
+
+  battleSEUnlocked=true;
+}
+
+window.addEventListener("pointerdown",unlockBattleSE,{once:true});
+window.addEventListener("keydown",unlockBattleSE,{once:true});
+
+function playBattleSE(id){
+  const el=document.getElementById(id);
+  if(!el)return;
+  try{
+    el.muted=false;
+    el.currentTime=0;
+    const p=el.play();
+    if(p && typeof p.catch === "function") p.catch(err=>console.warn("SE再生失敗:",id,err));
+  }catch(e){
+    console.warn("SE再生エラー:",id,e);
+  }
+}
+
+// バトルSEの発生条件。攻撃演出そのものとは分離しておく。
+function playBattleSituationSE(a1,a2,damageTo1=0,damageTo2=0){
+  const attack1=a1?.type==="attack";
+  const attack2=a2?.type==="attack";
+  const breach1=a1?.skill==="tech1";
+  const breach2=a2?.skill==="tech1";
+  const counter1=a1?.skill==="tech2";
+  const counter2=a2?.skill==="tech2";
+  const punish1=a1?.skill==="tech3";
+  const punish2=a2?.skill==="tech3";
+  const momentum1=a1?.skill==="tech6";
+  const momentum2=a2?.skill==="tech6";
+  const rampage1=a1?.skill==="tech7";
+  const rampage2=a2?.skill==="tech7";
+  const antiGuard1=a1?.skill==="tech8";
+  const antiGuard2=a2?.skill==="tech8";
+
+  // 攻撃技同士は共通の「打撃3」。
+  if(attack1 && attack2){
+    playBattleSE("seAttackClash");
+    return;
+  }
+
+  // ブリーチが実際にダメージを与えた＝命中。
+  if(breach1 && Number(damageTo2)>0) playBattleSE("seBleach");
+  if(breach2 && Number(damageTo1)>0) playBattleSE("seBleach");
+
+  // ブリーチがシールド系に当たった場合はガラス割れ。
+  const block1=a1?.type==="block" && !blockSeal[1];
+  const block2=a2?.type==="block" && !blockSeal[2];
+  if(breach1 && block2) playBattleSE("seShieldBreak");
+  if(breach2 && block1) playBattleSE("seShieldBreak");
+
+  // カウンターが攻撃を受けて成立した場合。
+  if(counter1 && attack2) playBattleSE("seCounter");
+  if(counter2 && attack1) playBattleSE("seCounter");
+
+  // アンチガード発動時。
+  if(antiGuard1) playBattleSE("seAntiGuard");
+  if(antiGuard2) playBattleSE("seAntiGuard");
+
+  // ランページ発動時。
+  if(rampage1) playBattleSE("seRampage");
+  if(rampage2) playBattleSE("seRampage");
+
+  // パニッシュ命中。チャージ中なら必殺技ヒット、それ以外は打撃6。
+  if(punish1 && Number(damageTo2)>0){
+    if(a2?.type==="charge") playBattleSE("seFinisher");
+    else playBattleSE("sePunish");
+  }
+  if(punish2 && Number(damageTo1)>0){
+    if(a1?.type==="charge") playBattleSE("seFinisher");
+    else playBattleSE("sePunish");
+  }
+
+  // モーメンタム命中。攻撃技同士のときは上の打撃3を優先。
+  if(momentum1 && Number(damageTo2)>0) playBattleSE("seMomentum");
+  if(momentum2 && Number(damageTo1)>0) playBattleSE("seMomentum");
+}
+
+function playBattleEffect(a1,a2,callback,damageTo1=0,damageTo2=0,isSpectator=false){
   let layer=document.getElementById("battleEffectLayer");
   if(!layer){
     layer=document.createElement("div");
@@ -3179,16 +3839,16 @@ function playBattleEffect(a1,a2,callback){
   }
   layer.innerHTML="";
 
-  const label1=document.createElement("div");
-  const label2=document.createElement("div");
-  label1.className="battleActionLabel p1";
-  label2.className="battleActionLabel p2";
-  const action1Name = a1?.name || selectedAction[1]?.data?.name || "";
-  const action2Name = a2?.name || selectedAction[2]?.data?.name || "";
-  label1.textContent="1P　"+action1Name;
-  label2.textContent="2P　"+action2Name;
-  layer.appendChild(label1);
-  layer.appendChild(label2);
+  // ダメージ数値は演出用レイヤーとは別にbattleScreenへ出す。
+  // 演出レイヤーは各演出終了時にinnerHTMLを消すため、ここへ直接置くと消える場合がある。
+  const finishEffect=()=>{
+    const damageLayer=document.getElementById("battleScreen") || layer;
+    if(Number(damageTo1)>0) createDamageNumber(damageLayer,1,Number(damageTo1));
+    if(Number(damageTo2)>0) createDamageNumber(damageLayer,2,Number(damageTo2));
+    if(Number(damageTo1)>0) flashHitPlayer(1,isSpectator);
+    if(Number(damageTo2)>0) flashHitPlayer(2,isSpectator);
+    setTimeout(()=>callback(),120);
+  };
 
   const attack1=a1.type==="attack";
   const attack2=a2.type==="attack";
@@ -3215,7 +3875,7 @@ function playBattleEffect(a1,a2,callback){
     layer.appendChild(ring);
     showImpact(layer,"RAMPAGE!","hit");
     flashScreen();
-    setTimeout(()=>{layer.innerHTML="";callback();},850);
+    setTimeout(()=>{layer.innerHTML="";finishEffect();},850);
     return;
   }
 
@@ -3223,7 +3883,7 @@ function playBattleEffect(a1,a2,callback){
   if(a1.skill==="tech8" || a2.skill==="tech8"){
     const target=a1.skill==="tech8"?"p2":"p1";
     createSealEffect(layer,target);
-    setTimeout(()=>{layer.innerHTML="";callback();},900);
+    setTimeout(()=>{layer.innerHTML="";finishEffect();},900);
     return;
   }
 
@@ -3245,7 +3905,7 @@ function playBattleEffect(a1,a2,callback){
         showImpact(layer,"REFLECT!","reflect");
       },260);
     }
-    setTimeout(()=>{layer.innerHTML="";callback();},900);
+    setTimeout(()=>{layer.innerHTML="";finishEffect();},900);
     return;
   }
 
@@ -3281,7 +3941,7 @@ function playBattleEffect(a1,a2,callback){
     }
     if((attack1&&!a1.pierce&&block2)||(attack2&&!a2.pierce&&block1)) showImpact(layer,"BLOCK!","blocked");
 
-    setTimeout(()=>{layer.innerHTML="";callback();},900);
+    setTimeout(()=>{layer.innerHTML="";finishEffect();},900);
     return;
   }
 
@@ -3290,7 +3950,7 @@ function playBattleEffect(a1,a2,callback){
     if(a1.skill==="tech4") createHealAt(layer,"p1");
     if(a2.skill==="tech4") createHealAt(layer,"p2");
     showImpact(layer,"+1 HP","heal");
-    setTimeout(()=>{layer.innerHTML="";callback();},850);
+    setTimeout(()=>{layer.innerHTML="";finishEffect();},850);
     return;
   }
 
@@ -3313,7 +3973,7 @@ function playBattleEffect(a1,a2,callback){
       };
       animateProjectile(p1,false,650,hitCenter,true);
       animateProjectile(p2,true,650,hitCenter,true);
-      setTimeout(()=>{layer.innerHTML="";callback();},950);
+      setTimeout(()=>{layer.innerHTML="";finishEffect();},950);
       return;
     }
 
@@ -3322,7 +3982,7 @@ function playBattleEffect(a1,a2,callback){
     createSlashAt(layer,"center", "#5da5ff", true);
     if(a1.skill==="tech3" || a2.skill==="tech3") createShockwave(layer,"#fff16a");
     setTimeout(()=>{showImpact(layer,"CLASH!","clash");flashScreen();},330);
-    setTimeout(()=>{layer.innerHTML="";callback();},850);
+    setTimeout(()=>{layer.innerHTML="";finishEffect();},850);
     return;
   }
 
@@ -3360,7 +4020,7 @@ function playBattleEffect(a1,a2,callback){
         },350);
       }
     }
-    setTimeout(()=>{layer.innerHTML="";callback();},1050);
+    setTimeout(()=>{layer.innerHTML="";finishEffect();},1050);
     return;
   }
 
@@ -3397,7 +4057,7 @@ function playBattleEffect(a1,a2,callback){
         },350);
       }
     }
-    setTimeout(()=>{layer.innerHTML="";callback();},1050);
+    setTimeout(()=>{layer.innerHTML="";finishEffect();},1050);
     return;
   }
 
@@ -3405,11 +4065,11 @@ function playBattleEffect(a1,a2,callback){
   if(a1.type==="charge" || a2.type==="charge"){
     if(a1.type==="charge") createChargeEffectAt(layer,"p1");
     if(a2.type==="charge") createChargeEffectAt(layer,"p2");
-    setTimeout(()=>{layer.innerHTML="";callback();},750);
+    setTimeout(()=>{layer.innerHTML="";finishEffect();},750);
     return;
   }
 
-  setTimeout(()=>{layer.innerHTML="";callback();},700);
+  setTimeout(()=>{layer.innerHTML="";finishEffect();},700);
 }
 
 function createSlashAt(layer,side,color,reverse=false){
@@ -3733,17 +4393,48 @@ function showImpact(layer,text,cls){
 
   if(cls==="hit"){
     flashScreen();
-    createDamageNumber(layer);
   }
   setTimeout(()=>impact.remove(),550);
 }
 
-function createDamageNumber(layer){
+function createDamageNumber(layer,player,damage){
+  if(!Number(damage) || Number(damage) <= 0) return;
+
+  // 演出レイヤーとは完全に分離して、画面最前面へ表示する。
+  // battleEffectLayer の innerHTML 消去や z-index の影響を受けない。
   const d=document.createElement("div");
-  d.className="battleImpact hit damageText";
-  d.textContent="IMPACT";
-  layer.appendChild(d);
-  setTimeout(()=>d.remove(),500);
+  d.className="damageNumber";
+  d.textContent=`-${damage}`;
+  d.style.position="fixed";
+  d.style.zIndex="100000";
+  d.style.pointerEvents="none";
+
+  const area=document.getElementById(`player${player}Area`);
+  if(area){
+    const r=area.getBoundingClientRect();
+    d.style.left=`${r.left + r.width / 2}px`;
+    d.style.top=`${r.top + r.height / 2}px`;
+  }else{
+    d.style.left=player===1?"15vw":"85vw";
+    d.style.top=player===1?"70vh":"20vh";
+  }
+
+  document.body.appendChild(d);
+  setTimeout(()=>d.remove(),900);
+}
+
+function flashHitPlayer(player,isSpectator=false){
+  const isOnline=(gameMode==="online");
+  if(isOnline && !isSpectator){
+    const me=window.onlineBattle?.localPlayer;
+    if(me!==player)return;
+  }
+  const screen=document.getElementById(isSpectator?"battleScreen":"battleScreen");
+  if(!screen)return;
+  screen.classList.remove("hitBrightness");
+  void screen.offsetWidth;
+  screen.classList.add("hitBrightness");
+  setTimeout(()=>screen.classList.remove("hitBrightness"),230);
 }
 
 /* =========================
@@ -3751,6 +4442,8 @@ function createDamageNumber(layer){
 ========================= */
 
 function showBattleResult(text){
+  stopBattleBGM();
+
   const el=document.getElementById("resultMessage");
   el.className="";
   el.textContent=text;
@@ -3843,12 +4536,85 @@ function updateDisabledActions(){
 
 
 /* =========================
+   バトルBGM
+========================= */
+
+function startBattleBGM(){
+  const audio=document.getElementById("battleBGM");
+  if(!audio)return;
+
+  audio.loop=true;
+  audio.volume=0.55;
+
+  // すでに再生中なら頭出しせず、そのまま続ける
+  if(!audio.paused)return;
+
+  const promise=audio.play();
+  if(promise && typeof promise.catch==="function"){
+    promise.catch(()=>{
+      // ブラウザの自動再生制限時は、次のユーザー操作で再試行する
+    });
+  }
+}
+
+function stopBattleBGM(){
+  const audio=document.getElementById("battleBGM");
+  if(!audio)return;
+
+  audio.pause();
+  audio.currentTime=0;
+}
+
+// バトル画面以外では停止、バトル画面に入ったら再生
+function syncBattleBGM(screenId){
+  if(screenId==="battleScreen"){
+    startBattleBGM();
+  }else{
+    stopBattleBGM();
+  }
+}
+
+// 自動再生がブロックされた場合、次のユーザー操作で再試行
+document.addEventListener("pointerdown",()=>{
+  if(document.getElementById("battleScreen")?.classList.contains("active")){
+    startBattleBGM();
+  }
+},{passive:true});
+
+document.addEventListener("keydown",()=>{
+  if(document.getElementById("battleScreen")?.classList.contains("active")){
+    startBattleBGM();
+  }
+});
+
+
+
+/* =========================
    初期化
 ========================= */
 
 updateTechniqueDisplay();
 
 </script>
+
+
+<!-- バトル中BGM：Reflect.mp3 -->
+<audio id="battleBGM" preload="auto" loop>
+  <source src="sounds/Reflect.mp3" type="audio/mpeg">
+</audio>
+
+<!-- バトルSE -->
+<div id="battleSEAudio" style="display:none">
+  <audio id="seBleach" preload="auto" src="sounds/se_bleach.mp3"></audio>
+  <audio id="seShieldBreak" preload="auto" src="sounds/se_shield_break.mp3"></audio>
+  <audio id="seCounter" preload="auto" src="sounds/se_counter.mp3"></audio>
+  <audio id="seAntiGuard" preload="auto" src="sounds/se_antiguard.mp3"></audio>
+  <audio id="seMomentum" preload="auto" src="sounds/se_momentum.mp3"></audio>
+  <audio id="seRampage" preload="auto" src="sounds/se_rampage.mp3"></audio>
+  <audio id="sePunish" preload="auto" src="sounds/se_punish.mp3"></audio>
+  <audio id="seFinisher" preload="auto" src="sounds/se_finisher.mp3"></audio>
+  <audio id="seAttackClash" preload="auto" src="sounds/se_attack_clash.mp3"></audio>
+</div>
 
 </body>
 </html>
