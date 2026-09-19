@@ -1368,6 +1368,9 @@ body{
     -webkit-tap-highlight-color:transparent;
     user-select:none;
     -webkit-user-select:none;
+    cursor:pointer;
+    position:relative;
+    z-index:11;
   }
   .actionName{font-size:10px;}
   .actionKey{font-size:9px;}
@@ -2124,6 +2127,12 @@ let locked = {
 };
 
 let countdownTimer = null;
+
+// 「10秒終了」のsetTimeoutが残ったまま3秒カウントと競合しないようにする
+let countdownFinishTimeout = null;
+
+// 1ターンを二重処理しないためのロック
+let turnResolving = false;
 
 let countdown = 3;
 
@@ -3129,6 +3138,12 @@ function setupActionNames(){
 
 function startTurn(){
 
+  // 前ターンに残っていたタイマーを完全に破棄
+  clearInterval(countdownTimer);
+  countdownTimer = null;
+  clearTimeout(countdownFinishTimeout);
+  countdownFinishTimeout = null;
+
   onlineCountdownStarted = false;
   onlineTurnStartedAt = Date.now();
   if(gameMode === "online" && onlineTurnNumber === 0) onlineTurnNumber = 1;
@@ -3138,6 +3153,9 @@ function startTurn(){
 
   locked[1] = false;
   locked[2] = false;
+
+  // 新しいターンなので二重処理ロックを解除
+  turnResolving = false;
 
   document.getElementById("player1Area").classList.remove("locked");
   document.getElementById("player2Area").classList.remove("locked");
@@ -3151,8 +3169,6 @@ function startTurn(){
   const el = document.getElementById("countdown");
   el.className = "countPulse";
   el.textContent = "10";
-
-  clearInterval(countdownTimer);
 
   countdownTimer = setInterval(()=>{
     countdown--;
@@ -3168,12 +3184,16 @@ function startTurn(){
     if(countdown === 0){
       el.className = "battleCall";
       el.textContent = "BATTLE!";
-      setTimeout(()=>{
+
+      clearTimeout(countdownFinishTimeout);
+      countdownFinishTimeout = setTimeout(()=>{
+        countdownFinishTimeout = null;
         if(countdown === 0) finishTurn();
       },500);
     }
 
     clearInterval(countdownTimer);
+    countdownTimer = null;
   },1000);
 }
 
@@ -3246,34 +3266,83 @@ document.addEventListener(
    マウス・タップ操作
 ========================= */
 
+// スマホではclickだけだと機種・ブラウザによって反応が遅れたり
+// 取りこぼしたりすることがあるため、pointerupでも直接処理する。
+// pointerupの後に発生するclickとの二重処理は抑止する。
+let lastActionPointerTarget = null;
+let lastActionPointerTime = 0;
+
+function handleActionPointer(event){
+
+  const actionElement =
+    event.target.closest(".action");
+
+  if(!actionElement){
+    return;
+  }
+
+  // バトル画面の行動ボタン以外は無視
+  if(!actionElement.closest("#battleScreen")){
+    return;
+  }
+
+  const player =
+    Number(actionElement.dataset.player);
+
+  const action =
+    actionElement.dataset.action;
+
+  if(!player || !action){
+    return;
+  }
+
+  lastActionPointerTarget = actionElement;
+  lastActionPointerTime = Date.now();
+
+  chooseAction(player, action);
+}
+
+// スマホ・タブレット・ペン・マウスを含むPointer Events
+document.addEventListener(
+  "pointerup",
+  handleActionPointer,
+  {passive:true}
+);
+
+// PCのclickにも対応。
+// pointerup直後の同じclickだけは二重処理しない。
 document.addEventListener(
   "click",
   event => {
 
     const actionElement =
-      event.target.closest(
-        ".action"
-      );
+      event.target.closest(".action");
 
     if(!actionElement){
       return;
     }
 
+    if(!actionElement.closest("#battleScreen")){
+      return;
+    }
+
+    const now = Date.now();
+
+    if(
+      actionElement === lastActionPointerTarget &&
+      now - lastActionPointerTime < 800
+    ){
+      return;
+    }
+
     const player =
-      Number(
-        actionElement.dataset.player
-      );
+      Number(actionElement.dataset.player);
 
     const action =
       actionElement.dataset.action;
 
     if(player && action){
-
-      chooseAction(
-        player,
-        action
-      );
-
+      chooseAction(player, action);
     }
 
   }
@@ -3391,7 +3460,12 @@ function chooseAction(player,action){
 
   // 両者が決定したら、残り時間を待たず3秒カウントへ移行
   if(selectedAction[1] && selectedAction[2]){
+    // 10秒カウント側にすでに作られたfinishTurn予約も必ず消す。
     clearInterval(countdownTimer);
+    countdownTimer = null;
+    clearTimeout(countdownFinishTimeout);
+    countdownFinishTimeout = null;
+
     countdown = 3;
     const el = document.getElementById("countdown");
     if(el){
@@ -3419,7 +3493,9 @@ function chooseAction(player,action){
         el.textContent = "BATTLE!";
       }
       // オフライン：3 → 2 → 1 → BATTLE! → 技名だけ公開 → 1秒 → 演出 → ダメージ数値
-      setTimeout(()=>{
+      clearTimeout(countdownFinishTimeout);
+      countdownFinishTimeout = setTimeout(()=>{
+        countdownFinishTimeout = null;
         if(countdown === 0 && selectedAction[1] && selectedAction[2]) finishTurn();
       },300);
     },1000);
@@ -3471,6 +3547,10 @@ function getActionData(player,action){
 ========================= */
 
 function finishTurn(){
+  // 同じターンのfinishTurn()が複数のタイマーから呼ばれても1回だけ処理する
+  if(turnResolving) return;
+  turnResolving = true;
+
   if(gameMode === "online"){
     const me=window.onlineBattle.localPlayer;
     if(!selectedAction[me]){
@@ -3480,8 +3560,14 @@ function finishTurn(){
       if(area) area.classList.add("locked");
       window.onlineBattle.sendAction("charge",onlineTurnNumber).catch(console.error);
     }
-    if(!selectedAction[1] || !selectedAction[2]) return;
-    if(me!==1) return;
+    if(!selectedAction[1] || !selectedAction[2]){
+      turnResolving = false;
+      return;
+    }
+    if(me!==1){
+      turnResolving = false;
+      return;
+    }
     if(window._resolvingOnlineTurn===onlineTurnNumber) return;
     window._resolvingOnlineTurn=onlineTurnNumber;
     resolveBattle();
