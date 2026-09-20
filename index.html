@@ -2452,7 +2452,7 @@ function receiveSpectatorBattleState(state,roomData){
       if(state.blockSeal){
         blockSeal={1:Boolean(state.blockSeal[1]),2:Boolean(state.blockSeal[2])};
       }
-      const effectStartAt=Number(state.effectStartAt || (Date.now()+1000));
+      const effectStartAt=Number(state.effectStartAt || (Date.now()+2000));
       clearTimeout(window._spectatorEffectStartTimer);
       window._spectatorEffectStartTimer=setTimeout(()=>{
         if(!spectatorActive)return;
@@ -2899,7 +2899,7 @@ function receiveOnlineBattleState(state){
     applyOnlineBlockSealState(state.blockSeal);
     showTechniqueReveal(a1.data,a2.data);
 
-    const effectStartAt=Number(state.effectStartAt || (Date.now()+1000));
+    const effectStartAt=Number(state.effectStartAt || (Date.now()+2000));
     clearTimeout(window._onlineEffectStartTimeout);
     window._onlineEffectStartTimeout=setTimeout(()=>{
       if(gameMode!=="online" || Number(onlineTurnNumber)!==Number(state.turn))return;
@@ -3892,7 +3892,7 @@ function resolveBattle(){
   // オンラインはFirebaseへ「技公開時点＋1秒」の絶対時刻を送る。
   showTechniqueReveal(a1,a2);
   const onlineEffectTurn = gameMode === "online" ? onlineTurnNumber : 0;
-  const effectStartAt = Date.now() + 1000;
+  const effectStartAt = Date.now() + 2000;
   const effectHp = {
     1:Math.max(0, Number(hp[1]) - Number(damageTo1 || 0)),
     2:Math.max(0, Number(hp[2]) - Number(damageTo2 || 0))
