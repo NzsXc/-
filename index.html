@@ -1044,6 +1044,48 @@ body{
   pointer-events:none;
 }
 
+#countdownRing{
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:55vw;
+  height:55vw;
+  max-width:700px;
+  max-height:700px;
+  transform:translate(-50%,-50%) rotate(0deg);
+  border-radius:50%;
+  background:conic-gradient(
+    from 0deg,
+    rgba(255,255,255,.95) 0deg 36deg,
+    transparent 36deg 360deg
+  );
+  -webkit-mask:radial-gradient(
+    farthest-side,
+    transparent calc(100% - 4px),
+    #000 calc(100% - 4px)
+  );
+  mask:radial-gradient(
+    farthest-side,
+    transparent calc(100% - 4px),
+    #000 calc(100% - 4px)
+  );
+  opacity:0;
+  --ring-angle:0deg;
+  transform:translate(-50%,-50%) rotate(var(--ring-angle));
+  pointer-events:none;
+  z-index:2;
+  filter:drop-shadow(0 0 5px rgba(255,255,255,.8)) drop-shadow(0 0 12px rgba(255,255,255,.35));
+}
+
+#countdownRing.active{
+  opacity:1;
+}
+
+/* 10秒を10段階で進む。滑らかに回転させず、1秒ごとに36度ずつ進む。 */
+#countdownRing.step{
+  transform:translate(-50%,-50%) rotate(var(--ring-angle));
+}
+
 .playerArea{
   width:300px;
   padding:12px;
@@ -1079,10 +1121,42 @@ body{
   background:#090b10;
   box-shadow:inset 0 2px 5px rgba(0,0,0,.6);
 }
+.statusTitle{
+  font-size:13px;
+  font-weight:700;
+  line-height:1;
+  margin-bottom:4px;
+  color:#e8e8ef;
+}
+
+.statusBarRow{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  width:100%;
+  margin-bottom:8px;
+}
+
+.statusBarRow .hpBar,
+.statusBarRow .gaugeBar{
+  flex:1;
+  min-width:0;
+  margin-bottom:0;
+}
+
+.statusValue{
+  flex:0 0 46px;
+  text-align:right;
+  font-size:17px;
+  font-weight:800;
+  letter-spacing:.5px;
+  color:#fff;
+}
+
 .hpFill{
-  background:linear-gradient(90deg,#ff263f,#ff6875,#ff263f);
+  background:linear-gradient(90deg,#19a85b,#62e88a,#19a85b);
   background-size:200% 100%;
-  box-shadow:0 0 12px rgba(255,50,70,.65);
+  box-shadow:0 0 12px rgba(50,220,110,.55);
   transition:width .35s cubic-bezier(.2,.8,.2,1);
   animation:hpFlow 2s linear infinite;
 }
@@ -1574,44 +1648,35 @@ body{
         1P
       </div>
 
-      <div>
-        HP
-        <span id="hp1Text">
-          10
-        </span>
-      </div>
-
     </div>
 
 
-    <div class="hpBar">
+    <div class="statusTitle">HP</div>
 
-      <div
-        id="hp1Fill"
-        class="hpFill">
+    <div class="statusBarRow">
+      <div class="hpBar">
+        <div
+          id="hp1Fill"
+          class="hpFill">
+        </div>
       </div>
 
+      <div id="hp1Text" class="statusValue">10/10</div>
     </div>
 
 
-    <div class="gaugeText">
+    <div class="statusTitle">ゲージ</div>
 
-      ゲージ
-      <span id="gauge1Text">
-        0
-      </span>
-      / 10
+    <div class="statusBarRow">
+      <div class="gaugeBar">
 
-    </div>
-
-
-    <div class="gaugeBar">
-
-      <div
-        id="gauge1Fill"
-        class="gaugeFill">
+        <div
+          id="gauge1Fill"
+          class="gaugeFill">
+        </div>
       </div>
 
+      <div id="gauge1Text" class="statusValue">0/10</div>
     </div>
 
 
@@ -1724,6 +1789,8 @@ body{
 
   <!-- 中央 -->
 
+  <div id="countdownRing" aria-hidden="true"></div>
+
   <div id="battleCenter">
 
     <div id="countdown">
@@ -1749,44 +1816,35 @@ body{
         2P
       </div>
 
-      <div>
-        HP
-        <span id="hp2Text">
-          10
-        </span>
-      </div>
-
     </div>
 
 
-    <div class="hpBar">
+    <div class="statusTitle">HP</div>
 
-      <div
-        id="hp2Fill"
-        class="hpFill">
+    <div class="statusBarRow">
+      <div class="hpBar">
+        <div
+          id="hp2Fill"
+          class="hpFill">
+        </div>
       </div>
 
+      <div id="hp2Text" class="statusValue">10/10</div>
     </div>
 
 
-    <div class="gaugeText">
+    <div class="statusTitle">ゲージ</div>
 
-      ゲージ
-      <span id="gauge2Text">
-        0
-      </span>
-      / 10
+    <div class="statusBarRow">
+      <div class="gaugeBar">
 
-    </div>
-
-
-    <div class="gaugeBar">
-
-      <div
-        id="gauge2Fill"
-        class="gaugeFill">
+        <div
+          id="gauge2Fill"
+          class="gaugeFill">
+        </div>
       </div>
 
+      <div id="gauge2Text" class="statusValue">0/10</div>
     </div>
 
 
@@ -2147,7 +2205,9 @@ const basicActions = {
     name:"チャージ",
     power:0,
     cost:0,
-    type:"charge"
+    type:"charge",
+    description:
+      "ゲージ+2"
   },
 
   attack:{
@@ -2155,14 +2215,18 @@ const basicActions = {
     power:1,
     cost:1,
     type:"attack",
-    pierce:false
+    pierce:false,
+    description:
+      "ゲージ1消費 / 1ダメージ"
   },
 
   block:{
     name:"ブロック",
     power:0,
     cost:0,
-    type:"block"
+    type:"block",
+    description:
+      "ブロック状態になる"
   }
 
 };
@@ -2193,7 +2257,7 @@ const techniquePool = [
     type:"reflect",
     skill:"tech2",
     description:
-      "ゲージ2消費 / 相手が攻撃していた場合、その攻撃ダメージをすべて相手に返す"
+      "ゲージ2消費 / 相手の攻撃ダメージをすべて相手に返す"
   },
 
   {
@@ -2204,23 +2268,23 @@ const techniquePool = [
     type:"attack",
     skill:"tech3",
     description:
-      "ゲージ5消費 / 2ダメージ / 相手がチャージ中なら追加2ダメージ"
+      "ゲージ5消費 / 2ダメージ / チャージ中の敵には追加で2ダメージ"
   },
 
   {
     name:"ヒール",
-    cost:3,
+    cost:2,
     power:0,
     pierce:false,
     type:"heal",
     skill:"tech4",
     description:
-      "ゲージ3消費 / 自分のHPを1回復"
+      "ゲージ2消費 / 自分のHPを1回復"
   },
 
   {name:"フォーサイト",cost:1,power:0,pierce:false,type:"block",skill:"tech5",description:"ゲージ1消費 / ブロック状態 / 相手がチャージならゲージ+3"},
   {name:"モーメンタム",cost:2,power:1,pierce:false,type:"attack",skill:"tech6",description:"ゲージ2消費 / 1ダメージ / 前のターンも技6なら2ダメージ"},
-  {name:"ランページ",cost:0,power:0,pierce:false,type:"special",skill:"tech7",description:"前のターンにチャージしていた場合のみ / ゲージ+8 / HP-3"},
+  {name:"ランページ",cost:0,power:0,pierce:false,type:"special",skill:"tech7",description:"前のターンにチャージしていた場合のみ / ゲージ+8 / HP-2"},
   {name:"アンチガード",cost:0,power:0,pierce:false,type:"seal",skill:"tech8",description:"相手のゲージが7未満のとき使用可能 / 相手のブロック系技を封印"}
 
 ];
@@ -2616,6 +2680,8 @@ let onlineCountdownStarted = false;
 let onlineBattleStarted = false;
 let receivingOnlineAction = false;
 let onlineTechConfirmed = false;
+// オンラインの技は1タップ目を説明表示、同じ技の2タップ目で確定。
+let onlineTechniquePreviewId = null;
 
 function receiveOnlineTechniques(player, indices){
 
@@ -2762,6 +2828,9 @@ function startOnlineBattleCountdownIfReady(){
   // P1だけが共通の開始時刻をFirebaseへ発行する。
   if(window.onlineBattle.localPlayer !== 1) return;
 
+  stopCountdownRing();
+  stopTurnCountdownSE();
+
   const startAt = Date.now() + 3000;
   const battle = {
     phase: "countdown",
@@ -2802,6 +2871,21 @@ function receiveOnlineBattleState(state){
     return;
   }
 
+  // Firebaseから届く古いblockSeal状態で封印が勝手に復活/解除されないようにする。
+  // trueは即時反映、falseは「封印された本人のゲージが7以上」の場合だけ解除する。
+  function applyOnlineBlockSealState(nextSeal){
+    if(!nextSeal)return;
+    for(const side of [1,2]){
+      if(nextSeal[side] === true){
+        blockSeal[side] = true;
+      }else if(nextSeal[side] === false){
+        if(Number(gauge[side] || 0) >= 7){
+          blockSeal[side] = false;
+        }
+      }
+    }
+  }
+
   // オンライン演出：1P/2Pとも同じ技公開時刻・演出開始時刻を使う。
   if(state.phase === "effect" && Number(state.resolvedTurn || 0) > 0){
     const effectTurn = Number(state.resolvedTurn);
@@ -2812,7 +2896,7 @@ function receiveOnlineBattleState(state){
     const a2 = state.actions?.[2];
     if(!a1?.data || !a2?.data) return;
 
-    blockSeal = state.blockSeal || blockSeal;
+    applyOnlineBlockSealState(state.blockSeal);
     showTechniqueReveal(a1.data,a2.data);
 
     const effectStartAt=Number(state.effectStartAt || (Date.now()+1000));
@@ -2852,7 +2936,7 @@ function receiveOnlineBattleState(state){
       lastAction=state.lastAction||{1:null,2:null};
       lastLastAction=state.lastLastAction||{1:null,2:null};
       momentumBonus=state.momentumBonus||{1:false,2:false};
-      blockSeal=state.blockSeal||{1:false,2:false};
+      applyOnlineBlockSealState(state.blockSeal);
       setupBattleFromOnlineState(state);
       return;
     }
@@ -3133,6 +3217,50 @@ function setupActionNames(){
 
 
 /* =========================
+   10秒行動選択の演出
+========================= */
+
+function setCountdownRingStep(step){
+  const ring=document.getElementById("countdownRing");
+  if(!ring)return;
+  const safeStep=Math.max(0,Math.min(9,Number(step)||0));
+  ring.style.setProperty("--ring-angle",(safeStep*36)+"deg");
+}
+
+function startCountdownRing(){
+  const ring=document.getElementById("countdownRing");
+  if(!ring)return;
+  ring.classList.remove("active");
+  ring.classList.remove("step");
+  setCountdownRingStep(0);
+  void ring.offsetWidth;
+  ring.classList.add("active","step");
+}
+
+function stopCountdownRing(){
+  const ring=document.getElementById("countdownRing");
+  if(!ring)return;
+  ring.classList.remove("active","step");
+}
+
+function startTurnCountdownSE(){
+  const audio=document.getElementById("turnCountdownSE");
+  if(!audio)return;
+  audio.loop=true;
+  audio.volume=0.28;
+  if(!audio.paused)return;
+  const promise=audio.play();
+  if(promise && typeof promise.catch==="function") promise.catch(()=>{});
+}
+
+function stopTurnCountdownSE(){
+  const audio=document.getElementById("turnCountdownSE");
+  if(!audio)return;
+  audio.pause();
+  audio.currentTime=0;
+}
+
+/* =========================
    ターン開始
 ========================= */
 
@@ -3150,6 +3278,7 @@ function startTurn(){
 
   selectedAction[1] = null;
   selectedAction[2] = null;
+  onlineTechniquePreviewId = null;
 
   locked[1] = false;
   locked[2] = false;
@@ -3170,6 +3299,9 @@ function startTurn(){
   el.className = "countPulse";
   el.textContent = "10";
 
+  startCountdownRing();
+  startTurnCountdownSE();
+
   countdownTimer = setInterval(()=>{
     countdown--;
 
@@ -3178,10 +3310,13 @@ function startTurn(){
       void el.offsetWidth;
       el.className = "countPulse";
       el.textContent = countdown;
+      setCountdownRingStep(10 - countdown);
       return;
     }
 
     if(countdown === 0){
+      stopCountdownRing();
+      stopTurnCountdownSE();
       el.className = "battleCall";
       el.textContent = "BATTLE!";
 
@@ -3299,6 +3434,8 @@ function handleActionPointer(event){
   lastActionPointerTarget = actionElement;
   lastActionPointerTime = Date.now();
 
+  // 技選択中に行動ボタンが押されたら決定ボタン38を鳴らす。
+  playBattleSE("seDecision38");
   chooseAction(player, action);
 }
 
@@ -3349,8 +3486,15 @@ document.addEventListener(
 );
 
 
+function showOnlineTechniqueDescription(data){
+  const el=document.getElementById("onlineTechniqueDescription");
+  if(!el || !data)return;
+  el.textContent=`${data.name || "選択した技"}：${data.description || ""}`;
+  el.style.display="block";
+}
+
 function updateOnlineTechniqueDescription(){
-  // 選択中の自分の技説明（オンラインの選択中UI）
+  // 確定後に呼ばれた場合も、確定した技の説明を表示する。
   const el=document.getElementById("onlineTechniqueDescription");
   if(!el)return;
   if(gameMode!=="online" || !selectedAction[window.onlineBattle?.localPlayer]){
@@ -3365,11 +3509,13 @@ function updateOnlineTechniqueDescription(){
     el.textContent="";
     return;
   }
-  el.textContent=`${data.name || "選択した技"}：${data.description || ""}`;
-  el.style.display="block";
+  showOnlineTechniqueDescription(data);
 }
 
 function showTechniqueReveal(a1,a2){
+  // カウントダウン終了後、技名を表示する瞬間にデータ解析SEを鳴らす。
+  playBattleSE("seDataAnalysis");
+
   // BATTLE!後は、技演出で元々使っていた「battleActionLabel」を
   // 1秒間だけ先に表示する。説明文は表示しない。
   const descEl=document.getElementById("onlineTechniqueDescription");
@@ -3439,7 +3585,22 @@ function chooseAction(player,action){
     if(gauge[opponent] >= 7)return;
   }
 
+  // ゲージMAX（10）のときはチャージ不可
+  if(action === "charge" && gauge[player] >= 10)return;
+
   if(data.cost>gauge[player])return;
+
+  // オンラインのみ：技は1タップ目で説明表示、同じ技の2タップ目で確定。
+  if(gameMode === "online" && data.skill){
+    if(onlineTechniquePreviewId !== action){
+      onlineTechniquePreviewId = action;
+      showOnlineTechniqueDescription(data);
+      return;
+    }
+    onlineTechniquePreviewId = null;
+  }else if(gameMode === "online"){
+    onlineTechniquePreviewId = null;
+  }
 
   selectedAction[player]={id:action,data:data};
   locked[player]=true;
@@ -3454,6 +3615,10 @@ function chooseAction(player,action){
 
   // オンラインはFirebase経由で両者の行動が揃ったら開始
   if(gameMode === "online"){
+    if(selectedAction[1] && selectedAction[2]){
+      stopCountdownRing();
+      stopTurnCountdownSE();
+    }
     startOnlineBattleCountdownIfReady();
     return;
   }
@@ -3465,6 +3630,8 @@ function chooseAction(player,action){
     countdownTimer = null;
     clearTimeout(countdownFinishTimeout);
     countdownFinishTimeout = null;
+    stopCountdownRing();
+    stopTurnCountdownSE();
 
     countdown = 3;
     const el = document.getElementById("countdown");
@@ -3547,6 +3714,10 @@ function getActionData(player,action){
 ========================= */
 
 function finishTurn(){
+  // 10秒行動選択の演出は、ターン確定時に必ず停止。
+  stopCountdownRing();
+  stopTurnCountdownSE();
+
   // 同じターンのfinishTurn()が複数のタイマーから呼ばれても1回だけ処理する
   if(turnResolving) return;
   turnResolving = true;
@@ -3599,6 +3770,14 @@ function resolveBattle(){
   let damageTo1 = 0;
   let damageTo2 = 0;
 
+  // このターンの技選択直後のゲージを保存。
+  // アンチガードの使用条件は「相手が技を選んだ時点」で判定するため、
+  // ヒール等でゲージを消費した後の値を使ってはいけない。
+  const gaugeBeforeCost = {
+    1:Number(gauge[1] || 0),
+    2:Number(gauge[2] || 0)
+  };
+
   // 先に技のコストを消費
   gauge[1] = Math.max(0, gauge[1] - Number(a1.cost || 0));
   gauge[2] = Math.max(0, gauge[2] - Number(a2.cost || 0));
@@ -3609,10 +3788,10 @@ function resolveBattle(){
   const reflect2 = a2.type === "reflect";
 
   // 技8：アンチガードの封印判定は「技を選んだ時点の相手ゲージ」で決まる。
-  // chooseAction() ですでに7以上なら選択できないため、ここでも同じ条件で封印する。
+  // コスト消費後のゲージでは判定しない。
   // 重要：block1 / block2 を計算する“前”に封印状態を反映する。
-  if(a1.skill === "tech8" && gauge[2] < 7) blockSeal[2] = true;
-  if(a2.skill === "tech8" && gauge[1] < 7) blockSeal[1] = true;
+  if(a1.skill === "tech8" && gaugeBeforeCost[2] < 7) blockSeal[2] = true;
+  if(a2.skill === "tech8" && gaugeBeforeCost[1] < 7) blockSeal[1] = true;
 
   const block1 = a1.type === "block" && !blockSeal[1];
   const block2 = a2.type === "block" && !blockSeal[2];
@@ -3697,15 +3876,17 @@ function resolveBattle(){
   }
 
   // ランページの自傷ダメージも表示対象にする。
-  if(a1.skill === "tech7") damageTo1 += 3;
-  if(a2.skill === "tech7") damageTo2 += 3;
+  if(a1.skill === "tech7") damageTo1 += 2;
+  if(a2.skill === "tech7") damageTo2 += 2;
 
-  // このターンの処理で相手ゲージが7以上になった場合だけ解除する。
-  // 7未満なら、既存の封印状態をそのまま維持する。
-  if(blockSeal[2] && gauge[1] >= 7){
+  // アンチガードの封印解除は「封印されている本人」のゲージだけを見る。
+  // 1Pが2Pを封印 → 2P自身のゲージが7以上で解除。
+  // 2Pが1Pを封印 → 1P自身のゲージが7以上で解除。
+  // 攻撃側のゲージでは解除しない。
+  if(blockSeal[2] && Number(gauge[2]) >= 7){
     blockSeal[2] = false;
   }
-  if(blockSeal[1] && gauge[2] >= 7){
+  if(blockSeal[1] && Number(gauge[1]) >= 7){
     blockSeal[1] = false;
   }
 
@@ -3809,7 +3990,8 @@ function unlockBattleSE(){
   if(battleSEUnlocked)return;
   const ids=[
     "seBleach","seShieldBreak","seCounter","seAntiGuard",
-    "seMomentum","seRampage","sePunish","seFinisher","seAttackClash"
+    "seMomentum","seRampage","sePunish","seFinisher","seAttackClash",
+    "seDecision33","seDecision10","seDecision38","seDataAnalysis"
   ];
 
   ids.forEach(id=>{
@@ -3817,6 +3999,7 @@ function unlockBattleSE(){
     if(!el)return;
     try{
       el.muted=true;
+      el.volume=0;
       el.currentTime=0;
       const p=el.play();
       if(p && typeof p.then === "function"){
@@ -3824,16 +4007,24 @@ function unlockBattleSE(){
           el.pause();
           el.currentTime=0;
           el.muted=false;
+          el.volume=0.75;
         }).catch(()=>{
+          el.pause();
+          el.currentTime=0;
           el.muted=false;
+          el.volume=0.75;
         });
       }else{
         el.pause();
         el.currentTime=0;
         el.muted=false;
+        el.volume=0.75;
       }
     }catch(e){
+      el.pause();
+      el.currentTime=0;
       el.muted=false;
+      el.volume=0.75;
     }
   });
 
@@ -3848,6 +4039,7 @@ function playBattleSE(id){
   if(!el)return;
   try{
     el.muted=false;
+    el.volume=0.75;
     el.currentTime=0;
     const p=el.play();
     if(p && typeof p.catch === "function") p.catch(err=>console.warn("SE再生失敗:",id,err));
@@ -3860,6 +4052,14 @@ function playBattleSE(id){
 function playBattleSituationSE(a1,a2,damageTo1=0,damageTo2=0){
   const attack1=a1?.type==="attack";
   const attack2=a2?.type==="attack";
+  const normalAttack1=attack1 && !a1?.skill;
+  const normalAttack2=attack2 && !a2?.skill;
+  const charge1=a1?.type==="charge";
+  const charge2=a2?.type==="charge";
+  const normalBlock1=a1?.type==="block" && !a1?.skill;
+  const normalBlock2=a2?.type==="block" && !a2?.skill;
+  const foresight1=a1?.skill==="tech5";
+  const foresight2=a2?.skill==="tech5";
   const breach1=a1?.skill==="tech1";
   const breach2=a2?.skill==="tech1";
   const counter1=a1?.skill==="tech2";
@@ -3878,6 +4078,16 @@ function playBattleSituationSE(a1,a2,damageTo1=0,damageTo2=0){
     playBattleSE("seAttackClash");
     return;
   }
+
+  // 通常アタック、チャージ、ブロック、先読みの選択SE。
+  if(normalAttack1) playBattleSE("seBleach");
+  if(normalAttack2) playBattleSE("seBleach");
+  if(charge1) playBattleSE("seDecision33");
+  if(charge2) playBattleSE("seDecision33");
+  if(normalBlock1) playBattleSE("seDecision10");
+  if(normalBlock2) playBattleSE("seDecision10");
+  if(foresight1) playBattleSE("seDecision10");
+  if(foresight2) playBattleSE("seDecision10");
 
   // ブリーチが実際にダメージを与えた＝命中。
   if(breach1 && Number(damageTo2)>0) playBattleSE("seBleach");
@@ -3942,6 +4152,64 @@ function playBattleEffect(a1,a2,callback,damageTo1=0,damageTo2=0,isSpectator=fal
   const block2=a2.type==="block"&&!blockSeal[2];
   const ranged1=a1.skill==="tech6";
   const ranged2=a2.skill==="tech6";
+
+  // ===== 複数行動の同時演出 =====
+  // 攻撃＋ヒール、攻撃＋アンチガードなどで、専用演出のreturnが
+  // もう片方の演出を消してしまわないよう、同じレイヤーへ重ねて再生する。
+  const heal1 = a1.skill==="tech4";
+  const heal2 = a2.skill==="tech4";
+  const seal1 = a1.skill==="tech8";
+  const seal2 = a2.skill==="tech8";
+
+  if((heal1 || heal2 || seal1 || seal2) && (attack1 || attack2)){
+    if(heal1) createHealAt(layer,"p1");
+    if(heal2) createHealAt(layer,"p2");
+    if(seal1) createSealEffect(layer,"p2");
+    if(seal2) createSealEffect(layer,"p1");
+
+    if(attack1){
+      if(ranged1){
+        const projectile=document.createElement("div");
+        projectile.className="battleProjectile p1 momentumProjectile";
+        layer.appendChild(projectile);
+        animateProjectile(projectile,false,720,()=>{
+          projectile.remove();
+          showImpact(layer,"HIT!","hit");
+          createShockwave(layer,"#ffcf4d");
+          flashScreen();
+        },false);
+      }else{
+        createSlashAt(layer,a2.type==="charge"?"p2":"center","#ff5266");
+        setTimeout(()=>{
+          showImpact(layer,"HIT!","hit");
+          flashScreen();
+        },350);
+      }
+    }
+
+    if(attack2){
+      if(ranged2){
+        const projectile=document.createElement("div");
+        projectile.className="battleProjectile p2 momentumProjectile";
+        layer.appendChild(projectile);
+        animateProjectile(projectile,true,720,()=>{
+          projectile.remove();
+          showImpact(layer,"HIT!","hit");
+          createShockwave(layer,"#ffcf4d");
+          flashScreen();
+        },false);
+      }else{
+        createSlashAt(layer,a1.type==="charge"?"p1":"center","#5da5ff");
+        setTimeout(()=>{
+          showImpact(layer,"HIT!","hit");
+          flashScreen();
+        },350);
+      }
+    }
+
+    setTimeout(()=>{layer.innerHTML="";finishEffect();},1050);
+    return;
+  }
 
   // ===== 技7 ランページ：赤黒の暴走演出 =====
   if(a1.skill==="tech7" || a2.skill==="tech7"){
@@ -4554,7 +4822,7 @@ function updateBattleUI(){
     const gaugeText=document.getElementById("gauge"+player+"Text");
     const gaugeFill=document.getElementById("gauge"+player+"Fill");
 
-    hpText.textContent=hp[player];
+    hpText.textContent=hp[player]+"/10";
     hpFill.style.width=(hp[player]*10)+"%";
 
     if(hp[player] < displayedHp[player]){
@@ -4566,7 +4834,7 @@ function updateBattleUI(){
       hpText.classList.add("hpDamage");
     }
 
-    gaugeText.textContent=gauge[player];
+    gaugeText.textContent=gauge[player]+"/10";
     gaugeFill.style.width=(gauge[player]*10)+"%";
     gaugeFill.classList.toggle("gaugeReady",gauge[player]>=7);
     gaugeFill.classList.toggle("gaugeMax",gauge[player]>=10);
@@ -4604,6 +4872,15 @@ function updateDisabledActions(){
       el.classList.toggle("disabled",disabled);
     });
 
+    // ゲージMAX（10）のときは通常チャージも暗くする
+    const chargeEl = document.querySelector(
+      `#player${player}Area [data-action="charge"]`
+    );
+
+    if(chargeEl){
+      chargeEl.classList.toggle("disabled", gauge[player] >= 10);
+    }
+
     // 通常ブロックの連続使用を禁止
     const blockEl = document.querySelector(
       `#player${player}Area [data-action="block"]`
@@ -4630,7 +4907,7 @@ function startBattleBGM(){
   if(!audio)return;
 
   audio.loop=true;
-  audio.volume=0.55;
+  audio.volume=0.40;
 
   // すでに再生中なら頭出しせず、そのまま続ける
   if(!audio.paused)return;
@@ -4700,6 +4977,11 @@ updateTechniqueDisplay();
   <audio id="sePunish" preload="auto" src="sounds/se_punish.mp3"></audio>
   <audio id="seFinisher" preload="auto" src="sounds/se_finisher.mp3"></audio>
   <audio id="seAttackClash" preload="auto" src="sounds/se_attack_clash.mp3"></audio>
+  <audio id="seDecision33" preload="auto" src="sounds/decision33.mp3"></audio>
+  <audio id="seDecision10" preload="auto" src="sounds/decision10.mp3"></audio>
+  <audio id="seDecision38" preload="auto" src="sounds/decision38.mp3"></audio>
+  <audio id="seDataAnalysis" preload="auto" src="sounds/data_analysis.mp3"></audio>
+  <audio id="turnCountdownSE" preload="auto" loop src="sounds/pendulum.mp3"></audio>
 </div>
 
 </body>
