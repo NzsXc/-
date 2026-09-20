@@ -276,6 +276,8 @@ body{
   margin-top:92px;
   overflow:hidden;
   border-radius:16px;
+  touch-action:pan-y;
+  user-select:none;
 }
 
 .tipPages{
@@ -301,7 +303,7 @@ body{
   border-radius:16px;
   background:rgba(24,26,34,.72);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.04);
-  font-size:clamp(20px,4vw,34px);
+  font-size:clamp(24px,5vw,40px);
   font-weight:900;
 }
 
@@ -366,8 +368,11 @@ body{
 #spectatorScreen .action{pointer-events:none;}
 
 @media(max-width:600px){
-  .tipNav{top:10px;width:min(300px,68vw);gap:4px;}
-  .tipViewport{width:92vw;height:52vh;margin-top:76px;}
+  .tipNav{top:28px;width:min(330px,78vw);gap:5px;}
+  .tipNavButton{aspect-ratio:1.18/1;}
+  .tipViewport{width:92vw;height:52vh;margin-top:96px;}
+  .tipPageInner{font-size:clamp(27px,7vw,44px);}
+  .tipBackButton{margin-top:34px;padding:11px 28px;min-height:46px;font-size:17px;}
   .spectatorList{width:92vw;max-height:66vh;}
   .spectatorRow{min-height:56px;padding:8px 10px;font-size:13px;}
 }
@@ -1559,8 +1564,6 @@ body{
 
 <div id="tipScreen" class="screen">
 
-  <div class="screenTitle">TIP</div>
-
   <div class="tipNav" aria-label="TIPページ">
     <button class="tipNavButton active" data-page="0" onclick="showTipPage(0)">1</button>
     <button class="tipNavButton" data-page="1" onclick="showTipPage(1)">2</button>
@@ -1580,6 +1583,50 @@ body{
   <button class="tipBackButton" onclick="showScreen('modeScreen')">戻る</button>
 
 </div>
+
+<script>
+/* =========================
+   TIP：スマホ横スワイプ＋PCマウスドラッグ
+========================= */
+(function(){
+  const viewport=document.getElementById("tipScreen")?.querySelector(".tipViewport");
+  if(!viewport)return;
+
+  let startX=0;
+  let startY=0;
+  let dragging=false;
+
+  viewport.addEventListener("pointerdown",function(e){
+    if(e.pointerType==="mouse" && e.button!==0)return;
+    if(e.isPrimary===false)return;
+
+    startX=e.clientX;
+    startY=e.clientY;
+    dragging=true;
+  });
+
+  viewport.addEventListener("pointerup",function(e){
+    if(!dragging || e.isPrimary===false)return;
+    dragging=false;
+
+    const dx=e.clientX-startX;
+    const dy=e.clientY-startY;
+
+    /* 縦方向の動きより横方向が明確なときだけ切り替える */
+    if(Math.abs(dx)<45 || Math.abs(dx)<=Math.abs(dy))return;
+
+    if(dx<0){
+      showTipPage(currentTipPage+1);
+    }else{
+      showTipPage(currentTipPage-1);
+    }
+  });
+
+  viewport.addEventListener("pointercancel",function(){
+    dragging=false;
+  });
+})();
+</script>
 
 
 <!-- =========================
@@ -1967,7 +2014,8 @@ body{
     get,
     onValue,
     update,
-    remove
+    remove,
+    onDisconnect
   } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js";
 
   const firebaseConfig = {
@@ -1987,6 +2035,55 @@ body{
   let localPlayer = null;
   let onlineStarted = false;
   let roomListener = null;
+  let presenceTimer = null;
+
+  function normalizeTechniques(value){
+    if(Array.isArray(value)) return value;
+    if(value && typeof value === "object"){
+      return Object.keys(value)
+        .sort((a,b)=>Number(a)-Number(b))
+        .map(key=>value[key]);
+    }
+    return [];
+  }
+
+  function normalizeActiveBattle(code, room){
+    const p1 = room?.players?.["1"];
+    const p2 = room?.players?.["2"];
+    const battle = room?.battle;
+    if(!p1?.joined || !p2?.joined || !p1?.online || !p2?.online || !battle) return null;
+    if(battle.spectatable === false || battle.phase === "finished") return null;
+    if(!["starting","countdown","effect","battle"].includes(String(battle.phase))) return null;
+
+    return {
+      roomCode:String(code),
+      p1:p1.name || "1P",
+      p2:p2.name || "2P",
+      battle
+    };
+  }
+
+  function stopPresenceHeartbeat(){
+    if(presenceTimer){
+      clearInterval(presenceTimer);
+      presenceTimer=null;
+    }
+  }
+
+  function startPresenceHeartbeat(){
+    stopPresenceHeartbeat();
+    if(!roomCode || !localPlayer) return;
+
+    const playerRef=ref(db,`rooms/${roomCode}/players/${localPlayer}`);
+    const touch=()=>update(playerRef,{
+      joined:true,
+      online:true,
+      lastSeen:Date.now()
+    }).catch(()=>{});
+
+    touch();
+    presenceTimer=setInterval(touch,8000);
+  }
 
   window.onlineBattle = {
     get roomCode(){ return roomCode; },
@@ -2001,10 +2098,27 @@ body{
         localPlayer = 1;
         onlineStarted = true;
 
+        const playerRef=ref(db,`rooms/${roomCode}/players/1`);
         await set(ref(db, "rooms/" + roomCode), {
           createdAt: Date.now(),
-          players: { "1": { joined: true } }
+          updatedAt: Date.now(),
+          players: {
+            "1": {
+              joined:true,
+              online:true,
+              lastSeen:Date.now(),
+              name:"1P"
+            }
+          }
         });
+
+        await onDisconnect(playerRef).update({
+          joined:false,
+          online:false,
+          lastSeen:Date.now()
+        });
+
+        startPresenceHeartbeat();
 
         alert("部屋を作りました！\n\n部屋コード：" + roomCode + "\n\n相手にこの6桁のコードを伝えてください。");
       }else{
@@ -2014,14 +2128,14 @@ body{
           return false;
         }
 
-        const snap = await get(ref(db, "rooms/" + code));
-        if(!snap.exists()){
+        const roomSnap = await get(ref(db, "rooms/" + code));
+        if(!roomSnap.exists()){
           alert("その部屋は見つかりません。");
           return false;
         }
 
-        const data = snap.val();
-        if(data.players && data.players["2"] && data.players["2"].joined){
+        const data = roomSnap.val();
+        if(data.players?.["2"]?.joined && data.players?.["2"]?.online){
           alert("その部屋は満員です。");
           return false;
         }
@@ -2030,9 +2144,21 @@ body{
         localPlayer = 2;
         onlineStarted = true;
 
+        const playerRef=ref(db,`rooms/${roomCode}/players/2`);
         await update(ref(db, "rooms/" + roomCode), {
-          "players/2/joined": true
+          "players/2/joined": true,
+          "players/2/online": true,
+          "players/2/lastSeen": Date.now(),
+          updatedAt: Date.now()
         });
+
+        await onDisconnect(playerRef).update({
+          joined:false,
+          online:false,
+          lastSeen:Date.now()
+        });
+
+        startPresenceHeartbeat();
 
         alert("部屋に参加しました！");
       }
@@ -2062,30 +2188,43 @@ body{
 
     async publishBattleState(state){
       if(!onlineStarted || !roomCode)return;
-      await set(ref(db, `rooms/${roomCode}/battle`), state);
+      const next={
+        ...state,
+        updatedAt:Date.now()
+      };
+      await set(ref(db, `rooms/${roomCode}/battle`), next);
+      await update(ref(db, `rooms/${roomCode}`), {
+        updatedAt:Date.now()
+      });
     },
 
     async listActiveBattles(){
       const snap=await get(ref(db,"rooms"));
       const rooms=snap.val() || {};
-      return Object.entries(rooms).filter(([code,room])=>{
-        const b=room && room.battle;
-        const p1=room?.players?.["1"]?.joined;
-        const p2=room?.players?.["2"]?.joined;
-        if(!p1 || !p2 || !b)return false;
-        if(b.phase === "finished")return false;
-        return true;
-      }).map(([code,room])=>({
-        roomCode:code,
-        p1:room?.players?.["1"]?.name || "プレイヤー1",
-        p2:room?.players?.["2"]?.name || "プレイヤー2",
-        battle:room.battle
-      }));
+      return Object.entries(rooms)
+        .map(([code,room])=>normalizeActiveBattle(code,room))
+        .filter(Boolean);
+    },
+
+    watchActiveBattles(callback){
+      return onValue(ref(db,"rooms"),snap=>{
+        const rooms=snap.val() || {};
+        const active=Object.entries(rooms)
+          .map(([code,room])=>normalizeActiveBattle(code,room))
+          .filter(Boolean)
+          .sort((a,b)=>Number(b.battle?.updatedAt||0)-Number(a.battle?.updatedAt||0));
+        callback(active);
+      });
+    },
+
+    watchBattle(roomCodeToWatch, callback){
+      return onValue(ref(db,`rooms/${roomCodeToWatch}/battle`),snap=>{
+        callback(snap.val(), roomCodeToWatch);
+      });
     },
 
     watchRoom(roomCodeToWatch, callback){
-      const stop=onValue(ref(db,`rooms/${roomCodeToWatch}`),snap=>callback(snap.val()));
-      return stop;
+      return onValue(ref(db,`rooms/${roomCodeToWatch}`),snap=>callback(snap.val()));
     }
   };
 
@@ -2099,13 +2238,6 @@ body{
       const p1 = data.players && data.players["1"];
       const p2 = data.players && data.players["2"];
 
-      function normalizeTechniques(value){
-        if(Array.isArray(value)) return value;
-        if(value && typeof value === "object") return Object.keys(value)
-          .sort((a,b)=>Number(a)-Number(b)).map(key=>value[key]);
-        return [];
-      }
-
       const p1Techniques = normalizeTechniques(p1 && p1.techniques);
       const p2Techniques = normalizeTechniques(p2 && p2.techniques);
       const p1Ready = !!(p1 && p1.ready === true && p1Techniques.length === 3);
@@ -2114,13 +2246,10 @@ body{
       if(p1Ready) window.receiveOnlineTechniques(1,p1Techniques);
       if(p2Ready) window.receiveOnlineTechniques(2,p2Techniques);
 
-      // 両者がREADYになったら、P1が共通の開始時刻をFirebaseへ送る。
-      // P1/P2とも同じstartAtを基準に約2秒後に1ターン目を開始する。
       if(p1Ready && p2Ready){
         window.startOnlineBattleIfReady();
       }
 
-      // 相手が確定しても、自分の技選択UIは触らない。
       if(gameMode === "online" && !onlineBattleStarted){
         const meReady = localPlayer === 1 ? p1Ready : p2Ready;
         const bothReady = p1Ready && p2Ready;
@@ -2139,16 +2268,26 @@ body{
 
       const turn = Number((battle && battle.turn) || onlineTurnNumber || 0);
       const opponent = localPlayer === 1 ? 2 : 1;
-      const remoteAction = data.turns && data.turns[String(turn)] &&
-        data.turns[String(turn)].actions &&
-        data.turns[String(turn)].actions[String(opponent)];
+      const remoteAction = data.turns?.[String(turn)]?.actions?.[String(opponent)];
       if(remoteAction && window.receiveOnlineAction){
         window.receiveOnlineAction(opponent, remoteAction.id, remoteAction.time, turn);
       }
     });
   }
 
+  window.addEventListener("beforeunload",()=>{
+    stopPresenceHeartbeat();
+    if(roomCode && localPlayer){
+      update(ref(db,`rooms/${roomCode}/players/${localPlayer}`),{
+        online:false,
+        joined:false,
+        lastSeen:Date.now()
+      }).catch(()=>{});
+    }
+  });
+
   console.log("心理バトル Firebase接続成功");
+
 </script>
 
 <script>
@@ -2283,9 +2422,9 @@ const techniquePool = [
   },
 
   {name:"フォーサイト",cost:1,power:0,pierce:false,type:"block",skill:"tech5",description:"ゲージ1消費 / ブロック状態 / 相手がチャージならゲージ+3"},
-  {name:"モーメンタム",cost:2,power:1,pierce:false,type:"attack",skill:"tech6",description:"ゲージ2消費 / 1ダメージ / 前のターンも技6なら2ダメージ"},
+  {name:"モーメンタム",cost:2,power:1,pierce:false,type:"attack",skill:"tech6",description:"ゲージ2消費 / 1ダメージ / 2連続使用ならさらに+1"},
   {name:"ランページ",cost:0,power:0,pierce:false,type:"special",skill:"tech7",description:"前のターンにチャージしていた場合のみ / ゲージ+8 / HP-2"},
-  {name:"アンチガード",cost:0,power:0,pierce:false,type:"seal",skill:"tech8",description:"相手のゲージが7未満のとき使用可能 / 相手のブロック系技を封印"}
+  {name:"アンチガード",cost:0,power:0,pierce:false,type:"seal",skill:"tech8",description:"相手のブロック系技を封印 / 相手がゲージ7に到達すると解除"}
 
 ];
 
@@ -2296,14 +2435,19 @@ window.techniquePoolForOnline = techniquePool;
    TIPページ切り替え
 ========================= */
 
+let currentTipPage=0;
+
 function showTipPage(page){
+  const index=Math.max(0,Math.min(3,Number(page)||0));
+  currentTipPage=index;
+
   const pages=document.getElementById("tipPages");
   if(pages){
-    const index=Math.max(0,Math.min(3,Number(page)||0));
     pages.style.transform=`translateX(-${index*100}%)`;
   }
+
   document.querySelectorAll(".tipNavButton").forEach((button,index)=>{
-    button.classList.toggle("active",index===Number(page));
+    button.classList.toggle("active",index===currentTipPage);
   });
 }
 
@@ -2343,19 +2487,30 @@ let spectatorActive = false;
 let spectatorRoomCode = null;
 let spectatorListener = null;
 let spectatorRoomsListener = null;
+let spectatorPendingActions = null;
+let spectatorPendingRevealTurn = 0;
 
 async function openSpectatorList(){
   gameMode="spectator";
   spectatorActive=false;
   spectatorRoomCode=null;
+
+  if(spectatorRoomsListener){
+    spectatorRoomsListener();
+    spectatorRoomsListener=null;
+  }
+
   showScreen("spectatorListScreen");
   const list=document.getElementById("spectatorList");
-  if(list)list.innerHTML='<div class="spectatorEmpty">対戦を読み込んでいます…</div>';
+  if(list)list.innerHTML='<div class="spectatorEmpty">リアルタイム対戦を探しています…</div>';
+
   try{
-    const rooms=await window.onlineBattle.listActiveBattles();
-    renderSpectatorList(rooms);
+    spectatorRoomsListener=window.onlineBattle.watchActiveBattles(rooms=>{
+      if(gameMode!=="spectator" || spectatorActive)return;
+      renderSpectatorList(rooms);
+    });
   }catch(err){
-    console.error(err);
+    console.error("観戦一覧監視エラー:",err);
     if(list)list.innerHTML='<div class="spectatorEmpty">対戦一覧を取得できませんでした。</div>';
   }
 }
@@ -2363,33 +2518,56 @@ async function openSpectatorList(){
 function renderSpectatorList(rooms){
   const list=document.getElementById("spectatorList");
   if(!list)return;
+
   list.innerHTML="";
   if(!rooms.length){
     list.innerHTML='<div class="spectatorEmpty">現在観戦できる対戦はありません。</div>';
     return;
   }
+
   rooms.forEach(room=>{
     const row=document.createElement("button");
+    row.type="button";
     row.className="spectatorRow";
-    row.innerHTML=`<span class="spectatorPlayer"></span><span class="spectatorVs">VS</span><span class="spectatorPlayer"></span>`;
+    row.innerHTML='<span class="spectatorPlayer"></span><span class="spectatorVs">VS</span><span class="spectatorPlayer"></span>';
     row.children[0].textContent=room.p1;
     row.children[2].textContent=room.p2;
+
+    const phaseLabel={
+      starting:"開始待ち",
+      countdown:"カウントダウン",
+      effect:"演出中",
+      battle:"対戦中"
+    }[room.battle?.phase] || "対戦中";
+
+    row.title=`${room.p1} VS ${room.p2} / ${phaseLabel}`;
     row.addEventListener("click",()=>enterSpectator(room.roomCode,room.p1,room.p2));
     list.appendChild(row);
   });
 }
 
 async function enterSpectator(code,p1,p2){
-  if(spectatorListener){spectatorListener();spectatorListener=null;}
+  if(spectatorListener){
+    spectatorListener();
+    spectatorListener=null;
+  }
+
   spectatorActive=true;
   spectatorRoomCode=code;
+  spectatorPendingActions=null;
+  spectatorPendingRevealTurn=0;
+  window._lastSpectatorRevealTurn=0;
   gameMode="spectator";
   onlineBattleStarted=true;
   onlineTurnNumber=0;
+  window._lastSpectatorEffectTurn=0;
+
   const title=document.getElementById("spectatorMatchTitle");
   if(title)title.textContent=`${p1} VS ${p2}`;
+
   showScreen("battleScreen");
   document.getElementById("battleScreen")?.classList.add("spectatorMode");
+
   let badge=document.getElementById("spectatorBadge");
   if(!badge){
     badge=document.createElement("div");
@@ -2398,137 +2576,267 @@ async function enterSpectator(code,p1,p2){
     badge.innerHTML='<span>観戦モード</span><button type="button" onclick="leaveSpectator()">観戦を終了</button>';
     document.getElementById("battleScreen").appendChild(badge);
   }
+
   badge.querySelector("span").textContent=`観戦：${p1} VS ${p2}`;
   const names=document.querySelectorAll("#battleScreen .playerName");
   if(names[0])names[0].textContent=p1;
   if(names[1])names[1].textContent=p2;
   badge.style.display="flex";
-  spectatorListener=window.onlineBattle.watchRoom(code,data=>{
-    if(!spectatorActive || !data)return;
-    const battle=data.battle;
+
+  // ここでは「部屋全体のダミーデータ」を作らず、
+  // Firebase上のこの試合の battle ノードだけを直接監視する。
+  spectatorListener=window.onlineBattle.watchBattle(code,(battle)=>{
+    if(!spectatorActive)return;
     if(!battle)return;
-    // 観戦者はFirebaseのbattle状態だけを読む。操作系は一切呼ばない。
-    receiveSpectatorBattleState(battle,data);
+    receiveSpectatorBattleState(battle);
   });
 }
 
-function receiveSpectatorBattleState(state,roomData){
+function receiveSpectatorBattleState(state){
   if(!spectatorActive || !state)return;
+
   gameMode="spectator";
   const turn=Number(state.turn||0);
   if(turn)onlineTurnNumber=turn;
 
-  if(state.phase==="starting" || state.phase==="battle"){
-    if(state.hp){hp={1:Number(state.hp[1]??hp[1]),2:Number(state.hp[2]??hp[2])};}
-    if(state.gauge){gauge={1:Number(state.gauge[1]??gauge[1]),2:Number(state.gauge[2]??gauge[2])};}
-    if(state.actions?.[1]?.data && state.actions?.[2]?.data){
-      selectedAction[1]={id:state.actions[1].id,data:state.actions[1].data};
-      selectedAction[2]={id:state.actions[2].id,data:state.actions[2].data};
-    }
-    updateSpectatorBattleUI();
-    if(state.phase==="starting" && Number.isFinite(Number(state.startAt))){
-      const startAt=Number(state.startAt);
-      clearTimeout(window._spectatorStartTimer);
-      window._spectatorStartTimer=setTimeout(()=>{
-        if(!spectatorActive)return;
-        updateSpectatorBattleUI();
-      },Math.max(0,startAt-Date.now()));
-    }
-    return;
+  // 現在のFirebase状態を即時反映。
+  if(state.hp){
+    hp={
+      1:Number(state.hp[1]??hp[1]),
+      2:Number(state.hp[2]??hp[2])
+    };
+  }
+  if(state.gauge){
+    gauge={
+      1:Number(state.gauge[1]??gauge[1]),
+      2:Number(state.gauge[2]??gauge[2])
+    };
   }
 
   if(state.phase==="countdown" && Number.isFinite(Number(state.startAt))){
-    if(state.actions?.[1]?.data && state.actions?.[2]?.data){
-      selectedAction[1]={id:state.actions[1].id,data:state.actions[1].data};
-      selectedAction[2]={id:state.actions[2].id,data:state.actions[2].data};
-    }
+    // カウント中は技名を観戦者へ公開しない。
+    // 技を選択済みであることだけ分かる状態にし、実データは一時保持する。
+    spectatorPendingActions = {
+      1: state.actions?.[1] || null,
+      2: state.actions?.[2] || null
+    };
+    spectatorPendingRevealTurn = turn;
+
+    // 前ターンの技名が残って見えないようにする。
+    selectedAction[1]=null;
+    selectedAction[2]=null;
+
     beginSpectatorCountdown(Number(state.startAt));
+    updateSpectatorBattleUI();
+    return;
+  }
+
+  if(state.actions?.[1]?.data){
+    selectedAction[1]={id:state.actions[1].id,data:state.actions[1].data};
+  }
+  if(state.actions?.[2]?.data){
+    selectedAction[2]={id:state.actions[2].id,data:state.actions[2].data};
+  }
+
+  if(state.phase==="starting"){
+    updateSpectatorBattleUI();
     return;
   }
 
   if(state.phase==="effect" && Number(state.resolvedTurn||0)>0){
     const effectTurn=Number(state.resolvedTurn);
-    if(effectTurn<=Number(window._lastSpectatorEffectTurn||0))return;
-    window._lastSpectatorEffectTurn=effectTurn;
+
+    // 同じFirebaseイベントをonValueが再通知しても演出を二重再生しない。
+    if(effectTurn<=Number(window._lastSpectatorEffectTurn||0)){
+      updateSpectatorBattleUI();
+      return;
+    }
+
     const a1=state.actions?.[1]?.data;
     const a2=state.actions?.[2]?.data;
+
     if(a1&&a2){
+      window._lastSpectatorEffectTurn=effectTurn;
       selectedAction[1]={id:state.actions[1].id,data:a1};
       selectedAction[2]={id:state.actions[2].id,data:a2};
-      setTimeout(()=>{
-        if(!spectatorActive)return;
-        playBattleEffect(a1,a2,()=>{
-          hp={1:Number(state.hp?.[1]??hp[1]),2:Number(state.hp?.[2]??hp[2])};
-          gauge={1:Number(state.gauge?.[1]??gauge[1]),2:Number(state.gauge?.[2]??gauge[2])};
-          updateSpectatorBattleUI();
-        },Number(state.damageTo1||0),Number(state.damageTo2||0),true);
-      },1000);
+
+      updateSpectatorBattleUI();
+
+      const effectStartAt=Number(state.effectStartAt||Date.now());
+      const delay=Math.max(0,effectStartAt-Date.now());
+
+      clearTimeout(window._spectatorEffectTimer);
+      window._spectatorEffectTimer=setTimeout(()=>{
+        if(!spectatorActive || spectatorRoomCode===null)return;
+
+        revealSpectatorActions(a1,a2,effectTurn);
+        playBattleSituationSE(
+          a1,a2,
+          Number(state.damageTo1||0),
+          Number(state.damageTo2||0)
+        );
+
+        playBattleEffect(
+          a1,
+          a2,
+          ()=>{
+            if(!spectatorActive)return;
+            hp={
+              1:Number(state.hp?.[1]??hp[1]),
+              2:Number(state.hp?.[2]??hp[2])
+            };
+            gauge={
+              1:Number(state.gauge?.[1]??gauge[1]),
+              2:Number(state.gauge?.[2]??gauge[2])
+            };
+            updateSpectatorBattleUI();
+          },
+          Number(state.damageTo1||0),
+          Number(state.damageTo2||0),
+          true
+        );
+      },delay);
     }
     return;
   }
 
-  if(state.phase==="finished"){
-    hp={1:Number(state.hp?.[1]??hp[1]),2:Number(state.hp?.[2]??hp[2])};
-    gauge={1:Number(state.gauge?.[1]??gauge[1]),2:Number(state.gauge?.[2]??gauge[2])};
+  if(state.phase==="battle"){
     updateSpectatorBattleUI();
-    showBattleResult(state.result||"");
+    return;
   }
+
+  if(state.phase==="finished"){
+    clearTimeout(window._spectatorEffectTimer);
+    hp={
+      1:Number(state.hp?.[1]??hp[1]),
+      2:Number(state.hp?.[2]??hp[2])
+    };
+    gauge={
+      1:Number(state.gauge?.[1]??gauge[1]),
+      2:Number(state.gauge?.[2]??gauge[2])
+    };
+    updateSpectatorBattleUI();
+    if(state.result)showBattleResult(state.result);
+  }
+}
+
+function revealSpectatorActions(a1,a2,turn){
+  if(!a1 || !a2)return;
+  const revealTurn=Number(turn||0);
+  if(revealTurn && Number(window._lastSpectatorRevealTurn||0)===revealTurn)return;
+
+  if(revealTurn)window._lastSpectatorRevealTurn=revealTurn;
+  showTechniqueReveal(a1,a2);
 }
 
 function beginSpectatorCountdown(startAt){
   const el=document.getElementById("countdown");
   clearTimeout(window._spectatorCountdownTimer);
+
   const target=Number(startAt);
   const tick=()=>{
     if(!spectatorActive)return;
+
     const ms=target-Date.now();
     if(ms>0){
-      if(el){el.className="countPulse";el.textContent=String(Math.min(3,Math.ceil(ms/1000)));}
-      window._spectatorCountdownTimer=setTimeout(tick,Math.min(100,Math.max(30,ms%1000||100)));
+      if(el){
+        el.className="countPulse";
+        el.textContent=String(Math.min(3,Math.ceil(ms/1000)));
+      }
+      window._spectatorCountdownTimer=setTimeout(
+        tick,
+        Math.min(100,Math.max(30,ms%1000||100))
+      );
       return;
     }
-    if(el){el.className="battleCall";el.textContent="BATTLE!";}
+
+    if(el){
+      el.className="battleCall";
+      el.textContent="BATTLE!";
+    }
+
+    // 対戦中のプレイヤーと同じタイミングで、カウント終了後にだけ技名を公開。
+    const a1=spectatorPendingActions?.[1]?.data;
+    const a2=spectatorPendingActions?.[2]?.data;
+    if(a1 && a2){
+      revealSpectatorActions(a1,a2,spectatorPendingRevealTurn);
+    }
   };
+
   tick();
 }
 
 function updateSpectatorBattleUI(){
   showScreen("battleScreen");
   document.getElementById("battleScreen")?.classList.add("spectatorMode");
-  const screen=document.getElementById("spectatorScreen");
-  if(!screen)return;
-  const set=(id,val)=>{const e=document.getElementById(id);if(e)e.textContent=val;};
-  set("hp1Text",hp[1]); set("hp2Text",hp[2]);
-  set("gauge1Text",gauge[1]); set("gauge2Text",gauge[2]);
-  const h1=document.getElementById("hp1Fill"),h2=document.getElementById("hp2Fill");
-  const g1=document.getElementById("gauge1Fill"),g2=document.getElementById("gauge2Fill");
-  if(h1)h1.style.width=(hp[1]*10)+"%"; if(h2)h2.style.width=(hp[2]*10)+"%";
-  if(g1)g1.style.width=(gauge[1]*10)+"%"; if(g2)g2.style.width=(gauge[2]*10)+"%";
-  document.querySelectorAll("#spectatorScreen .action").forEach(el=>{el.style.pointerEvents="none";});
+
+  const set=(id,val)=>{
+    const e=document.getElementById(id);
+    if(e)e.textContent=String(val);
+  };
+
+  set("hp1Text",hp[1]);
+  set("hp2Text",hp[2]);
+  set("gauge1Text",gauge[1]);
+  set("gauge2Text",gauge[2]);
+
+  const h1=document.getElementById("hp1Fill");
+  const h2=document.getElementById("hp2Fill");
+  const g1=document.getElementById("gauge1Fill");
+  const g2=document.getElementById("gauge2Fill");
+
+  if(h1)h1.style.width=Math.max(0,Math.min(100,hp[1]*10))+"%";
+  if(h2)h2.style.width=Math.max(0,Math.min(100,hp[2]*10))+"%";
+  if(g1)g1.style.width=Math.max(0,Math.min(100,gauge[1]*10))+"%";
+  if(g2)g2.style.width=Math.max(0,Math.min(100,gauge[2]*10))+"%";
+
+  document.querySelectorAll("#battleScreen .action").forEach(el=>{
+    el.style.pointerEvents="none";
+  });
 }
 
 function leaveSpectator(){
   spectatorActive=false;
   spectatorRoomCode=null;
-  if(spectatorListener){spectatorListener();spectatorListener=null;}
+  spectatorPendingActions=null;
+  spectatorPendingRevealTurn=0;
+  window._lastSpectatorRevealTurn=0;
+
+  if(spectatorListener){
+    spectatorListener();
+    spectatorListener=null;
+  }
   clearTimeout(window._spectatorStartTimer);
   clearTimeout(window._spectatorCountdownTimer);
+  clearTimeout(window._spectatorEffectTimer);
+
   clearOnlineTechniqueDescription();
+  document.getElementById("battleEffectLayer")?.replaceChildren();
   document.getElementById("battleScreen")?.classList.remove("spectatorMode");
+
   const names=document.querySelectorAll("#battleScreen .playerName");
   if(names[0])names[0].textContent="1P";
   if(names[1])names[1].textContent="2P";
+
   const badge=document.getElementById("spectatorBadge");
   if(badge)badge.style.display="none";
+
   gameMode=null;
+  onlineBattleStarted=false;
+
   showScreen("onlineScreen");
 }
 
 function closeSpectatorList(){
-  if(spectatorRoomsListener){spectatorRoomsListener();spectatorRoomsListener=null;}
+  if(spectatorRoomsListener){
+    spectatorRoomsListener();
+    spectatorRoomsListener=null;
+  }
   gameMode=null;
   showScreen("onlineScreen");
 }
+
+
 
 function startOnlineMatch(type){
   onlineMatchType = type;
@@ -2834,6 +3142,7 @@ function startOnlineBattleCountdownIfReady(){
   const startAt = Date.now() + 3000;
   const battle = {
     phase: "countdown",
+    spectatable:true,
     turn: onlineTurnNumber,
     startAt,
     actions: {
@@ -3901,6 +4210,7 @@ function resolveBattle(){
     window._lastOnlineEffectTurn = onlineEffectTurn;
     const effectState = {
       phase: "effect",
+      spectatable:true,
       turn: onlineEffectTurn,
       resolvedTurn: onlineEffectTurn,
       effectStartAt,
@@ -3950,6 +4260,7 @@ function resolveBattle(){
       const nextTurn=finishedTurn+1;
       const state={
         phase: battleResult ? "finished" : "battle",
+        spectatable: !battleResult,
         turn: nextTurn,
         startAt: Date.now()+1200,
         resolvedTurn: finishedTurn,
