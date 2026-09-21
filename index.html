@@ -467,7 +467,7 @@ body{
   padding:18px;
   border:2px solid rgba(255,255,255,.18);
   border-radius:18px;
-  background:linear-gradient(145deg,#303546,#1a1d27);
+  background:linear-gradient(145deg,#eff0f2,#e8e9eb);
   font-size:clamp(20px,2.8vw,30px);
   font-weight:900;
   cursor:pointer;
@@ -475,7 +475,7 @@ body{
 }
 
 #techConfirmButton:hover{
-  background:linear-gradient(145deg,#3a4052,#222633);
+  background:linear-gradient(145deg,#ffffff,#f4f4f5);
 }
 
 
@@ -1252,17 +1252,51 @@ body{
 
 .shieldShard{
   position:absolute;
-  left:15%;top:75%;
-  width:13px;height:4px;
-  border-radius:3px;
-  background:linear-gradient(90deg,#fff,#69aaff,transparent);
-  box-shadow:0 0 10px #69aaff,0 0 20px rgba(100,170,255,.9);
+  left:15%;
+  top:75%;
+
+  /* 大きなガラス片 */
+  width:60px;
+  height:40px;
+
+  /* ガラスっぽい不規則な形 */
+  clip-path:polygon(
+    8% 18%,
+    62% 0%,
+    100% 28%,
+    82% 88%,
+    35% 100%,
+    0% 62%
+  );
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255,255,255,.95) 0%,
+      rgba(190,225,255,.85) 18%,
+      rgba(80,155,255,.65) 45%,
+      rgba(20,90,190,.45) 70%,
+      rgba(255,255,255,.15) 100%
+    );
+
+  border:1px solid rgba(255,255,255,.9);
+
+  box-shadow:
+    0 0 8px rgba(150,210,255,.95),
+    0 0 22px rgba(80,160,255,.9),
+    0 0 45px rgba(50,120,255,.55);
+
   transform:translate(-50%,-50%);
-  animation:shieldShardBreak .55s ease-out forwards;
+  animation:shieldShardBreak .7s cubic-bezier(.12,.8,.2,1) forwards;
+
   pointer-events:none;
   z-index:8;
 }
-.shieldShard.p2{left:85%;top:25%;}
+
+.shieldShard.p2{
+  left:85%;
+  top:25%;
+}
 
 .punishBurst{
   position:absolute;
@@ -1558,9 +1592,6 @@ body{
 ========================= -->
 
 <div id="tipScreen" class="screen">
-
-  <div class="screenTitle">TIP</div>
-
   <div class="tipNav" aria-label="TIPページ">
     <button class="tipNavButton active" data-page="0" onclick="showTipPage(0)">1</button>
     <button class="tipNavButton" data-page="1" onclick="showTipPage(1)">2</button>
@@ -1588,7 +1619,7 @@ body{
 
 <div id="techScreen" class="screen">
 
-  <div id="techTitle" class="screenTitle">1P：技を3つ選択</div>
+  <div id="techTitle" class="screenTitle">1P：技選択</div>
 
   <div class="techSelect">
 
@@ -2068,12 +2099,13 @@ body{
     async listActiveBattles(){
       const snap=await get(ref(db,"rooms"));
       const rooms=snap.val() || {};
+      const activePhases=new Set(["starting","battle","countdown","effect"]);
       return Object.entries(rooms).filter(([code,room])=>{
         const b=room && room.battle;
-        const p1=room?.players?.["1"]?.joined;
-        const p2=room?.players?.["2"]?.joined;
+        const p1=room?.players?.["1"]?.joined === true;
+        const p2=room?.players?.["2"]?.joined === true;
         if(!p1 || !p2 || !b)return false;
-        if(b.phase === "finished")return false;
+        if(!activePhases.has(String(b.phase || "")))return false;
         return true;
       }).map(([code,room])=>({
         roomCode:code,
@@ -2081,6 +2113,27 @@ body{
         p2:room?.players?.["2"]?.name || "プレイヤー2",
         battle:room.battle
       }));
+    },
+
+    filterActiveBattles(rooms){
+      const source=rooms || {};
+      const activePhases=new Set(["starting","battle","countdown","effect"]);
+      return Object.entries(source).filter(([code,room])=>{
+        const b=room && room.battle;
+        const p1=room?.players?.["1"]?.joined === true;
+        const p2=room?.players?.["2"]?.joined === true;
+        return !!(p1 && p2 && b && activePhases.has(String(b.phase || "")));
+      }).map(([code,room])=>({
+        roomCode:code,
+        p1:room?.players?.["1"]?.name || "プレイヤー1",
+        p2:room?.players?.["2"]?.name || "プレイヤー2",
+        battle:room.battle
+      }));
+    },
+
+    watchAllRooms(callback){
+      const stop=onValue(ref(db,"rooms"),snap=>callback(snap.val() || {}));
+      return stop;
     },
 
     watchRoom(roomCodeToWatch, callback){
@@ -2205,7 +2258,9 @@ const basicActions = {
     name:"チャージ",
     power:0,
     cost:0,
-    type:"charge"
+    type:"charge",
+    description:
+      "ゲージ+2"
   },
 
   attack:{
@@ -2213,14 +2268,18 @@ const basicActions = {
     power:1,
     cost:1,
     type:"attack",
-    pierce:false
+    pierce:false,
+    description:
+      "ゲージ1消費 / 1ダメージ"
   },
 
   block:{
     name:"ブロック",
     power:0,
     cost:0,
-    type:"block"
+    type:"block",
+    description:
+      "ブロック状態になる"
   }
 
 };
@@ -2277,9 +2336,9 @@ const techniquePool = [
   },
 
   {name:"フォーサイト",cost:1,power:0,pierce:false,type:"block",skill:"tech5",description:"ゲージ1消費 / ブロック状態 / 相手がチャージならゲージ+3"},
-  {name:"モーメンタム",cost:2,power:1,pierce:false,type:"attack",skill:"tech6",description:"ゲージ2消費 / 1ダメージ / 前のターンも技6なら2ダメージ"},
+  {name:"モーメンタム",cost:2,power:1,pierce:false,type:"attack",skill:"tech6",description:"ゲージ2消費 / 1ダメージ / 2連続使用ならさらに+1"},
   {name:"ランページ",cost:0,power:0,pierce:false,type:"special",skill:"tech7",description:"前のターンにチャージしていた場合のみ / ゲージ+8 / HP-2"},
-  {name:"アンチガード",cost:0,power:0,pierce:false,type:"seal",skill:"tech8",description:"相手のゲージが7未満のとき使用可能 / 相手のブロック系技を封印"}
+  {name:"アンチガード",cost:0,power:0,pierce:false,type:"seal",skill:"tech8",description:"相手のブロック系技を封印 / 相手のゲージが7に達すると解除"}
 
 ];
 
@@ -2345,9 +2404,22 @@ async function openSpectatorList(){
   showScreen("spectatorListScreen");
   const list=document.getElementById("spectatorList");
   if(list)list.innerHTML='<div class="spectatorEmpty">対戦を読み込んでいます…</div>';
+
+  if(spectatorRoomsListener){
+    spectatorRoomsListener();
+    spectatorRoomsListener=null;
+  }
+
   try{
     const rooms=await window.onlineBattle.listActiveBattles();
     renderSpectatorList(rooms);
+
+    // 一覧を開いている間はFirebaseを監視し、試合開始・終了を即時反映する。
+    spectatorRoomsListener=window.onlineBattle.watchAllRooms(data=>{
+      if(gameMode!=="spectator" || spectatorActive)return;
+      const roomsNow=window.onlineBattle.filterActiveBattles(data);
+      renderSpectatorList(roomsNow);
+    });
   }catch(err){
     console.error(err);
     if(list)list.innerHTML='<div class="spectatorEmpty">対戦一覧を取得できませんでした。</div>';
@@ -2375,6 +2447,13 @@ function renderSpectatorList(rooms){
 
 async function enterSpectator(code,p1,p2){
   if(spectatorListener){spectatorListener();spectatorListener=null;}
+  // 前に観戦した別試合のターン番号を持ち越すと、演出中の試合を
+  // 「すでに再生済み」と誤判定してしまうため、試合を切り替えるたびに初期化する。
+  window._lastSpectatorEffectTurn=0;
+  clearTimeout(window._spectatorStartTimer);
+  clearTimeout(window._spectatorCountdownTimer);
+  clearTimeout(window._spectatorTechniqueRevealTimer);
+  clearTimeout(window._spectatorEffectStartTimer);
   spectatorActive=true;
   spectatorRoomCode=code;
   gameMode="spectator";
@@ -2452,10 +2531,22 @@ function receiveSpectatorBattleState(state,roomData){
       if(state.blockSeal){
         blockSeal={1:Boolean(state.blockSeal[1]),2:Boolean(state.blockSeal[2])};
       }
-      const effectStartAt=Number(state.effectStartAt || (Date.now()+1000));
+      const revealAt=Number(state.revealAt || state.effectStartAt || Date.now());
+      const effectStartAt=Number(state.effectStartAt || (revealAt+1000));
+      clearTimeout(window._spectatorTechniqueRevealTimer);
       clearTimeout(window._spectatorEffectStartTimer);
+
+      // 対戦者と同じFirebaseの絶対時刻で技名公開を再生する。
+      window._spectatorTechniqueRevealTimer=setTimeout(()=>{
+        if(!spectatorActive)return;
+        showTechniqueReveal(a1,a2);
+      },Math.max(0,revealAt-Date.now()));
+
+      // 技名公開の1秒後、同じFirebaseの絶対時刻で演出を開始する。
       window._spectatorEffectStartTimer=setTimeout(()=>{
         if(!spectatorActive)return;
+        clearOnlineTechniqueDescription();
+        playBattleSituationSE(a1,a2,Number(state.damageTo1||0),Number(state.damageTo2||0));
         playBattleEffect(a1,a2,()=>{
           hp={1:Number(state.hp?.[1]??hp[1]),2:Number(state.hp?.[2]??hp[2])};
           gauge={1:Number(state.gauge?.[1]??gauge[1]),2:Number(state.gauge?.[2]??gauge[2])};
@@ -2478,15 +2569,27 @@ function beginSpectatorCountdown(startAt){
   const el=document.getElementById("countdown");
   clearTimeout(window._spectatorCountdownTimer);
   const target=Number(startAt);
+  let lastShown="";
   const tick=()=>{
     if(!spectatorActive)return;
     const ms=target-Date.now();
     if(ms>0){
-      if(el){el.className="countPulse";el.textContent=String(Math.min(3,Math.ceil(ms/1000)));}
+      const value=String(Math.min(3,Math.ceil(ms/1000)));
+      if(el && value!==lastShown){
+        lastShown=value;
+        el.className="";
+        void el.offsetWidth;
+        el.className="countPulse";
+        el.textContent=value;
+      }
       window._spectatorCountdownTimer=setTimeout(tick,Math.min(100,Math.max(30,ms%1000||100)));
       return;
     }
-    if(el){el.className="battleCall";el.textContent="BATTLE!";}
+    if(el && lastShown!=="BATTLE!"){
+      lastShown="BATTLE!";
+      el.className="battleCall";
+      el.textContent="BATTLE!";
+    }
   };
   tick();
 }
@@ -2512,6 +2615,7 @@ function leaveSpectator(){
   if(spectatorListener){spectatorListener();spectatorListener=null;}
   clearTimeout(window._spectatorStartTimer);
   clearTimeout(window._spectatorCountdownTimer);
+  clearTimeout(window._spectatorTechniqueRevealTimer);
   clearTimeout(window._spectatorEffectStartTimer);
   clearOnlineTechniqueDescription();
   document.getElementById("battleScreen")?.classList.remove("spectatorMode");
@@ -2557,7 +2661,7 @@ function startOnlineMatch(type){
       button.textContent = "決定";
     }
     document.getElementById("techTitle").textContent =
-      "オンライン：技を3つ選択";
+      "オンライン：技選択";
     updateTechniqueDisplay();
   }).catch(err=>{
     console.error(err);
@@ -2580,7 +2684,7 @@ function selectMode(mode){
   selectingPlayer = 1;
   showScreen("techScreen");
   document.getElementById("techConfirmButton").textContent = "次へ";
-  document.getElementById("techTitle").textContent = "1P：技を3つ選択";
+  document.getElementById("techTitle").textContent = "1P：技選択";
   updateTechniqueDisplay();
 }
 
@@ -2947,8 +3051,18 @@ function receiveOnlineBattleState(state){
             lastLastAction[2] = lastAction[2];
             lastAction[1] = {id:a1.id,data:a1.data};
             lastAction[2] = {id:a2.id,data:a2.data};
-            momentumBonus[1] = a1.data.skill === "tech6";
-            momentumBonus[2] = a2.data.skill === "tech6";
+           // モーメンタムは連続使用するたびに 1 → 2 → 1 → 2 と交互にする。
+if(a1.skill === "tech6"){
+  momentumBonus[1] = !momentumBonus[1];
+}else{
+  momentumBonus[1] = false;
+}
+
+if(a2.skill === "tech6"){
+  momentumBonus[2] = !momentumBonus[2];
+}else{
+  momentumBonus[2] = false;
+}
 
             const nextState={
               phase:"battle",
@@ -3145,7 +3259,7 @@ function confirmTech(){
         el.style.pointerEvents = "auto";
       });
       document.getElementById("techTitle").textContent =
-        "オンライン：技を3つ選択";
+        "オンライン：技選択";
       alert("技の送信に失敗しました。");
       return;
     });
@@ -3169,7 +3283,7 @@ function confirmTech(){
     document
       .getElementById("techTitle")
       .textContent =
-        "2P：技を3つ選択";
+        "2P：技選択";
 
     document
       .getElementById("techConfirmButton")
@@ -3883,8 +3997,11 @@ function resolveBattle(){
   if(a2.skill === "tech4") hp[2] = Math.min(10, hp[2] + 1);
 
   // カウンター：相手の攻撃を相手へ返す
-  if(reflect1 && attack2) damageTo2 += Number(a2.power || 0);
-  if(reflect2 && attack1) damageTo1 += Number(a1.power || 0);
+  // モーメンタムの強化ターンは実威力が2になるため、カウンターもその実威力を返す。
+  const reflectedPower1 = a1.skill === "tech6" && momentumBonus[1] ? 2 : Number(a1.power || 0);
+  const reflectedPower2 = a2.skill === "tech6" && momentumBonus[2] ? 2 : Number(a2.power || 0);
+  if(reflect1 && attack2) damageTo2 += reflectedPower2;
+  if(reflect2 && attack1) damageTo1 += reflectedPower1;
 
   // 攻撃同士は威力差で勝敗を決める
   if(attack1 && attack2){
@@ -3941,7 +4058,7 @@ function resolveBattle(){
     }
   }
 
-  // 技7：前ターンチャージ後のみ使用可能。ゲージ+8、HP-3
+  // 技7：前ターンチャージ後のみ使用可能。ゲージ+8、HP-2
   if(a1.skill === "tech7"){
     gauge[1] = Math.min(10, gauge[1] + 8);
   }
@@ -4012,9 +4129,18 @@ function resolveBattle(){
     hp[2] = Math.max(0, hp[2] - damageTo2);
 
     updateBattleUI();
-    // 今回モーメンタムなら、次回だけ2ダメージにする。
-    momentumBonus[1] = a1.skill === "tech6";
-    momentumBonus[2] = a2.skill === "tech6";
+// モーメンタムは連続使用するたびに 1 → 2 → 1 → 2 と交互にする。
+if(a1.skill === "tech6"){
+  momentumBonus[1] = !momentumBonus[1];
+}else{
+  momentumBonus[1] = false;
+}
+
+if(a2.skill === "tech6"){
+  momentumBonus[2] = !momentumBonus[2];
+}else{
+  momentumBonus[2] = false;
+}
 
     lastLastAction[1] = lastAction[1];
     lastLastAction[2] = lastAction[2];
