@@ -2452,7 +2452,7 @@ function receiveSpectatorBattleState(state,roomData){
       if(state.blockSeal){
         blockSeal={1:Boolean(state.blockSeal[1]),2:Boolean(state.blockSeal[2])};
       }
-      const effectStartAt=Number(state.effectStartAt || (Date.now()+2000));
+      const effectStartAt=Number(state.effectStartAt || (Date.now()+1000));
       clearTimeout(window._spectatorEffectStartTimer);
       window._spectatorEffectStartTimer=setTimeout(()=>{
         if(!spectatorActive)return;
@@ -2897,12 +2897,23 @@ function receiveOnlineBattleState(state){
     if(!a1?.data || !a2?.data) return;
 
     applyOnlineBlockSealState(state.blockSeal);
-    showTechniqueReveal(a1.data,a2.data);
 
-    const effectStartAt=Number(state.effectStartAt || (Date.now()+2000));
+    // 技公開も演出もFirebaseが配信した共通の絶対時刻で再生する。
+    // 1Pだけ先にローカル再生する経路をなくし、2Pの技公開抜け・遅延を防ぐ。
+    const revealAt = Number(state.revealAt || (Date.now()+300));
+    const effectStartAt = Number(state.effectStartAt || (revealAt+1000));
+
+    clearTimeout(window._onlineTechniqueRevealTimeout);
     clearTimeout(window._onlineEffectStartTimeout);
+
+    window._onlineTechniqueRevealTimeout=setTimeout(()=>{
+      if(gameMode!=="online" || Number(onlineTurnNumber)!==Number(state.turn))return;
+      showTechniqueReveal(a1.data,a2.data);
+    },Math.max(0,revealAt-Date.now()));
+
     window._onlineEffectStartTimeout=setTimeout(()=>{
       if(gameMode!=="online" || Number(onlineTurnNumber)!==Number(state.turn))return;
+      clearOnlineTechniqueDescription();
       playBattleSituationSE(
         a1.data,
         a2.data,
@@ -3889,22 +3900,23 @@ function resolveBattle(){
   }
 
   // 技公開：オフライン/オンライン共通。
-  // オンラインはFirebaseへ「技公開時点＋1秒」の絶対時刻を送る。
-  showTechniqueReveal(a1,a2);
+  // オンラインはFirebaseへ「技公開時刻」と「演出開始時刻」を送り、
+  // 1P/2PともFirebase受信側の同じ処理で再生する。
   const onlineEffectTurn = gameMode === "online" ? onlineTurnNumber : 0;
-  const effectStartAt = Date.now() + 2000;
+  const revealAt = gameMode === "online" ? Date.now() + 800 : 0;
+  const effectStartAt = gameMode === "online" ? revealAt + 1000 : Date.now() + 1000;
+  if(gameMode !== "online") showTechniqueReveal(a1,a2);
   const effectHp = {
     1:Math.max(0, Number(hp[1]) - Number(damageTo1 || 0)),
     2:Math.max(0, Number(hp[2]) - Number(damageTo2 || 0))
   };
   if(gameMode === "online"){
     window._onlineLocalEffectTurn = onlineEffectTurn;
-    // 自分が発行したeffectをFirebase受信側で二重再生しない。
-    window._lastOnlineEffectTurn = onlineEffectTurn;
     const effectState = {
       phase: "effect",
       turn: onlineEffectTurn,
       resolvedTurn: onlineEffectTurn,
+      revealAt,
       effectStartAt,
       actions:{
         1:{id:selectedAction[1].id,data:a1},
@@ -3923,15 +3935,15 @@ function resolveBattle(){
     window.onlineBattle.publishBattleState(effectState).catch(console.error);
   }
 
-  // 技公開から1秒後に演出開始。
+  // オンラインの技公開・演出はFirebase受信処理に一本化する。
+  // 1P/2Pとも同じ revealAt / effectStartAt を使う。
+  if(gameMode === "online") return;
+
+  // オフラインでは従来どおり技公開の1秒後に演出開始。
   setTimeout(()=>{
-  // オンラインで古いターンのタイマーだけを無視する。
-  // オフライン対戦では従来どおりこの処理を実行する。
-  if(gameMode === "online" && Number(onlineTurnNumber) !== Number(onlineEffectTurn)) return;
-  // 技名公開1秒後、実際の演出開始と同時にSEを鳴らす。
-  clearOnlineTechniqueDescription();
-  playBattleSituationSE(a1,a2,damageTo1,damageTo2);
-  playBattleEffect(a1,a2,()=>{
+    clearOnlineTechniqueDescription();
+    playBattleSituationSE(a1,a2,damageTo1,damageTo2);
+    playBattleEffect(a1,a2,()=>{
     hp[1] = Math.max(0, hp[1] - damageTo1);
     hp[2] = Math.max(0, hp[2] - damageTo2);
 
@@ -3972,7 +3984,6 @@ function resolveBattle(){
       // 次ターンはFirebaseの共通startAtを受信してから開始する。
       return;
     }
-
     // オフラインでもHPが0になったら、次ターンを開始しない。
     if(battleResult){
       showBattleResult(battleResult);
@@ -3983,7 +3994,6 @@ function resolveBattle(){
   }, damageTo1, damageTo2);
   },1000);
 }
-
 
 /* =========================
    バトル演出
