@@ -2931,6 +2931,44 @@ function receiveOnlineBattleState(state){
           momentumBonus=state.momentumBonus||momentumBonus;
           applyOnlineBlockSealState(state.blockSeal);
           updateBattleUI();
+
+          // 次ターンの開始はここでは行わない。
+          // P1/P2ともFirebaseのbattle状態を受信し、同じstartAtでstartTurn()する。
+          if(window.onlineBattle.localPlayer===1 && Number(onlineTurnNumber)===Number(state.turn)){
+            if(state.result){
+              showBattleResult(state.result);
+              return;
+            }
+            const finishedTurn=Number(state.resolvedTurn || state.turn);
+            const nextTurn=finishedTurn+1;
+            const nextStartAt=Date.now()+1200;
+
+            lastLastAction[1] = lastAction[1];
+            lastLastAction[2] = lastAction[2];
+            lastAction[1] = {id:a1.id,data:a1.data};
+            lastAction[2] = {id:a2.id,data:a2.data};
+            momentumBonus[1] = a1.data.skill === "tech6";
+            momentumBonus[2] = a2.data.skill === "tech6";
+
+            const nextState={
+              phase:"battle",
+              turn:nextTurn,
+              startAt:nextStartAt,
+              resolvedTurn:finishedTurn,
+              actions:{1:{id:a1.id,data:a1.data},2:{id:a2.id,data:a2.data}},
+              hp:{1:hp[1],2:hp[2]},
+              gauge:{1:gauge[1],2:gauge[2]},
+              lastAction,
+              lastLastAction,
+              momentumBonus,
+              blockSeal,
+              result:""
+            };
+
+            window._lastOnlineResolvedTurn=finishedTurn;
+            window.onlineBattle.publishBattleState(nextState).catch(console.error);
+            window.onlineBattle.clearActions(finishedTurn).catch(console.error);
+          }
         },
         Number(state.damageTo1||0),
         Number(state.damageTo2||0)
@@ -2939,7 +2977,7 @@ function receiveOnlineBattleState(state){
     return;
   }
 
-  if(state.phase === "starting" || state.phase === "battle"){
+  if(state.phase === "starting"){
     if(!onlineBattleStarted){
       onlineBattleStarted=true;
       hp={1:Number(state.hp?.[1] ?? 10),2:Number(state.hp?.[2] ?? 10)};
@@ -2951,6 +2989,32 @@ function receiveOnlineBattleState(state){
       setupBattleFromOnlineState(state);
       return;
     }
+  }
+
+  // 次ターン開始も1P/2Pで完全に同じ経路にする。
+  // Firebaseが配信した同じstartAtを、両端末が受信して同じ時刻にstartTurn()する。
+  if(state.phase === "battle" && Number(state.turn || 0) > 0){
+    const nextTurn=Number(state.turn);
+    if(nextTurn <= Number(window._lastOnlineStateTurnReceived || 0)) return;
+    window._lastOnlineStateTurnReceived=nextTurn;
+
+    hp={1:Number(state.hp?.[1] ?? hp[1]),2:Number(state.hp?.[2] ?? hp[2])};
+    gauge={1:Number(state.gauge?.[1] ?? gauge[1]),2:Number(state.gauge?.[2] ?? gauge[2])};
+    lastAction=state.lastAction||lastAction;
+    lastLastAction=state.lastLastAction||lastLastAction;
+    momentumBonus=state.momentumBonus||momentumBonus;
+    applyOnlineBlockSealState(state.blockSeal);
+    updateBattleUI();
+
+    const startAt=Number(state.startAt || Date.now());
+    clearTimeout(window._onlineStartTimeout);
+    window._onlineStartTimeout=setTimeout(()=>{
+      if(gameMode!=="online" || onlineTurnNumber!==nextTurn)return;
+      if(window._onlineStateTurnStarted===nextTurn)return;
+      window._onlineStateTurnStarted=nextTurn;
+      startTurn();
+    },Math.max(0,startAt-Date.now()));
+    return;
   }
 
   if(Number(state.resolvedTurn||0) > Number(window._lastOnlineResolvedTurn||0)){
