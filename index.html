@@ -2020,6 +2020,11 @@ body{
   let onlineStarted = false;
   let roomListener = null;
   let presenceDisconnect = null;
+  // 端末時計ではなくFirebaseの時刻を基準に、全端末で開始時刻を計算する。
+  let serverTimeOffset = 0;
+  onValue(ref(db, ".info/serverTimeOffset"), snap => {
+    serverTimeOffset=Number(snap.val() || 0);
+  });
 
   async function markLocalPlayerOnline(){
     if(!roomCode || !localPlayer) return;
@@ -2050,6 +2055,7 @@ body{
     get roomCode(){ return roomCode; },
     get localPlayer(){ return localPlayer; },
     get active(){ return onlineStarted; },
+    now(){ return Date.now()+serverTimeOffset; },
 
     async start(){
       // 前の部屋の監視・在席情報を必ず解除して、別試合の受信を混ぜない。
@@ -2114,7 +2120,7 @@ body{
       if(!onlineStarted || !roomCode || !localPlayer)return;
       await set(ref(db, `rooms/${roomCode}/turns/${turnNumber}/actions/${localPlayer}`), {
         id: actionId,
-        time: Date.now()
+        time: Date.now()+serverTimeOffset
       });
     },
 
@@ -2564,8 +2570,11 @@ function receiveSpectatorBattleState(state,roomData){
       if(state.blockSeal){
         blockSeal={1:Boolean(state.blockSeal[1]),2:Boolean(state.blockSeal[2])};
       }
-      const revealAt=Number(state.revealAt || state.effectStartAt || Date.now());
-      const effectStartAt=Number(state.effectStartAt || (revealAt+1000));
+      const revealAt=Number(state.revealAt || state.effectStartAt || onlineNow());
+      const effectStartAt=Number(state.effectStartAt || (revealAt+ONLINE_REVEAL_MS));
+      const receivedAt=onlineNow();
+      const scheduleRevealAt=effectStartAt<=receivedAt ? receivedAt+50 : revealAt;
+      const scheduleEffectAt=effectStartAt<=receivedAt ? scheduleRevealAt+ONLINE_REVEAL_MS : effectStartAt;
       clearTimeout(window._spectatorTechniqueRevealTimer);
       clearTimeout(window._spectatorEffectStartTimer);
 
@@ -2573,7 +2582,7 @@ function receiveSpectatorBattleState(state,roomData){
       window._spectatorTechniqueRevealTimer=setTimeout(()=>{
         if(!spectatorActive)return;
         showTechniqueReveal(a1,a2);
-      },Math.max(0,revealAt-Date.now()));
+      },Math.max(0,scheduleRevealAt-onlineNow()));
 
       // 技名公開の1秒後、同じFirebaseの絶対時刻で演出を開始する。
       window._spectatorEffectStartTimer=setTimeout(()=>{
@@ -2585,7 +2594,7 @@ function receiveSpectatorBattleState(state,roomData){
           gauge={1:Number(state.gauge?.[1]??gauge[1]),2:Number(state.gauge?.[2]??gauge[2])};
           updateSpectatorBattleUI();
         },Number(state.damageTo1||0),Number(state.damageTo2||0),true);
-      },Math.max(0,effectStartAt-Date.now()));
+      },Math.max(0,scheduleEffectAt-onlineNow()));
     }
     return;
   }
@@ -2605,7 +2614,7 @@ function beginSpectatorCountdown(startAt){
   let lastShown="";
   const tick=()=>{
     if(!spectatorActive)return;
-    const ms=target-Date.now();
+    const ms=target-onlineNow();
     if(ms>0){
       const value=String(Math.min(3,Math.ceil(ms/1000)));
       if(el && value!==lastShown){
@@ -2821,8 +2830,16 @@ let receivingOnlineAction = false;
 let onlineTechConfirmed = false;
 // 新しい部屋・再対戦時に古い非同期処理が状態を書き戻さないための世代番号。
 let onlineMatchSession = 0;
+// 2秒程度の回線遅延があっても、2Pが公開演出を受信してから再生できる余白。
+const ONLINE_EVENT_LEAD_MS = 3200;
+const ONLINE_REVEAL_MS = 1300;
+const ONLINE_NEXT_TURN_LEAD_MS = 1500;
 // オンラインの技は1タップ目を説明表示、同じ技の2タップ目で確定。
 let onlineTechniquePreviewId = null;
+
+function onlineNow(){
+  return window.onlineBattle?.now?.() ?? Date.now();
+}
 
 function resetOnlineMatchState(){
   onlineMatchSession++;
@@ -2844,6 +2861,7 @@ function resetOnlineMatchState(){
   window._onlineStateTurnStarted=0;
   window._resolvingOnlineTurn=0;
   window._onlineInitialStarted=0;
+  window._onlineCountdownKey=null;
   clearOnlineTechniqueDescription();
   const layer=document.getElementById("battleEffectLayer");
   if(layer) layer.innerHTML="";
@@ -2893,9 +2911,9 @@ function maybeStartOnlineBattle(){
     const button = document.getElementById("techConfirmButton");
     if(button){ button.disabled=true; button.textContent="READY!"; }
     const title = document.getElementById("techTitle");
-    if(title) title.textContent="READY! 2秒後に対戦開始…";
+    if(title) title.textContent="READY! 同期後に対戦開始…";
     const battle = {
-      phase:"starting", turn:1, startAt:Date.now()+2000,
+      phase:"starting", turn:1, startAt:onlineNow()+ONLINE_EVENT_LEAD_MS,
       hp:{1:10,2:10}, gauge:{1:0,2:0},
       lastAction:{1:null,2:null}, lastLastAction:{1:null,2:null},
       momentumBonus:{1:false,2:false}, blockSeal:{1:false,2:false},
@@ -2942,6 +2960,11 @@ function beginOnlineBattleCountdown(startAt){
   if(!Number.isFinite(Number(startAt))) return;
 
   const target = Number(startAt);
+  const countdownKey=`${onlineTurnNumber}:${target}`;
+  // onValueは行動の書き込み・削除でも同じbattle状態を再通知する。
+  // 同一ターンの3秒カウントを作り直さない。
+  if(window._onlineCountdownKey===countdownKey) return;
+  window._onlineCountdownKey=countdownKey;
   onlineCountdownStarted = true;
   clearInterval(countdownTimer);
   clearTimeout(window._onlineCountdownTimeout);
@@ -2958,7 +2981,7 @@ function beginOnlineBattleCountdown(startAt){
   };
 
   const tick = () => {
-    const remainingMs = target - Date.now();
+    const remainingMs = target - onlineNow();
 
     if(remainingMs > 0){
       show(Math.min(3, Math.ceil(remainingMs / 1000)));
@@ -2997,7 +3020,7 @@ function startOnlineBattleCountdownIfReady(){
   stopCountdownRing();
   stopTurnCountdownSE();
 
-  const startAt = Date.now() + 3000;
+  const startAt = onlineNow() + ONLINE_EVENT_LEAD_MS;
   const battle = {
     phase: "countdown",
     turn: onlineTurnNumber,
@@ -3010,7 +3033,7 @@ function startOnlineBattleCountdownIfReady(){
 
   onlineCountdownStarted = true;
   window.onlineBattle.publishBattleState(battle).catch(console.error);
-  beginOnlineBattleCountdown(startAt);
+  // P1もFirebaseから受け取った状態だけで開始する。ローカル即時開始との二重化を防ぐ。
 }
 
 function applyOnlineBlockSealState(nextSeal){
@@ -3067,8 +3090,13 @@ function receiveOnlineBattleState(state){
 
     // 技公開も演出もFirebaseが配信した共通の絶対時刻で再生する。
     // 1Pだけ先にローカル再生する経路をなくし、2Pの技公開抜け・遅延を防ぐ。
-    const revealAt = Number(state.revealAt || (Date.now()+300));
-    const effectStartAt = Number(state.effectStartAt || (revealAt+1000));
+    const revealAt = Number(state.revealAt || (onlineNow()+ONLINE_EVENT_LEAD_MS));
+    const effectStartAt = Number(state.effectStartAt || (revealAt+ONLINE_REVEAL_MS));
+    // 想定以上の遅延で開始時刻を過ぎていた場合も、公開と演出を同じ瞬間に
+    // 潰さず、2P側では公開時間を確保してから再生する。
+    const receivedAt=onlineNow();
+    const scheduleRevealAt=effectStartAt<=receivedAt ? receivedAt+50 : revealAt;
+    const scheduleEffectAt=effectStartAt<=receivedAt ? scheduleRevealAt+ONLINE_REVEAL_MS : effectStartAt;
 
     clearTimeout(window._onlineTechniqueRevealTimeout);
     clearTimeout(window._onlineEffectStartTimeout);
@@ -3076,7 +3104,7 @@ function receiveOnlineBattleState(state){
     window._onlineTechniqueRevealTimeout=setTimeout(()=>{
       if(session!==onlineMatchSession || gameMode!=="online" || Number(onlineTurnNumber)!==Number(state.turn))return;
       showTechniqueReveal(a1.data,a2.data);
-    },Math.max(0,revealAt-Date.now()));
+    },Math.max(0,scheduleRevealAt-onlineNow()));
 
     window._onlineEffectStartTimeout=setTimeout(()=>{
       if(session!==onlineMatchSession || gameMode!=="online" || Number(onlineTurnNumber)!==Number(state.turn))return;
@@ -3109,7 +3137,7 @@ function receiveOnlineBattleState(state){
             }
             const finishedTurn=Number(state.resolvedTurn || state.turn);
             const nextTurn=finishedTurn+1;
-            const nextStartAt=Date.now()+1200;
+            const nextStartAt=onlineNow()+ONLINE_NEXT_TURN_LEAD_MS;
 
             lastLastAction[1] = lastAction[1];
             lastLastAction[2] = lastAction[2];
@@ -3151,7 +3179,7 @@ if(a2.skill === "tech6"){
         Number(state.damageTo1||0),
         Number(state.damageTo2||0)
       );
-    },Math.max(0,effectStartAt-Date.now()));
+    },Math.max(0,scheduleEffectAt-onlineNow()));
     return;
   }
 
@@ -3184,14 +3212,14 @@ if(a2.skill === "tech6"){
     applyOnlineBlockSealState(state.blockSeal);
     updateBattleUI();
 
-    const startAt=Number(state.startAt || Date.now());
+    const startAt=Number(state.startAt || onlineNow());
     clearTimeout(window._onlineStartTimeout);
     window._onlineStartTimeout=setTimeout(()=>{
       if(gameMode!=="online" || onlineTurnNumber!==nextTurn)return;
       if(window._onlineStateTurnStarted===nextTurn)return;
       window._onlineStateTurnStarted=nextTurn;
       startTurn();
-    },Math.max(0,startAt-Date.now()));
+    },Math.max(0,startAt-onlineNow()));
     return;
   }
 
@@ -3209,7 +3237,7 @@ if(a2.skill === "tech6"){
       updateBattleUI();
       if(state.result) showBattleResult(state.result);
       else {
-        const wait=Math.max(0,Number(state.startAt||Date.now())-Date.now());
+        const wait=Math.max(0,Number(state.startAt||onlineNow())-onlineNow());
         clearTimeout(window._onlineStartTimeout);
         window._onlineStartTimeout=setTimeout(()=>{
           if(gameMode!=="online" || onlineTurnNumber!==Number(state.turn))return;
@@ -3223,7 +3251,7 @@ if(a2.skill === "tech6"){
       if(state.result){
         showBattleResult(state.result);
       }else{
-        const wait=Math.max(0,Number(state.startAt||Date.now())-Date.now());
+        const wait=Math.max(0,Number(state.startAt||onlineNow())-onlineNow());
         clearTimeout(window._onlineStartTimeout);
         window._onlineStartTimeout=setTimeout(()=>{
           if(gameMode!=="online" || onlineTurnNumber!==Number(state.turn))return;
@@ -3268,8 +3296,8 @@ function setupBattleFromOnlineState(state){
   updateBattleUI();
   showScreen("battleScreen");
   setupActionNames();
-  const startAt=Number(state.startAt||Date.now());
-  const wait=Math.max(0,startAt-Date.now());
+  const startAt=Number(state.startAt||onlineNow());
+  const wait=Math.max(0,startAt-onlineNow());
   clearTimeout(window._onlineStartTimeout);
   window._onlineStartTimeout=setTimeout(()=>{
     if(gameMode!=="online" || onlineTurnNumber!==Number(state.turn))return;
@@ -3526,6 +3554,7 @@ function startTurn(){
   countdownFinishTimeout = null;
 
   onlineCountdownStarted = false;
+  window._onlineCountdownKey = null;
   onlineTurnStartedAt = Date.now();
   if(gameMode === "online" && onlineTurnNumber === 0) onlineTurnNumber = 1;
 
@@ -3802,7 +3831,7 @@ function showTechniqueReveal(a1,a2){
   window._techniqueRevealCleanupTimeout=setTimeout(()=>{
     label1.remove();
     label2.remove();
-  },1100);
+  },ONLINE_REVEAL_MS);
 }
 
 function clearOnlineTechniqueDescription(){
@@ -4156,8 +4185,8 @@ function resolveBattle(){
   // オンラインはFirebaseへ「技公開時刻」と「演出開始時刻」を送り、
   // 1P/2PともFirebase受信側の同じ処理で再生する。
   const onlineEffectTurn = gameMode === "online" ? onlineTurnNumber : 0;
-  const revealAt = gameMode === "online" ? Date.now() + 800 : 0;
-  const effectStartAt = gameMode === "online" ? revealAt + 1000 : Date.now() + 1000;
+  const revealAt = gameMode === "online" ? onlineNow() + ONLINE_EVENT_LEAD_MS : 0;
+  const effectStartAt = gameMode === "online" ? revealAt + ONLINE_REVEAL_MS : Date.now() + 1000;
   if(gameMode !== "online") showTechniqueReveal(a1,a2);
   const effectHp = {
     1:Math.max(0, Number(hp[1]) - Number(damageTo1 || 0)),
@@ -4230,7 +4259,7 @@ if(a2.skill === "tech6"){
       const state={
         phase: battleResult ? "finished" : "battle",
         turn: nextTurn,
-        startAt: Date.now()+1200,
+        startAt: onlineNow()+ONLINE_NEXT_TURN_LEAD_MS,
         resolvedTurn: finishedTurn,
         actions:{1:{id:selectedAction[1].id,data:a1},2:{id:selectedAction[2].id,data:a2}},
         hp:{1:hp[1],2:hp[2]}, gauge:{1:gauge[1],2:gauge[2]},
