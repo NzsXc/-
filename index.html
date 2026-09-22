@@ -2832,6 +2832,8 @@ let onlineTechConfirmed = false;
 let onlineMatchSession = 0;
 // 2秒程度の回線遅延があっても、2Pが公開演出を受信してから再生できる余白。
 const ONLINE_EVENT_LEAD_MS = 3200;
+// 技公開はカウント終了後すぐに行う。サーバー時刻補正により短い余白でも同期する。
+const ONLINE_EFFECT_LEAD_MS = 900;
 const ONLINE_REVEAL_MS = 1300;
 const ONLINE_NEXT_TURN_LEAD_MS = 1500;
 // オンラインの技は1タップ目を説明表示、同じ技の2タップ目で確定。
@@ -3017,6 +3019,14 @@ function startOnlineBattleCountdownIfReady(){
   // P1だけが共通の開始時刻をFirebaseへ発行する。
   if(window.onlineBattle.localPlayer !== 1) return;
 
+  // 既に残り3秒以下なら、表示中のカウントを3へ戻さずそのまま使う。
+  // 0秒付近で相手の選択が届いた場合は、ここで確定を再試行する。
+  if(countdown <= 0){
+    finishTurn();
+    return;
+  }
+  if(countdown <= 3) return;
+
   stopCountdownRing();
   stopTurnCountdownSE();
 
@@ -3090,7 +3100,7 @@ function receiveOnlineBattleState(state){
 
     // 技公開も演出もFirebaseが配信した共通の絶対時刻で再生する。
     // 1Pだけ先にローカル再生する経路をなくし、2Pの技公開抜け・遅延を防ぐ。
-    const revealAt = Number(state.revealAt || (onlineNow()+ONLINE_EVENT_LEAD_MS));
+    const revealAt = Number(state.revealAt || (onlineNow()+ONLINE_EFFECT_LEAD_MS));
     const effectStartAt = Number(state.effectStartAt || (revealAt+ONLINE_REVEAL_MS));
     // 想定以上の遅延で開始時刻を過ぎていた場合も、公開と演出を同じ瞬間に
     // 潰さず、2P側では公開時間を確保してから再生する。
@@ -3906,8 +3916,11 @@ function chooseAction(player,action){
   // オンラインはFirebase経由で両者の行動が揃ったら開始
   if(gameMode === "online"){
     if(selectedAction[1] && selectedAction[2]){
-      stopCountdownRing();
-      stopTurnCountdownSE();
+      // 残り3秒以下は現在のカウントを止めず、自然に0秒まで進める。
+      if(countdown > 3){
+        stopCountdownRing();
+        stopTurnCountdownSE();
+      }
     }
     startOnlineBattleCountdownIfReady();
     return;
@@ -4019,6 +4032,8 @@ function finishTurn(){
       locked[me]=true;
       const area=document.getElementById("player"+me+"Area");
       if(area) area.classList.add("locked");
+      // 時間切れの自動チャージも、手動選択と同じ説明を見せる。
+      showOnlineTechniqueDescription(basicActions.charge);
       window.onlineBattle.sendAction("charge",onlineTurnNumber).catch(console.error);
     }
     if(!selectedAction[1] || !selectedAction[2]){
@@ -4185,7 +4200,7 @@ function resolveBattle(){
   // オンラインはFirebaseへ「技公開時刻」と「演出開始時刻」を送り、
   // 1P/2PともFirebase受信側の同じ処理で再生する。
   const onlineEffectTurn = gameMode === "online" ? onlineTurnNumber : 0;
-  const revealAt = gameMode === "online" ? onlineNow() + ONLINE_EVENT_LEAD_MS : 0;
+  const revealAt = gameMode === "online" ? onlineNow() + ONLINE_EFFECT_LEAD_MS : 0;
   const effectStartAt = gameMode === "online" ? revealAt + ONLINE_REVEAL_MS : Date.now() + 1000;
   if(gameMode !== "online") showTechniqueReveal(a1,a2);
   const effectHp = {
