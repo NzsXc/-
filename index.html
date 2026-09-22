@@ -1998,7 +1998,8 @@ body{
     get,
     onValue,
     update,
-    remove
+    remove,
+    onDisconnect
   } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js";
 
   const firebaseConfig = {
@@ -2018,6 +2019,32 @@ body{
   let localPlayer = null;
   let onlineStarted = false;
   let roomListener = null;
+  let presenceDisconnect = null;
+
+  async function markLocalPlayerOnline(){
+    if(!roomCode || !localPlayer) return;
+    const presenceRef=ref(db, `rooms/${roomCode}/players/${localPlayer}/online`);
+    await set(presenceRef, true);
+    if(presenceDisconnect) await presenceDisconnect.cancel();
+    presenceDisconnect=onDisconnect(presenceRef);
+    await presenceDisconnect.set(false);
+  }
+
+  async function closeCurrentRoom(){
+    const previousRoom=roomCode;
+    const previousPlayer=localPlayer;
+    if(roomListener){ roomListener(); roomListener=null; }
+    if(presenceDisconnect){
+      await presenceDisconnect.cancel();
+      presenceDisconnect=null;
+    }
+    if(previousRoom && previousPlayer){
+      await set(ref(db, `rooms/${previousRoom}/players/${previousPlayer}/online`), false);
+    }
+    roomCode=null;
+    localPlayer=null;
+    onlineStarted=false;
+  }
 
   window.onlineBattle = {
     get roomCode(){ return roomCode; },
@@ -2025,6 +2052,8 @@ body{
     get active(){ return onlineStarted; },
 
     async start(){
+      // 前の部屋の監視・在席情報を必ず解除して、別試合の受信を混ぜない。
+      await closeCurrentRoom();
       const create = confirm("新しい部屋を作りますか？\n\nOK：部屋を作る\nキャンセル：部屋コードで参加");
 
       if(create){
@@ -2034,8 +2063,9 @@ body{
 
         await set(ref(db, "rooms/" + roomCode), {
           createdAt: Date.now(),
-          players: { "1": { joined: true } }
+          players: { "1": { joined: true, online: true } }
         });
+        await markLocalPlayerOnline();
 
         alert("部屋を作りました！\n\n部屋コード：" + roomCode + "\n\n相手にこの6桁のコードを伝えてください。");
       }else{
@@ -2062,8 +2092,10 @@ body{
         onlineStarted = true;
 
         await update(ref(db, "rooms/" + roomCode), {
-          "players/2/joined": true
+          "players/2/joined": true,
+          "players/2/online": true
         });
+        await markLocalPlayerOnline();
 
         alert("部屋に参加しました！");
       }
@@ -2102,9 +2134,10 @@ body{
       const activePhases=new Set(["starting","battle","countdown","effect"]);
       return Object.entries(rooms).filter(([code,room])=>{
         const b=room && room.battle;
-        const p1=room?.players?.["1"]?.joined === true;
-        const p2=room?.players?.["2"]?.joined === true;
-        if(!p1 || !p2 || !b)return false;
+        const p1=room?.players?.["1"];
+        const p2=room?.players?.["2"];
+        // 接続が残っている両対戦者の試合だけを観戦対象にする。
+        if(!p1?.joined || !p2?.joined || !p1?.online || !p2?.online || !b)return false;
         if(!activePhases.has(String(b.phase || "")))return false;
         return true;
       }).map(([code,room])=>({
@@ -2120,9 +2153,9 @@ body{
       const activePhases=new Set(["starting","battle","countdown","effect"]);
       return Object.entries(source).filter(([code,room])=>{
         const b=room && room.battle;
-        const p1=room?.players?.["1"]?.joined === true;
-        const p2=room?.players?.["2"]?.joined === true;
-        return !!(p1 && p2 && b && activePhases.has(String(b.phase || "")));
+        const p1=room?.players?.["1"];
+        const p2=room?.players?.["2"];
+        return !!(p1?.joined && p2?.joined && p1?.online && p2?.online && b && activePhases.has(String(b.phase || "")));
       }).map(([code,room])=>({
         roomCode:code,
         p1:room?.players?.["1"]?.name || "プレイヤー1",
@@ -2635,6 +2668,8 @@ function closeSpectatorList(){
 }
 
 function startOnlineMatch(type){
+  // 前試合の受信済みターンやタイマーを持ち越さない。
+  resetOnlineMatchState();
   onlineMatchType = type;
   gameMode = "online";
   onlineBattleStarted = false;
@@ -2784,8 +2819,35 @@ let onlineCountdownStarted = false;
 let onlineBattleStarted = false;
 let receivingOnlineAction = false;
 let onlineTechConfirmed = false;
+// 新しい部屋・再対戦時に古い非同期処理が状態を書き戻さないための世代番号。
+let onlineMatchSession = 0;
 // オンラインの技は1タップ目を説明表示、同じ技の2タップ目で確定。
 let onlineTechniquePreviewId = null;
+
+function resetOnlineMatchState(){
+  onlineMatchSession++;
+  [
+    "_onlineTechniqueRevealTimeout",
+    "_onlineEffectStartTimeout",
+    "_onlineStartTimeout",
+    "_onlineCountdownTimeout"
+  ].forEach(key=>clearTimeout(window[key]));
+  clearInterval(countdownTimer);
+  clearTimeout(countdownFinishTimeout);
+  countdownTimer=null;
+  countdownFinishTimeout=null;
+  onlineCountdownStarted=false;
+  turnResolving=false;
+  window._lastOnlineEffectTurn=0;
+  window._lastOnlineResolvedTurn=0;
+  window._lastOnlineStateTurnReceived=0;
+  window._onlineStateTurnStarted=0;
+  window._resolvingOnlineTurn=0;
+  window._onlineInitialStarted=0;
+  clearOnlineTechniqueDescription();
+  const layer=document.getElementById("battleEffectLayer");
+  if(layer) layer.innerHTML="";
+}
 
 function receiveOnlineTechniques(player, indices){
 
@@ -2994,11 +3056,12 @@ function receiveOnlineBattleState(state){
   if(state.phase === "effect" && Number(state.resolvedTurn || 0) > 0){
     const effectTurn = Number(state.resolvedTurn);
     if(effectTurn <= Number(window._lastOnlineEffectTurn || 0)) return;
-    window._lastOnlineEffectTurn = effectTurn;
 
     const a1 = state.actions?.[1];
     const a2 = state.actions?.[2];
     if(!a1?.data || !a2?.data) return;
+    window._lastOnlineEffectTurn = effectTurn;
+    const session=onlineMatchSession;
 
     applyOnlineBlockSealState(state.blockSeal);
 
@@ -3011,12 +3074,12 @@ function receiveOnlineBattleState(state){
     clearTimeout(window._onlineEffectStartTimeout);
 
     window._onlineTechniqueRevealTimeout=setTimeout(()=>{
-      if(gameMode!=="online" || Number(onlineTurnNumber)!==Number(state.turn))return;
+      if(session!==onlineMatchSession || gameMode!=="online" || Number(onlineTurnNumber)!==Number(state.turn))return;
       showTechniqueReveal(a1.data,a2.data);
     },Math.max(0,revealAt-Date.now()));
 
     window._onlineEffectStartTimeout=setTimeout(()=>{
-      if(gameMode!=="online" || Number(onlineTurnNumber)!==Number(state.turn))return;
+      if(session!==onlineMatchSession || gameMode!=="online" || Number(onlineTurnNumber)!==Number(state.turn))return;
       clearOnlineTechniqueDescription();
       playBattleSituationSE(
         a1.data,
@@ -3028,6 +3091,7 @@ function receiveOnlineBattleState(state){
         a1.data,
         a2.data,
         ()=>{
+          if(session!==onlineMatchSession || gameMode!=="online" || Number(onlineTurnNumber)!==Number(state.turn)) return;
           hp={1:Number(state.hp?.[1] ?? hp[1]),2:Number(state.hp?.[2] ?? hp[2])};
           gauge={1:Number(state.gauge?.[1] ?? gauge[1]),2:Number(state.gauge?.[2] ?? gauge[2])};
           lastAction=state.lastAction||lastAction;
@@ -3732,9 +3796,17 @@ function showTechniqueReveal(a1,a2){
 
   layer.appendChild(label1);
   layer.appendChild(label2);
+
+  // 回線遅延などで演出開始が来なかった場合も、技公開表示だけが残り続けない。
+  clearTimeout(window._techniqueRevealCleanupTimeout);
+  window._techniqueRevealCleanupTimeout=setTimeout(()=>{
+    label1.remove();
+    label2.remove();
+  },1100);
 }
 
 function clearOnlineTechniqueDescription(){
+  clearTimeout(window._techniqueRevealCleanupTimeout);
   const el=document.getElementById("onlineTechniqueDescription");
   if(el){el.style.display="none";el.textContent="";}
   const reveal=document.getElementById("battleTechniqueRevealNames");
