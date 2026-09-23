@@ -1748,7 +1748,31 @@ button{min-height:44px;}
 @media(prefers-reduced-motion:reduce){
   .hpFill,.gaugeFill,.gaugeFill.gaugeReady{animation:none;}
 }
+/* 相手の装備技を表示 */
+#battleScreen[data-local-player="1"] #player2Area .actionList,
+#battleScreen[data-local-player="2"] #player1Area .actionList {
+  display:grid;
+  pointer-events:none;
+}
 
+/* 相手の基本行動は非表示。装備した3技だけ残す */
+#battleScreen[data-local-player="1"] #player2Area .action:not([data-action^="tech"]),
+#battleScreen[data-local-player="2"] #player1Area .action:not([data-action^="tech"]) {
+  display:none;
+}
+
+/* 相手の技を暗くせず、操作キー表示も消す */
+#battleScreen[data-local-player="1"] #player2Area .action,
+#battleScreen[data-local-player="2"] #player1Area .action {
+  opacity:1;
+  filter:none;
+  cursor:default;
+}
+
+#battleScreen[data-local-player="1"] #player2Area .actionKey,
+#battleScreen[data-local-player="2"] #player1Area .actionKey {
+  display:none;
+}
 </style>
 </head>
 
@@ -3346,7 +3370,10 @@ function sendSelectedOnlineAction(player,action,turn){
     if(session!==onlineMatchSession || turn!==onlineInputTurn || turn!==onlineTurnNumber || onlinePendingAction!==submission)return;
     onlinePendingAction=null;
     onlineActionAcknowledged=true;
-    if(message)message.textContent="選択を確定しました。相手を待っています…";
+if(message && onlineInputOpen && countdown > 0){
+  message.textContent =
+    "選択を確定しました。相手を待っています…";
+}
     startOnlineBattleCountdownIfReady();
     if(countdown<=0)finishTurn();
   }).catch(error=>{
@@ -3401,7 +3428,7 @@ function beginOnlineBattleCountdown(startAt){
       el.className = "battleCall";
       el.textContent = "BATTLE!";
     }
-
+document.getElementById("resultMessage").textContent = "";
     clearTimeout(window._onlineCountdownTimeout);
     window._onlineCountdownTimeout = setTimeout(()=>{
       if(gameMode === "online" && window.onlineBattle.localPlayer === 1 &&
@@ -4095,7 +4122,7 @@ function startTurn(){
       stopTurnCountdownSE();
       el.className = "battleCall";
       el.textContent = "BATTLE!";
-
+document.getElementById("resultMessage").textContent = "";
       clearTimeout(countdownFinishTimeout);
       countdownFinishTimeout = setTimeout(()=>{
         countdownFinishTimeout = null;
@@ -4447,6 +4474,7 @@ function chooseAction(player,action){
         el.className = "battleCall";
         el.textContent = "BATTLE!";
       }
+      document.getElementById("resultMessage").textContent = "";
       // オフライン：3 → 2 → 1 → BATTLE! → 技名だけ公開 → 1秒 → 演出 → ダメージ数値
       clearTimeout(countdownFinishTimeout);
       countdownFinishTimeout = setTimeout(()=>{
