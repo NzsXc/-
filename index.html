@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>心理バトル</title>
 
 <style>
@@ -1487,6 +1487,35 @@ body{
   #battleCenter{z-index:3;pointer-events:none;}
 }
 
+/* エンハンスの状態マークと新技の演出 */
+.enhanceIndicator{
+  display:inline-flex;
+  align-items:center;
+  flex:0 0 auto;
+  margin-left:6px;
+  padding:3px 6px;
+  border:1px solid rgba(255,85,110,.5);
+  border-radius:999px;
+  background:rgba(135,18,40,.24);
+  color:#ff9cad;
+  font-size:11px;
+  font-weight:800;
+  line-height:1.2;
+  white-space:nowrap;
+}
+.enhanceIndicator[hidden]{display:none;}
+.enhanceAura{
+  background:radial-gradient(circle,rgba(255,235,240,.4),rgba(255,50,75,.24) 35%,transparent 70%);
+  box-shadow:0 0 35px rgba(255,50,75,.7);
+}
+.siphonProjectile{
+  width:18px;
+  height:18px;
+  color:#42b6ff;
+  background:#bfefff;
+}
+.siphonArrival{width:25px;height:25px;border-width:2px;}
+
 </style>
 <!-- PSYCHO_BATTLE_FLOW_FIX_20260919 -->
 <style id="cyber-theme">
@@ -1518,10 +1547,215 @@ button:focus-visible,.action:focus-visible{outline:2px solid #e4faff;outline-off
 .tipNavButton.active{background:#537895;color:#fff;border-color:#d7f1ff;}
 input{background:#142a40;color:#f0faff;border:1px solid #91c5e6;border-radius:3px;}
 </style>
+<style id="responsive-play-fix">
+/* Adaptive viewport, safe areas, and readable touch controls. */
+:root{
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-right:env(safe-area-inset-right,0px);
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+  --safe-left:env(safe-area-inset-left,0px);
+}
+html{min-height:100%;overflow-x:hidden;}
+body{min-height:100vh;min-height:100dvh;overflow-x:hidden;overflow-y:auto;}
+[hidden]{display:none !important;}
+button,.action{touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
+button{min-height:44px;}
+.screen{
+  min-height:100vh;
+  min-height:100dvh;
+  padding:calc(24px + var(--safe-top)) calc(20px + var(--safe-right)) calc(84px + var(--safe-bottom)) calc(20px + var(--safe-left));
+}
+.screen.active{display:flex;}
+#startScreen{padding-bottom:calc(24px + var(--safe-bottom));}
+#modeScreen,#onlineScreen,#tipScreen{
+  padding:calc(24px + var(--safe-top)) calc(20px + var(--safe-right)) calc(92px + var(--safe-bottom)) calc(20px + var(--safe-left));
+  overflow:visible;
+}
+.modeBottomButton,.onlineBackButton,.tipBackButton{left:calc(16px + var(--safe-left));bottom:calc(16px + var(--safe-bottom));}
+.modeSquareButton{right:calc(16px + var(--safe-right));bottom:calc(16px + var(--safe-bottom));}
+.screenTitle{max-width:100%;text-align:center;overflow-wrap:anywhere;}
+.onlineMenu,.spectatorList{width:min(720px,100%);}
+.spectatorList{max-height:64vh;max-height:64dvh;overflow:auto;}
+#techScreen{padding-top:calc(72px + var(--safe-top));padding-bottom:calc(24px + var(--safe-bottom));}
+.techSelect{width:min(820px,100%);}
+.techCard{grid-template-columns:44px minmax(0,1fr) 44px;}
+.techArrow{width:44px;min-width:44px;min-height:54px;}
+.techCardDescription{font-size:13px;line-height:1.6;}
+.techIcon{font-size:clamp(18px,2.4vw,25px);}
+#roomCodeButton{
+  position:fixed;
+  top:calc(8px + var(--safe-top));
+  right:calc(12px + var(--safe-right));
+  z-index:120;
+  min-height:44px;
+  max-width:calc(100vw - 24px - var(--safe-left) - var(--safe-right));
+  padding:8px 14px;
+  background:rgba(18,39,61,.97);
+  font-size:14px;
+  font-weight:700;
+  letter-spacing:.04em;
+  cursor:pointer;
+}
+#roomCodeButton:active{transform:translateY(1px);}
+#battleScreen{
+  display:none;
+  min-height:max(720px,100vh);
+  min-height:max(720px,100dvh);
+  padding:0;
+  overflow:hidden;
+}
+#battleScreen.active{display:block;}
+.playerArea{width:320px;max-width:calc(100% - 24px);min-width:0;padding:12px;}
+#player1Area{left:calc(16px + var(--safe-left));bottom:calc(16px + var(--safe-bottom));}
+#player2Area{right:calc(16px + var(--safe-right));top:calc(64px + var(--safe-top));}
+#battleScreen[data-local-player="1"] #player2Area .actionList,
+#battleScreen[data-local-player="2"] #player1Area .actionList{display:none;}
+#battleScreen[data-local-player="2"] #player2Area{left:calc(16px + var(--safe-left));bottom:calc(16px + var(--safe-bottom));right:auto;top:auto;}
+#battleScreen[data-local-player="2"] #player1Area{right:calc(16px + var(--safe-right));top:calc(64px + var(--safe-top));left:auto;bottom:auto;}
+.playerHeader{min-width:0;min-height:27px;margin-bottom:7px;}
+.playerName{display:flex;align-items:center;gap:8px;min-width:0;max-width:100%;font-size:20px;letter-spacing:1px;}
+.playerNameText{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.enhanceBadge{
+  flex:none;
+  display:inline-flex;
+  align-items:center;
+  gap:3px;
+  padding:3px 5px;
+  border:1px solid #ff8497;
+  border-radius:4px;
+  color:#ffd8df;
+  background:#80293ac9;
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:0;
+  line-height:1.2;
+  text-shadow:0 0 7px #ff667e;
+}
+.actionList{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;}
+.action{min-width:0;min-height:54px;padding:5px 3px;}
+.actionName{max-width:100%;font-size:13px;line-height:1.25;overflow-wrap:anywhere;text-align:center;margin-top:3px;}
+.actionKey{font-size:10px;line-height:1;}
+#battleCenter{padding:12px;}
+#resultMessage{font-size:14px;line-height:1.5;letter-spacing:0;max-width:min(100%,440px);overflow-wrap:anywhere;text-transform:none;text-shadow:none;}
+#resultMessage.resultShow{font-size:clamp(32px,7vw,98px);line-height:1.1;letter-spacing:3px;max-width:100%;text-shadow:0 0 12px currentColor,0 0 35px currentColor;}
+#battleHomeButton{pointer-events:auto;min-width:180px;min-height:48px;margin-top:18px;padding:12px 20px;font-size:16px;font-weight:800;cursor:pointer;z-index:60;}
+.onlineTechniqueDescription{max-width:min(90vw,440px);font-size:13px;}
+.spectatorBadge{top:calc(8px + var(--safe-top));max-width:calc(100% - 24px);min-height:48px;white-space:normal;padding:4px 8px 4px 12px;}
+.spectatorBadge button{flex:none;min-height:44px;padding:8px 12px;}
+#spectatorLoadouts{
+  position:absolute;
+  left:50%;
+  bottom:calc(16px + var(--safe-bottom));
+  transform:translateX(-50%);
+  width:min(440px,calc(100% - 32px));
+  max-height:min(360px,calc(50dvh - 80px));
+  overflow-y:auto;
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+  padding:10px;
+  border:1px solid #89b8d688;
+  background:rgba(18,39,61,.96);
+  z-index:12;
+}
+.spectatorLoadout{min-width:0;}
+.spectatorLoadoutTitle{display:block;font-size:13px;font-weight:800;margin-bottom:6px;overflow-wrap:anywhere;color:#dcefff;}
+.spectatorLoadout:first-child .spectatorLoadoutTitle{color:#ff91a0;}
+.spectatorLoadout:last-child .spectatorLoadoutTitle{color:#8ccbff;}
+.spectatorTechniqueList{display:grid;gap:5px;}
+.spectatorTechnique{display:block;min-width:0;border:1px solid #87b7d24d;background:#17334c;font-size:12px;line-height:1.4;overflow-wrap:anywhere;}
+.spectatorTechnique + .spectatorTechnique{margin-top:5px;}
+.spectatorTechnique summary{min-height:44px;padding:9px 7px;cursor:pointer;touch-action:manipulation;}
+.spectatorTechnique summary:focus-visible{outline:2px solid #e4faff;outline-offset:2px;}
+.spectatorTechnique p{margin:0;padding:2px 8px 9px;color:#d3e8f6;line-height:1.6;}
+#battleScreen.spectatorMode .actionList{display:none;}
+/* Compact screens use document flow so controls can never be clipped by browser bars. */
+@media(max-width:1100px),(max-height:680px){
+  #battleScreen{
+    min-height:100vh;
+    min-height:100dvh;
+    padding:calc(62px + var(--safe-top)) calc(12px + var(--safe-right)) calc(12px + var(--safe-bottom)) calc(12px + var(--safe-left));
+  }
+  #battleScreen.active{
+    display:grid;
+    grid-template-columns:minmax(0,1fr);
+    grid-template-rows:auto minmax(108px,1fr) auto;
+    gap:10px;
+    align-items:stretch;
+  }
+  #battleScreen .playerArea{
+    position:relative;
+    inset:auto;
+    width:min(100%,520px);
+    max-width:100%;
+    padding:9px 10px;
+    justify-self:center;
+    align-self:start;
+    z-index:10;
+  }
+  #battleScreen #player1Area{grid-column:1;grid-row:3;align-self:end;}
+  #battleScreen #player2Area{grid-column:1;grid-row:1;}
+  #battleScreen[data-local-player="2"] #player2Area{grid-row:3;inset:auto;align-self:end;}
+  #battleScreen[data-local-player="2"] #player1Area{grid-row:1;inset:auto;align-self:start;}
+  #battleScreen #battleCenter{position:relative;inset:auto;grid-column:1;grid-row:2;min-height:108px;padding:6px;}
+  .playerHeader{margin-bottom:5px;padding-bottom:3px;min-height:24px;}
+  .statusTitle{font-size:11px;margin-bottom:3px;}
+  .statusBarRow{margin-bottom:5px;}
+  .statusValue{font-size:15px;flex-basis:44px;}
+  .hpBar{height:14px;}
+  .gaugeBar{height:10px;}
+  .action{min-height:52px;}
+  .actionName{font-size:13px;}
+  #countdown,#countdown.battleCall{font-size:clamp(38px,8vw,68px);}
+  #battleHomeButton{margin-top:10px;}
+  #battleEffectLayer{position:absolute;inset:0;overflow:hidden;z-index:40;}
+  #spectatorLoadouts{position:relative;inset:auto;transform:none;grid-column:1;grid-row:4;width:min(100%,520px);max-height:none;overflow:visible;justify-self:center;}
+  #battleScreen.spectatorMode{grid-template-rows:auto minmax(100px,1fr) auto auto;}
+  .battleActionLabel{font-size:clamp(22px,5vw,36px);padding:6px 9px;max-width:90%;}
+}
+/* Short landscape displays keep both players and the arena beside one another. */
+@media(min-width:640px) and (max-height:680px){
+  #battleScreen.active{
+    grid-template-columns:minmax(0,1fr) minmax(120px,.65fr) minmax(0,1fr);
+    grid-template-rows:minmax(270px,1fr);
+    gap:10px;
+  }
+  #battleScreen #player1Area{grid-column:1;grid-row:1;align-self:center;}
+  #battleScreen #player2Area{grid-column:3;grid-row:1;align-self:center;}
+  #battleScreen[data-local-player="2"] #player2Area{grid-column:1;grid-row:1;align-self:center;}
+  #battleScreen[data-local-player="2"] #player1Area{grid-column:3;grid-row:1;align-self:center;}
+  #battleScreen #battleCenter{grid-column:2;grid-row:1;align-self:center;min-width:0;}
+  #battleScreen .playerArea{padding:8px;}
+  .actionName{font-size:12px;}
+  #countdown,#countdown.battleCall{font-size:40px;letter-spacing:1px;}
+  #resultMessage.resultShow{font-size:32px;letter-spacing:1px;}
+  #battleHomeButton{min-width:0;width:100%;font-size:14px;padding:9px 5px;}
+  #battleScreen.spectatorMode{grid-template-rows:minmax(160px,1fr) auto;}
+  #spectatorLoadouts{grid-column:1 / -1;grid-row:2;width:min(100%,760px);}
+}
+@media(max-width:540px){
+  .screenTitle{font-size:24px;margin-bottom:14px;}
+  .techSelect{grid-template-columns:minmax(0,1fr);grid-template-rows:auto;gap:10px;margin-top:0;}
+  .techCard,.techCard:nth-child(n),#techConfirmButton{grid-column:1;grid-row:auto;min-height:118px;}
+  .techCard{padding:10px;gap:8px;}
+  #techConfirmButton{min-height:54px;padding:12px;}
+  .techCardDescription{font-size:13px;margin-top:5px;}
+  .techIcon{font-size:19px;min-height:26px;}
+  #techScreen{padding-left:calc(12px + var(--safe-left));padding-right:calc(12px + var(--safe-right));}
+  .tipNavButton{min-width:44px;}
+  .modeChoiceBox{width:100%;max-width:520px;}
+}
+@media(prefers-reduced-motion:reduce){
+  .hpFill,.gaugeFill,.gaugeFill.gaugeReady{animation:none;}
+}
+
+</style>
 </head>
 
 
 <body>
+
+<button id="roomCodeButton" type="button" hidden onclick="copyRoomCode()" aria-label="ルームコードをコピー" title="タップしてルームコードをコピー">ルームコード <span id="roomCodeText"></span> ⧉</button>
 
 
 <!-- =========================
@@ -1708,7 +1942,8 @@ input{background:#142a40;color:#f0faff;border:1px solid #91c5e6;border-radius:3p
     <div class="playerHeader">
 
       <div class="playerName">
-        1P
+        <span class="playerNameText">1P</span>
+        <span id="p1Enhance" class="enhanceBadge" hidden title="攻撃力+1" aria-label="攻撃力が1上がっています">↑+1</span>
       </div>
 
     </div>
@@ -1850,6 +2085,8 @@ input{background:#142a40;color:#f0faff;border:1px solid #91c5e6;border-radius:3p
   </div>
 
 
+  <section id="spectatorLoadouts" hidden aria-label="対戦プレイヤーの選択技"></section>
+
   <!-- 中央 -->
 
   <div id="countdownRing" aria-hidden="true"></div>
@@ -1865,6 +2102,8 @@ input{background:#142a40;color:#f0faff;border:1px solid #91c5e6;border-radius:3p
 
     <div id="onlineTechniqueDescription" class="onlineTechniqueDescription"></div>
 
+    <button id="battleHomeButton" type="button" hidden onclick="returnBattleHome()">ホームに戻る</button>
+
   </div>
 
 
@@ -1876,7 +2115,8 @@ input{background:#142a40;color:#f0faff;border:1px solid #91c5e6;border-radius:3p
     <div class="playerHeader">
 
       <div class="playerName">
-        2P
+        <span class="playerNameText">2P</span>
+        <span id="p2Enhance" class="enhanceBadge" hidden title="攻撃力+1" aria-label="攻撃力が1上がっています">↑+1</span>
       </div>
 
     </div>
@@ -2052,41 +2292,108 @@ input{background:#142a40;color:#f0faff;border:1px solid #91c5e6;border-radius:3p
   let onlineStarted = false;
   let roomListener = null;
   let presenceDisconnect = null;
+  let presenceTimer = null;
+  let connected = false;
+  let presenceGeneration = 0;
+  const PRESENCE_GRACE_MS = 60000;
   // 端末時計ではなくFirebaseの時刻を基準に、全端末で開始時刻を計算する。
   let serverTimeOffset = 0;
   onValue(ref(db, ".info/serverTimeOffset"), snap => {
     serverTimeOffset=Number(snap.val() || 0);
   });
 
+  function showOnlineWriteError(error, retry){
+    console.error(error);
+    const target=document.getElementById("resultMessage");
+    if(!target || !onlineStarted)return;
+    target.textContent="通信に失敗しました。接続を確認してください。 ";
+    const button=document.createElement("button");
+    button.type="button";
+    button.textContent="通信を再試行";
+    button.style.pointerEvents="auto";
+    button.style.minHeight="44px";
+    button.onclick=()=>{
+      button.disabled=true;
+      retry().then(()=>{if(button.isConnected)target.textContent="";}).catch(()=>{button.disabled=false;});
+    };
+    target.appendChild(button);
+  }
+
   async function markLocalPlayerOnline(){
-    if(!roomCode || !localPlayer) return;
-    const presenceRef=ref(db, `rooms/${roomCode}/players/${localPlayer}/online`);
-    await set(presenceRef, true);
-    if(presenceDisconnect) await presenceDisconnect.cancel();
-    presenceDisconnect=onDisconnect(presenceRef);
-    await presenceDisconnect.set(false);
+    if(!roomCode || !localPlayer || !connected)return;
+    const generation=presenceGeneration;
+    const playerPath=`rooms/${roomCode}/players/${localPlayer}`;
+    const disconnect=onDisconnect(ref(db,playerPath+"/online"));
+    // 切断フックを先に登録。再接続のたびに登録し直して在席情報を復旧する。
+    await disconnect.set(false);
+    if(generation!==presenceGeneration){await disconnect.cancel();return;}
+    presenceDisconnect=disconnect;
+    await update(ref(db,playerPath),{online:true,lastSeen:Date.now()+serverTimeOffset});
+  }
+
+  onValue(ref(db,".info/connected"),snap=>{
+    connected=snap.val()===true;
+    if(connected && onlineStarted){
+      markLocalPlayerOnline().catch(error=>showOnlineWriteError(error,markLocalPlayerOnline));
+    }
+  });
+
+  function startPresenceHeartbeat(){
+    clearInterval(presenceTimer);
+    presenceTimer=setInterval(()=>{
+      if(connected && onlineStarted && roomCode && localPlayer){
+        update(ref(db,`rooms/${roomCode}/players/${localPlayer}`),{
+          online:true,lastSeen:Date.now()+serverTimeOffset
+        }).catch(console.error);
+      }
+    },15000);
   }
 
   async function closeCurrentRoom(){
     const previousRoom=roomCode;
     const previousPlayer=localPlayer;
-    if(roomListener){ roomListener(); roomListener=null; }
-    if(presenceDisconnect){
-      await presenceDisconnect.cancel();
-      presenceDisconnect=null;
-    }
-    if(previousRoom && previousPlayer){
-      await set(ref(db, `rooms/${previousRoom}/players/${previousPlayer}/online`), false);
-    }
+    const previousDisconnect=presenceDisconnect;
+    presenceGeneration++;
+    if(roomListener){roomListener();roomListener=null;}
+    clearInterval(presenceTimer);
+    presenceTimer=null;
+    presenceDisconnect=null;
     roomCode=null;
     localPlayer=null;
     onlineStarted=false;
+    if(previousRoom && previousPlayer){
+      // 接続が戻るまで画面移動を止めない。退出予約はFirebaseが再接続時に送る。
+      update(ref(db,`rooms/${previousRoom}/players/${previousPlayer}`),{
+        online:false,joined:false,ready:false,lastSeen:0
+      }).then(()=>previousDisconnect?.cancel()).catch(console.error);
+    }else if(previousDisconnect){
+      previousDisconnect.cancel().catch(console.error);
+    }
+  }
+
+  function activeBattles(rooms){
+    const activePhases=new Set(["starting","battle","countdown","effect"]);
+    const now=Date.now()+serverTimeOffset;
+    const present=(player,battle)=>player?.joined && (player.online===true ||
+      now-Number(player.lastSeen || battle.updatedAt || 0)<PRESENCE_GRACE_MS);
+    return Object.entries(rooms || {}).filter(([,room])=>{
+      const battle=room?.battle;
+      return battle && !battle.result && activePhases.has(String(battle.phase || "")) &&
+        present(room.players?.[1],battle) && present(room.players?.[2],battle);
+    }).map(([code,room])=>({
+      roomCode:code,
+      p1:room.players?.[1]?.name || "プレイヤー1",
+      p2:room.players?.[2]?.name || "プレイヤー2",
+      battle:room.battle
+    }));
   }
 
   window.onlineBattle = {
     get roomCode(){ return roomCode; },
     get localPlayer(){ return localPlayer; },
     get active(){ return onlineStarted; },
+    get connected(){ return connected; },
+    leave: closeCurrentRoom,
     now(){ return Date.now()+serverTimeOffset; },
 
     async start(){
@@ -2138,18 +2445,19 @@ input{background:#142a40;color:#f0faff;border:1px solid #91c5e6;border-radius:3p
         alert("部屋に参加しました！");
       }
 
+      startPresenceHeartbeat();
       listenRoom();
       return true;
     },
 
     async sendTechniques(indices){
       if(!onlineStarted || !roomCode || !localPlayer)return;
-      await set(ref(db, `rooms/${roomCode}/players/${localPlayer}/techniques`), indices);
-      await set(ref(db, `rooms/${roomCode}/players/${localPlayer}/ready`), true);
+      await update(ref(db, `rooms/${roomCode}/players/${localPlayer}`), {techniques:indices,ready:true});
     },
 
     async sendAction(actionId, turnNumber){
-      if(!onlineStarted || !roomCode || !localPlayer)return;
+      if(!onlineStarted || !roomCode || !localPlayer)throw new Error("対戦ルームに接続していません。");
+      if(!Number.isInteger(Number(turnNumber)) || Number(turnNumber)<1)throw new Error("ターン番号が不正です。");
       await set(ref(db, `rooms/${roomCode}/turns/${turnNumber}/actions/${localPlayer}`), {
         id: actionId,
         time: Date.now()+serverTimeOffset
@@ -2163,52 +2471,31 @@ input{background:#142a40;color:#f0faff;border:1px solid #91c5e6;border-radius:3p
 
     async publishBattleState(state){
       if(!onlineStarted || !roomCode)return;
-      await set(ref(db, `rooms/${roomCode}/battle`), state);
+      const writingRoom=roomCode;
+      const generation=presenceGeneration;
+      const retry=async()=>{
+        if(generation!==presenceGeneration || writingRoom!==roomCode)return;
+        try{
+          await set(ref(db,`rooms/${writingRoom}/battle`),{...state,updatedAt:Date.now()+serverTimeOffset});
+        }catch(error){showOnlineWriteError(error,retry);throw error;}
+      };
+      await retry();
     },
 
     async listActiveBattles(){
       const snap=await get(ref(db,"rooms"));
-      const rooms=snap.val() || {};
-      const activePhases=new Set(["starting","battle","countdown","effect"]);
-      return Object.entries(rooms).filter(([code,room])=>{
-        const b=room && room.battle;
-        const p1=room?.players?.["1"];
-        const p2=room?.players?.["2"];
-        // 接続が残っている両対戦者の試合だけを観戦対象にする。
-        if(!p1?.joined || !p2?.joined || !p1?.online || !p2?.online || !b)return false;
-        if(!activePhases.has(String(b.phase || "")))return false;
-        return true;
-      }).map(([code,room])=>({
-        roomCode:code,
-        p1:room?.players?.["1"]?.name || "プレイヤー1",
-        p2:room?.players?.["2"]?.name || "プレイヤー2",
-        battle:room.battle
-      }));
+      return activeBattles(snap.val());
     },
 
-    filterActiveBattles(rooms){
-      const source=rooms || {};
-      const activePhases=new Set(["starting","battle","countdown","effect"]);
-      return Object.entries(source).filter(([code,room])=>{
-        const b=room && room.battle;
-        const p1=room?.players?.["1"];
-        const p2=room?.players?.["2"];
-        return !!(p1?.joined && p2?.joined && p1?.online && p2?.online && b && activePhases.has(String(b.phase || "")));
-      }).map(([code,room])=>({
-        roomCode:code,
-        p1:room?.players?.["1"]?.name || "プレイヤー1",
-        p2:room?.players?.["2"]?.name || "プレイヤー2",
-        battle:room.battle
-      }));
-    },
+    filterActiveBattles: activeBattles,
 
-    watchAllRooms(callback){
-      const stop=onValue(ref(db,"rooms"),snap=>callback(snap.val() || {}));
+    watchAllRooms(callback,onError){
+      const stop=onValue(ref(db,"rooms"),snap=>callback(snap.val() || {}),onError);
       return stop;
     },
 
-    watchRoom(roomCodeToWatch, callback){
-      const stop=onValue(ref(db,`rooms/${roomCodeToWatch}`),snap=>callback(snap.val()));
+    watchRoom(roomCodeToWatch, callback,onError){
+      const stop=onValue(ref(db,`rooms/${roomCodeToWatch}`),snap=>callback(snap.val()),onError);
       return stop;
     }
   };
@@ -2302,6 +2589,8 @@ let lastLastAction = {1:null,2:null};
 // モーメンタムの「次の1回だけ2ダメージ」判定
 let momentumBonus = {1:false,2:false};
 let blockSeal = {1:false,2:false};
+// エンハンスが有効な残りターン数。使用した次の2ターンに適用する。
+let enhanceTurns = {1:0,2:0};
 
 let locked = {
   1:false,
@@ -2381,7 +2670,7 @@ const techniquePool = [
     type:"reflect",
     skill:"tech2",
     description:
-      "ゲージ2消費 / 相手が攻撃していた場合、その攻撃ダメージをすべて相手に返す"
+      "ゲージ2消費 / 相手の攻撃を無効化し、威力に関係なく1ダメージだけ相手に返す"
   },
 
   {
@@ -2409,7 +2698,9 @@ const techniquePool = [
   {name:"フォーサイト",cost:1,power:0,pierce:false,type:"block",skill:"tech5",description:"ゲージ1消費 / ブロック状態 / 相手がチャージならゲージ+3"},
   {name:"モーメンタム",cost:2,power:1,pierce:false,type:"attack",skill:"tech6",description:"ゲージ2消費 / 1ダメージ / 2連続使用ならさらに+1"},
   {name:"ランページ",cost:0,power:0,pierce:false,type:"special",skill:"tech7",description:"前のターンにチャージしていた場合のみ / ゲージ+8 / HP-2"},
-  {name:"アンチガード",cost:0,power:0,pierce:false,type:"seal",skill:"tech8",description:"相手のブロック系技を封印 / 相手のゲージが7に達すると解除"}
+  {name:"アンチガード",cost:0,power:0,pierce:false,type:"seal",skill:"tech8",description:"相手のブロック系技を封印 / 相手のゲージが7に達すると解除"},
+  {name:"エンハンス",cost:1,power:0,pierce:false,type:"enhance",skill:"tech9",description:"ゲージ1消費 / 次の2ターン、攻撃力+1 / 再使用で残り2ターンに更新"},
+  {name:"サイフォン",cost:3,power:0,pierce:false,type:"siphon",skill:"tech10",description:"ゲージ3消費 / 相手のゲージを最大2奪い、奪った分だけ自分に加える"}
 
 ];
 
@@ -2450,7 +2741,10 @@ function showScreen(id){
     .getElementById(id)
     .classList.add("active");
 
+  const battleScreen=document.getElementById("battleScreen");
+  battleScreen.dataset.localPlayer=gameMode==="online" ? String(window.onlineBattle?.localPlayer||"") : "";
   syncBattleBGM(id);
+  updateRoomCodeButton(id);
 
 }
 
@@ -2468,47 +2762,54 @@ let spectatorRoomCode = null;
 let spectatorListener = null;
 let spectatorRoomsListener = null;
 
+let spectatorSession=0;
+let spectatorCountdownKey="";
+
+function clearSpectatorTimers(){
+  ["_spectatorStartTimer","_spectatorCountdownTimer","_spectatorTechniqueRevealTimer","_spectatorEffectStartTimer"]
+    .forEach(key=>clearTimeout(window[key]));
+  spectatorCountdownKey="";
+}
+
 async function openSpectatorList(){
+  const session=++spectatorSession;
   gameMode="spectator";
   spectatorActive=false;
   spectatorRoomCode=null;
+  clearSpectatorTimers();
+  if(spectatorListener){spectatorListener();spectatorListener=null;}
+  if(spectatorRoomsListener){spectatorRoomsListener();spectatorRoomsListener=null;}
   showScreen("spectatorListScreen");
   const list=document.getElementById("spectatorList");
-  if(list)list.innerHTML='<div class="spectatorEmpty">対戦を読み込んでいます…</div>';
-
-  if(spectatorRoomsListener){
-    spectatorRoomsListener();
-    spectatorRoomsListener=null;
-  }
-
+  list.innerHTML='<div class="spectatorEmpty">対戦を読み込んでいます…</div>';
   try{
-    const rooms=await window.onlineBattle.listActiveBattles();
-    renderSpectatorList(rooms);
-
-    // 一覧を開いている間はFirebaseを監視し、試合開始・終了を即時反映する。
+    if(!window.onlineBattle) throw new Error("接続を準備中です。しばらくしてから開き直してください。");
+    // 初回取得も同じ監視から受け取り、取得と監視の間に始まった試合も取りこぼさない。
     spectatorRoomsListener=window.onlineBattle.watchAllRooms(data=>{
-      if(gameMode!=="spectator" || spectatorActive)return;
-      const roomsNow=window.onlineBattle.filterActiveBattles(data);
-      renderSpectatorList(roomsNow);
+      if(session!==spectatorSession || gameMode!=="spectator" || spectatorActive)return;
+      renderSpectatorList(window.onlineBattle.filterActiveBattles(data));
+    },()=>{
+      if(session===spectatorSession)list.innerHTML='<div class="spectatorEmpty">対戦一覧を取得できませんでした。観戦を開き直してください。</div>';
     });
   }catch(err){
     console.error(err);
-    if(list)list.innerHTML='<div class="spectatorEmpty">対戦一覧を取得できませんでした。</div>';
+    list.innerHTML='<div class="spectatorEmpty">対戦一覧を取得できませんでした。しばらくしてから開き直してください。</div>';
   }
 }
 
 function renderSpectatorList(rooms){
   const list=document.getElementById("spectatorList");
   if(!list)return;
-  list.innerHTML="";
+  list.replaceChildren();
   if(!rooms.length){
     list.innerHTML='<div class="spectatorEmpty">現在観戦できる対戦はありません。</div>';
     return;
   }
   rooms.forEach(room=>{
     const row=document.createElement("button");
+    row.type="button";
     row.className="spectatorRow";
-    row.innerHTML=`<span class="spectatorPlayer"></span><span class="spectatorVs">VS</span><span class="spectatorPlayer"></span>`;
+    row.innerHTML='<span class="spectatorPlayer"></span><span class="spectatorVs">VS</span><span class="spectatorPlayer"></span>';
     row.children[0].textContent=room.p1;
     row.children[2].textContent=room.p2;
     row.addEventListener("click",()=>enterSpectator(room.roomCode,room.p1,room.p2));
@@ -2516,197 +2817,222 @@ function renderSpectatorList(rooms){
   });
 }
 
+function setPlayerNames(p1="1P",p2="2P"){
+  [p1,p2].forEach((name,index)=>{
+    const node=document.querySelector(`#player${index+1}Area .playerNameText`);
+    if(node)node.textContent=name;
+  });
+}
+
+function renderSpectatorLoadouts(room){
+  const panel=document.getElementById("spectatorLoadouts");
+  if(!panel)return;
+  panel.replaceChildren();
+  for(const side of [1,2]){
+    const raw=room.players?.[side]?.techniques ?? room.battle?.techniques?.[side];
+    const indices=Array.isArray(raw)?raw:Object.keys(raw||{}).sort((a,b)=>Number(a)-Number(b)).map(key=>raw[key]);
+    const techs=indices.map(index=>techniquePool[Number(index)]).filter(Boolean).slice(0,3);
+    if(side===1)player1Techs=techs; else player2Techs=techs;
+    const section=document.createElement("section");
+    section.className="spectatorLoadout";
+    const heading=document.createElement("strong");
+    heading.className="spectatorLoadoutTitle";
+    heading.textContent=`${room.players?.[side]?.name || side+"P"} の技`;
+    section.appendChild(heading);
+    techs.forEach((tech,index)=>{
+      const item=document.createElement("details");
+      item.className="spectatorTechnique";
+      const summary=document.createElement("summary");
+      summary.textContent=`${tech.name} · ${tech.cost}`;
+      const description=document.createElement("p");
+      description.textContent=tech.description;
+      item.append(summary,description);
+      section.appendChild(item);
+      const actionName=document.querySelector(`#p${side}tech${index} .actionName`);
+      if(actionName)actionName.textContent=tech.name;
+    });
+    if(techs.length!==3){
+      const note=document.createElement("p");
+      note.textContent="技の情報を読み込み中…";
+      section.appendChild(note);
+    }
+    panel.appendChild(section);
+  }
+}
+
 async function enterSpectator(code,p1,p2){
+  const session=++spectatorSession;
   if(spectatorListener){spectatorListener();spectatorListener=null;}
-  // 前に観戦した別試合のターン番号を持ち越すと、演出中の試合を
-  // 「すでに再生済み」と誤判定してしまうため、試合を切り替えるたびに初期化する。
+  if(spectatorRoomsListener){spectatorRoomsListener();spectatorRoomsListener=null;}
+  resetOnlineMatchState();
+  clearSpectatorTimers();
   window._lastSpectatorEffectTurn=0;
-  clearTimeout(window._spectatorStartTimer);
-  clearTimeout(window._spectatorCountdownTimer);
-  clearTimeout(window._spectatorTechniqueRevealTimer);
-  clearTimeout(window._spectatorEffectStartTimer);
+  window._lastSpectatorStateTurn=0;
   spectatorActive=true;
   spectatorRoomCode=code;
   gameMode="spectator";
-  onlineBattleStarted=true;
+  onlineBattleStarted=false;
   onlineTurnNumber=0;
-  const title=document.getElementById("spectatorMatchTitle");
-  if(title)title.textContent=`${p1} VS ${p2}`;
+  hp={1:10,2:10}; gauge={1:0,2:0};
+  enhanceTurns={1:0,2:0}; blockSeal={1:false,2:false};
+  selectedAction={1:null,2:null}; locked={1:true,2:true};
+  player1Techs=[]; player2Techs=[];
+  const battleScreen=document.getElementById("battleScreen");
+  battleScreen.classList.add("spectatorMode");
   showScreen("battleScreen");
-  document.getElementById("battleScreen")?.classList.add("spectatorMode");
+  document.getElementById("resultMessage").textContent="";
+  document.getElementById("countdown").textContent="観戦中";
+  document.getElementById("battleHomeButton").hidden=true;
+  setPlayerNames(p1,p2);
   let badge=document.getElementById("spectatorBadge");
   if(!badge){
     badge=document.createElement("div");
     badge.id="spectatorBadge";
     badge.className="spectatorBadge";
     badge.innerHTML='<span>観戦モード</span><button type="button" onclick="leaveSpectator()">観戦を終了</button>';
-    document.getElementById("battleScreen").appendChild(badge);
+    battleScreen.appendChild(badge);
   }
   badge.querySelector("span").textContent=`観戦：${p1} VS ${p2}`;
-  const names=document.querySelectorAll("#battleScreen .playerName");
-  if(names[0])names[0].textContent=p1;
-  if(names[1])names[1].textContent=p2;
   badge.style.display="flex";
+  const panel=document.getElementById("spectatorLoadouts");
+  if(panel)panel.hidden=false;
+  let loadoutKey="";
   spectatorListener=window.onlineBattle.watchRoom(code,data=>{
-    if(!spectatorActive || !data)return;
-    const battle=data.battle;
-    if(!battle)return;
-    // 観戦者はFirebaseのbattle状態だけを読む。操作系は一切呼ばない。
-    receiveSpectatorBattleState(battle,data);
+    if(session!==spectatorSession || !spectatorActive)return;
+    if(!data){showBattleResult("この対戦は終了しました");return;}
+    const nextKey=JSON.stringify(data.players || {});
+    if(loadoutKey!==nextKey){renderSpectatorLoadouts(data);loadoutKey=nextKey;}
+    if(data.battle)receiveSpectatorBattleState(data.battle,data);
+  },()=>{
+    if(session===spectatorSession)showBattleResult("接続を確認してください");
   });
+}
+
+function applySpectatorState(state){
+  for(const side of [1,2]){
+    if(state.hp?.[side]!=null)hp[side]=Number(state.hp[side]);
+    if(state.gauge?.[side]!=null)gauge[side]=Number(state.gauge[side]);
+    if(state.enhanceTurns?.[side]!=null)enhanceTurns[side]=Number(state.enhanceTurns[side]);
+    if(state.blockSeal?.[side]!=null)blockSeal[side]=!!state.blockSeal[side];
+  }
+  if(state.lastAction)lastAction=state.lastAction;
+  updateSpectatorBattleUI();
 }
 
 function receiveSpectatorBattleState(state,roomData){
   if(!spectatorActive || !state)return;
-  gameMode="spectator";
   const turn=Number(state.turn||0);
+  if(turn<Number(window._lastSpectatorStateTurn||0))return;
+  window._lastSpectatorStateTurn=turn;
   if(turn)onlineTurnNumber=turn;
-
+  const session=spectatorSession;
   if(state.phase==="starting" || state.phase==="battle"){
-    if(state.hp){hp={1:Number(state.hp[1]??hp[1]),2:Number(state.hp[2]??hp[2])};}
-    if(state.gauge){gauge={1:Number(state.gauge[1]??gauge[1]),2:Number(state.gauge[2]??gauge[2])};}
-    if(state.actions?.[1]?.data && state.actions?.[2]?.data){
-      selectedAction[1]={id:state.actions[1].id,data:state.actions[1].data};
-      selectedAction[2]={id:state.actions[2].id,data:state.actions[2].data};
-    }
-    updateSpectatorBattleUI();
-    if(state.phase==="starting" && Number.isFinite(Number(state.startAt))){
-      const startAt=Number(state.startAt);
-      clearTimeout(window._spectatorStartTimer);
-      window._spectatorStartTimer=setTimeout(()=>{
-        if(!spectatorActive)return;
-        updateSpectatorBattleUI();
-      },Math.max(0,startAt-Date.now()));
-    }
+    clearSpectatorTimers();
+    applySpectatorState(state);
+    document.getElementById("countdown").textContent="技を選択中";
     return;
   }
-
-  if(state.phase==="countdown" && Number.isFinite(Number(state.startAt))){
-    if(state.actions?.[1]?.data && state.actions?.[2]?.data){
-      selectedAction[1]={id:state.actions[1].id,data:state.actions[1].data};
-      selectedAction[2]={id:state.actions[2].id,data:state.actions[2].data};
-    }
-    beginSpectatorCountdown(Number(state.startAt));
+  if(state.phase==="countdown"){
+    applySpectatorState(state);
+    if(Number.isFinite(Number(state.startAt)))beginSpectatorCountdown(state.startAt);
     return;
   }
-
-  if(state.phase==="effect" && Number(state.resolvedTurn||0)>0){
-    const effectTurn=Number(state.resolvedTurn);
+  if(state.phase==="effect"){
+    const effectTurn=Number(state.resolvedTurn||0);
     if(effectTurn<=Number(window._lastSpectatorEffectTurn||0))return;
     window._lastSpectatorEffectTurn=effectTurn;
-    const a1=state.actions?.[1]?.data;
-    const a2=state.actions?.[2]?.data;
-    if(a1&&a2){
-      selectedAction[1]={id:state.actions[1].id,data:a1};
-      selectedAction[2]={id:state.actions[2].id,data:a2};
-      if(state.blockSeal){
-        blockSeal={1:Boolean(state.blockSeal[1]),2:Boolean(state.blockSeal[2])};
-      }
-      const revealAt=Number(state.revealAt || state.effectStartAt || onlineNow());
-      const effectStartAt=Number(state.effectStartAt || (revealAt+ONLINE_REVEAL_MS));
-      const receivedAt=onlineNow();
-      const scheduleRevealAt=effectStartAt<=receivedAt ? receivedAt+50 : revealAt;
-      const scheduleEffectAt=effectStartAt<=receivedAt ? scheduleRevealAt+ONLINE_REVEAL_MS : effectStartAt;
-      clearTimeout(window._spectatorTechniqueRevealTimer);
-      clearTimeout(window._spectatorEffectStartTimer);
-
-      // 対戦者と同じFirebaseの絶対時刻で技名公開を再生する。
-      window._spectatorTechniqueRevealTimer=setTimeout(()=>{
-        if(!spectatorActive)return;
-        showTechniqueReveal(a1,a2);
-      },Math.max(0,scheduleRevealAt-onlineNow()));
-
-      // 技名公開の1秒後、同じFirebaseの絶対時刻で演出を開始する。
-      window._spectatorEffectStartTimer=setTimeout(()=>{
-        if(!spectatorActive)return;
-        clearOnlineTechniqueDescription();
-        playBattleSituationSE(a1,a2,Number(state.damageTo1||0),Number(state.damageTo2||0));
-        playBattleEffect(a1,a2,()=>{
-          hp={1:Number(state.hp?.[1]??hp[1]),2:Number(state.hp?.[2]??hp[2])};
-          gauge={1:Number(state.gauge?.[1]??gauge[1]),2:Number(state.gauge?.[2]??gauge[2])};
-          updateSpectatorBattleUI();
-        },Number(state.damageTo1||0),Number(state.damageTo2||0),true);
-      },Math.max(0,scheduleEffectAt-onlineNow()));
-    }
+    clearSpectatorTimers();
+    const a1=state.actions?.[1]?.data,a2=state.actions?.[2]?.data;
+    if(!a1 || !a2){applySpectatorState(state);return;}
+    selectedAction={1:{id:state.actions[1].id,data:a1},2:{id:state.actions[2].id,data:a2}};
+    const now=onlineNow();
+    const revealAt=Number(state.revealAt||now);
+    const effectStartAt=Number(state.effectStartAt||revealAt+ONLINE_REVEAL_MS);
+    // 演出途中から入室した場合は現在の確定値を表示する。
+    if(effectStartAt+1800<now){applySpectatorState(state);return;}
+    const scheduledReveal=effectStartAt<=now?now+30:revealAt;
+    const scheduledEffect=effectStartAt<=now?scheduledReveal+ONLINE_REVEAL_MS:effectStartAt;
+    window._spectatorTechniqueRevealTimer=setTimeout(()=>{
+      if(session!==spectatorSession || !spectatorActive || onlineTurnNumber!==turn)return;
+      showTechniqueReveal(a1,a2);
+    },Math.max(0,scheduledReveal-onlineNow()));
+    window._spectatorEffectStartTimer=setTimeout(()=>{
+      if(session!==spectatorSession || !spectatorActive || onlineTurnNumber!==turn)return;
+      clearOnlineTechniqueDescription();
+      playBattleSituationSE(a1,a2,Number(state.damageTo1||0),Number(state.damageTo2||0));
+      playBattleEffect(a1,a2,()=>{
+        if(session!==spectatorSession || !spectatorActive || onlineTurnNumber!==turn)return;
+        applySpectatorState(state);
+        if(state.result)showBattleResult(state.result);
+      },Number(state.damageTo1||0),Number(state.damageTo2||0),true);
+    },Math.max(0,scheduledEffect-onlineNow()));
     return;
   }
-
   if(state.phase==="finished"){
-    hp={1:Number(state.hp?.[1]??hp[1]),2:Number(state.hp?.[2]??hp[2])};
-    gauge={1:Number(state.gauge?.[1]??gauge[1]),2:Number(state.gauge?.[2]??gauge[2])};
-    updateSpectatorBattleUI();
-    showBattleResult(state.result||"");
+    clearSpectatorTimers();
+    applySpectatorState(state);
+    showBattleResult(state.result||"対戦終了");
   }
 }
 
 function beginSpectatorCountdown(startAt){
-  const el=document.getElementById("countdown");
+  const key=`${onlineTurnNumber}:${startAt}`;
+  if(spectatorCountdownKey===key)return;
   clearTimeout(window._spectatorCountdownTimer);
-  const target=Number(startAt);
-  let lastShown="";
+  spectatorCountdownKey=key;
+  const session=spectatorSession;
+  const el=document.getElementById("countdown");
   const tick=()=>{
-    if(!spectatorActive)return;
-    const ms=target-onlineNow();
-    if(ms>0){
-      const value=String(Math.min(3,Math.ceil(ms/1000)));
-      if(el && value!==lastShown){
-        lastShown=value;
-        el.className="";
-        void el.offsetWidth;
-        el.className="countPulse";
-        el.textContent=value;
-      }
-      window._spectatorCountdownTimer=setTimeout(tick,Math.min(100,Math.max(30,ms%1000||100)));
-      return;
-    }
-    if(el && lastShown!=="BATTLE!"){
-      lastShown="BATTLE!";
-      el.className="battleCall";
-      el.textContent="BATTLE!";
-    }
+    if(session!==spectatorSession || !spectatorActive)return;
+    const ms=Number(startAt)-onlineNow();
+    el.textContent=ms>0?String(Math.min(3,Math.ceil(ms/1000))):"BATTLE!";
+    el.className=ms>0?"countPulse":"battleCall";
+    if(ms>0)window._spectatorCountdownTimer=setTimeout(tick,Math.min(1000,ms));
   };
   tick();
 }
 
 function updateSpectatorBattleUI(){
-  showScreen("battleScreen");
-  document.getElementById("battleScreen")?.classList.add("spectatorMode");
-  const set=(id,val)=>{const e=document.getElementById(id);if(e)e.textContent=val;};
-  set("hp1Text",hp[1]+"/10"); set("hp2Text",hp[2]+"/10");
-  set("gauge1Text",gauge[1]+"/10"); set("gauge2Text",gauge[2]+"/10");
-  const h1=document.getElementById("hp1Fill"),h2=document.getElementById("hp2Fill");
-  const g1=document.getElementById("gauge1Fill"),g2=document.getElementById("gauge2Fill");
-  if(h1)h1.style.width=(hp[1]*10)+"%";
-  if(h2)h2.style.width=(hp[2]*10)+"%";
-  if(g1)g1.style.width=(gauge[1]*10)+"%";
-  if(g2)g2.style.width=(gauge[2]*10)+"%";
-  document.querySelectorAll("#battleScreen.spectatorMode .action").forEach(el=>{el.style.pointerEvents="none";});
+  updateBattleUI();
+  document.querySelectorAll("#battleScreen .action").forEach(el=>{
+    el.classList.remove("disabled");
+    el.setAttribute("aria-disabled","true");
+  });
 }
 
-function leaveSpectator(){
+function stopSpectating(){
+  ++spectatorSession;
   spectatorActive=false;
   spectatorRoomCode=null;
   if(spectatorListener){spectatorListener();spectatorListener=null;}
-  clearTimeout(window._spectatorStartTimer);
-  clearTimeout(window._spectatorCountdownTimer);
-  clearTimeout(window._spectatorTechniqueRevealTimer);
-  clearTimeout(window._spectatorEffectStartTimer);
+  if(spectatorRoomsListener){spectatorRoomsListener();spectatorRoomsListener=null;}
+  clearSpectatorTimers();
   clearOnlineTechniqueDescription();
   document.getElementById("battleScreen")?.classList.remove("spectatorMode");
-  const names=document.querySelectorAll("#battleScreen .playerName");
-  if(names[0])names[0].textContent="1P";
-  if(names[1])names[1].textContent="2P";
   const badge=document.getElementById("spectatorBadge");
   if(badge)badge.style.display="none";
+  const panel=document.getElementById("spectatorLoadouts");
+  if(panel)panel.hidden=true;
+  document.querySelectorAll("#battleScreen .action").forEach(el=>{
+    el.style.pointerEvents="";
+    el.removeAttribute("aria-disabled");
+  });
+  setPlayerNames();
+}
+
+function leaveSpectator(){
+  stopSpectating();
+  resetOnlineMatchState();
   gameMode=null;
   showScreen("onlineScreen");
 }
 
 function closeSpectatorList(){
-  if(spectatorRoomsListener){spectatorRoomsListener();spectatorRoomsListener=null;}
+  stopSpectating();
   gameMode=null;
   showScreen("onlineScreen");
 }
+
 
 function startOnlineMatch(type){
   // 前試合の受信済みターンやタイマーを持ち越さない。
@@ -2746,6 +3072,8 @@ function startOnlineMatch(type){
 }
 
 function selectMode(mode){
+  document.getElementById("techConfirmButton").disabled=false;
+  document.querySelectorAll("#techScreen .techArrow").forEach(el=>{el.disabled=false;el.style.pointerEvents="";});
 
   gameMode = mode;
 
@@ -2868,15 +3196,33 @@ const ONLINE_EVENT_LEAD_MS = 3200;
 const ONLINE_EFFECT_LEAD_MS = 900;
 const ONLINE_REVEAL_MS = 1300;
 const ONLINE_NEXT_TURN_LEAD_MS = 1500;
-// オンラインの技は1タップ目を説明表示、同じ技の2タップ目で確定。
+// オンラインも1タップで確定。開始前の受信はターン別に保管する。
 let onlineTechniquePreviewId = null;
+let onlineInputTurn = 0;
+let onlineInputOpen = false;
+let onlinePendingAction = null;
+let onlineActionAcknowledged = false;
+let onlineActionSendFailed = false;
+const onlineRemoteActions = new Map();
 
 function onlineNow(){
   return window.onlineBattle?.now?.() ?? Date.now();
 }
 
 function resetOnlineMatchState(){
+  const resultMessage=document.getElementById("resultMessage");
+  if(resultMessage){resultMessage.textContent="";resultMessage.className="";}
+  const homeButton=document.getElementById("battleHomeButton");
+  if(homeButton)homeButton.hidden=true;
   onlineMatchSession++;
+  onlineInputTurn=0;
+  onlineInputOpen=false;
+  onlinePendingAction=null;
+  onlineActionAcknowledged=false;
+  onlineActionSendFailed=false;
+  onlineRemoteActions.clear();
+  player1Techs=[];
+  player2Techs=[];
   [
     "_onlineTechniqueRevealTimeout",
     "_onlineEffectStartTimeout",
@@ -2950,7 +3296,7 @@ function maybeStartOnlineBattle(){
       phase:"starting", turn:1, startAt:onlineNow()+ONLINE_EVENT_LEAD_MS,
       hp:{1:10,2:10}, gauge:{1:0,2:0},
       lastAction:{1:null,2:null}, lastLastAction:{1:null,2:null},
-      momentumBonus:{1:false,2:false}, blockSeal:{1:false,2:false},
+      momentumBonus:{1:false,2:false}, enhanceTurns:{1:0,2:0}, blockSeal:{1:false,2:false},
       resolvedTurn:0, result:""
     };
     window.onlineBattle.publishBattleState(battle).then(()=>{
@@ -2970,23 +3316,48 @@ function maybeStartOnlineBattle(){
 window.startOnlineBattleIfReady = maybeStartOnlineBattle;
 
 function receiveOnlineAction(player, actionId, timestamp, turnNumber){
-  if(gameMode !== "online") return;
-  if(player === window.onlineBattle.localPlayer) return;
-  if(Number(turnNumber) !== onlineTurnNumber) return;
-  if(!timestamp || selectedAction[player]) return;
-  const data = getActionData(player, actionId);
-  if(!data) return;
-
-  selectedAction[player] = {id:actionId, data:data};
-  locked[player] = true;
-  const area=document.getElementById("player"+player+"Area");
-  if(area) area.classList.add("locked");
-
-  // オンラインではP1が両者の行動が揃ったことを確認し、
-  // Firebaseで共通の開始時刻を発行する。
-  if(selectedAction[1] && selectedAction[2] && window.onlineBattle.localPlayer === 1){
-    startOnlineBattleCountdownIfReady();
+  if(gameMode!=="online" || player===window.onlineBattle.localPlayer)return;
+  const turn=Number(turnNumber);
+  if(!Number.isInteger(turn) || turn<onlineTurnNumber || turn<=Number(window._lastOnlineResolvedTurn || 0))return;
+  if(!timestamp || typeof actionId!=="string")return;
+  const data=getActionData(player,actionId);
+  if(!data)return;
+  // startAtまでの待ち時間に届いた入力も、startTurn後に必ず適用する。
+  onlineRemoteActions.set(turn,{player,id:actionId,data});
+  if(turn!==onlineInputTurn || !onlineInputOpen || turn!==onlineTurnNumber)return;
+  if(!selectedAction[player]){
+    selectedAction[player]={id:actionId,data};
+    locked[player]=true;
+    document.getElementById("player"+player+"Area")?.classList.add("locked");
   }
+  startOnlineBattleCountdownIfReady();
+}
+
+function sendSelectedOnlineAction(player,action,turn){
+  if(onlinePendingAction)return;
+  const session=onlineMatchSession;
+  const submission={player,action,turn,session};
+  onlinePendingAction=submission;
+  onlineActionSendFailed=false;
+  onlineActionAcknowledged=false;
+  const message=document.getElementById("resultMessage");
+  if(message)message.textContent="選択を送信中…";
+  window.onlineBattle.sendAction(action,turn).then(()=>{
+    if(session!==onlineMatchSession || turn!==onlineInputTurn || turn!==onlineTurnNumber || onlinePendingAction!==submission)return;
+    onlinePendingAction=null;
+    onlineActionAcknowledged=true;
+    if(message)message.textContent="選択を確定しました。相手を待っています…";
+    startOnlineBattleCountdownIfReady();
+    if(countdown<=0)finishTurn();
+  }).catch(error=>{
+    if(session!==onlineMatchSession || turn!==onlineInputTurn || onlinePendingAction!==submission)return;
+    console.error(error);
+    onlinePendingAction=null;
+    onlineActionSendFailed=true;
+    locked[player]=false;
+    document.getElementById("player"+player+"Area")?.classList.remove("locked");
+    if(message)message.textContent="送信できませんでした。選んだボタンをもう一度押して再送してください。";
+  });
 }
 
 function beginOnlineBattleCountdown(startAt){
@@ -3046,6 +3417,7 @@ function beginOnlineBattleCountdown(startAt){
 function startOnlineBattleCountdownIfReady(){
   if(gameMode !== "online") return;
   if(!selectedAction[1] || !selectedAction[2]) return;
+  if(!onlineActionAcknowledged || onlinePendingAction || onlineInputTurn!==onlineTurnNumber) return;
   if(onlineCountdownStarted) return;
 
   // P1だけが共通の開始時刻をFirebaseへ発行する。
@@ -3067,6 +3439,9 @@ function startOnlineBattleCountdownIfReady(){
     phase: "countdown",
     turn: onlineTurnNumber,
     startAt,
+    hp:{1:hp[1],2:hp[2]}, gauge:{1:gauge[1],2:gauge[2]},
+    lastAction,lastLastAction,momentumBonus, enhanceTurns,blockSeal,
+    resolvedTurn:Number(window._lastOnlineResolvedTurn || 0),result:"",
     actions: {
       1: {id: selectedAction[1].id, data: selectedAction[1].data},
       2: {id: selectedAction[2].id, data: selectedAction[2].data}
@@ -3096,14 +3471,25 @@ function applyOnlineBlockSealState(nextSeal){
 function receiveOnlineBattleState(state){
   if(gameMode !== "online" || !state) return;
   const turn=Number(state.turn||0);
-  if(!turn) return;
+  if(!turn || turn<onlineTurnNumber) return;
+  if(turn>onlineTurnNumber){
+    onlineInputOpen=false;
+    clearInterval(countdownTimer);
+    clearTimeout(countdownFinishTimeout);
+    clearTimeout(window._onlineCountdownTimeout);
+  }
   onlineTurnNumber=turn;
 
   // 終了状態は処理済みターンでも受信し、次ターンを開始しない。
   if(state.phase === "finished"){
+    onlineInputOpen=false;
+    clearInterval(countdownTimer);
+    clearTimeout(countdownFinishTimeout);
+    clearTimeout(window._onlineCountdownTimeout);
     clearTimeout(window._onlineStartTimeout);
     hp={1:Number(state.hp?.[1] ?? hp[1]),2:Number(state.hp?.[2] ?? hp[2])};
     gauge={1:Number(state.gauge?.[1] ?? gauge[1]),2:Number(state.gauge?.[2] ?? gauge[2])};
+    enhanceTurns={1:Number(state.enhanceTurns?.[1] ?? enhanceTurns[1]),2:Number(state.enhanceTurns?.[2] ?? enhanceTurns[2])};
     window._lastOnlineResolvedTurn=Number(state.resolvedTurn || state.turn);
     updateBattleUI();
     showBattleResult(state.result || (hp[1]<=0 && hp[2]<=0 ? "DRAW" : hp[1]<=0 ? "2P WIN" : hp[2]<=0 ? "1P WIN" : ""));
@@ -3112,6 +3498,9 @@ function receiveOnlineBattleState(state){
 
   // 両端末が同じFirebaseのstartAtを基準に3→2→1→BATTLE!を表示する。
   if(state.phase === "countdown" && Number.isFinite(Number(state.startAt))){
+    onlineInputOpen=false;
+    clearTimeout(window._onlineStartTimeout);
+    clearTimeout(countdownFinishTimeout);
     const a1 = state.actions?.[1];
     const a2 = state.actions?.[2];
 
@@ -3130,6 +3519,11 @@ function receiveOnlineBattleState(state){
 
   // オンライン演出：1P/2Pとも同じ技公開時刻・演出開始時刻を使う。
   if(state.phase === "effect" && Number(state.resolvedTurn || 0) > 0){
+    onlineInputOpen=false;
+    clearInterval(countdownTimer);
+    clearTimeout(countdownFinishTimeout);
+    clearTimeout(window._onlineStartTimeout);
+    clearTimeout(window._onlineCountdownTimeout);
     const effectTurn = Number(state.resolvedTurn);
     if(effectTurn <= Number(window._lastOnlineEffectTurn || 0)) return;
 
@@ -3175,6 +3569,7 @@ function receiveOnlineBattleState(state){
           if(session!==onlineMatchSession || gameMode!=="online" || Number(onlineTurnNumber)!==Number(state.turn)) return;
           hp={1:Number(state.hp?.[1] ?? hp[1]),2:Number(state.hp?.[2] ?? hp[2])};
           gauge={1:Number(state.gauge?.[1] ?? gauge[1]),2:Number(state.gauge?.[2] ?? gauge[2])};
+    enhanceTurns={1:Number(state.enhanceTurns?.[1] ?? enhanceTurns[1]),2:Number(state.enhanceTurns?.[2] ?? enhanceTurns[2])};
           lastAction=state.lastAction||lastAction;
           lastLastAction=state.lastLastAction||lastLastAction;
           momentumBonus=state.momentumBonus||momentumBonus;
@@ -3202,13 +3597,13 @@ function receiveOnlineBattleState(state){
             lastAction[1] = {id:a1.id,data:a1.data};
             lastAction[2] = {id:a2.id,data:a2.data};
            // モーメンタムは連続使用するたびに 1 → 2 → 1 → 2 と交互にする。
-if(a1.skill === "tech6"){
+if(a1.data.skill === "tech6"){
   momentumBonus[1] = !momentumBonus[1];
 }else{
   momentumBonus[1] = false;
 }
 
-if(a2.skill === "tech6"){
+if(a2.data.skill === "tech6"){
   momentumBonus[2] = !momentumBonus[2];
 }else{
   momentumBonus[2] = false;
@@ -3224,7 +3619,7 @@ if(a2.skill === "tech6"){
               gauge:{1:gauge[1],2:gauge[2]},
               lastAction,
               lastLastAction,
-              momentumBonus,
+              momentumBonus, enhanceTurns,
               blockSeal,
               result:""
             };
@@ -3246,6 +3641,7 @@ if(a2.skill === "tech6"){
       onlineBattleStarted=true;
       hp={1:Number(state.hp?.[1] ?? 10),2:Number(state.hp?.[2] ?? 10)};
       gauge={1:Number(state.gauge?.[1] ?? 0),2:Number(state.gauge?.[2] ?? 0)};
+    enhanceTurns={1:Number(state.enhanceTurns?.[1] ?? enhanceTurns[1]),2:Number(state.enhanceTurns?.[2] ?? enhanceTurns[2])};
       lastAction=state.lastAction||{1:null,2:null};
       lastLastAction=state.lastLastAction||{1:null,2:null};
       momentumBonus=state.momentumBonus||{1:false,2:false};
@@ -3264,6 +3660,7 @@ if(a2.skill === "tech6"){
 
     hp={1:Number(state.hp?.[1] ?? hp[1]),2:Number(state.hp?.[2] ?? hp[2])};
     gauge={1:Number(state.gauge?.[1] ?? gauge[1]),2:Number(state.gauge?.[2] ?? gauge[2])};
+    enhanceTurns={1:Number(state.enhanceTurns?.[1] ?? enhanceTurns[1]),2:Number(state.enhanceTurns?.[2] ?? enhanceTurns[2])};
     lastAction=state.lastAction||lastAction;
     lastLastAction=state.lastLastAction||lastLastAction;
     momentumBonus=state.momentumBonus||momentumBonus;
@@ -3288,6 +3685,7 @@ if(a2.skill === "tech6"){
     const apply=()=>{
       hp={1:Number(state.hp?.[1] ?? hp[1]),2:Number(state.hp?.[2] ?? hp[2])};
       gauge={1:Number(state.gauge?.[1] ?? gauge[1]),2:Number(state.gauge?.[2] ?? gauge[2])};
+    enhanceTurns={1:Number(state.enhanceTurns?.[1] ?? enhanceTurns[1]),2:Number(state.enhanceTurns?.[2] ?? enhanceTurns[2])};
       lastAction=state.lastAction||lastAction;
       lastLastAction=state.lastLastAction||lastLastAction;
       momentumBonus=state.momentumBonus||momentumBonus;
@@ -3344,6 +3742,16 @@ if(a2.skill === "tech6"){
 }
 
 function setupBattleFromOnlineState(state){
+  hp={1:Number(state.hp?.[1] ?? 10),2:Number(state.hp?.[2] ?? 10)};
+  gauge={1:Number(state.gauge?.[1] ?? 0),2:Number(state.gauge?.[2] ?? 0)};
+  enhanceTurns={1:Number(state.enhanceTurns?.[1] ?? 0),2:Number(state.enhanceTurns?.[2] ?? 0)};
+  blockSeal={1:!!state.blockSeal?.[1],2:!!state.blockSeal?.[2]};
+  lastAction=state.lastAction||{1:null,2:null};
+  lastLastAction=state.lastLastAction||{1:null,2:null};
+  momentumBonus=state.momentumBonus||{1:false,2:false};
+  document.getElementById("battleHomeButton").hidden=true;
+  document.getElementById("resultMessage").textContent="";
+  document.getElementById("resultMessage").className="";
   document.getElementById("battleScreen")?.classList.remove("spectatorMode");
   const spectatorBadge=document.getElementById("spectatorBadge");
   if(spectatorBadge)spectatorBadge.style.display="none";
@@ -3461,6 +3869,9 @@ function confirmTech(){
 ========================= */
 
 function setupBattle(){
+  document.getElementById("battleHomeButton").hidden=true;
+  document.getElementById("resultMessage").className="";
+  setPlayerNames();
 
   document.getElementById("battleScreen")?.classList.remove("spectatorMode");
   const spectatorBadge=document.getElementById("spectatorBadge");
@@ -3483,6 +3894,8 @@ function setupBattle(){
   momentumBonus[2] = false;
   blockSeal[1] = false;
   blockSeal[2] = false;
+  enhanceTurns[1] = 0;
+  enhanceTurns[2] = 0;
 
   locked[1] = false;
   locked[2] = false;
@@ -3604,6 +4017,9 @@ function stopTurnCountdownSE(){
 ========================= */
 
 function startTurn(){
+  document.getElementById("battleHomeButton").hidden=true;
+  document.getElementById("resultMessage").className="";
+  if(gameMode==="online" && onlineInputTurn===onlineTurnNumber)return;
 
   // 前ターンに残っていたタイマーを完全に破棄
   clearInterval(countdownTimer);
@@ -3613,7 +4029,15 @@ function startTurn(){
 
   onlineCountdownStarted = false;
   window._onlineCountdownKey = null;
-  onlineTurnStartedAt = Date.now();
+  onlineTurnStartedAt = onlineNow();
+  if(gameMode=== "online"){
+    onlineInputTurn=onlineTurnNumber;
+    onlineInputOpen=true;
+    onlinePendingAction=null;
+    onlineActionAcknowledged=false;
+    onlineActionSendFailed=false;
+    for(const turn of onlineRemoteActions.keys()){if(turn<onlineInputTurn)onlineRemoteActions.delete(turn);}
+  }
   if(gameMode === "online" && onlineTurnNumber === 0) onlineTurnNumber = 1;
 
   selectedAction[1] = null;
@@ -3642,7 +4066,19 @@ function startTurn(){
   startCountdownRing();
   startTurnCountdownSE();
 
+  if(gameMode==="online"){
+    const buffered=onlineRemoteActions.get(onlineInputTurn);
+    if(buffered){
+      selectedAction[buffered.player]={id:buffered.id,data:buffered.data};
+      locked[buffered.player]=true;
+      document.getElementById("player"+buffered.player+"Area")?.classList.add("locked");
+    }
+  }
+
+  const timerSession=onlineMatchSession;
+  const timerTurn=onlineInputTurn;
   countdownTimer = setInterval(()=>{
+    if(gameMode==="online" && (timerSession!==onlineMatchSession || timerTurn!==onlineTurnNumber || !onlineInputOpen))return;
     countdown--;
 
     if(countdown > 0){
@@ -3663,7 +4099,7 @@ function startTurn(){
       clearTimeout(countdownFinishTimeout);
       countdownFinishTimeout = setTimeout(()=>{
         countdownFinishTimeout = null;
-        if(countdown === 0) finishTurn();
+        if(countdown === 0 && (gameMode!=="online" || (timerSession===onlineMatchSession && timerTurn===onlineInputTurn && timerTurn===onlineTurnNumber))) finishTurn();
       },500);
     }
 
@@ -3906,7 +4342,17 @@ function clearOnlineTechniqueDescription(){
 ========================= */
 
 function chooseAction(player,action){
-  if(gameMode === "online" && player !== window.onlineBattle.localPlayer)return;
+  if(!document.getElementById("battleScreen")?.classList.contains("active"))return;
+  if(gameMode!=="online" && gameMode!=="offline")return;
+  if(gameMode === "online" && (player !== window.onlineBattle.localPlayer || !onlineInputOpen || onlineInputTurn!==onlineTurnNumber || turnResolving))return;
+  if(gameMode === "online" && onlinePendingAction)return;
+  // 失敗した送信は同じ確定済み入力で再送し、時間切れのチャージで上書きしない。
+  if(gameMode === "online" && onlineActionSendFailed && selectedAction[player]?.id===action){
+    locked[player]=true;
+    document.getElementById("player"+player+"Area")?.classList.add("locked");
+    sendSelectedOnlineAction(player,action,onlineInputTurn);
+    return;
+  }
   if(locked[player])return;
 
   const data=getActionData(player,action);
@@ -3938,17 +4384,8 @@ function chooseAction(player,action){
 
   if(data.cost>gauge[player])return;
 
-  // オンラインのみ：技は1タップ目で説明表示、同じ技の2タップ目で確定。
-  if(gameMode === "online" && data.skill){
-    if(onlineTechniquePreviewId !== action){
-      onlineTechniquePreviewId = action;
-      showOnlineTechniqueDescription(data);
-      return;
-    }
-    onlineTechniquePreviewId = null;
-  }else if(gameMode === "online"){
-    onlineTechniquePreviewId = null;
-  }
+  // 技を含めて1タップで確定し、説明を表示する。
+  onlineTechniquePreviewId=null;
 
   selectedAction[player]={id:action,data:data};
   locked[player]=true;
@@ -3958,7 +4395,7 @@ function chooseAction(player,action){
   else clearOnlineTechniqueDescription();
 
   if(gameMode === "online" && !receivingOnlineAction){
-    window.onlineBattle.sendAction(action, onlineTurnNumber).catch(err=>console.error(err));
+    sendSelectedOnlineAction(player,action,onlineInputTurn);
   }
 
   // オンラインはFirebase経由で両者の行動が揃ったら開始
@@ -4075,25 +4512,25 @@ function finishTurn(){
 
   if(gameMode === "online"){
     const me=window.onlineBattle.localPlayer;
+    if(!me || onlineInputTurn!==onlineTurnNumber){turnResolving=false;return;}
     if(!selectedAction[me]){
+      if(!onlineInputOpen){turnResolving=false;return;}
       selectedAction[me]={id:"charge",data:basicActions.charge};
       locked[me]=true;
-      const area=document.getElementById("player"+me+"Area");
-      if(area) area.classList.add("locked");
-      // 時間切れの自動チャージも、手動選択と同じ説明を見せる。
+      document.getElementById("player"+me+"Area")?.classList.add("locked");
       showOnlineTechniqueDescription(basicActions.charge);
-      window.onlineBattle.sendAction("charge",onlineTurnNumber).catch(console.error);
-    }
-    if(!selectedAction[1] || !selectedAction[2]){
-      turnResolving = false;
+      // 本当に無入力だった場合だけ自動チャージ。送信成功を確認してから進む。
+      turnResolving=false;
+      sendSelectedOnlineAction(me,"charge",onlineInputTurn);
       return;
     }
-    if(me!==1){
-      turnResolving = false;
+    if(!onlineActionAcknowledged || onlinePendingAction || onlineActionSendFailed || !selectedAction[1] || !selectedAction[2] || me!==1){
+      turnResolving=false;
       return;
     }
-    if(window._resolvingOnlineTurn===onlineTurnNumber) return;
+    if(window._resolvingOnlineTurn===onlineTurnNumber)return;
     window._resolvingOnlineTurn=onlineTurnNumber;
+    onlineInputOpen=false;
     resolveBattle();
     return;
   }
@@ -4160,67 +4597,27 @@ function resolveBattle(){
   if(a1.skill === "tech4") hp[1] = Math.min(10, hp[1] + 1);
   if(a2.skill === "tech4") hp[2] = Math.min(10, hp[2] + 1);
 
-  // カウンター：相手の攻撃を相手へ返す
-  // モーメンタムの強化ターンは実威力が2になるため、カウンターもその実威力を返す。
-  const reflectedPower1 = a1.skill === "tech6" && momentumBonus[1] ? 2 : Number(a1.power || 0);
-  const reflectedPower2 = a2.skill === "tech6" && momentumBonus[2] ? 2 : Number(a2.power || 0);
-  if(reflect1 && attack2) damageTo2 += reflectedPower2;
-  if(reflect2 && attack1) damageTo1 += reflectedPower1;
+  // 強化はこのターンの開始時点の残数で判定する。
+  // モーメンタムを含む全攻撃技の実威力を先に求め、衝突時にも同じ値を使う。
+  const power1 = attack1 ? (a1.skill === "tech6" ? (momentumBonus[1] ? 2 : 1) : Number(a1.power || 0)) + (enhanceTurns[1] > 0 ? 1 : 0) : 0;
+  const power2 = attack2 ? (a2.skill === "tech6" ? (momentumBonus[2] ? 2 : 1) : Number(a2.power || 0)) + (enhanceTurns[2] > 0 ? 1 : 0) : 0;
 
-  // 攻撃同士は威力差で勝敗を決める
+  // カウンターは攻撃を無効化して固定1ダメージを返す。エンハンスの対象外。
+  if(reflect1 && attack2) damageTo2 += 1;
+  if(reflect2 && attack1) damageTo1 += 1;
+
+  // 攻撃同士は強化を含む威力差で決める。
   if(attack1 && attack2){
-    const p1 = Number(a1.power || 0);
-    const p2 = Number(a2.power || 0);
-    if(p1 > p2) damageTo2 += p1 - p2;
-    else if(p2 > p1) damageTo1 += p2 - p1;
+    if(power1 > power2) damageTo2 += power1 - power2;
+    else if(power2 > power1) damageTo1 += power2 - power1;
   }else{
-    if(attack1){
-      if(block2){
-        if(a1.pierce) damageTo2 += Number(a1.power || 0);
-      }else if(!reflect2){
-        damageTo2 += Number(a1.power || 0);
-      }
-    }
-    if(attack2){
-      if(block1){
-        if(a2.pierce) damageTo1 += Number(a2.power || 0);
-      }else if(!reflect1){
-        damageTo1 += Number(a2.power || 0);
-      }
-    }
+    if(attack1 && !reflect2 && (!block2 || a1.pierce)) damageTo2 += power1;
+    if(attack2 && !reflect1 && (!block1 || a2.pierce)) damageTo1 += power2;
   }
 
-  // 技3：チャージ中の相手には追加2ダメージ
-  // ブロック・カウンター中には追加ダメージを入れない
+  // 技3：チャージ中の相手には追加2ダメージ。
   if(a1.skill === "tech3" && a2.type === "charge" && !block2 && !reflect2) damageTo2 += 2;
   if(a2.skill === "tech3" && a1.type === "charge" && !block1 && !reflect1) damageTo1 += 2;
-
-  // 技6：モーメンタムは「連続使用した次の1回」だけ2ダメージ。
-  // 例：1 → 2 → 1 → 2 → 1
-  const momentumDmg1 = a1.skill === "tech6" ? (momentumBonus[1] ? 2 : 1) : 0;
-  const momentumDmg2 = a2.skill === "tech6" ? (momentumBonus[2] ? 2 : 1) : 0;
-
-  if(a1.skill === "tech6" && !block2 && !reflect2){
-    if(attack2){
-      if(a2.skill === "tech6"){
-        // モーメンタム同士は、それぞれの今回の威力を比較
-        if(momentumDmg1 > momentumDmg2) damageTo2 = Math.max(damageTo2, momentumDmg1 - momentumDmg2);
-        else if(momentumDmg2 > momentumDmg1) damageTo1 = Math.max(damageTo1, momentumDmg2 - momentumDmg1);
-      }else{
-        damageTo2 = Math.max(damageTo2, momentumDmg1 - Number(a2.power || 0), 0);
-      }
-    }else{
-      damageTo2 = Math.max(damageTo2, momentumDmg1);
-    }
-  }
-
-  if(a2.skill === "tech6" && !block1 && !reflect1){
-    if(attack1){
-      if(a1.skill !== "tech6") damageTo1 = Math.max(damageTo1, momentumDmg2 - Number(a1.power || 0), 0);
-    }else{
-      damageTo1 = Math.max(damageTo1, momentumDmg2);
-    }
-  }
 
   // 技7：前ターンチャージ後のみ使用可能。ゲージ+8、HP-2
   if(a1.skill === "tech7"){
@@ -4229,6 +4626,18 @@ function resolveBattle(){
   if(a2.skill === "tech7"){
     gauge[2] = Math.min(10, gauge[2] + 8);
   }
+
+  // サイフォン：双方の消費・ゲージ獲得後に、同じ時点の残量から奪う量を決める。
+  // 同時使用でも処理順で結果が変わらず、相手が0ならゲージを生み出さない。
+  const siphonGauge = {1:gauge[1],2:gauge[2]};
+  const stolenBy1 = a1.skill === "tech10" ? Math.min(2,siphonGauge[2]) : 0;
+  const stolenBy2 = a2.skill === "tech10" ? Math.min(2,siphonGauge[1]) : 0;
+  gauge[1] = Math.min(10,Math.max(0,siphonGauge[1] + stolenBy1 - stolenBy2));
+  gauge[2] = Math.min(10,Math.max(0,siphonGauge[2] + stolenBy2 - stolenBy1));
+
+  // 既存の強化は毎ターン消費する。新規使用・再使用では次の2ターンへ更新する。
+  enhanceTurns[1] = a1.skill === "tech9" ? 2 : Math.max(0,enhanceTurns[1] - 1);
+  enhanceTurns[2] = a2.skill === "tech9" ? 2 : Math.max(0,enhanceTurns[2] - 1);
 
   // ランページの自傷ダメージも表示対象にする。
   if(a1.skill === "tech7") damageTo1 += 2;
@@ -4273,7 +4682,7 @@ function resolveBattle(){
       damageTo2,
       lastAction,
       lastLastAction,
-      momentumBonus,
+      momentumBonus, enhanceTurns,
       blockSeal,
       result:effectHp[1]<=0 && effectHp[2]<=0 ? "DRAW" :
              effectHp[1]<=0 ? "2P WIN" : effectHp[2]<=0 ? "1P WIN" : ""
@@ -4327,7 +4736,7 @@ if(a2.skill === "tech6"){
         resolvedTurn: finishedTurn,
         actions:{1:{id:selectedAction[1].id,data:a1},2:{id:selectedAction[2].id,data:a2}},
         hp:{1:hp[1],2:hp[2]}, gauge:{1:gauge[1],2:gauge[2]},
-        lastAction, lastLastAction, momentumBonus, blockSeal, result:battleResult
+        lastAction, lastLastAction, momentumBonus, enhanceTurns, blockSeal, result:battleResult
       };
       window.onlineBattle.publishBattleState(state).catch(console.error);
       window.onlineBattle.clearActions(finishedTurn).catch(console.error);
@@ -4523,6 +4932,13 @@ function playBattleEffect(a1,a2,callback,damageTo1=0,damageTo2=0,isSpectator=fal
   const ranged1=a1.skill==="tech6";
   const ranged2=a2.skill==="tech6";
 
+  // 支援技の演出は先に重ねて、相手側の攻撃・防御などと同時に再生する。
+  if(a1.skill === "tech9") createEnhanceAt(layer,"p1");
+  if(a2.skill === "tech9") createEnhanceAt(layer,"p2");
+  if(a1.skill === "tech10") createSiphonAt(layer,"p1");
+  if(a2.skill === "tech10") createSiphonAt(layer,"p2");
+  const hasSupportEffect = [a1,a2].some(action=>action.skill === "tech9" || action.skill === "tech10");
+
   // ===== 複数行動の同時演出 =====
   // 攻撃＋ヒール、攻撃＋アンチガードなどで、専用演出のreturnが
   // もう片方の演出を消してしまわないよう、同じレイヤーへ重ねて再生する。
@@ -4594,8 +5010,7 @@ function playBattleEffect(a1,a2,callback,damageTo1=0,damageTo2=0,isSpectator=fal
     ring.style.color="#ff263f";
     ring.style.width="240px";
     ring.style.height="240px";
-    ring.style.left=side==="p1"?"15%":"85%";
-    ring.style.top=side==="p1"?"75%":"25%";
+    setBattleEffectPosition(ring,layer,side);
     layer.appendChild(ring);
     showImpact(layer,"RAMPAGE!","hit");
     flashScreen();
@@ -4789,20 +5204,18 @@ function playBattleEffect(a1,a2,callback,damageTo1=0,damageTo2=0,isSpectator=fal
   if(a1.type==="charge" || a2.type==="charge"){
     if(a1.type==="charge") createChargeEffectAt(layer,"p1");
     if(a2.type==="charge") createChargeEffectAt(layer,"p2");
-    setTimeout(()=>{layer.innerHTML="";finishEffect();},750);
+    setTimeout(()=>{layer.innerHTML="";finishEffect();},hasSupportEffect ? 850 : 750);
     return;
   }
 
-  setTimeout(()=>{layer.innerHTML="";finishEffect();},700);
+  setTimeout(()=>{layer.innerHTML="";finishEffect();},hasSupportEffect ? 850 : 700);
 }
 
 function createSlashAt(layer,side,color,reverse=false){
   const e=document.createElement("div");
   e.className="effectSlash";
   e.style.color=color;
-  if(side==="p1"){e.style.left="15%";e.style.top="75%";}
-  else if(side==="p2"){e.style.left="85%";e.style.top="25%";}
-  else {e.style.left="50%";e.style.top="50%";}
+  setBattleEffectPosition(e,layer,side);
   if(reverse) e.style.transform="translate(-50%,-50%) rotate(155deg) scaleX(0)";
   layer.appendChild(e);
   return e;
@@ -4817,14 +5230,87 @@ function createReflectedSlash(layer,side){
 function createHealAt(layer,side){
   const e=document.createElement("div");
   e.className="effectAura";
-  e.style.left=side==="p1"?"15%":"85%";
-  e.style.top=side==="p1"?"75%":"25%";
+  setBattleEffectPosition(e,layer,side);
   layer.appendChild(e);
+}
+
+function getBattleEffectPoint(layer,side){
+  const targetId=side==="p1"?"player1Area":side==="p2"?"player2Area":"battleCenter";
+  const area=document.getElementById(targetId);
+  const bounds=layer.getBoundingClientRect();
+  if(area && bounds.width>0 && bounds.height>0){
+    const playerBounds=area.getBoundingClientRect();
+    return {
+      x:100*(playerBounds.left + playerBounds.width/2 - bounds.left)/bounds.width,
+      y:100*(playerBounds.top + playerBounds.height/2 - bounds.top)/bounds.height
+    };
+  }
+  return side==="p1"?{x:15,y:75}:side==="p2"?{x:85,y:25}:{x:50,y:50};
+}
+
+function setBattleEffectPosition(element,layer,side="center"){
+  const point=getBattleEffectPoint(layer,side);
+  element.style.left=point.x+"%";
+  element.style.top=point.y+"%";
+  element.style.right="auto";
+}
+
+function createEnhanceAt(layer,side){
+  const point=getBattleEffectPoint(layer,side);
+  const aura=document.createElement("div");
+  aura.className="effectAura enhanceAura";
+  aura.style.left=point.x+"%";
+  aura.style.top=point.y+"%";
+  layer.appendChild(aura);
+  const ring=document.createElement("div");
+  ring.className="effectRing";
+  ring.style.color="#ff4d65";
+  ring.style.left=aura.style.left;
+  ring.style.top=aura.style.top;
+  layer.appendChild(ring);
+}
+
+function createSiphonAt(layer,recipient){
+  // 青い2粒を相手から使用者へ飛ばす。両者同時使用でも方向を別々に保つ。
+  const source=getBattleEffectPoint(layer,recipient==="p1"?"p2":"p1");
+  const target=getBattleEffectPoint(layer,recipient);
+  for(let index=0;index<2;index++){
+    const orb=document.createElement("div");
+    orb.className="battleProjectile siphonProjectile";
+    orb.style.left=source.x+"%";
+    orb.style.top=source.y+"%";
+    layer.appendChild(orb);
+    setTimeout(()=>{
+      if(!orb.isConnected)return;
+      const began=performance.now();
+      const frame=now=>{
+        if(!orb.isConnected)return;
+        const progress=Math.min(1,(now-began)/550);
+        const t=progress*progress*(3-2*progress);
+        const curve=Math.sin(t*Math.PI)*(index===0?4:-4);
+        orb.style.left=(source.x+(target.x-source.x)*t+curve)+"%";
+        orb.style.top=(source.y+(target.y-source.y)*t)+"%";
+        if(progress<1){
+          requestAnimationFrame(frame);
+        }else{
+          orb.remove();
+          const ring=document.createElement("div");
+          ring.className="effectRing siphonArrival";
+          ring.style.color="#48baff";
+          ring.style.left=target.x+"%";
+          ring.style.top=target.y+"%";
+          layer.appendChild(ring);
+        }
+      };
+      requestAnimationFrame(frame);
+    },index*100);
+  }
 }
 
 function createCounterShield(layer,side){
   const shield=document.createElement("div");
   shield.className="battleShield "+side+" counterShield";
+  setBattleEffectPosition(shield,layer,side);
   shield.style.borderColor="#d9d9e8";
   shield.style.boxShadow="0 0 22px rgba(230,230,255,.95), inset 0 0 18px rgba(210,210,230,.35)";
   shield.style.background="radial-gradient(circle,rgba(220,220,235,.22),rgba(160,160,180,.06) 48%,transparent 72%)";
@@ -4836,8 +5322,7 @@ function createChargeEffectAt(layer,side){
   const e=document.createElement("div");
   e.className="effectRing";
   e.style.color="#ff8a24";
-  e.style.left=side==="p1"?"15%":"85%";
-  e.style.top=side==="p1"?"75%":"25%";
+  setBattleEffectPosition(e,layer,side);
   layer.appendChild(e);
 }
 
@@ -4847,8 +5332,7 @@ function createSealEffect(layer,side){
   const cross=document.createElement("div");
   cross.textContent="✕";
   cross.style.position="absolute";
-  cross.style.left=side==="p1"?"15%":"85%";
-  cross.style.top=side==="p1"?"75%":"25%";
+  setBattleEffectPosition(cross,layer,side);
   cross.style.transform="translate(-50%,-50%)";
   cross.style.fontSize="110px";
   cross.style.fontWeight="900";
@@ -4863,6 +5347,7 @@ function createShieldShards(layer,side){
   for(let i=0;i<7;i++){
     const shard=document.createElement("div");
     shard.className="shieldShard "+side;
+    setBattleEffectPosition(shard,layer,side);
     const angle=(i/7)*Math.PI*2;
     shard.style.setProperty("--sx",Math.cos(angle)*95+"px");
     shard.style.setProperty("--sy",Math.sin(angle)*95+"px");
@@ -4871,8 +5356,9 @@ function createShieldShards(layer,side){
 }
 
 function createPunishEffectAt(layer,side){
-  const x=side==="p1"?"15%":"85%";
-  const y=side==="p1"?"75%":"25%";
+  const point=getBattleEffectPoint(layer,side);
+  const x=point.x+"%";
+  const y=point.y+"%";
 
   const burst=document.createElement("div");
   burst.className="punishBurst";
@@ -4897,6 +5383,7 @@ function createPunishEffectAt(layer,side){
 function createShield(layer,side){
   const shield=document.createElement("div");
   shield.className="battleShield "+side;
+  setBattleEffectPosition(shield,layer,side);
   layer.appendChild(shield);
   return shield;
 }
@@ -4905,6 +5392,7 @@ function createRing(layer,color){
   const e=document.createElement("div");
   e.className="effectRing";
   e.style.color=color;
+  setBattleEffectPosition(e,layer,"center");
   layer.appendChild(e);
 }
 
@@ -4912,12 +5400,14 @@ function createShockwave(layer,color){
   const e=document.createElement("div");
   e.className="effectShockwave";
   e.style.color=color;
+  setBattleEffectPosition(e,layer,"center");
   layer.appendChild(e);
 }
 
 function createAura(layer){
   const e=document.createElement("div");
   e.className="effectAura";
+  setBattleEffectPosition(e,layer,"center");
   layer.appendChild(e);
 }
 
@@ -4945,18 +5435,19 @@ function spawnTechniqueEffect(layer,action,player){
     e=document.createElement("div");
     e.className="effectSlash";
     e.style.color=color;
-    e.style.top=player===1?"62%":"38%";
+    setBattleEffectPosition(e,layer,player===1?"p1":"p2");
     layer.appendChild(e);
   }else if(skill==="tech2"){
     e=document.createElement("div");
     e.className="effectRing";
     e.style.color="#d66cff";
+    setBattleEffectPosition(e,layer,player===1?"p1":"p2");
     layer.appendChild(e);
   }else if(skill==="tech3"){
     e=document.createElement("div");
     e.className="effectLightning";
     e.style.color="#fff16a";
-    e.style.left=player===1?"62%":"38%";
+    setBattleEffectPosition(e,layer,player===1?"p2":"p1");
     layer.appendChild(e);
     createShockwave(layer,"#fff16a");
   }else if(skill==="tech4"){
@@ -4971,6 +5462,7 @@ function spawnTechniqueEffect(layer,action,player){
       r.style.width=(70+i*35)+"px";
       r.style.height=(70+i*35)+"px";
       r.style.animationDelay=(i*.07)+"s";
+      setBattleEffectPosition(r,layer,player===1?"p1":"p2");
       layer.appendChild(r);
     }
   }else if(skill==="tech7"){
@@ -4984,6 +5476,7 @@ function spawnTechniqueEffect(layer,action,player){
     e=document.createElement("div");
     e.className="effectHex";
     e.style.color="#b36cff";
+    setBattleEffectPosition(e,layer,player===1?"p2":"p1");
     layer.appendChild(e);
   }
 }
@@ -4992,115 +5485,25 @@ function spawnTechniqueEffect(layer,action,player){
    玉の移動
 ========================= */
 
-function animateProjectile(
-  el,
-  reverse,
-  duration,
-  done,
-  stopAtCenter
-){
-
-  const start =
-    reverse
-      ? {
-          x:85,
-          y:25
-        }
-      : {
-          x:15,
-          y:75
-        };
-
-
-  /*
-    攻撃 vs 攻撃だけ中央で止める。
-    それ以外は相手側まで飛ばす。
-  */
-
-  const end =
-    stopAtCenter
-      ? {
-          x:50,
-          y:50
-        }
-      : (
-        reverse
-          ? {
-              x:15,
-              y:75
-            }
-          : {
-              x:85,
-              y:25
-            }
-      );
-
-
-  const control = {
-    x:50,
-    y:50
-  };
-
-
-  const begin =
-    performance.now();
-
+function animateProjectile(el,reverse,duration,done,stopAtCenter){
+  const layer=el.parentElement || document.getElementById("battleEffectLayer");
+  const start=getBattleEffectPoint(layer,reverse?"p2":"p1");
+  const end=getBattleEffectPoint(layer,stopAtCenter?"center":reverse?"p1":"p2");
+  const control=getBattleEffectPoint(layer,"center");
+  const begin=performance.now();
+  el.style.left=start.x+"%";
+  el.style.top=start.y+"%";
 
   function frame(now){
-
-    let t =
-      Math.min(
-        1,
-        (now - begin) /
-        duration
-      );
-
-
-    t =
-      t * t *
-      (3 - 2 * t);
-
-
-    const x =
-      (1-t)*(1-t)*start.x +
-      2*(1-t)*t*control.x +
-      t*t*end.x;
-
-
-    const y =
-      (1-t)*(1-t)*start.y +
-      2*(1-t)*t*control.y +
-      t*t*end.y;
-
-
-    el.style.left =
-      x + "%";
-
-    el.style.top =
-      y + "%";
-
-
-    if(t < 1){
-
-      requestAnimationFrame(
-        frame
-      );
-
-    }
-
-    else{
-
-      done();
-
-    }
-
+    if(!el.isConnected)return;
+    const progress=Math.min(1,(now-begin)/Math.max(1,duration));
+    const t=progress*progress*(3-2*progress);
+    el.style.left=((1-t)*(1-t)*start.x+2*(1-t)*t*control.x+t*t*end.x)+"%";
+    el.style.top=((1-t)*(1-t)*start.y+2*(1-t)*t*control.y+t*t*end.y)+"%";
+    if(progress<1)requestAnimationFrame(frame);
+    else done();
   }
-
-
-  requestAnimationFrame(
-    frame
-  );
-
+  requestAnimationFrame(frame);
 }
 
 
@@ -5113,6 +5516,7 @@ function showImpact(layer,text,cls){
   const impact=document.createElement("div");
   impact.className="battleImpact "+cls;
   impact.textContent=text;
+  setBattleEffectPosition(impact,layer,"center");
   layer.appendChild(impact);
 
   if(cls==="hit"){
@@ -5167,6 +5571,14 @@ function flashHitPlayer(player,isSpectator=false){
 
 function showBattleResult(text){
   stopBattleBGM();
+  clearInterval(countdownTimer);
+  clearTimeout(countdownFinishTimeout);
+  stopCountdownRing();
+  stopTurnCountdownSE();
+  locked[1]=true; locked[2]=true;
+  document.getElementById("countdown").textContent="";
+  const homeButton=document.getElementById("battleHomeButton");
+  if(homeButton) homeButton.hidden=false;
 
   const el=document.getElementById("resultMessage");
   el.className="";
@@ -5185,7 +5597,29 @@ function showBattleResult(text){
 let displayedHp={1:10,2:10};
 let displayedGauge={1:0,2:0};
 
+function updateEnhanceIndicators(){
+  [1,2].forEach(player=>{
+    // 既存の表示欄を優先し、旧レイアウトでも名前の横へ作成できるようにする。
+    const name=document.querySelector(`#player${player}Area .playerName`);
+    let indicator=document.getElementById(`p${player}Enhance`);
+    if(name && !indicator){
+      indicator=document.createElement("span");
+      indicator.id=`p${player}Enhance`;
+      name.appendChild(indicator);
+    }
+    if(!indicator)return;
+    indicator.classList.add("enhanceIndicator");
+    indicator.setAttribute("role","status");
+    const turns=Math.max(0,Number(enhanceTurns[player]) || 0);
+    indicator.hidden=turns===0;
+    indicator.textContent=`↑ 攻撃+1 · ${turns}T`;
+    indicator.title=`エンハンス：攻撃力+1（残り${turns}ターン）`;
+    indicator.setAttribute("aria-label",indicator.title);
+  });
+}
+
 function updateBattleUI(){
+  updateEnhanceIndicators();
   [1,2].forEach(player=>{
     const hpText=document.getElementById("hp"+player+"Text");
     const hpFill=document.getElementById("hp"+player+"Fill");
@@ -5242,6 +5676,9 @@ function updateDisabledActions(){
       el.classList.toggle("disabled",disabled);
     });
 
+    const attackEl=document.querySelector(`#player${player}Area [data-action="attack"]`);
+    if(attackEl)attackEl.classList.toggle("disabled",gauge[player]<basicActions.attack.cost);
+
     // ゲージMAX（10）のときは通常チャージも暗くする
     const chargeEl = document.querySelector(
       `#player${player}Area [data-action="charge"]`
@@ -5273,6 +5710,7 @@ function updateDisabledActions(){
 ========================= */
 
 function startBattleBGM(){
+  if(document.getElementById("resultMessage")?.classList.contains("resultShow"))return;
   const audio=document.getElementById("battleBGM");
   if(!audio)return;
 
@@ -5325,6 +5763,68 @@ document.addEventListener("keydown",()=>{
 /* =========================
    初期化
 ========================= */
+
+function updateRoomCodeButton(screenId){
+  const button=document.getElementById("roomCodeButton");
+  if(!button)return;
+  const visible=gameMode==="online" && window.onlineBattle?.active && ["techScreen","battleScreen"].includes(screenId);
+  button.hidden=!visible;
+  document.body.classList.toggle("hasRoomCode",!!visible);
+  if(visible){
+    button.textContent=`ルーム ${window.onlineBattle.roomCode} · コピー`;
+    button.setAttribute("aria-label",`ルームコード ${window.onlineBattle.roomCode} をコピー`);
+  }
+}
+
+async function copyRoomCode(){
+  const code=window.onlineBattle?.roomCode;
+  const button=document.getElementById("roomCodeButton");
+  if(!code || !button)return;
+  let copied=false;
+  try{
+    if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(code);copied=true;}
+  }catch(err){console.warn("クリップボードへの書き込みを再試行します",err);}
+  if(!copied){
+    const input=document.createElement("textarea");
+    input.value=code;
+    input.style.cssText="position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;user-select:text";
+    input.setAttribute("readonly","");
+    document.body.appendChild(input);
+    input.select(); input.setSelectionRange(0,code.length);
+    try{copied=document.execCommand("copy");}catch(err){}
+    input.remove();
+  }
+  button.textContent=copied?"コピーしました ✓":"コピーできませんでした";
+  if(!copied)window.prompt("このルームコードをコピーしてください。",code);
+  clearTimeout(window._roomCopyTimer);
+  window._roomCopyTimer=setTimeout(()=>{
+    const active=document.querySelector(".screen.active");
+    if(active)updateRoomCodeButton(active.id);
+  },1800);
+}
+
+function returnBattleHome(){
+  const wasOnline=gameMode==="online";
+  stopSpectating();
+  gameMode=null;
+  resetOnlineMatchState();
+  onlineBattleStarted=false;
+  onlineTechConfirmed=false;
+  onlineTurnNumber=0;
+  player1Techs=[]; player2Techs=[];
+  selectedAction={1:null,2:null}; locked={1:false,2:false};
+  enhanceTurns={1:0,2:0};
+  blockSeal={1:false,2:false};
+  selectedTechniques={1:[0,1,2],2:[0,1,2]};
+  stopCountdownRing(); stopTurnCountdownSE(); stopBattleBGM();
+  document.getElementById("battleHomeButton").hidden=true;
+  document.getElementById("resultMessage").textContent="";
+  document.querySelectorAll("#techScreen .techArrow").forEach(el=>{el.disabled=false;el.style.pointerEvents="";});
+  document.getElementById("techConfirmButton").disabled=false;
+  showScreen("modeScreen");
+  if(wasOnline)window.onlineBattle?.leave?.().catch(err=>console.error("退室情報を送信できませんでした",err));
+}
+
 
 updateTechniqueDisplay();
 
