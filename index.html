@@ -1773,6 +1773,50 @@ button{min-height:44px;}
 #battleScreen[data-local-player="2"] #player1Area .actionKey {
   display:none;
 }
+
+/* =========================
+   プレイヤーログイン
+========================= */
+#playerLoginButton{
+  position:absolute;
+  right:calc(16px + env(safe-area-inset-right,0px));
+  bottom:calc(16px + env(safe-area-inset-bottom,0px));
+  z-index:20;
+  min-width:110px;
+  padding:10px 16px;
+  font-size:14px;
+}
+#playerLoginModal{
+  position:fixed;
+  inset:0;
+  z-index:10000;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  background:rgba(0,0,0,.72);
+}
+#playerLoginModal.open{display:flex;}
+.playerLoginPanel{
+  width:min(92vw,360px);
+  padding:22px;
+  background:#142a40;
+  border:1px solid #91c5e6;
+  border-radius:6px;
+  box-shadow:0 14px 40px rgba(0,0,0,.45);
+}
+.playerLoginPanel h2{margin:0 0 16px;font-size:22px;}
+#playerLoginPassword{
+  width:100%;
+  box-sizing:border-box;
+  min-height:46px;
+  padding:10px 12px;
+  font-size:18px;
+}
+.playerLoginActions{display:flex;gap:10px;margin-top:14px;}
+.playerLoginActions button{flex:1;}
+#playerLoginMessage{min-height:1.5em;margin-top:12px;font-size:13px;color:#ffd0d0;}
+
 </style>
 </head>
 
@@ -1798,6 +1842,20 @@ button{min-height:44px;}
     タップしてスタート
   </div>
 
+  <button id="playerLoginButton" type="button" onclick="event.stopPropagation(); openPlayerLogin()">ログイン</button>
+
+</div>
+
+<div id="playerLoginModal" role="dialog" aria-modal="true" aria-labelledby="playerLoginTitle" onclick="event.stopPropagation()">
+  <div class="playerLoginPanel">
+    <h2 id="playerLoginTitle">プレイヤーログイン</h2>
+    <input id="playerLoginPassword" type="password" inputmode="numeric" autocomplete="current-password" placeholder="パスワード" aria-label="パスワード">
+    <div class="playerLoginActions">
+      <button type="button" onclick="submitPlayerLogin()">ログイン</button>
+      <button type="button" onclick="closePlayerLogin()">キャンセル</button>
+    </div>
+    <div id="playerLoginMessage" aria-live="polite"></div>
+  </div>
 </div>
 
 
@@ -2288,6 +2346,14 @@ button{min-height:44px;}
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
   import {
+    getAuth,
+    setPersistence,
+    browserLocalPersistence,
+    signInWithEmailAndPassword,
+    signOut,
+    onAuthStateChanged
+  } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+  import {
     getDatabase,
     ref,
     set,
@@ -2310,6 +2376,115 @@ button{min-height:44px;}
 
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
+  const auth = getAuth(app);
+
+  let loggedInPlayerData = null;
+
+  async function passwordToLoginEmail(password){
+    const bytes=new TextEncoder().encode(password);
+    const digest=await crypto.subtle.digest("SHA-256",bytes);
+    const hex=Array.from(new Uint8Array(digest),byte=>byte.toString(16).padStart(2,"0")).join("");
+    return `player-${hex.slice(0,24)}@psy-login.local`;
+  }
+
+  function updatePlayerLoginButton(){
+    const button=document.getElementById("playerLoginButton");
+    if(!button)return;
+    if(loggedInPlayerData){
+      button.textContent=`${loggedInPlayerData.name} / ${loggedInPlayerData.rankRate}`;
+      button.title="ログイン中。クリックでログアウト";
+    }else{
+      button.textContent="ログイン";
+      button.title="";
+    }
+  }
+
+  async function loadLoggedInPlayer(user){
+    const playerRef=ref(db,`users/${user.uid}`);
+    let snapshot=await get(playerRef);
+
+    // 最初のNzアカウントだけは、初回ログイン時に初期データを作成する。
+    if(!snapshot.exists() && user.email==="player-fa610321d6baba427e5c1cdb@psy-login.local"){
+      await set(playerRef,{name:"Nz",rankRate:-3});
+      snapshot=await get(playerRef);
+    }
+
+    if(!snapshot.exists()){
+      loggedInPlayerData=null;
+      updatePlayerLoginButton();
+      throw new Error("このアカウントのプレイヤーデータが登録されていません。");
+    }
+
+    const data=snapshot.val() || {};
+    loggedInPlayerData={
+      uid:user.uid,
+      name:String(data.name ?? "プレイヤー"),
+      rankRate:Number(data.rankRate ?? 0),
+      ...data
+    };
+    window.loggedInPlayerData=loggedInPlayerData;
+    updatePlayerLoginButton();
+  }
+
+  window.openPlayerLogin=async function(){
+    if(auth.currentUser && loggedInPlayerData){
+      if(confirm(`${loggedInPlayerData.name} でログイン中です。ログアウトしますか？`)){
+        await signOut(auth);
+      }
+      return;
+    }
+    const modal=document.getElementById("playerLoginModal");
+    const input=document.getElementById("playerLoginPassword");
+    const message=document.getElementById("playerLoginMessage");
+    message.textContent="";
+    input.value="";
+    modal.classList.add("open");
+    setTimeout(()=>input.focus(),0);
+  };
+
+  window.closePlayerLogin=function(){
+    document.getElementById("playerLoginModal")?.classList.remove("open");
+    const input=document.getElementById("playerLoginPassword");
+    if(input)input.value="";
+  };
+
+  window.submitPlayerLogin=async function(){
+    const input=document.getElementById("playerLoginPassword");
+    const message=document.getElementById("playerLoginMessage");
+    const password=input.value;
+    if(!password){message.textContent="パスワードを入力してください。";return;}
+    message.textContent="ログイン中…";
+    try{
+      await setPersistence(auth,browserLocalPersistence);
+      const email=await passwordToLoginEmail(password);
+      const credential=await signInWithEmailAndPassword(auth,email,password);
+      await loadLoggedInPlayer(credential.user);
+      window.closePlayerLogin();
+    }catch(error){
+      console.error("ログインに失敗しました",error);
+      message.textContent="パスワードが違うか、アカウントがまだ登録されていません。";
+    }
+  };
+
+  document.getElementById("playerLoginPassword")?.addEventListener("keydown",event=>{
+    if(event.key==="Enter")window.submitPlayerLogin();
+    if(event.key==="Escape")window.closePlayerLogin();
+  });
+
+  setPersistence(auth,browserLocalPersistence).catch(console.error);
+  onAuthStateChanged(auth,async user=>{
+    if(!user){
+      loggedInPlayerData=null;
+      window.loggedInPlayerData=null;
+      updatePlayerLoginButton();
+      return;
+    }
+    try{
+      await loadLoggedInPlayer(user);
+    }catch(error){
+      console.error("プレイヤーデータを取得できませんでした",error);
+    }
+  });
 
   let roomCode = null;
   let localPlayer = null;
