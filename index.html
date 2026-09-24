@@ -2457,6 +2457,7 @@ button{min-height:44px;}
     try{
       await setPersistence(auth,browserLocalPersistence);
       const email=await passwordToLoginEmail(password);
+      console.log("ログイン先メール:", email);
       const credential=await signInWithEmailAndPassword(auth,email,password);
       await loadLoggedInPlayer(credential.user);
       window.closePlayerLogin();
