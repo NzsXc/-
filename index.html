@@ -2457,7 +2457,6 @@ button{min-height:44px;}
     try{
       await setPersistence(auth,browserLocalPersistence);
       const email=await passwordToLoginEmail(password);
-      console.log("ログイン先メール:", email);
       const credential=await signInWithEmailAndPassword(auth,email,password);
       await loadLoggedInPlayer(credential.user);
       window.closePlayerLogin();
@@ -2598,6 +2597,11 @@ button{min-height:44px;}
 
     async start(){
       // 前の部屋の監視・在席情報を必ず解除して、別試合の受信を混ぜない。
+      await auth.authStateReady();
+      // セッション復元とプロフィール取得を待ってから参加名を確定する。
+      if(auth.currentUser) await loadLoggedInPlayer(auth.currentUser);
+      const accountName=auth.currentUser && loggedInPlayerData
+        ? String(loggedInPlayerData.name || "").trim() : "";
       await closeCurrentRoom();
       const create = confirm("新しい部屋を作りますか？\n\nOK：部屋を作る\nキャンセル：部屋コードで参加");
 
@@ -2608,7 +2612,7 @@ button{min-height:44px;}
 
         await set(ref(db, "rooms/" + roomCode), {
           createdAt: Date.now(),
-          players: { "1": { joined: true, online: true } }
+          players: { "1": { joined: true, online: true, name: accountName || "プレイヤー1" } }
         });
         await markLocalPlayerOnline();
 
@@ -2638,7 +2642,8 @@ button{min-height:44px;}
 
         await update(ref(db, "rooms/" + roomCode), {
           "players/2/joined": true,
-          "players/2/online": true
+          "players/2/online": true,
+          "players/2/name": accountName || "プレイヤー2"
         });
         await markLocalPlayerOnline();
 
@@ -2709,6 +2714,7 @@ button{min-height:44px;}
 
       const p1 = data.players && data.players["1"];
       const p2 = data.players && data.players["2"];
+      setPlayerNames(p1?.name || "プレイヤー1",p2?.name || "プレイヤー2");
 
       function normalizeTechniques(value){
         if(Array.isArray(value)) return value;
@@ -3017,6 +3023,10 @@ function renderSpectatorList(rooms){
   });
 }
 
+function getBattlePlayerName(side){
+  return document.querySelector(`#player${side}Area .playerNameText`)?.textContent || side+"P";
+}
+
 function setPlayerNames(p1="1P",p2="2P"){
   [p1,p2].forEach((name,index)=>{
     const node=document.querySelector(`#player${index+1}Area .playerNameText`);
@@ -3100,6 +3110,10 @@ async function enterSpectator(code,p1,p2){
   spectatorListener=window.onlineBattle.watchRoom(code,data=>{
     if(session!==spectatorSession || !spectatorActive)return;
     if(!data){showBattleResult("この対戦は終了しました");return;}
+    const name1=data.players?.[1]?.name || "プレイヤー1";
+    const name2=data.players?.[2]?.name || "プレイヤー2";
+    setPlayerNames(name1,name2);
+    badge.querySelector("span").textContent=`観戦：${name1} VS ${name2}`;
     const nextKey=JSON.stringify(data.players || {});
     if(loadoutKey!==nextKey){renderSpectatorLoadouts(data);loadoutKey=nextKey;}
     if(data.battle)receiveSpectatorBattleState(data.battle,data);
@@ -4517,8 +4531,8 @@ function showTechniqueReveal(a1,a2){
   const action1Name = a1?.name || selectedAction[1]?.data?.name || "";
   const action2Name = a2?.name || selectedAction[2]?.data?.name || "";
 
-  label1.textContent="1P　"+action1Name;
-  label2.textContent="2P　"+action2Name;
+  label1.textContent=getBattlePlayerName(1)+"　"+action1Name;
+  label2.textContent=getBattlePlayerName(2)+"　"+action2Name;
 
   layer.appendChild(label1);
   layer.appendChild(label2);
@@ -5786,7 +5800,8 @@ function showBattleResult(text){
 
   const el=document.getElementById("resultMessage");
   el.className="";
-  el.textContent=text;
+  el.textContent=text==="1P WIN" ? getBattlePlayerName(1)+" WIN"
+    : text==="2P WIN" ? getBattlePlayerName(2)+" WIN" : text;
   if(text==="1P WIN") el.style.color="#ff5b6b";
   else if(text==="2P WIN") el.style.color="#63aaff";
   else el.style.color="#fff";
