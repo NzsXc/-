@@ -104,4 +104,3 @@ async function startRandomMatch(){
   document.querySelectorAll('#onlineScreen button:not(#randomSearchCancel)').forEach(e=>e.disabled=false);
  }
 }
-```
