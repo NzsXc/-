@@ -1,3 +1,4 @@
+```js
 let botMatch=false,botThinking=false,botKnowledge=null,botWorker=null,botEpoch=0,botTurn=0;
 let randomSearchBusy=false,randomSearchCancelled=false;
 function stopBot(){botEpoch++;botWorker?.terminate();botWorker=null;botThinking=false;botMatch=false;}
@@ -37,14 +38,14 @@ function prepareBotMatch(){
  selectedTechniques[2]=choices[Math.floor(Math.random()*choices.length)].slice();
  document.querySelectorAll('#techScreen .techArrow').forEach(el=>{el.disabled=false;el.style.pointerEvents='auto';});
  const button=document.getElementById('techConfirmButton');button.disabled=false;button.textContent='決定';
- document.getElementById('techTitle').textContent='AI Bot（第'+botKnowledge.generation+'世代）：技選択';
+ document.getElementById('techTitle').textContent='Ai v1：技選択';
  showScreen('techScreen');updateTechniqueDisplay();
 }
 function confirmBotTech(){
  player1Techs=selectedTechniques[1].map(i=>techniquePool[i]);
  player2Techs=selectedTechniques[2].map(i=>techniquePool[i]);
  setupBattle();
- setPlayerNames(window.loggedInPlayerData?.name||'あなた','AI Bot · 第'+botKnowledge.generation+'世代');
+ setPlayerNames(window.loggedInPlayerData?.name||'あなた','Ai v1');
 }
 async function startBotTurn(){
  const epoch=++botEpoch;botWorker?.terminate();botThinking=true;locked[1]=true;locked[2]=true;
@@ -86,7 +87,7 @@ async function startRandomMatch(){
   if(!result){status.textContent='検索をキャンセルしました';return;}
   if(result==='bot'){
    if(randomSearchCancelled){status.textContent='検索をキャンセルしました';return;}
-   status.textContent='AI Botの知識を読み込んでいます…';await loadBotKnowledge();
+   status.textContent='Ai v1の知識を読み込んでいます…';await loadBotKnowledge();
    if(randomSearchCancelled){status.textContent='検索をキャンセルしました';return;}
    prepareBotMatch();status.textContent='';
   }else{
@@ -103,4 +104,4 @@ async function startRandomMatch(){
   document.querySelectorAll('#onlineScreen button:not(#randomSearchCancel)').forEach(e=>e.disabled=false);
  }
 }
-
+```
