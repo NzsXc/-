@@ -1,4 +1,4 @@
-```js
+
 let botMatch=false,botThinking=false,botKnowledge=null,botWorker=null,botEpoch=0,botTurn=0;
 let randomSearchBusy=false,randomSearchCancelled=false;
 function stopBot(){botEpoch++;botWorker?.terminate();botWorker=null;botThinking=false;botMatch=false;}
