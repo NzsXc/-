@@ -1516,6 +1516,20 @@ body{
 }
 .siphonArrival{width:25px;height:25px;border-width:2px;}
 
+
+/* 2P視点ではプレイヤー欄と公開技名の位置を揃える。色と名前は本人のまま。 */
+#battleScreen[data-local-player="2"] .battleActionLabel.p1{
+  left:46%;top:30%;bottom:auto;
+}
+#battleScreen[data-local-player="2"] .battleActionLabel.p2{
+  left:30%;bottom:30%;top:auto;
+}
+.playerName{flex-wrap:wrap;}
+.blockSealIndicator{
+  border-color:rgba(179,108,255,.5);
+  background:rgba(100,40,160,.24);
+  color:#d3a3ff;
+}
 </style>
 <!-- PSYCHO_BATTLE_FLOW_FIX_20260919 -->
 <style id="cyber-theme">
@@ -5837,7 +5851,27 @@ function updateEnhanceIndicators(){
   });
 }
 
+function updateBlockSealIndicators(){
+  [1,2].forEach(player=>{
+    const name=document.querySelector(`#player${player}Area .playerName`);
+    let indicator=document.getElementById(`p${player}BlockSeal`);
+    if(name && !indicator){
+      indicator=document.createElement("span");
+      indicator.id=`p${player}BlockSeal`;
+      name.appendChild(indicator);
+    }
+    if(!indicator)return;
+    indicator.classList.add("enhanceIndicator","blockSealIndicator");
+    indicator.setAttribute("role","status");
+    indicator.hidden=!blockSeal[player];
+    indicator.textContent="防御技封印";
+    indicator.title="アンチガード：防御技封印（ゲージが7以上になると解除）";
+    indicator.setAttribute("aria-label",indicator.title);
+  });
+}
+
 function updateBattleUI(){
+  updateBlockSealIndicators();
   updateEnhanceIndicators();
   [1,2].forEach(player=>{
     const hpText=document.getElementById("hp"+player+"Text");
