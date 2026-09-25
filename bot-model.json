@@ -1,0 +1,1544 @@
+{
+  "schema": "psy-training-v2",
+  "rules": "psy-20260924-resolver-v1",
+  "trainingRevision": 2,
+  "candidate": {
+    "schema": "psy-value-v1-75",
+    "weights": [
+      2.8925703575094244,
+      1.1276657423150491,
+      0.3350084379287615,
+      0.09683423132188888,
+      -0.2963468789355452,
+      -0.13368395994679813,
+      0.4801950739112628,
+      -0.1521280023114837,
+      -0.0010272581421083345,
+      -0.031803691138563246,
+      0.09301914387566987,
+      0.25775329542139636,
+      -0.1760769408791396,
+      -0.006873658799688696,
+      -0.16819360411183204,
+      0.18976388400190947,
+      0.3894177665537119,
+      0.20631452874128475,
+      0.04133981517023376,
+      -0.013454032056564522,
+      -0.0033600926512521814,
+      0.1479884608339112,
+      0.3156350730734201,
+      0.15605889237850468,
+      0.05671975004248952,
+      -0.017959540657614695,
+      -0.004471611771672666,
+      0.027335626040116294,
+      0.4725973262821586,
+      0.22315969108220587,
+      0.06892329277087327,
+      -0.07733225709268543,
+      0.020084061038458605,
+      -0.11110872891757399,
+      0.2731537133958739,
+      0.2049893198757033,
+      0.01675730954298889,
+      -0.01171056919299483,
+      -0.005516254499412519,
+      -0.06834268717715852,
+      0.25519313211770533,
+      0.12358024958295005,
+      0.003932015556605356,
+      -0.03463243907469575,
+      -0.014799033629890289,
+      -0.0606061555544856,
+      0.23609874091327573,
+      0.13722186880686066,
+      0.02981389805957208,
+      -0.055011346443823335,
+      -0.00034812518883549565,
+      -0.010103030102188994,
+      0.135962400808959,
+      0.1332117333033065,
+      -0.010103030102188994,
+      -0.03241771354739345,
+      0.0037301316700929644,
+      0.012610201935891947,
+      0.14234794484762262,
+      0.1320161218486876,
+      0.012610201935891947,
+      -0.011732193270248423,
+      0.004160310985829194,
+      -0.054633166925832505,
+      0.16703709780996404,
+      0.12531645062887453,
+      0.01495865346329366,
+      -0.027997115955385333,
+      -0.002434809378932089,
+      -0.0729044041345932,
+      0.29026787672563825,
+      0.14112837069671333,
+      0.022445395558377015,
+      -0.05327819475446524,
+      -0.00012635100070999532
+    ],
+    "updates": 752252
+  },
+  "champion": {
+    "schema": "psy-value-v1-75",
+    "weights": [
+      2.812771443256807,
+      1.096777832267266,
+      0.3147817262804541,
+      0.08898905255421447,
+      -0.27318611076258714,
+      -0.11602613863082598,
+      0.5011904541308335,
+      -0.10533743275659689,
+      -0.002360567408979083,
+      -0.02634954497229262,
+      0.10244671039525123,
+      0.21234536719139557,
+      -0.19138762962115177,
+      -0.00791986796834524,
+      -0.2140120410045682,
+      0.17569282450686427,
+      0.3589248731824682,
+      0.18653530339907579,
+      0.07057361308857543,
+      -0.019208346058298777,
+      0.001170109430201425,
+      0.11071555380065515,
+      0.2898054989534136,
+      0.12848659246764324,
+      0.06280648574916264,
+      -0.02638458033414418,
+      -0.004040535733596575,
+      0.046914607311404295,
+      0.4362465940592206,
+      0.20545870277375686,
+      0.055359101333911635,
+      -0.0417323913352926,
+      0.006950796300693852,
+      -0.07629841594829773,
+      0.2715379971534518,
+      0.18812014421024506,
+      0.011573655923632886,
+      -0.050659744339057275,
+      -0.005558696828929646,
+      -0.059772901719563315,
+      0.24429707331010186,
+      0.12157292736154919,
+      0.00697240728743592,
+      -0.045758344286151366,
+      -0.004353001159394579,
+      -0.029460340969391895,
+      0.21306441200656084,
+      0.12352242612616911,
+      0.049520045409074925,
+      -0.016722219935342623,
+      -0.001453377582807015,
+      -0.014280672442469385,
+      0.10839338589211754,
+      0.12902448500237818,
+      -0.014280672442469385,
+      -0.014453451405089376,
+      -0.0033190733159839227,
+      -0.014181229738031355,
+      0.12297076161335262,
+      0.14397695773924454,
+      -0.014181229738031355,
+      -0.030867481421757416,
+      0.0003586442364627038,
+      -0.06415218109220361,
+      0.15325972700131435,
+      0.12657557185752813,
+      0.03202251642566209,
+      -0.047999405641758114,
+      -0.0028302953169420985,
+      -0.07517724370897165,
+      0.23981400659866586,
+      0.13706038586417188,
+      0.05364807651026618,
+      -0.023043799458518883,
+      0.005993727743359356
+    ],
+    "updates": 624396
+  },
+  "generation": 20,
+  "trainGames": 107648,
+  "trainTurns": 4078584,
+  "trainUnresolved": 0,
+  "seed": 3022954072,
+  "gateRound": 574,
+  "sinceGate": 512,
+  "failures": 2,
+  "leagueCursor": 384,
+  "leagueGames": 384,
+  "skills": [
+    {
+      "games": 192,
+      "wins": 111,
+      "losses": 81,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 202,
+      "wins": 125,
+      "losses": 77,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 232,
+      "wins": 129,
+      "losses": 103,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 210,
+      "wins": 102,
+      "losses": 108,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 246,
+      "wins": 122,
+      "losses": 124,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 234,
+      "wins": 103,
+      "losses": 131,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 242,
+      "wins": 114,
+      "losses": 128,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 258,
+      "wins": 112,
+      "losses": 146,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 264,
+      "wins": 134,
+      "losses": 130,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 224,
+      "wins": 100,
+      "losses": 124,
+      "draws": 0,
+      "unresolved": 0
+    }
+  ],
+  "compositions": [
+    {
+      "games": 6,
+      "wins": 4,
+      "losses": 2,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 2,
+      "wins": 2,
+      "losses": 0,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 2,
+      "wins": 2,
+      "losses": 0,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 2,
+      "wins": 0,
+      "losses": 2,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 10,
+      "wins": 5,
+      "losses": 5,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 14,
+      "wins": 10,
+      "losses": 4,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 2,
+      "wins": 2,
+      "losses": 0,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 2,
+      "wins": 2,
+      "losses": 0,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 2,
+      "wins": 0,
+      "losses": 2,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 2,
+      "wins": 1,
+      "losses": 1,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 10,
+      "wins": 7,
+      "losses": 3,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 14,
+      "wins": 7,
+      "losses": 7,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 2,
+      "wins": 0,
+      "losses": 2,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 2,
+      "wins": 2,
+      "losses": 0,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 2,
+      "wins": 0,
+      "losses": 2,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 2,
+      "wins": 2,
+      "losses": 0,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 8,
+      "wins": 6,
+      "losses": 2,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 14,
+      "wins": 7,
+      "losses": 7,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 2,
+      "wins": 0,
+      "losses": 2,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 2,
+      "wins": 2,
+      "losses": 0,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 2,
+      "wins": 1,
+      "losses": 1,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 2,
+      "wins": 0,
+      "losses": 2,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 10,
+      "wins": 6,
+      "losses": 4,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 14,
+      "wins": 10,
+      "losses": 4,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 2,
+      "wins": 2,
+      "losses": 0,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 2,
+      "wins": 2,
+      "losses": 0,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 2,
+      "wins": 0,
+      "losses": 2,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 2,
+      "wins": 1,
+      "losses": 1,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 8,
+      "wins": 4,
+      "losses": 4,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 14,
+      "wins": 6,
+      "losses": 8,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 2,
+      "wins": 0,
+      "losses": 2,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 2,
+      "wins": 2,
+      "losses": 0,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 2,
+      "wins": 1,
+      "losses": 1,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 2,
+      "wins": 2,
+      "losses": 0,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 10,
+      "wins": 3,
+      "losses": 7,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 14,
+      "wins": 10,
+      "losses": 4,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 2,
+      "wins": 2,
+      "losses": 0,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 2,
+      "wins": 1,
+      "losses": 1,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 2,
+      "wins": 2,
+      "losses": 0,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 2,
+      "wins": 1,
+      "losses": 1,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 8,
+      "wins": 6,
+      "losses": 2,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 14,
+      "wins": 8,
+      "losses": 6,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 2,
+      "wins": 2,
+      "losses": 0,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 2,
+      "wins": 2,
+      "losses": 0,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 2,
+      "wins": 1,
+      "losses": 1,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 2,
+      "wins": 1,
+      "losses": 1,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 10,
+      "wins": 7,
+      "losses": 3,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 14,
+      "wins": 8,
+      "losses": 6,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 2,
+      "wins": 1,
+      "losses": 1,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 4,
+      "wins": 1,
+      "losses": 3,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 4,
+      "wins": 2,
+      "losses": 2,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 4,
+      "wins": 4,
+      "losses": 0,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 10,
+      "wins": 4,
+      "losses": 6,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 16,
+      "wins": 11,
+      "losses": 5,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 4,
+      "wins": 3,
+      "losses": 1,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 4,
+      "wins": 2,
+      "losses": 2,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 4,
+      "wins": 2,
+      "losses": 2,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 4,
+      "wins": 2,
+      "losses": 2,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 12,
+      "wins": 8,
+      "losses": 4,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 16,
+      "wins": 12,
+      "losses": 4,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 4,
+      "wins": 1,
+      "losses": 3,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 4,
+      "wins": 2,
+      "losses": 2,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 4,
+      "wins": 2,
+      "losses": 2,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 4,
+      "wins": 0,
+      "losses": 4,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 12,
+      "wins": 6,
+      "losses": 6,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 16,
+      "wins": 7,
+      "losses": 9,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 4,
+      "wins": 1,
+      "losses": 3,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 4,
+      "wins": 3,
+      "losses": 1,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 4,
+      "wins": 2,
+      "losses": 2,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 4,
+      "wins": 3,
+      "losses": 1,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 10,
+      "wins": 3,
+      "losses": 7,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 16,
+      "wins": 9,
+      "losses": 7,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 4,
+      "wins": 3,
+      "losses": 1,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 4,
+      "wins": 2,
+      "losses": 2,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 4,
+      "wins": 3,
+      "losses": 1,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 4,
+      "wins": 1,
+      "losses": 3,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 12,
+      "wins": 6,
+      "losses": 6,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 16,
+      "wins": 12,
+      "losses": 4,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 4,
+      "wins": 2,
+      "losses": 2,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 4,
+      "wins": 2,
+      "losses": 2,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 4,
+      "wins": 3,
+      "losses": 1,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 4,
+      "wins": 2,
+      "losses": 2,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 10,
+      "wins": 5,
+      "losses": 5,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 16,
+      "wins": 9,
+      "losses": 7,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 4,
+      "wins": 2,
+      "losses": 2,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 4,
+      "wins": 1,
+      "losses": 3,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 4,
+      "wins": 2,
+      "losses": 2,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 4,
+      "wins": 0,
+      "losses": 4,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 12,
+      "wins": 9,
+      "losses": 3,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 16,
+      "wins": 7,
+      "losses": 9,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 4,
+      "wins": 0,
+      "losses": 4,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 4,
+      "wins": 1,
+      "losses": 3,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 4,
+      "wins": 2,
+      "losses": 2,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 4,
+      "wins": 1,
+      "losses": 3,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 10,
+      "wins": 5,
+      "losses": 5,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 16,
+      "wins": 8,
+      "losses": 8,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 4,
+      "wins": 0,
+      "losses": 4,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 4,
+      "wins": 0,
+      "losses": 4,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 4,
+      "wins": 0,
+      "losses": 4,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 4,
+      "wins": 2,
+      "losses": 2,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 12,
+      "wins": 8,
+      "losses": 4,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 16,
+      "wins": 4,
+      "losses": 12,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 4,
+      "wins": 3,
+      "losses": 1,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 4,
+      "wins": 1,
+      "losses": 3,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 4,
+      "wins": 0,
+      "losses": 4,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 4,
+      "wins": 2,
+      "losses": 2,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 10,
+      "wins": 4,
+      "losses": 6,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 16,
+      "wins": 2,
+      "losses": 14,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 4,
+      "wins": 2,
+      "losses": 2,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 4,
+      "wins": 1,
+      "losses": 3,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 4,
+      "wins": 0,
+      "losses": 4,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 4,
+      "wins": 1,
+      "losses": 3,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 12,
+      "wins": 6,
+      "losses": 6,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 16,
+      "wins": 6,
+      "losses": 10,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 4,
+      "wins": 1,
+      "losses": 3,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 4,
+      "wins": 0,
+      "losses": 4,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 4,
+      "wins": 0,
+      "losses": 4,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 4,
+      "wins": 0,
+      "losses": 4,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 10,
+      "wins": 4,
+      "losses": 6,
+      "draws": 0,
+      "unresolved": 0
+    },
+    {
+      "games": 16,
+      "wins": 6,
+      "losses": 10,
+      "draws": 0,
+      "unresolved": 0
+    }
+  ],
+  "evaluations": [
+    {
+      "round": 524,
+      "wins": 133,
+      "losses": 123,
+      "draws": 0,
+      "unresolved": 0,
+      "promoted": false,
+      "pValue": 0.31765382104383316
+    },
+    {
+      "round": 525,
+      "wins": 127,
+      "losses": 129,
+      "draws": 0,
+      "unresolved": 0,
+      "promoted": false,
+      "pValue": 0.5912230747245079
+    },
+    {
+      "round": 526,
+      "wins": 130,
+      "losses": 126,
+      "draws": 0,
+      "unresolved": 0,
+      "promoted": false,
+      "pValue": 0.45032662312601657
+    },
+    {
+      "round": 527,
+      "wins": 142,
+      "losses": 114,
+      "draws": 0,
+      "unresolved": 0,
+      "promoted": false,
+      "pValue": 0.062459100184320014
+    },
+    {
+      "round": 528,
+      "wins": 121,
+      "losses": 135,
+      "draws": 0,
+      "unresolved": 0,
+      "promoted": false,
+      "pValue": 0.8221503804592563
+    },
+    {
+      "round": 529,
+      "wins": 131,
+      "losses": 125,
+      "draws": 0,
+      "unresolved": 0,
+      "promoted": false,
+      "pValue": 0.40497452645946236
+    },
+    {
+      "round": 530,
+      "wins": 132,
+      "losses": 124,
+      "draws": 0,
+      "unresolved": 0,
+      "promoted": false,
+      "pValue": 0.3703264206728914
+    },
+    {
+      "round": 531,
+      "wins": 133,
+      "losses": 123,
+      "draws": 0,
+      "unresolved": 0,
+      "promoted": false,
+      "pValue": 0.3199864658769712
+    },
+    {
+      "round": 532,
+      "wins": 132,
+      "losses": 124,
+      "draws": 0,
+      "unresolved": 0,
+      "promoted": false,
+      "pValue": 0.3637735417447351
+    },
+    {
+      "round": 533,
+      "wins": 116,
+      "losses": 140,
+      "draws": 0,
+      "unresolved": 0,
+      "promoted": false,
+      "pValue": 0.9428728465750384
+    },
+    {
+      "round": 534,
+      "wins": 130,
+      "losses": 126,
+      "draws": 0,
+      "unresolved": 0,
+      "promoted": false,
+      "pValue": 0.45107925004834964
+    },
+    {
+      "round": 535,
+      "wins": 133,
+      "losses": 123,
+      "draws": 0,
+      "unresolved": 0,
+      "promoted": false,
+      "pValue": 0.322231956947113
+    },
+    {
+      "round": 536,
+      "wins": 119,
+      "losses": 137,
+      "draws": 0,
+      "unresolved": 0,
+      "promoted": false,
+      "pValue": 0.8667938451643399
+    },
+    {
+      "round": 537,
+      "wins": 119,
+      "losses": 137,
+      "draws": 0,
+      "unresolved": 0,
+      "promoted": false,
+      "pValue": 0.8892256351775942
+    },
+    {
+      "round": 538,
+      "wins": 139,
+      "losses": 117,
+      "draws": 0,
+      "unresolved": 0,
+      "promoted": false,
+      "pValue": 0.13021276294862164
+    },
+    {
+      "round": 539,
+      "wins": 129,
+      "losses": 127,
+      "draws": 0,
+      "unresolved": 0,
+      "promoted": false,
+      "pValue": 0.5000000000000001
+    },
+    {
+      "round": 540,
+      "wins": 138,
+      "losses": 118,
+      "draws": 0,
+      "unresolved": 0,
+      "promoted": false,
+      "pValue": 0.1540841159718404
+    },
+    {
+      "round": 541,
+      "wins": 123,
+      "losses": 133,
+      "draws": 0,
+      "unresolved": 0,
+      "promoted": false,
+      "pValue": 0.7616561032828623
+    },
+    {
+      "round": 542,
+      "wins": 118,
+      "losses": 138,
+      "draws": 0,
+      "unresolved": 0,
+      "promoted": false,
+      "pValue": 0.9058918984884862
+    },
+    {
+      "round": 543,
+      "wins": 138,
+      "losses": 118,
+      "draws": 0,
+      "unresolved": 0,
+      "promoted": false,
+      "pValue": 0.1477066403278351
+    },
+    {
+      "round": 544,
+      "wins": 126,
+      "losses": 130,
+      "draws": 0,
+      "unresolved": 0,
+      "promoted": false,
+      "pValue": 0.6328289834850767
+    },
+    {
+      "round": 545,
+      "wins": 128,
+      "losses": 128,
+      "draws": 0,
+      "unresolved": 0,
+      "promoted": false,
+      "pValue": 0.5456115373622539
+    },
+    {
+      "round": 546,
+      "wins": 131,
+      "losses": 125,
+      "draws": 0,
+      "unresolved": 0,
+      "promoted": false,
+      "pValue": 0.4099464518745244
+    },
+    {
+      "round": 547,
+      "wins": 134,
+      "losses": 122,
+      "draws": 0,
+      "unresolved": 0,
+      "promoted": false,
+      "pValue": 0.2779988588804855
+    },
+    {
+      "round": 548,
+      "wins": 123,
+      "losses": 133,
+      "draws": 0,
+      "unresolved": 0,
+      "promoted": false,
+      "pValue": 0.7750187318548887
+    },
+    {
+      "round": 549,
+      "wins": 137,
+      "losses": 119,
+      "draws": 0,
+      "unresolved": 0,
+      "promoted": false,
+      "pValue": 0.17459091908529414
+    },
+    {
+      "round": 550,
+      "wins": 135,
+      "losses": 121,
+      "draws": 0,
+      "unresolved": 0,
+      "promoted": false,
+      "pValue": 0.2351842659290722
+    },
+    {
+      "round": 551,
+      "wins": 130,
+      "losses": 126,
+      "draws": 0,
+      "unresolved": 0,
+      "promoted": false,
+      "pValue": 0.45179867284175634
+    },
+    {
+      "round": 552,
+      "wins": 138,
+      "losses": 118,
+      "draws": 0,
+      "unresolved": 0,
+      "promoted": false,
+      "pValue": 0.13021773828832678
+    },
+    {
+      "round": 553,
+      "wins": 117,
+      "losses": 139,
+      "draws": 0,
+      "unresolved": 0,
+      "promoted": false,
+      "pValue": 0.9201441584409903
+    },
+    {
+      "round": 554,
+      "wins": 134,
+      "losses": 122,
+      "draws": 0,
+      "unresolved": 0,
+      "promoted": false,
+      "pValue": 0.28579335900153624
+    },
+    {
+      "round": 555,
+      "wins": 130,
+      "losses": 126,
+      "draws": 0,
+      "unresolved": 0,
+      "promoted": false,
+      "pValue": 0.4531471623515405
+    },
+    {
+      "round": 556,
+      "wins": 121,
+      "losses": 135,
+      "draws": 0,
+      "unresolved": 0,
+      "promoted": false,
+      "pValue": 0.8254090809147059
+    },
+    {
+      "round": 557,
+      "wins": 119,
+      "losses": 137,
+      "draws": 0,
+      "unresolved": 0,
+      "promoted": false,
+      "pValue": 0.8824512187958291
+    },
+    {
+      "round": 558,
+      "wins": 144,
+      "losses": 112,
+      "draws": 0,
+      "unresolved": 0,
+      "promoted": true,
+      "pValue": 0.03405933714204988
+    },
+    {
+      "round": 559,
+      "wins": 119,
+      "losses": 137,
+      "draws": 0,
+      "unresolved": 0,
+      "promoted": false,
+      "pValue": 0.875977129053736
+    },
+    {
+      "round": 560,
+      "wins": 130,
+      "losses": 126,
+      "draws": 0,
+      "unresolved": 0,
+      "promoted": false,
+      "pValue": 0.45438846263774607
+    },
+    {
+      "round": 561,
+      "wins": 136,
+      "losses": 120,
+      "draws": 0,
+      "unresolved": 0,
+      "promoted": false,
+      "pValue": 0.20148153752303988
+    },
+    {
+      "round": 562,
+      "wins": 136,
+      "losses": 120,
+      "draws": 0,
+      "unresolved": 0,
+      "promoted": false,
+      "pValue": 0.20148153752303988
+    },
+    {
+      "round": 563,
+      "wins": 122,
+      "losses": 134,
+      "draws": 0,
+      "unresolved": 0,
+      "promoted": false,
+      "pValue": 0.7858964821412098
+    },
+    {
+      "round": 564,
+      "wins": 114,
+      "losses": 142,
+      "draws": 0,
+      "unresolved": 0,
+      "promoted": false,
+      "pValue": 0.9638810364041187
+    },
+    {
+      "round": 565,
+      "wins": 131,
+      "losses": 125,
+      "draws": 0,
+      "unresolved": 0,
+      "promoted": false,
+      "pValue": 0.4087769252754922
+    },
+    {
+      "round": 566,
+      "wins": 132,
+      "losses": 124,
+      "draws": 0,
+      "unresolved": 0,
+      "promoted": false,
+      "pValue": 0.36550444111130254
+    },
+    {
+      "round": 567,
+      "wins": 140,
+      "losses": 116,
+      "draws": 0,
+      "unresolved": 0,
+      "promoted": false,
+      "pValue": 0.10033910156469289
+    },
+    {
+      "round": 568,
+      "wins": 137,
+      "losses": 119,
+      "draws": 0,
+      "unresolved": 0,
+      "promoted": false,
+      "pValue": 0.18999969820595902
+    },
+    {
+      "round": 569,
+      "wins": 138,
+      "losses": 118,
+      "draws": 0,
+      "unresolved": 0,
+      "promoted": false,
+      "pValue": 0.1477066403278351
+    },
+    {
+      "round": 570,
+      "wins": 129,
+      "losses": 127,
+      "draws": 0,
+      "unresolved": 0,
+      "promoted": false,
+      "pValue": 0.5
+    },
+    {
+      "round": 571,
+      "wins": 152,
+      "losses": 104,
+      "draws": 0,
+      "unresolved": 0,
+      "promoted": true,
+      "pValue": 0.0021362025158258367
+    },
+    {
+      "round": 572,
+      "wins": 128,
+      "losses": 128,
+      "draws": 0,
+      "unresolved": 0,
+      "promoted": false,
+      "pValue": 0.5468528376484596
+    },
+    {
+      "round": 573,
+      "wins": 128,
+      "losses": 128,
+      "draws": 0,
+      "unresolved": 0,
+      "promoted": false,
+      "pValue": 0.5456115373622539
+    }
+  ],
+  "savedAt": "2026-09-25T12:19:42.552Z"
+}
