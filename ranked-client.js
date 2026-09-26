@@ -15,13 +15,14 @@ function rankedButtons(searching){
  document.querySelectorAll('#onlineScreen button:not(#randomSearchCancel)').forEach(b=>b.disabled=searching);
  const cancel=document.getElementById('randomSearchCancel');cancel.hidden=!searching;cancel.disabled=false;cancel.onclick=()=>{rankedCancelled=true;cancel.disabled=true;};
 }
-async function startRanked(){
+async function startRanked(resume=false){
  if(rankedActive)return;
  if(!window.loggedInPlayerData){alert('ログインしてからランク戦を開始してください');return;}
  stopBot();resetOnlineMatchState();rankedActive=true;rankedMatch=null;rankedCancelled=false;rankedSeenReveal=0;
  const epoch=++rankedEpoch;gameMode='ranked';rankedButtons(true);
  try{
-  let response=await rankedRpc({op:'join'});
+  let response=await rankedRpc({op:resume?'resume':'join'});
+  if(resume&&!response.match){rankedStop();return;}
   while(rankedActive&&epoch===rankedEpoch&&!response.match&&!response.bot){
    if(rankedCancelled){response=await rankedRpc({op:'cancel'});if(!response.match){rankedStop();rankedMessage('検索をキャンセルしました');return;}break;}
    rankedMessage('対戦相手を探しています… '+Math.min(10,Math.floor((response.waitedMs||0)/1000))+' / 10秒');
@@ -47,9 +48,11 @@ function rankedApply(m){
  if(rankedMatch?.id===m.id&&(m.revision<rankedMatch.revision||m.serverNow<rankedMatch.serverNow))return;
  const entering=!rankedMatch,wasPhase=rankedMatch?.phase;rankedMatch=m;gameMode='ranked';
  const me=m.you;selectingPlayer=me;
+ const inGrace=!m.closed&&m.serverNow>=m.deadline,remaining=Math.max(0,Math.ceil(((m.graceDeadline??m.deadline)-m.serverNow)/1000));
  if(m.phase==='select'){
   if(entering){showScreen('techScreen');updateTechniqueDisplay();}
   document.getElementById('techTitle').textContent=m.ready[me]?'技を確定しました。相手を待っています…':'ランク戦：技選択（残り'+Math.max(0,Math.ceil((m.deadline-m.serverNow)/1000))+'秒）';
+  if(inGrace)document.getElementById('techTitle').textContent='復帰猶予：あと'+remaining+'秒（未確定側は期限後に敗北）';
   document.querySelectorAll('#techScreen .techArrow').forEach(b=>{b.disabled=m.ready[me];b.style.pointerEvents=m.ready[me]?'none':'auto';});
   const button=document.getElementById('techConfirmButton');button.disabled=m.ready[me]||rankedSending;button.textContent=m.ready[me]?'確定済み':'決定';return;
  }
@@ -69,7 +72,7 @@ function rankedApply(m){
  for(const p of [1,2])document.getElementById('player'+p+'Area').classList.toggle('locked',locked[p]);
  document.getElementById('battleHomeButton').hidden=false;document.getElementById('battleHomeButton').textContent=m.closed?'ホームへ':'降参して戻る';
  document.getElementById('countdown').textContent=m.closed?'':m.serverNow<m.opensAt?'技公開':String(Math.max(0,Math.ceil((m.deadline-m.serverNow)/1000)));
- if(!m.closed)document.getElementById('resultMessage').textContent=m.ownAction!==null?'行動を確定しました':'';
+ if(!m.closed){document.getElementById('resultMessage').textContent=inGrace?(m.ownAction!==null?'相手の復帰を待っています':'復帰しました。期限内に行動を確定してください'):m.ownAction!==null?'行動を確定しました':'';if(inGrace)document.getElementById('countdown').textContent='復帰猶予 '+remaining+'秒';}
  if(m.reveal&&rankedSeenReveal!==m.reveal.turn){
   rankedSeenReveal=m.reveal.turn;
   const a=p=>m.reveal.actions[p]<3?basicActions[['charge','attack','block'][m.reveal.actions[p]]]:techniquePool[m.reveal.actions[p]-3];
@@ -78,7 +81,7 @@ function rankedApply(m){
  if(m.closed){showBattleResult(m.result.winner===0?'DRAW':m.result.winner+'P WIN');rankedResult(m);}
 }
 function rankedResult(m){
- const r=m.rating;const reason={'resigned':'降参','idle-forfeit':'連続無入力','selection-timeout':'技選択の時間切れ','turn-limit':'ターン上限','battle':''}[m.result.reason]||'';
+ const r=m.rating;const reason={'resigned':'降参','reconnect-timeout':'復帰猶予切れ','idle-forfeit':'連続無入力','selection-timeout':'技選択の時間切れ','turn-limit':'ターン上限','battle':''}[m.result.reason]||'';
  const el=document.createElement('div');el.style.fontSize='16px';el.textContent=(reason?reason+' / ':'')+(r?'レート '+r.before+' → '+r.after+'（'+(r.delta>=0?'+':'')+r.delta+'）':'');
  if(!m.result.rated)el.textContent+=' レート変動なし';document.getElementById('resultMessage').appendChild(el);
  if(r&&window.loggedInPlayerData){window.loggedInPlayerData.rankRate=r.after;const button=document.getElementById('playerLoginButton');if(button)button.textContent=window.loggedInPlayerData.name+' / '+r.after;}

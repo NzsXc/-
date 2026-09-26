@@ -10,9 +10,12 @@ export function createFreeTransport(db,auth){
   for(let attempt=0;attempt<4;attempt++){
    const keys=['players','createdAt','state','ready','resigned','settled','transition'];g=Object.fromEntries(await Promise.all(keys.map(async k=>[k,await read(path+'/'+k)])));g.ready||={};
    const me=g.players[1]===u?1:g.players[2]===u?2:0;if(!me)throw Error('参加者ではありません');g.me=me;
-   const s=g.state,terminal=!!g.resigned||s&&(s.hp1<=0||s.hp2<=0||s.turn>300)||!s&&now()>=g.createdAt+60000;
+   const s=g.state;let finalMoves=null;const expires=s?s.startedAt+(s.turn>1?2500:0)+40000:0;
+   if(s&&now()>=expires)finalMoves=await read(path+'/moves/'+s.turn)||{};
+   const abandoned=!!s&&now()>=expires&&(finalMoves?.[1]==null||finalMoves?.[2]==null);g.abandoned=abandoned;
+   const terminal=abandoned||!!g.resigned||s&&(s.hp1<=0||s.hp2<=0||s.turn>300)||!s&&now()>=g.createdAt+90000;
    if(terminal&&!g.settled){
-    const winner=g.resigned?.[1]?2:g.resigned?.[2]?1:s?(s.hp1<=0?(s.hp2<=0?0:2):s.hp2<=0?1:0):g.ready[1]?(g.ready[2]?0:1):g.ready[2]?2:0;
+    const winner=g.resigned?.[1]?2:g.resigned?.[2]?1:s&&s.hp1>0&&s.hp2>0&&s.turn<=300&&abandoned?(finalMoves[1]!=null?1:finalMoves[2]!=null?2:0):s?(s.hp1<=0?(s.hp2<=0?0:2):s.hp2<=0?1:0):g.ready[1]?(g.ready[2]?0:1):g.ready[2]?2:0;
     const accounts={1:await read('freeAccounts/'+g.players[1]),2:await read('freeAccounts/'+g.players[2])};
     const amount=winner===0?0:Math.max(10,30+Math.trunc((accounts[3-winner].rating-accounts[winner].rating)/20));
     const patch={},ledger={at:serverTimestamp(),winner};for(const p of [1,2]){const a=accounts[p],d=winner===0?0:winner===p?amount:-amount;Object.assign(ledger,{['before'+p]:a.rating,['after'+p]:a.rating+d,['delta'+p]:d});patch['freeAccounts/'+g.players[p]]={...a,rating:a.rating+d,games:a.games+1,active:'',lastSettled:id};}patch[path+'/settled']=ledger;
@@ -22,7 +25,7 @@ export function createFreeTransport(db,auth){
    if(s&&!terminal){
     g.own=await read(path+'/moves/'+s.turn+'/'+me);let moves=null;
     try{moves=await read(path+'/moves/'+s.turn);}catch(e){if(!String(e.code||e.message).toLowerCase().includes('permission'))throw e;}
-    if(moves?.[1]!=null&&moves?.[2]!=null||now()>=s.startedAt+(s.turn>1?2500:0)+10000){const c=calculate(s,moves||{},id),state=Object.fromEntries(stateFields.map(k=>[k,k==='startedAt'?serverTimestamp():c[k]]));try{await update(ref(db,path),{transition:c,state});}catch(e){const fresh=await read(path+'/state');if(fresh.turn===s.turn&&!await read(path+'/resigned'))throw e;}continue;}
+    if(moves?.[1]!=null&&moves?.[2]!=null){const c=calculate(s,moves||{},id),state=Object.fromEntries(stateFields.map(k=>[k,k==='startedAt'?serverTimestamp():c[k]]));try{await update(ref(db,path),{transition:c,state});}catch(e){const fresh=await read(path+'/state');if(fresh.turn===s.turn&&!await read(path+'/resigned'))throw e;}continue;}
    }
    break;
   }
@@ -30,11 +33,12 @@ export function createFreeTransport(db,auth){
   const loadouts={};if(g.ready[1]&&g.ready[2])for(const p of [1,2])loadouts[p]=await read(path+'/loadouts/'+p);
   const state=s?{turn:s.turn,...Object.fromEntries(['hp','gauge','seal','enhance','momentum','last'].map(k=>[k,[null,s[k+'1'],s[k+'2']]]))}:null;
   const closed=!!g.settled,opensAt=s?s.startedAt+(s.turn>1?2500:0):0;
-  return {id,you:me,players,ready:g.ready,loadouts,state,closed,phase:closed?'finished':s?'turn':'select',revision:now(),serverNow:now(),opensAt,deadline:s?opensAt+10000:g.createdAt+60000,ownAction:g.own??null,reveal:g.transition?{turn:g.transition.turn-1,actions:{1:g.transition.action1,2:g.transition.action2}}:null,result:closed?{winner:g.settled.winner,rated:true,reason:g.resigned?'resigned':!s?'selection-timeout':s.misses1>=2||s.misses2>=2?'idle-forfeit':s.turn>300?'turn-limit':'battle'}:null,rating:closed?{before:g.settled['before'+me],after:g.settled['after'+me],delta:g.settled['delta'+me]}:null};
+  return {id,you:me,players,ready:g.ready,loadouts,state,closed,phase:closed?'finished':s?'turn':'select',revision:now(),serverNow:now(),opensAt,deadline:s?opensAt+10000:g.createdAt+60000,graceDeadline:s?opensAt+40000:g.createdAt+90000,ownAction:g.own??null,reveal:g.transition?{turn:g.transition.turn-1,actions:{1:g.transition.action1,2:g.transition.action2}}:null,result:closed?{winner:g.settled.winner,rated:true,reason:g.resigned?'resigned':g.abandoned&&s?.hp1>0&&s?.hp2>0?'reconnect-timeout':!s?'selection-timeout':s.misses1>=2||s.misses2>=2?'idle-forfeit':s.turn>300?'turn-limit':'battle'}:null,rating:closed?{before:g.settled['before'+me],after:g.settled['after'+me],delta:g.settled['delta'+me]}:null};
  }
  return async function request(d){
   const a=await profile(),u=auth.currentUser.uid;
   if(d.op==='profile')return a;
+  if(d.op==='resume'){const id=a.active||a.lastSettled;return id?{match:await status(id)}:{};}
   if(['join','queue','cancel'].includes(d.op)){
    if(a.active)return {match:await status(a.active)};
    const qp='freeQueue/'+u;
