@@ -63,7 +63,7 @@ function rankedApply(m){
   lastAction[p]=m.state.last[p]?{data:{type:m.state.last[p]}}:null;
  }
  if(entering||wasPhase==='select'){showScreen('battleScreen');setupActionNames();}
- setPlayerNames(m.players[1].name,m.players[2].bot?'AI Bot · 第'+m.botGeneration+'世代':m.players[2].name);
+ setPlayerNames(m.players[1].name,m.players[2].bot?botDisplayName():m.players[2].name);
  updateBattleUI();
  locked[me]=m.ownAction!==null||rankedSending||m.closed||m.serverNow<m.opensAt;locked[3-me]=true;
  for(const p of [1,2])document.getElementById('player'+p+'Area').classList.toggle('locked',locked[p]);
