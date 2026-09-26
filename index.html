@@ -2362,7 +2362,9 @@ button{min-height:44px;}
 <script src="bot-engine.js"></script>
 <script src="random-queue.js"></script>
 <script src="bot-client.js"></script>
+<script src="ranked-client.js"></script>
 <script type="module">
+  import {createFreeTransport} from "./free-transport.js";
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
   import {
     getAuth,
@@ -2397,6 +2399,7 @@ button{min-height:44px;}
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
   const auth = getAuth(app);
+  window.rankedTransport=createFreeTransport(db,auth);
 
   let loggedInPlayerData = null;
 
@@ -2423,12 +2426,6 @@ button{min-height:44px;}
     const playerRef=ref(db,`users/${user.uid}`);
     let snapshot=await get(playerRef);
 
-    // 最初のNzアカウントだけは、初回ログイン時に初期データを作成する。
-    if(!snapshot.exists() && user.email==="player-fa610321d6baba427e5c1cdb@psy-login.local"){
-      await set(playerRef,{name:"Nz",rankRate:-3});
-      snapshot=await get(playerRef);
-    }
-
     if(!snapshot.exists()){
       loggedInPlayerData=null;
       updatePlayerLoginButton();
@@ -2443,6 +2440,8 @@ button{min-height:44px;}
       ...data
     };
     window.loggedInPlayerData=loggedInPlayerData;
+    const protectedProfile=await window.rankedTransport({op:"profile"});
+    loggedInPlayerData.rankRate=protectedProfile.rating;
     updatePlayerLoginButton();
   }
 
@@ -3006,7 +3005,7 @@ function showScreen(id){
     .classList.add("active");
 
   const battleScreen=document.getElementById("battleScreen");
-  battleScreen.dataset.localPlayer=botMatch ? "1" : gameMode==="online" ? String(window.onlineBattle?.localPlayer||"") : "";
+  battleScreen.dataset.localPlayer=rankedActive ? String(rankedMatch?.you||"") : botMatch ? "1" : gameMode==="online" ? String(window.onlineBattle?.localPlayer||"") : "";
   syncBattleBGM(id);
   updateRoomCodeButton(id);
 
@@ -3307,7 +3306,7 @@ function closeSpectatorList(){
 
 
 function startOnlineMatch(type){
-  if(type==="random"){startRandomMatch();return;}
+  if(type==="random"){startRanked();return;}
   stopBot();
   // 前試合の受信済みターンやタイマーを持ち越さない。
   resetOnlineMatchState();
@@ -4053,6 +4052,7 @@ window.receiveOnlineTechniques = receiveOnlineTechniques;
 window.receiveOnlineAction = receiveOnlineAction;
 
 function confirmTech(){
+  if(rankedActive){rankedConfirm();return;}
   if(botMatch){confirmBotTech();return;}
 
   if(gameMode === "online"){
@@ -4584,8 +4584,8 @@ function showTechniqueReveal(a1,a2){
     descEl.textContent="";
   }
 
-  const layer=document.getElementById("battleEffectLayer");
-  if(!layer)return;
+  let layer=document.getElementById("battleEffectLayer");
+  if(!layer){layer=document.createElement("div");layer.id="battleEffectLayer";document.getElementById("battleScreen").appendChild(layer);}
 
   // 技演出側で元々使っていた技名表示処理を、そのままここへ移動。
   layer.innerHTML="";
@@ -4626,6 +4626,7 @@ function clearOnlineTechniqueDescription(){
 ========================= */
 
 function chooseAction(player,action){
+  if(rankedActive){rankedChoose(player,action);return;}
   if(botMatch && (player!==1 || botThinking))return;
   if(!document.getElementById("battleScreen")?.classList.contains("active"))return;
   if(gameMode!=="online" && gameMode!=="offline")return;
@@ -6110,7 +6111,8 @@ async function copyRoomCode(){
   },1800);
 }
 
-function returnBattleHome(){
+function returnBattleHome(){if(rankedActive){rankedLeave();return;}returnBattleHomeCore();}
+function returnBattleHomeCore(){
   stopBot();
   const wasOnline=gameMode==="online";
   stopSpectating();
