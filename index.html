@@ -1530,6 +1530,12 @@ body{
   background:rgba(100,40,160,.24);
   color:#d3a3ff;
 }
+/* TIP 1：TIP 2本文と同じ文字設定 */
+.tipIntroPage{
+  font-size:14px;
+  font-weight:400;
+  line-height:1.65;
+}
 /* TIP 2：大会ルール表示 */
 .tipRulesPage{
   align-items:flex-start;
@@ -1547,7 +1553,8 @@ body{
 .tipRulesContent ul{margin:6px 0 10px;padding-left:1.5em;}
 .tipRulesContent li{margin:4px 0;}
 @media(max-width:600px){
-  .tipRulesPage{padding:14px 16px;font-size:12px;}
+  .tipIntroPage{font-size:15px;}
+  .tipRulesPage{padding:14px 16px;font-size:15px;}
   .tipRulesContent h2{font-size:19px;margin-bottom:14px;}
   .tipRulesContent h3{font-size:14px;margin-top:16px;}
 }
@@ -1984,7 +1991,7 @@ button{min-height:44px;}
 
   <div class="tipViewport" aria-label="TIP内容">
     <div class="tipPages" id="tipPages">
-      <section class="tipPage"><div class="tipPageInner">
+      <section class="tipPage"><div class="tipPageInner tipIntroPage">
 ・相手の行動を読み、技を使い分けて勝利を目指すターン制バトルです。<br>・お互いに行動を選ぶと、選択した技が公開されて効果が発動します。<br>
 ・相手のHPを0にすれば勝利です。チャージでゲージをため、攻撃や特殊技につなげましょう。
 </div></section>
