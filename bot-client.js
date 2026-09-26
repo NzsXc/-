@@ -1,5 +1,6 @@
 let botMatch=false,botThinking=false,botKnowledge=null,botWorker=null,botEpoch=0,botTurn=0;
 let randomSearchBusy=false,randomSearchCancelled=false;
+function botDisplayName(){return "Ai v"+(Number.isSafeInteger(botKnowledge?.displayVersion)&&botKnowledge.displayVersion>=1?botKnowledge.displayVersion:1);}
 function stopBot(){botEpoch++;botWorker?.terminate();botWorker=null;botThinking=false;botMatch=false;}
 async function loadBotKnowledge(){
  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),15000);
@@ -37,14 +38,14 @@ function prepareBotMatch(){
  selectedTechniques[2]=choices[Math.floor(Math.random()*choices.length)].slice();
  document.querySelectorAll('#techScreen .techArrow').forEach(el=>{el.disabled=false;el.style.pointerEvents='auto';});
  const button=document.getElementById('techConfirmButton');button.disabled=false;button.textContent='決定';
- document.getElementById('techTitle').textContent='AI Bot（第'+botKnowledge.generation+'世代）：技選択';
+ document.getElementById('techTitle').textContent=botDisplayName()+'：技選択';
  showScreen('techScreen');updateTechniqueDisplay();
 }
 function confirmBotTech(){
  player1Techs=selectedTechniques[1].map(i=>techniquePool[i]);
  player2Techs=selectedTechniques[2].map(i=>techniquePool[i]);
  setupBattle();
- setPlayerNames(window.loggedInPlayerData?.name||'あなた','AI Bot · 第'+botKnowledge.generation+'世代');
+ setPlayerNames(window.loggedInPlayerData?.name||'あなた',botDisplayName());
 }
 async function startBotTurn(){
  const epoch=++botEpoch;botWorker?.terminate();botThinking=true;locked[1]=true;locked[2]=true;
@@ -86,7 +87,7 @@ async function startRandomMatch(){
   if(!result){status.textContent='検索をキャンセルしました';return;}
   if(result==='bot'){
    if(randomSearchCancelled){status.textContent='検索をキャンセルしました';return;}
-   status.textContent='AI Botの知識を読み込んでいます…';await loadBotKnowledge();
+   status.textContent='Aiの知識を読み込んでいます…';await loadBotKnowledge();
    if(randomSearchCancelled){status.textContent='検索をキャンセルしました';return;}
    prepareBotMatch();status.textContent='';
   }else{
