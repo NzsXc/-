@@ -82,6 +82,8 @@ function rankedApply(m){
  if(!rankedActive||!m)return;
  if(rankedMatch?.id===m.id&&(m.revision<rankedMatch.revision||m.serverNow<rankedMatch.serverNow))return;
  const entering=!rankedMatch,wasPhase=rankedMatch?.phase;rankedMatch=m;gameMode='ranked';
+ // Initial snapshots restore the board; only subsequent turns play effects.
+ if(entering&&m.reveal)rankedSeenReveal=m.reveal.turn;
  rankedClockStart(m);
  const me=m.you;selectingPlayer=me;
  const inGrace=!m.closed&&m.serverNow>=m.deadline,remaining=Math.max(0,Math.ceil(((m.graceDeadline??m.deadline)-m.serverNow)/1000));

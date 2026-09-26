@@ -38,7 +38,7 @@ export function createFreeTransport(db,auth){
  return async function request(d){
   const a=await profile(),u=auth.currentUser.uid;
   if(d.op==='profile')return a;
-  if(d.op==='resume'){const id=a.active||a.lastSettled;return id?{match:await status(id)}:{};}
+  if(d.op==='resume'){const id=a.active;return id?{match:await status(id)}:{};}
   if(['join','queue','cancel'].includes(d.op)){
    if(a.active)return {match:await status(a.active)};
    const qp='freeQueue/'+u;

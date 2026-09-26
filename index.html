@@ -2433,9 +2433,9 @@ button{min-height:44px;}
 <script src="bot-engine.js"></script>
 <script src="random-queue.js"></script>
 <script src="bot-client.js?v=ai-name-1"></script>
-<script src="ranked-client.js?v=smooth-effects-1"></script>
+<script src="ranked-client.js?v=resume-active-1"></script>
 <script type="module">
-  import {createFreeTransport} from "./free-transport.js?v=smooth-effects-1";
+  import {createFreeTransport} from "./free-transport.js?v=resume-active-1";
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
   import {
     getAuth,
@@ -2513,7 +2513,7 @@ button{min-height:44px;}
     window.loggedInPlayerData=loggedInPlayerData;
     const protectedProfile=await window.rankedTransport({op:"profile"});
     loggedInPlayerData.rankRate=protectedProfile.rating;
-    if(protectedProfile.active||protectedProfile.lastSettled)setTimeout(()=>{if(!rankedActive)startRanked(true);},0);
+    if(protectedProfile.active)setTimeout(()=>{if(!rankedActive)startRanked(true);},0);
     updatePlayerLoginButton();
   }
 
