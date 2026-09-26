@@ -1530,6 +1530,28 @@ body{
   background:rgba(100,40,160,.24);
   color:#d3a3ff;
 }
+/* TIP 2：大会ルール表示 */
+.tipRulesPage{
+  align-items:flex-start;
+  justify-content:flex-start;
+  overflow-y:auto;
+  padding:18px 22px;
+  font-size:14px;
+  font-weight:400;
+  line-height:1.65;
+}
+.tipRulesContent{width:100%;max-width:720px;margin:0 auto;}
+.tipRulesContent h2{margin:0 0 18px;text-align:center;font-size:24px;}
+.tipRulesContent h3{margin:20px 0 8px;font-size:17px;}
+.tipRulesContent p{margin:6px 0;}
+.tipRulesContent ul{margin:6px 0 10px;padding-left:1.5em;}
+.tipRulesContent li{margin:4px 0;}
+@media(max-width:600px){
+  .tipRulesPage{padding:14px 16px;font-size:12px;}
+  .tipRulesContent h2{font-size:19px;margin-bottom:14px;}
+  .tipRulesContent h3{font-size:14px;margin-top:16px;}
+}
+
 </style>
 <!-- PSYCHO_BATTLE_FLOW_FIX_20260919 -->
 <style id="cyber-theme">
@@ -1966,7 +1988,49 @@ button{min-height:44px;}
 ・相手の行動を読み、技を使い分けて勝利を目指すターン制バトルです。<br>・お互いに行動を選ぶと、選択した技が公開されて効果が発動します。<br>
 ・相手のHPを0にすれば勝利です。チャージでゲージをため、攻撃や特殊技につなげましょう。
 </div></section>
-      <section class="tipPage"><div class="tipPageInner">TIP 2</div></section>
+      <section class="tipPage"><div class="tipPageInner tipRulesPage">
+        <div class="tipRulesContent">
+          <h2>心理バトル 大会ルール</h2>
+
+          <h3>1. 大会形式</h3>
+          <p>大会形式は、参加人数の確定後に決定します。</p>
+          <p>参加人数に応じて、総当たり戦またはトーナメント戦を採用します。</p>
+
+          <h3>2. 試合中のトラブル</h3>
+          <p>ゲーム側の不具合が発生し、正常に試合を続行できないと主催者が判断した場合は、その試合を無効として再試合を行います。</p>
+          <p>プレイヤー側の通信切断・離脱については、切断・離脱したプレイヤーの敗北とします。</p>
+
+          <h3>3. 主催者本人が関係する試合</h3>
+          <p>主催者本人が関係する試合中にゲーム側の不具合が疑われ、試合を中断する必要があると主催者が判断した場合、対戦相手に中断の確認を取ります。</p>
+          <p>対戦相手が承認した場合は、試合を中断します。</p>
+          <p>対戦相手が中断を拒否した場合は、試合に関係していない第三者3人による多数決で、中断するかどうかを決定します。</p>
+          <p>中断後、ゲーム側の不具合であると判断された場合は再試合とします。</p>
+
+          <h3>4. 引き分け</h3>
+          <p>試合が引き分けとなった場合は、再試合を行います。</p>
+
+          <h3>5. 助言の禁止</h3>
+          <p>試合中に、他の参加者・観戦者などから助言を受けることを禁止します。</p>
+
+          <h3>6. 不正行為の禁止</h3>
+          <p>以下のような不正行為を禁止します。</p>
+          <ul>
+            <li>バグの意図的な利用</li>
+            <li>チートの使用</li>
+            <li>その他、試合を不正に有利にする行為</li>
+          </ul>
+          <p>不正行為が確認された場合は、失格とする場合があります。</p>
+
+          <h3>7. 賞金</h3>
+          <p>大会には少額の賞金を設定します。</p>
+          <p>賞金は大会終了後に支払います。</p>
+          <p>支払い方法は、以下のいずれかとします。</p>
+          <ul>
+            <li>PayPay</li>
+            <li>手渡し</li>
+          </ul>
+        </div>
+      </div></section>
       <section class="tipPage"><div class="tipPageInner">TIP 3</div></section>
       <section class="tipPage"><div class="tipPageInner">TIP 4</div></section>
     </div>
