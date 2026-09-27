@@ -1861,6 +1861,14 @@ button{min-height:44px;}
 #playerLoginMessage{min-height:1.5em;margin-top:12px;font-size:13px;color:#ffd0d0;}
 
 </style>
+<!-- PWA settings -->
+<link rel="manifest" href="./manifest.webmanifest">
+<meta name="theme-color" content="#111111">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="心理バトル">
+<link rel="apple-touch-icon" href="./icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
 </head>
 
 
@@ -6236,5 +6244,7 @@ updateTechniqueDisplay();
   <audio id="turnCountdownSE" preload="auto" loop src="sounds/pendulum.mp3"></audio>
 </div>
 
+<!-- PWA registration -->
+<script src="./pwa-register.js" defer></script>
 </body>
 </html>
