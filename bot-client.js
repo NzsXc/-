@@ -1,5 +1,4 @@
 let botMatch=false,botThinking=false,botKnowledge=null,botWorker=null,botEpoch=0,botTurn=0;
-let randomSearchBusy=false,randomSearchCancelled=false;
 function botDisplayName(){return "Ai v"+(Number.isSafeInteger(botKnowledge?.displayVersion)&&botKnowledge.displayVersion>=1?botKnowledge.displayVersion:1);}
 function stopBot(){botEpoch++;botWorker?.terminate();botWorker=null;botThinking=false;botMatch=false;}
 async function loadBotKnowledge(){
@@ -34,11 +33,13 @@ function botActionId(id){
 }
 function prepareBotMatch(){
  stopBot();botMatch=true;botTurn=0;gameMode='offline';selectingPlayer=1;
- const choices=[...BattleAI.combinations];
- selectedTechniques[2]=choices[Math.floor(Math.random()*choices.length)].slice();
+ if(botSettings.loadout==='random'){
+  const choices=[...BattleAI.combinations];
+  selectedTechniques[2]=choices[Math.floor(Math.random()*choices.length)].slice();
+ }else selectedTechniques[2]=botSettings.techniques.slice();
  document.querySelectorAll('#techScreen .techArrow').forEach(el=>{el.disabled=false;el.style.pointerEvents='auto';});
  const button=document.getElementById('techConfirmButton');button.disabled=false;button.textContent='決定';
- document.getElementById('techTitle').textContent=botDisplayName()+'：技選択';
+ document.getElementById('techTitle').textContent='あなた：技選択（BOT・'+BOT_LEVELS[botSettings.difficulty]+'）';
  showScreen('techScreen');updateTechniqueDisplay();
 }
 function confirmBotTech(){
@@ -54,12 +55,12 @@ async function startBotTurn(){
  const state=botState();
  try{
   const id=await new Promise((resolve,reject)=>{
-   const worker=new Worker('bot-worker.js');botWorker=worker;
+   const worker=new Worker('bot-worker.js?v=difficulty-2');botWorker=worker;
    const timer=setTimeout(()=>{worker.terminate();reject(Error('Botの思考が時間内に完了しませんでした'));},15000);
    worker.onmessage=({data})=>{clearTimeout(timer);worker.terminate();data.ok?resolve(data.action):reject(Error(data.error));};
    worker.onerror=()=>{clearTimeout(timer);worker.terminate();reject(Error('Botの思考ファイルを読み込めません'));};
    // Only the public start-of-turn state is sent. No selectedAction is sent.
-   worker.postMessage({state,model:botKnowledge.champion});
+   worker.postMessage({state,model:botKnowledge?.champion||null,difficulty:botSettings.difficulty});
   });
   if(!botMatch||epoch!==botEpoch)return;
   if(!BattleAI.legal(state,2).includes(id))throw Error('Botの行動が不正です');
@@ -75,33 +76,50 @@ async function startBotTurn(){
   document.getElementById('battleHomeButton').hidden=false;
  }
 }
-async function startRandomMatch(){
- if(randomSearchBusy)return;
- if(!window.onlineBattle){alert('接続を準備中です。少し待って再試行してください。');return;}
- randomSearchBusy=true;randomSearchCancelled=false;stopBot();resetOnlineMatchState();
- const status=document.getElementById('randomSearchStatus'),cancel=document.getElementById('randomSearchCancel');
- document.querySelectorAll('#onlineScreen button:not(#randomSearchCancel)').forEach(e=>e.disabled=true);
- cancel.hidden=false;cancel.disabled=false;status.textContent='対戦相手を探しています…';
- try{
-  const result=await window.onlineBattle.startRandom((seconds)=>{status.textContent='対戦相手を探しています… '+seconds+' / 10秒';},()=>randomSearchCancelled);
-  if(!result){status.textContent='検索をキャンセルしました';return;}
-  if(result==='bot'){
-   if(randomSearchCancelled){status.textContent='検索をキャンセルしました';return;}
-   status.textContent='Aiの知識を読み込んでいます…';await loadBotKnowledge();
-   if(randomSearchCancelled){status.textContent='検索をキャンセルしました';return;}
-   prepareBotMatch();status.textContent='';
-  }else{
-   gameMode='online';onlineMatchType='random';onlineBattleStarted=false;onlineTurnNumber=0;
-   selectingPlayer=window.onlineBattle.localPlayer;onlineTechConfirmed=false;
-   showScreen('techScreen');
-   document.querySelectorAll('#techScreen .techArrow').forEach(e=>{e.disabled=false;e.style.pointerEvents='auto';});
-   const button=document.getElementById('techConfirmButton');button.disabled=false;button.textContent='決定';
-   document.getElementById('techTitle').textContent='ランダム対戦：技選択';updateTechniqueDisplay();status.textContent='';
-  }
- }catch(error){console.error(error);status.textContent='開始できません：'+error.message+'。接続・配信ファイル・Firebaseの権限を確認して再試行してください。';}
- finally{
-  randomSearchBusy=false;cancel.hidden=true;
-  document.querySelectorAll('#onlineScreen button:not(#randomSearchCancel)').forEach(e=>e.disabled=false);
- }
-}
+// Compatibility for old callers; all online matching remains human-only.
+function startRandomMatch(){return startRanked();}
 
+const BOT_LEVELS={easy:'弱い',normal:'普通',hard:'強い'};
+const botSettings={difficulty:'normal',loadout:'random',techniques:[0,1,2]};
+let soloLoading=false,soloSession=0;
+function openSoloSettings(){
+ stopBot();resetOnlineMatchState();gameMode='offline';soloSession++;
+ const difficulty=document.getElementById('botDifficulty');difficulty.value=botSettings.difficulty;
+ difficulty.onchange=()=>{botSettings.difficulty=difficulty.value;updateSoloSettings();};
+ const loadout=document.getElementById('botLoadout');loadout.value=botSettings.loadout;
+ loadout.onchange=()=>{botSettings.loadout=loadout.value;updateSoloSettings();};
+ document.getElementById('soloStatus').textContent='';updateSoloSettings();showScreen('soloScreen');
+}
+function updateSoloSettings(){
+ document.getElementById('botDifficultyNote').textContent={easy:'使える行動からランダムに選びます。',normal:'1手先を考えて行動します。',hard:'2手先まで読み、より慎重に行動します。'}[botSettings.difficulty];
+ const area=document.getElementById('botTechniqueSettings');area.hidden=botSettings.loadout!=='custom';area.replaceChildren();
+ botSettings.techniques.forEach((index,slot)=>{
+  const label=document.createElement('label');label.textContent='BOTの技 '+(slot+1);
+  const select=document.createElement('select');select.disabled=soloLoading;
+  techniquePool.forEach((tech,i)=>{const option=document.createElement('option');option.value=i;option.textContent=tech.name;option.disabled=botSettings.techniques.some((n,s)=>s!==slot&&n===i);select.append(option);});
+  select.value=index;select.onchange=()=>{botSettings.techniques[slot]=Number(select.value);updateSoloSettings();};
+  label.append(select);area.append(label);
+ });
+}
+function closeSoloSettings(){soloSession++;showScreen('modeScreen');}
+async function startSoloMatch(){
+ if(soloLoading)return;const session=soloSession;soloLoading=true;
+ const button=document.getElementById('soloStartButton'),status=document.getElementById('soloStatus');
+ button.disabled=true;document.querySelectorAll('#soloScreen select').forEach(e=>e.disabled=true);
+ try{
+  if(typeof BattleAI==='undefined')throw Error('bot-engine.jsを読み込めません。');
+  if(!botKnowledge && botSettings.difficulty!=='easy'){
+   status.textContent='BOTを準備しています…';
+   try{await loadBotKnowledge();}catch(error){
+    // The built-in evaluator supports all difficulty levels even without a trained model.
+    console.warn('学習済みモデルを読み込めないため標準AIを使います',error);
+    if(session!==soloSession)return;
+    status.textContent='学習データを読み込めません。標準AIで遊べます。もう一度「技選択へ」を押してください。';
+    botKnowledge={champion:null,displayVersion:1};return;
+   }
+  }
+  if(session!==soloSession)return;
+  prepareBotMatch();
+ }catch(error){status.textContent=error.message;}
+ finally{soloLoading=false;button.disabled=false;document.querySelectorAll('#soloScreen select').forEach(e=>e.disabled=false);updateSoloSettings();}
+}

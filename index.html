@@ -1559,6 +1559,25 @@ body{
   .tipRulesContent h3{font-size:14px;margin-top:16px;}
 }
 
+/* Mode selection: the local two-player button is joined below the first row. */
+#modeScreen .modeChoiceBox{grid-template-columns:1fr 32px 1fr;grid-template-rows:1fr;min-height:110px;border-radius:22px 22px 0 0;}
+.localModeButton{width:min(720px,78vw);min-height:64px;border:2px solid rgba(255,255,255,.18);border-top:0;border-radius:0 0 22px 22px;background:rgba(24,24,32,.92);}
+.settingsPanel{width:min(620px,90vw);display:grid;gap:16px;padding:22px;border:1px solid #a4d0ed66;border-radius:18px;background:#141e2d;}
+.settingsPanel label{display:grid;gap:8px;line-height:1.5;}
+.settingsPanel select{width:100%;min-height:44px;background:#223047;color:#fff;border:1px solid #7794b4;border-radius:9px;padding:8px;font:inherit;}
+#botTechniqueSettings{display:grid;gap:12px;}
+#botTechniqueSettings[hidden]{display:none;}
+.settingsNote{margin:0;font-size:14px;color:#bdcddd;line-height:1.6;}
+.lobbyStatus{text-align:center;white-space:pre-line;line-height:1.7;min-height:28px;}
+#soloScreen,#friendLobbyScreen{position:relative;overflow:auto;}
+#friendCreateButton{width:min(720px,88vw);min-height:54px;}
+.friendRoomButton{grid-template-columns:1fr auto;text-align:left;}
+@media(max-width:600px){
+ #modeScreen .modeChoiceBox{width:92vw;min-height:100px;grid-template-columns:1fr 24px 1fr;grid-template-rows:1fr;}
+ .localModeButton{width:92vw;min-height:60px;}
+ .settingsPanel{padding:16px;gap:12px;}
+}
+
 </style>
 <!-- PSYCHO_BATTLE_FLOW_FIX_20260919 -->
 <style id="cyber-theme">
@@ -1917,16 +1936,18 @@ button{min-height:44px;}
 <div id="modeScreen" class="screen">
 
   <div class="modeChoiceBox" aria-label="バトルモード選択">
-    <button class="modeChoiceButton" onclick="selectMode('offline')">
-      オフライン
+    <button class="modeChoiceButton" onclick="openSoloSettings()">
+      一人で
     </button>
 
     <div class="modeSlash" aria-hidden="true"></div>
 
     <button class="modeChoiceButton" onclick="selectMode('online')">
-      オンライン
+      だれかと
     </button>
   </div>
+
+  <button class="modeChoiceButton localModeButton" onclick="selectMode('offline')">2人で</button>
 
   <button class="modeBottomButton" aria-label="TIPを開く" onclick="showScreen('tipScreen')">📣</button>
   <button class="modeSquareButton" aria-label="メニュー">□</button>
@@ -1940,12 +1961,12 @@ button{min-height:44px;}
 
 <div id="onlineScreen" class="screen">
 
-  <div class="screenTitle">オンライン</div>
+  <div class="screenTitle">だれかと</div>
 
   <div class="onlineMenu">
     <button class="onlineMainButton" onclick="startOnlineMatch('random')">ランダム対戦</button>
     <div id="randomSearchStatus" role="status" style="text-align:center;font-size:14px;line-height:1.5"></div>
-    <button id="randomSearchCancel" hidden onclick="randomSearchCancelled=true;this.disabled=true">検索をキャンセル</button>
+    <button id="randomSearchCancel" hidden onclick="rankedCancelled=true;this.disabled=true">検索をキャンセル</button>
     <button class="onlineMainButton" onclick="startOnlineMatch('friend')">友達対戦</button>
 
     <div class="onlineSubRow">
@@ -1962,6 +1983,27 @@ button{min-height:44px;}
 <!-- =========================
      観戦一覧画面
 ========================= -->
+
+<div id="soloScreen" class="screen">
+  <div class="screenTitle">一人で</div>
+  <div class="settingsPanel">
+    <label>BOTの強さ<select id="botDifficulty"><option value="easy">弱い</option><option value="normal" selected>普通</option><option value="hard">強い</option></select></label>
+    <p id="botDifficultyNote" class="settingsNote">1手先を考えて行動します。</p>
+    <label>BOTの技<select id="botLoadout"><option value="random">おまかせ</option><option value="custom">自分で選ぶ</option></select></label>
+    <div id="botTechniqueSettings" hidden></div>
+    <p class="settingsNote">あなたの技は、このあと選べます。</p>
+    <div id="soloStatus" class="lobbyStatus" role="status"></div>
+    <button id="soloStartButton" class="onlineMainButton" onclick="startSoloMatch()">技選択へ</button>
+  </div>
+  <button class="onlineBackButton" onclick="closeSoloSettings()">戻る</button>
+</div>
+<div id="friendLobbyScreen" class="screen">
+  <div class="screenTitle">友達対戦</div>
+  <div id="friendLobbyStatus" class="lobbyStatus" role="status">部屋を選ぶか、新しく作ってください。</div>
+  <button id="friendCreateButton" class="onlineMainButton" onclick="createFriendRoom()">部屋を作る</button>
+  <div id="friendRoomList" class="spectatorList" aria-label="参加できる部屋"></div>
+  <button id="friendLobbyBack" class="onlineBackButton" onclick="closeFriendLobby()">戻る</button>
+</div>
 
 <div id="spectatorListScreen" class="screen">
   <div class="screenTitle">観戦</div>
@@ -2439,11 +2481,11 @@ button{min-height:44px;}
 
 
 <script src="bot-engine.js"></script>
-<script src="random-queue.js"></script>
-<script src="bot-client.js?v=ai-name-1"></script>
-<script src="ranked-client.js?v=resume-active-1"></script>
+<script src="bot-client.js?v=solo-settings-2"></script>
+<script src="ranked-client.js?v=human-only-2"></script>
+<script src="lobby-client.js?v=room-list-1"></script>
 <script type="module">
-  import {createFreeTransport} from "./free-transport.js?v=resume-active-1";
+  import {createFreeTransport} from "./free-transport.js?v=human-only-2";
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
   import {
     getAuth,
@@ -2694,101 +2736,35 @@ button{min-height:44px;}
     leave: closeCurrentRoom,
     now(){ return Date.now()+serverTimeOffset; },
 
-    async startRandom(onProgress,isCancelled){
+    async start(code=null){
       await auth.authStateReady();
-      if(auth.currentUser)await loadLoggedInPlayer(auth.currentUser);
-      await closeCurrentRoom();
-      if(!connected)throw Error("オンライン接続がありません");
-      const id=crypto.randomUUID();
-      const name=loggedInPlayerData?.name||"プレイヤー";
-      const queueRef=ref(db,"randomMatchmaking");
-      const entryRef=ref(db,"randomMatchmaking/"+id);
-      const disconnect=onDisconnect(entryRef);await disconnect.remove();
-      let outcome=null;
-      try{
-        for(;;){
-          if(!connected)throw Error("通信が切断されました");
-          const now=Date.now()+serverTimeOffset;
-          const cancelled=isCancelled();
-          const result=await runTransaction(queueRef,raw=>randomQueueTransition(raw,id,name,now,cancelled),{applyLocally:false});
-          outcome=result.snapshot.child(id).val();
-          if(outcome?.status==='matched'){
-            const match=outcome.match;
-            // Both clients can initialize the same room; only the first transaction creates it.
-            await runTransaction(ref(db,"rooms/"+match.room),room=>room||{createdAt:now,matchType:'random',players:match.players},{applyLocally:false});
-            roomCode=match.room;localPlayer=outcome.side;onlineStarted=true;
-            if(isCancelled()){await closeCurrentRoom();return false;}
-            await markLocalPlayerOnline();startPresenceHeartbeat();listenRoom();return 'human';
-          }
-          if(cancelled)return false;
-          if(outcome?.status==='bot')return 'bot';
-          onProgress(Math.min(10,Math.floor((now-outcome.joinedAt)/1000)));
-          await new Promise(resolve=>setTimeout(resolve,400));
-        }
-      }finally{
-        // A partner keeps its own matched descriptor, so deleting our entry cannot unmatch it.
-        await remove(entryRef).catch(console.error);
-        await disconnect.cancel().catch(console.error);
-      }
-    },
-
-    async start(){
-      // 前の部屋の監視・在席情報を必ず解除して、別試合の受信を混ぜない。
-      await auth.authStateReady();
-      // セッション復元とプロフィール取得を待ってから参加名を確定する。
       if(auth.currentUser) await loadLoggedInPlayer(auth.currentUser);
-      const accountName=auth.currentUser && loggedInPlayerData
-        ? String(loggedInPlayerData.name || "").trim() : "";
+      if(!connected)throw Error('オンライン接続がありません。');
       await closeCurrentRoom();
-      const create = confirm("新しい部屋を作りますか？\n\nOK：部屋を作る\nキャンセル：部屋コードで参加");
-
-      if(create){
-        roomCode = String(Math.floor(100000 + Math.random() * 900000));
-        localPlayer = 1;
-        onlineStarted = true;
-
-        await set(ref(db, "rooms/" + roomCode), {
-          createdAt: Date.now(),
-          players: { "1": { joined: true, online: true, name: accountName || "プレイヤー1" } }
-        });
-        await markLocalPlayerOnline();
-
-        alert("部屋を作りました！\n\n部屋コード：" + roomCode + "\n\n相手にこの6桁のコードを伝えてください。");
+      const now=Date.now()+serverTimeOffset;
+      const name=String(loggedInPlayerData?.name||'プレイヤー');
+      const player={joined:true,online:true,ready:false,name,lastSeen:now};
+      let target=code,side=code?2:1;
+      if(code){
+        const result=await runTransaction(ref(db,'rooms/'+code),room=>{
+          const host=room?.players?.[1];
+          if(!room||room.matchType!=='friend'||room.battle||room.lobbyPhase!=='waiting'||!host?.joined||host.online!==true||now-Number(host.lastSeen||0)>PRESENCE_GRACE_MS||room.players?.[2]?.joined)return;
+          room.players[2]=player;room.lobbyPhase='selecting';return room;
+        },{applyLocally:false});
+        if(!result.committed)throw Error('この部屋は満員、または閉じられました。一覧から選び直してください。');
       }else{
-        const code = prompt("参加する部屋の6桁コードを入力してください。");
-        if(!code || !/^\d{6}$/.test(code)){
-          alert("6桁の部屋コードを入力してください。");
-          return false;
+        // Use a transaction so even a rare room-code collision cannot overwrite a match.
+        for(let tries=0;tries<8;tries++){
+          target=String(Math.floor(100000+Math.random()*900000));
+          const result=await runTransaction(ref(db,'rooms/'+target),room=>room?undefined:{createdAt:now,matchType:'friend',lobbyPhase:'waiting',players:{1:player}},{applyLocally:false});
+          if(result.committed)break;
+          target=null;
         }
-
-        const snap = await get(ref(db, "rooms/" + code));
-        if(!snap.exists()){
-          alert("その部屋は見つかりません。");
-          return false;
-        }
-
-        const data = snap.val();
-        if(data.players && data.players["2"] && data.players["2"].joined){
-          alert("その部屋は満員です。");
-          return false;
-        }
-
-        roomCode = code;
-        localPlayer = 2;
-        onlineStarted = true;
-
-        await update(ref(db, "rooms/" + roomCode), {
-          "players/2/joined": true,
-          "players/2/online": true,
-          "players/2/name": accountName || "プレイヤー2"
-        });
-        await markLocalPlayerOnline();
-
-        alert("部屋に参加しました！");
+        if(!target)throw Error('部屋を作れませんでした。再試行してください。');
       }
-
-      startPresenceHeartbeat();
-      listenRoom();
+      roomCode=target;localPlayer=side;onlineStarted=true;
+      try{await markLocalPlayerOnline();startPresenceHeartbeat();listenRoom();}
+      catch(error){await closeCurrentRoom();throw error;}
       return true;
     },
 
@@ -2851,6 +2827,7 @@ button{min-height:44px;}
 
       const p1 = data.players && data.players["1"];
       const p2 = data.players && data.players["2"];
+      window.onFriendRoomUpdate?.(data);
       setPlayerNames(p1?.name || "プレイヤー1",p2?.name || "プレイヤー2");
 
       function normalizeTechniques(value){
@@ -3387,41 +3364,7 @@ function closeSpectatorList(){
 
 function startOnlineMatch(type){
   if(type==="random"){startRanked();return;}
-  stopBot();
-  // 前試合の受信済みターンやタイマーを持ち越さない。
-  resetOnlineMatchState();
-  onlineMatchType = type;
-  gameMode = "online";
-  onlineBattleStarted = false;
-  onlineTurnNumber = 0;
-
-  if(!window.onlineBattle){
-    alert("Firebaseの読み込みが完了していません。もう一度お試しください。");
-    return;
-  }
-
-  window.onlineBattle.start().then(ok=>{
-    if(!ok) return;
-
-    selectingPlayer = window.onlineBattle.localPlayer;
-    onlineTechConfirmed = false;
-    showScreen("techScreen");
-    document.querySelectorAll("#techScreen .techArrow").forEach(el=>{
-      el.disabled = false;
-      el.style.pointerEvents = "auto";
-    });
-    const button = document.getElementById("techConfirmButton");
-    if(button){
-      button.disabled = false;
-      button.textContent = "決定";
-    }
-    document.getElementById("techTitle").textContent =
-      "オンライン：技選択";
-    updateTechniqueDisplay();
-  }).catch(err=>{
-    console.error(err);
-    alert("オンライン接続に失敗しました。Firebaseの設定を確認してください。");
-  });
+  openFriendLobby();
 }
 
 function selectMode(mode){

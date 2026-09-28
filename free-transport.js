@@ -48,7 +48,9 @@ export function createFreeTransport(db,auth){
    for(const [other]of Object.entries(all).filter(([k,v])=>k!==u&&v.heartbeat>now()-15000).sort((a,b)=>a[1].joinedAt-b[1].joinedAt)){
     const id=push(ref(db,'freeGames')).key;try{await update(ref(db),{['freeGames/'+id+'/players']:{1:u,2:other},['freeGames/'+id+'/createdAt']:serverTimestamp(),['freeAccounts/'+u+'/active']:id,['freeAccounts/'+other+'/active']:id,[qp]:null,['freeQueue/'+other]:null});return {match:await status(id)};}catch(e){const fresh=await profile();if(fresh.active)return {match:await status(fresh.active)};}
    }
-   const waitedMs=now()-(q?.joinedAt??now());if(waitedMs>=10000){await set(ref(db,qp),null);const fresh=await profile();return fresh.active?{match:await status(fresh.active)}:{bot:true};}return {waitedMs};
+   // Keep refreshing the queue heartbeat until another human joins or the user cancels.
+   const waitedMs=Math.max(0,now()-(q?.joinedAt??now()));
+   return {waitedMs,waiting:1,capacity:2};
   }
   const id=d.matchId,path='freeGames/'+id,players=await read(path+'/players'),me=players[1]===u?1:players[2]===u?2:0;if(!me)throw Error('参加者ではありません');
   if(d.op==='loadout')await update(ref(db,path),{['loadouts/'+me]:d.loadout,['ready/'+me]:true});

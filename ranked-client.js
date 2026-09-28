@@ -19,18 +19,17 @@ async function startRanked(resume=false){
  if(rankedActive)return;
  if(!window.loggedInPlayerData){alert('ログインしてからランク戦を開始してください');return;}
  stopBot();resetOnlineMatchState();rankedActive=true;rankedMatch=null;rankedCancelled=false;rankedSeenReveal=0;
- const epoch=++rankedEpoch;gameMode='ranked';rankedButtons(true);
+ const epoch=++rankedEpoch;gameMode='ranked';rankedButtons(true);rankedMessage('対戦相手を探しています…');
  try{
   let response=await rankedRpc({op:resume?'resume':'join'});
   if(resume&&!response.match){rankedStop();return;}
-  while(rankedActive&&epoch===rankedEpoch&&!response.match&&!response.bot){
+  while(rankedActive&&epoch===rankedEpoch&&!response.match){
    if(rankedCancelled){response=await rankedRpc({op:'cancel'});if(!response.match){rankedStop();rankedMessage('検索をキャンセルしました');return;}break;}
-   rankedMessage('対戦相手を探しています… '+Math.min(10,Math.floor((response.waitedMs||0)/1000))+' / 10秒');
+   rankedMessage('1/2 · 対戦相手を待っています…（'+Math.floor((response.waitedMs||0)/1000)+'秒）');
    await new Promise(r=>setTimeout(r,1000));response=await rankedRpc({op:'queue'});
   }
   if(epoch!==rankedEpoch)return;
-  if(response.bot){rankedStop();await loadBotKnowledge();prepareBotMatch();document.getElementById("techTitle").textContent+="（練習・レート変動なし）";return;}
-  rankedButtons(false);rankedApply(response.match);rankedPoll(epoch);
+  rankedButtons(false);document.getElementById('randomSearchStatus').textContent='';rankedApply(response.match);rankedPoll(epoch);
  }catch(error){rankedStop();rankedMessage('ランク戦を開始できません：'+error.message);}
 }
 async function rankedPoll(epoch){
