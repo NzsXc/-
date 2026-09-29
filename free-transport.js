@@ -4,7 +4,7 @@ export function createFreeTransport(db,auth){
  let offset=0;onValue(ref(db,'.info/serverTimeOffset'),s=>{offset=s.val()||0;});
  const now=()=>Date.now()+offset,read=async p=>(await get(ref(db,p))).val();
  async function profile(){const u=auth.currentUser?.uid;if(!u||auth.currentUser.isAnonymous)throw Error('ログインしてください');let a=await read('freeAccounts/'+u);if(!a){a={name:String(globalThis.window?.loggedInPlayerData?.name||'プレイヤー').slice(0,24),rating:1000,games:0,active:'',lastSettled:''};try{await set(ref(db,'freeAccounts/'+u),a);}catch(e){a=await read('freeAccounts/'+u);if(!a)throw e;}}return a;}
- const turnOpensAt=s=>s.startedAt+(s.turn>1?2500:5600);
+ const turnOpensAt=s=>s.startedAt+(s.turn>1?2500:5100);
  const initial=()=>Object.fromEntries(stateFields.map(k=>[k,k==='turn'?1:k==='startedAt'?serverTimestamp():k.startsWith('hp')?10:k.startsWith('seal')||k.startsWith('momentum')?false:k.startsWith('last')?'':0]));
  async function status(id){
   const u=auth.currentUser.uid,path='freeGames/'+id;let g;
