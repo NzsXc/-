@@ -28,3 +28,16 @@
 @keyframes introElectricTravel{to{stroke-dashoffset:-227;}}
 @media(max-width:480px){.intro-card{padding:15px 17px 11px;}.intro-card-header{gap:10px;}.intro-rating{gap:5px;}.intro-rating-value{font-size:20px;}.intro-name{font-size:20px;}.intro-titles{margin:9px 0 10px;}}
 @media(prefers-reduced-motion:reduce){.intro-energy-sparks{animation:none;}.intro-energy-halo{filter:none;}}
+
+/* Branching white lightning with a blue-violet corona. */
+.intro-energy[data-lightning="v2"] svg{stroke-linejoin:round;stroke-linecap:round;}
+.intro-bolt-frame{opacity:0;animation:introBoltMorph 1.2s linear infinite;}
+.intro-bolt-frame-1{animation-delay:-.4s;}
+.intro-bolt-frame-2{animation-delay:-.8s;}
+.intro-bolt-aura{stroke:#7356ff;stroke-width:24;opacity:.48;filter:blur(12px);}
+.intro-bolt-glow{stroke:#bb9dff;stroke-width:7;opacity:.85;filter:blur(2.2px);}
+.intro-bolt-core{stroke:#fffaff;stroke-width:2.4;filter:drop-shadow(0 0 3px #e4ccff);}
+.intro-bolt-branches{stroke:#d8c4ff;stroke-width:.8;opacity:.8;filter:drop-shadow(0 0 2px #a486ff);}
+.intro-bolt-filaments{stroke:#f2eaff;stroke-width:1;opacity:.9;filter:drop-shadow(0 0 2px #bd96ff);}
+@keyframes introBoltMorph{0%,26%{opacity:1;}33.333%,93%{opacity:0;}100%{opacity:1;}}
+@media(prefers-reduced-motion:reduce){.intro-bolt-frame{animation:none;opacity:0;}.intro-bolt-frame-0{opacity:1;}}
