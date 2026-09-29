@@ -43,7 +43,7 @@ async function rankedPoll(epoch){
  }finally{rankedPolling=false;}
 }
 let rankedFrame=0,rankedClockAt=0,rankedClockServer=0,rankedAnimating=false,rankedEffectTimer=0,rankedVisualToken=0;
-function rankedVisualStop(){cancelAnimationFrame(rankedFrame);rankedFrame=0;clearTimeout(rankedEffectTimer);rankedVisualToken++;rankedAnimating=false;stopCountdownRing();stopTurnCountdownSE();clearTimeout(window._techniqueRevealCleanupTimeout);document.getElementById('battleEffectLayer')?.replaceChildren();}
+function rankedVisualStop(){PlayerIntro.reset();cancelAnimationFrame(rankedFrame);rankedFrame=0;clearTimeout(rankedEffectTimer);rankedVisualToken++;rankedAnimating=false;stopCountdownRing();stopTurnCountdownSE();clearTimeout(window._techniqueRevealCleanupTimeout);document.getElementById('battleEffectLayer')?.replaceChildren();}
 function rankedClockStart(m){
  rankedClockAt=performance.now();rankedClockServer=m.serverNow;
  if(!rankedFrame){rankedTick();}
@@ -52,10 +52,11 @@ function rankedTick(){
  rankedFrame=0;const m=rankedMatch;if(!rankedActive||!m)return;
  const now=rankedClockServer+performance.now()-rankedClockAt;
  const put=(id,text)=>{const el=document.getElementById(id);if(el&&el.textContent!==text)el.textContent=text;};
+ if(m.state?.turn===1&&now>=m.opensAt)PlayerIntro.cancel();
  const grace=now>=m.deadline,remaining=Math.max(0,Math.ceil(((grace?m.graceDeadline:m.deadline)-now)/1000));
  if(m.closed||rankedAnimating||!m.state||now<m.opensAt){stopCountdownRing();stopTurnCountdownSE();
   if(!m.closed&&m.phase==='select')put('techTitle',grace?'復帰猶予：あと'+remaining+'秒（未確定側は期限後に敗北）':m.ready[m.you]?'技を確定しました。相手を待っています…':'ランク戦：技選択（残り'+remaining+'秒）');
-  else if(!m.closed)put('countdown',rankedAnimating?'技公開・演出':'技公開');
+  else if(!m.closed)put('countdown',m.state?.turn===1&&now<m.opensAt?'':rankedAnimating?'技公開・演出':'技公開');
  }else{
   put('countdown',grace?'復帰猶予 '+remaining+'秒':String(remaining));
   const ring=document.getElementById('countdownRing');
@@ -105,10 +106,13 @@ function rankedApply(m){
  if(entering||wasPhase==='select'){showScreen('battleScreen');setupActionNames();}
  setPlayerNames(m.players[1].name,m.players[2].bot?botDisplayName():m.players[2].name);
  updateBattleUI();
+ if(!m.closed&&m.state.turn===1){
+  PlayerIntro.start({key:'ranked:'+m.id,startAt:m.opensAt-PlayerIntro.DURATION_MS,now:()=>rankedClockServer+performance.now()-rankedClockAt,players:m.players});
+ }else PlayerIntro.cancel();
  locked[me]=m.ownAction!==null||rankedSending||m.closed||m.serverNow<m.opensAt;locked[3-me]=true;
  for(const p of [1,2])document.getElementById('player'+p+'Area').classList.toggle('locked',locked[p]);
  document.getElementById('battleHomeButton').hidden=false;document.getElementById('battleHomeButton').textContent=m.closed?'ホームへ':'降参して戻る';
- document.getElementById('countdown').textContent=m.closed?'':m.serverNow<m.opensAt?'技公開':String(Math.max(0,Math.ceil((m.deadline-m.serverNow)/1000)));
+ document.getElementById('countdown').textContent=m.closed?'':m.serverNow<m.opensAt?(m.state.turn===1?'':'技公開'):String(Math.max(0,Math.ceil((m.deadline-m.serverNow)/1000)));
  if(!m.closed){document.getElementById('resultMessage').textContent=inGrace?(m.ownAction!==null?'相手の復帰を待っています':'復帰しました。期限内に行動を確定してください'):m.ownAction!==null?'行動を確定しました':'';if(inGrace)document.getElementById('countdown').textContent='復帰猶予 '+remaining+'秒';}
  if(m.reveal&&rankedSeenReveal!==m.reveal.turn&&!rankedAnimating){rankedReveal(m);}
  if(m.closed&&!rankedAnimating){showBattleResult(m.result.winner===0?'DRAW':m.result.winner+'P WIN');rankedResult(m);}
@@ -127,6 +131,7 @@ async function rankedConfirm(){
  catch(e){rankedSending=false;document.getElementById('techConfirmButton').disabled=false;rankedMessage(e.message);}
 }
 async function rankedChoose(player,action){
+ if(PlayerIntro.isActive())return;
  const m=rankedMatch;if(!m||player!==m.you||rankedSending||m.phase!=='turn'||locked[player])return;
  const id=['charge','attack','block'].includes(action)?['charge','attack','block'].indexOf(action):m.loadouts[player][Number(action.replace('tech',''))]+3;
  rankedSending=true;locked[player]=true;

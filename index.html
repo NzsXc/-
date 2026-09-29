@@ -1888,6 +1888,7 @@ button{min-height:44px;}
 <meta name="apple-mobile-web-app-title" content="心理バトル">
 <link rel="apple-touch-icon" href="./icons/icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+<link rel="stylesheet" href="player-intro.css?v=1">
 </head>
 
 
@@ -2480,12 +2481,13 @@ button{min-height:44px;}
 </div>
 
 
+<script src="player-intro.js?v=1"></script>
 <script src="bot-engine.js"></script>
 <script src="bot-client.js?v=solo-settings-2"></script>
-<script src="ranked-client.js?v=human-only-2"></script>
+<script src="ranked-client.js?v=player-intro-1"></script>
 <script src="lobby-client.js?v=room-list-1"></script>
 <script type="module">
-  import {createFreeTransport} from "./free-transport.js?v=human-only-2";
+  import {createFreeTransport} from "./free-transport.js?v=player-intro-1";
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
   import {
     getAuth,
@@ -2743,7 +2745,8 @@ button{min-height:44px;}
       await closeCurrentRoom();
       const now=Date.now()+serverTimeOffset;
       const name=String(loggedInPlayerData?.name||'プレイヤー');
-      const player={joined:true,online:true,ready:false,name,lastSeen:now};
+      const rating=auth.currentUser && Number.isFinite(loggedInPlayerData?.rankRate)?loggedInPlayerData.rankRate:null;
+      const player={joined:true,online:true,ready:false,name,lastSeen:now,...(rating!==null?{rating}:{})};
       let target=code,side=code?2:1;
       if(code){
         const result=await runTransaction(ref(db,'rooms/'+code),room=>{
@@ -2827,6 +2830,7 @@ button{min-height:44px;}
 
       const p1 = data.players && data.players["1"];
       const p2 = data.players && data.players["2"];
+      window.onlineIntroPlayers={1:{name:p1?.name,rating:p1?.rating},2:{name:p2?.name,rating:p2?.rating}};
       window.onFriendRoomUpdate?.(data);
       setPlayerNames(p1?.name || "プレイヤー1",p2?.name || "プレイヤー2");
 
@@ -3048,6 +3052,7 @@ function showTipPage(page){
 ========================= */
 
 function showScreen(id){
+  if(id!=="battleScreen")PlayerIntro.cancel();
 
   document
     .querySelectorAll(".screen")
@@ -3507,6 +3512,7 @@ function onlineNow(){
 }
 
 function resetOnlineMatchState(){
+  PlayerIntro.reset();
   const resultMessage=document.getElementById("resultMessage");
   if(resultMessage){resultMessage.textContent="";resultMessage.className="";}
   const homeButton=document.getElementById("battleHomeButton");
@@ -3590,7 +3596,7 @@ function maybeStartOnlineBattle(){
     const title = document.getElementById("techTitle");
     if(title) title.textContent="READY! 同期後に対戦開始…";
     const battle = {
-      phase:"starting", turn:1, startAt:onlineNow()+ONLINE_EVENT_LEAD_MS,
+      phase:"starting", turn:1, startAt:onlineNow()+ONLINE_EVENT_LEAD_MS+PlayerIntro.DURATION_MS,
       hp:{1:10,2:10}, gauge:{1:0,2:0},
       lastAction:{1:null,2:null}, lastLastAction:{1:null,2:null},
       momentumBonus:{1:false,2:false}, enhanceTurns:{1:0,2:0}, blockSeal:{1:false,2:false},
@@ -4056,17 +4062,23 @@ function setupBattleFromOnlineState(state){
   const spectatorBadge=document.getElementById("spectatorBadge");
   if(spectatorBadge)spectatorBadge.style.display="none";
   selectedAction[1]=null; selectedAction[2]=null;
-  locked[1]=false; locked[2]=false;
+  locked[1]=true; locked[2]=true;
   displayedHp[1]=hp[1]; displayedHp[2]=hp[2];
   displayedGauge[1]=gauge[1]; displayedGauge[2]=gauge[2];
   updateBattleUI();
   showScreen("battleScreen");
   setupActionNames();
   const startAt=Number(state.startAt||onlineNow());
+  if(Number(state.turn)===1){
+    stopCountdownRing();stopTurnCountdownSE();
+    document.getElementById('countdown').textContent='';
+    PlayerIntro.start({key:'room:'+window.onlineBattle.roomCode+':'+onlineMatchSession,startAt:startAt-PlayerIntro.DURATION_MS,now:onlineNow,players:window.onlineIntroPlayers});
+  }
   const wait=Math.max(0,startAt-onlineNow());
   clearTimeout(window._onlineStartTimeout);
   window._onlineStartTimeout=setTimeout(()=>{
     if(gameMode!=="online" || onlineTurnNumber!==Number(state.turn))return;
+    PlayerIntro.cancel();
     startTurn();
   },wait);
 }
@@ -4649,6 +4661,7 @@ function clearOnlineTechniqueDescription(){
 ========================= */
 
 function chooseAction(player,action){
+  if(PlayerIntro.isActive())return;
   if(rankedActive){rankedChoose(player,action);return;}
   if(botMatch && (player!==1 || botThinking))return;
   if(!document.getElementById("battleScreen")?.classList.contains("active"))return;
@@ -5880,6 +5893,7 @@ function flashHitPlayer(player,isSpectator=false){
 ========================= */
 
 function showBattleResult(text){
+  PlayerIntro.cancel();
   stopBattleBGM();
   clearInterval(countdownTimer);
   clearTimeout(countdownFinishTimeout);
