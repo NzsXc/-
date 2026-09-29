@@ -1,6 +1,6 @@
 /* A shared server-time timeline: 0.8 s entry, 3 s drift, 1 s exit. */
 (()=>{
- const ENTER_MS=800,HOLD_MS=3000,EXIT_MS=1000,DURATION_MS=ENTER_MS+HOLD_MS+EXIT_MS;
+ const ENTER_MS=800,HOLD_MS=3000,EXIT_MS=500,DURATION_MS=ENTER_MS+HOLD_MS+EXIT_MS;
  let current=null,frame=0,lastKey=null;
  const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
  function motion(elapsed,from,near,to,direction=1){
