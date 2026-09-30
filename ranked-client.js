@@ -55,7 +55,7 @@ function rankedTick(){
  if(m.state?.turn===1&&now>=m.opensAt)PlayerIntro.cancel();
  const grace=now>=m.deadline,remaining=Math.max(0,Math.ceil(((grace?m.graceDeadline:m.deadline)-now)/1000));
  if(m.closed||rankedAnimating||!m.state||now<m.opensAt){stopCountdownRing();stopTurnCountdownSE();
-  if(!m.closed&&m.phase==='select')put('techTitle',grace?'復帰猶予：あと'+remaining+'秒（未確定側は期限後に敗北）':m.ready[m.you]?'技を確定しました。相手を待っています…':'ランク戦：技選択（残り'+remaining+'秒）');
+  if(!m.closed&&m.phase==='select')put('techTitle',grace?'復帰猶予：あと'+remaining+'秒（未確定側は期限後に敗北）':m.ready[m.you]?'技を確定しました。相手を待っています…':(m.kind==='friend'?'ルーム対戦':'ランダム対戦')+'：技選択（残り'+remaining+'秒）');
   else if(!m.closed)put('countdown',m.state?.turn===1&&now<m.opensAt?'':rankedAnimating?'技公開・演出':'技公開');
  }else{
   put('countdown',grace?'復帰猶予 '+remaining+'秒':String(remaining));
@@ -89,7 +89,7 @@ function rankedApply(m){
  const inGrace=!m.closed&&m.serverNow>=m.deadline,remaining=Math.max(0,Math.ceil(((m.graceDeadline??m.deadline)-m.serverNow)/1000));
  if(m.phase==='select'){
   if(entering){showScreen('techScreen');updateTechniqueDisplay();}
-  document.getElementById('techTitle').textContent=m.ready[me]?'技を確定しました。相手を待っています…':'ランク戦：技選択（残り'+Math.max(0,Math.ceil((m.deadline-m.serverNow)/1000))+'秒）';
+  document.getElementById('techTitle').textContent=m.ready[me]?'技を確定しました。相手を待っています…':(m.kind==='friend'?'ルーム対戦':'ランダム対戦')+'：技選択（残り'+Math.max(0,Math.ceil((m.deadline-m.serverNow)/1000))+'秒）';
   if(inGrace)document.getElementById('techTitle').textContent='復帰猶予：あと'+remaining+'秒（未確定側は期限後に敗北）';
   document.querySelectorAll('#techScreen .techArrow').forEach(b=>{b.disabled=m.ready[me];b.style.pointerEvents=m.ready[me]?'none':'auto';});
   const button=document.getElementById('techConfirmButton');button.disabled=m.ready[me]||rankedSending;button.textContent=m.ready[me]?'確定済み':'決定';return;
@@ -122,7 +122,7 @@ function rankedResult(m){
  const r=m.rating;const reason={'resigned':'降参','reconnect-timeout':'復帰猶予切れ','idle-forfeit':'連続無入力','selection-timeout':'技選択の時間切れ','turn-limit':'ターン上限','battle':''}[m.result.reason]||'';
  const el=document.createElement('div');el.style.fontSize='16px';el.textContent=(reason?reason+' / ':'')+(r?'レート '+r.before+' → '+r.after+'（'+(r.delta>=0?'+':'')+r.delta+'）':'');
  if(!m.result.rated)el.textContent+=' レート変動なし';document.getElementById('resultMessage').appendChild(el);
- if(r&&window.loggedInPlayerData){window.loggedInPlayerData.rankRate=r.after;const button=document.getElementById('playerLoginButton');if(button)button.textContent=window.loggedInPlayerData.name+' / '+r.after;}
+ if(r&&m.result.rated&&window.loggedInPlayerData){window.loggedInPlayerData.rankRate=r.after;const button=document.getElementById('playerLoginButton');if(button)button.textContent=window.loggedInPlayerData.name+' / '+r.after;}
 }
 async function rankedConfirm(){
  if(rankedSending||rankedMatch?.phase!=='select')return;rankedSending=true;
@@ -141,7 +141,7 @@ async function rankedChoose(player,action){
 function rankedStop(){rankedVisualStop();rankedEpoch++;rankedActive=false;rankedMatch=null;rankedSending=false;rankedButtons(false);}
 async function rankedLeave(){
  if(rankedMatch&&!rankedMatch.closed){
-  if(!confirm('降参してホームに戻りますか？ レートに反映されます。'))return;
+  if(!confirm(rankedMatch.kind==='friend'?'降参してホームに戻りますか？':'降参してホームに戻りますか？ レートに反映されます。'))return;
   try{const r=await rankedRpc({op:'resign',matchId:rankedMatch.id});rankedApply(r.match);return;}catch(e){rankedMessage(e.message);return;}
  }
  rankedStop();returnBattleHomeCore();

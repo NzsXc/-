@@ -1889,6 +1889,7 @@ button{min-height:44px;}
 <link rel="apple-touch-icon" href="./icons/icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
 <link rel="stylesheet" href="player-intro.css?v=2">
+<link rel="stylesheet" href="titles.css?v=1">
 </head>
 
 
@@ -1951,7 +1952,7 @@ button{min-height:44px;}
   <button class="modeChoiceButton localModeButton" onclick="selectMode('offline')">2人で</button>
 
   <button class="modeBottomButton" aria-label="TIPを開く" onclick="showScreen('tipScreen')">📣</button>
-  <button class="modeSquareButton" aria-label="メニュー">□</button>
+  <button class="modeSquareButton" aria-label="称号の付け替え" onclick="openTitles()">□</button>
 
 </div>
 
@@ -1960,6 +1961,16 @@ button{min-height:44px;}
      オンラインメニュー
 ========================= -->
 
+<div id="titlesScreen" class="screen">
+ <div class="titles-layout">
+  <div class="titles-heading"><h1>称号の付け替え</h1><button id="titleBack" class="titles-button" onclick="closeTitles()">戻る</button></div>
+  <p>最大3つ装備できます。選んだ称号はオンライン対戦のプレイヤーカードに表示されます。</p>
+  <div id="titleSlots" class="title-slots" aria-label="称号の装備枠"></div>
+  <div class="titles-actions"><button id="titleClear" class="titles-button" onclick="clearTitleSlot()">この枠を外す</button><button id="titleSave" class="titles-button" onclick="saveTitles()">保存する</button></div>
+  <div id="titlesStatus" class="titles-status" role="status"></div>
+  <div id="titleCollection"></div>
+ </div>
+</div>
 <div id="onlineScreen" class="screen">
 
   <div class="screenTitle">だれかと</div>
@@ -2481,14 +2492,18 @@ button{min-height:44px;}
 </div>
 
 
+<script src="titles-catalog.js?v=1"></script>
 <script src="player-intro.js?v=1"></script>
+<script src="titles-client.js?v=1"></script>
 <script src="player-lightning.js?v=2"></script>
 <script src="bot-engine.js"></script>
 <script src="bot-client.js?v=solo-settings-2"></script>
-<script src="ranked-client.js?v=player-intro-1"></script>
-<script src="lobby-client.js?v=room-list-1"></script>
+<script src="ranked-client.js?v=protected-titles-1"></script>
+<script src="lobby-client.js?v=protected-titles-1"></script>
 <script type="module">
-  import {createFreeTransport} from "./free-transport.js?v=player-intro-1";
+  import {createTitleService} from "./title-service.js?v=1";
+  import {createProtectedRooms} from "./protected-rooms.js?v=1";
+  import {createFreeTransport} from "./free-transport.js?v=protected-titles-1";
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
   import {
     getAuth,
@@ -2523,7 +2538,9 @@ button{min-height:44px;}
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
   const auth = getAuth(app);
+  window.titleService=createTitleService(db,auth);
   window.rankedTransport=createFreeTransport(db,auth);
+  window.protectedRooms=createProtectedRooms(db,auth,window.rankedTransport);
 
   let loggedInPlayerData = null;
 
@@ -2566,6 +2583,7 @@ button{min-height:44px;}
     window.loggedInPlayerData=loggedInPlayerData;
     const protectedProfile=await window.rankedTransport({op:"profile"});
     loggedInPlayerData.rankRate=protectedProfile.rating;
+    window.titleService.claimRatings().catch(console.warn);
     if(protectedProfile.active)setTimeout(()=>{if(!rankedActive)startRanked(true);},0);
     updatePlayerLoginButton();
   }
@@ -2617,7 +2635,7 @@ button{min-height:44px;}
 
   setPersistence(auth,browserLocalPersistence).catch(console.error);
   onAuthStateChanged(auth,async user=>{
-    if(!user){
+    if(!user || user.isAnonymous){
       loggedInPlayerData=null;
       window.loggedInPlayerData=null;
       updatePlayerLoginButton();
@@ -2884,6 +2902,9 @@ button{min-height:44px;}
     });
   }
 
+  // Protected friend games feed the existing spectator presentation.
+  window.onlineBattle.watchAllRooms=window.protectedRooms.watchAllRooms;
+  window.onlineBattle.watchRoom=window.protectedRooms.watchRoom;
   console.log("心理バトル Firebase接続成功");
 </script>
 
