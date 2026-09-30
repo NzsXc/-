@@ -56,12 +56,14 @@ function rankedTick(){
  const grace=now>=m.deadline,remaining=Math.max(0,Math.ceil(((grace?m.graceDeadline:m.deadline)-now)/1000));
  if(m.closed||rankedAnimating||!m.state||now<m.opensAt){stopCountdownRing();stopTurnCountdownSE();
   if(!m.closed&&m.phase==='select')put('techTitle',grace?'復帰猶予：あと'+remaining+'秒（未確定側は期限後に敗北）':m.ready[m.you]?'技を確定しました。相手を待っています…':(m.kind==='friend'?'ルーム対戦':'ランダム対戦')+'：技選択（残り'+remaining+'秒）');
-  else if(!m.closed)put('countdown',m.state?.turn===1&&now<m.opensAt?'':rankedAnimating?'技公開・演出':'技公開');
+  else if(!m.closed)put('countdown','');
  }else{
-  put('countdown',grace?'復帰猶予 '+remaining+'秒':String(remaining));
+  const countdownEl=document.getElementById('countdown');
+  const text=grace?(now<m.deadline+500?'BATTLE!':'復帰猶予 '+remaining+'秒'):String(remaining);
+  if(countdownEl&&countdownEl.textContent!==text){countdownEl.className='';void countdownEl.offsetWidth;countdownEl.className=grace?(now<m.deadline+500?'battleCall':''):'countPulse';countdownEl.textContent=text;}
   const ring=document.getElementById('countdownRing');
   if(grace){stopCountdownRing();stopTurnCountdownSE();put('resultMessage',m.ownAction!==null?'相手の復帰を待っています':'期限内に行動を確定してください');}
-  else{ring?.classList.add('active','step');ring?.style.setProperty('--ring-angle',(Math.min(1,Math.max(0,(now-m.opensAt)/(m.deadline-m.opensAt)))*360)+'deg');startTurnCountdownSE();}
+  else{ring?.classList.add('active','step');setCountdownRingStep(10-remaining);startTurnCountdownSE();}
  }
  if(m.state){locked[m.you]=rankedAnimating||m.closed||rankedSending||m.ownAction!==null||now<m.opensAt||now>=(m.graceDeadline??m.deadline);document.getElementById('player'+m.you+'Area').classList.toggle('locked',locked[m.you]);}
  if(!m.closed||rankedAnimating)rankedFrame=requestAnimationFrame(rankedTick);
@@ -112,8 +114,8 @@ function rankedApply(m){
  locked[me]=m.ownAction!==null||rankedSending||m.closed||m.serverNow<m.opensAt;locked[3-me]=true;
  for(const p of [1,2])document.getElementById('player'+p+'Area').classList.toggle('locked',locked[p]);
  document.getElementById('battleHomeButton').hidden=false;document.getElementById('battleHomeButton').textContent=m.closed?'ホームへ':'降参して戻る';
- document.getElementById('countdown').textContent=m.closed?'':m.serverNow<m.opensAt?(m.state.turn===1?'':'技公開'):String(Math.max(0,Math.ceil((m.deadline-m.serverNow)/1000)));
- if(!m.closed){document.getElementById('resultMessage').textContent=inGrace?(m.ownAction!==null?'相手の復帰を待っています':'復帰しました。期限内に行動を確定してください'):m.ownAction!==null?'行動を確定しました':'';if(inGrace)document.getElementById('countdown').textContent='復帰猶予 '+remaining+'秒';}
+ if(m.closed||rankedAnimating||m.serverNow<m.opensAt)document.getElementById('countdown').textContent='';
+ if(!m.closed){document.getElementById('resultMessage').textContent=inGrace?(m.ownAction!==null?'相手の復帰を待っています':'復帰しました。期限内に行動を確定してください'):m.ownAction!==null?'行動を確定しました':'';}
  if(m.reveal&&rankedSeenReveal!==m.reveal.turn&&!rankedAnimating){rankedReveal(m);}
  if(m.closed&&!rankedAnimating){showBattleResult(m.result.winner===0?'DRAW':m.result.winner+'P WIN');rankedResult(m);}
 
