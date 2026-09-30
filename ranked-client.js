@@ -42,8 +42,8 @@ async function rankedPoll(epoch){
   }
  }finally{rankedPolling=false;}
 }
-let rankedFrame=0,rankedClockAt=0,rankedClockServer=0,rankedAnimating=false,rankedEffectTimer=0,rankedVisualToken=0;
-function rankedVisualStop(){PlayerIntro.reset();cancelAnimationFrame(rankedFrame);rankedFrame=0;clearTimeout(rankedEffectTimer);rankedVisualToken++;rankedAnimating=false;stopCountdownRing();stopTurnCountdownSE();clearTimeout(window._techniqueRevealCleanupTimeout);document.getElementById('battleEffectLayer')?.replaceChildren();}
+let rankedFrame=0,rankedClockAt=0,rankedClockServer=0,rankedAnimating=false,rankedEffectTimer=0,rankedVisualToken=0,rankedVisualCountdownEnd=0;
+function rankedVisualStop(){PlayerIntro.reset();cancelAnimationFrame(rankedFrame);rankedFrame=0;clearTimeout(rankedEffectTimer);rankedVisualToken++;rankedAnimating=false;rankedVisualCountdownEnd=0;stopCountdownRing();stopTurnCountdownSE();clearTimeout(window._techniqueRevealCleanupTimeout);document.getElementById('battleEffectLayer')?.replaceChildren();}
 function rankedClockStart(m){
  rankedClockAt=performance.now();rankedClockServer=m.serverNow;
  if(!rankedFrame){rankedTick();}
@@ -56,7 +56,12 @@ function rankedTick(){
  const grace=now>=m.deadline,remaining=Math.max(0,Math.ceil(((grace?m.graceDeadline:m.deadline)-now)/1000));
  if(m.closed||rankedAnimating||!m.state||now<m.opensAt){stopCountdownRing();stopTurnCountdownSE();
   if(!m.closed&&m.phase==='select')put('techTitle',grace?'復帰猶予：あと'+remaining+'秒（未確定側は期限後に敗北）':m.ready[m.you]?'技を確定しました。相手を待っています…':(m.kind==='friend'?'ルーム対戦':'ランダム対戦')+'：技選択（残り'+remaining+'秒）');
-  else if(!m.closed)put('countdown','');
+  else if(rankedAnimating){
+   const left=rankedVisualCountdownEnd-performance.now();
+   const text=left>0?String(Math.min(3,Math.ceil(left/1000))):left>-500?'BATTLE!':'';
+   const el=document.getElementById('countdown');
+   if(el&&el.textContent!==text){el.className='';void el.offsetWidth;el.className=left>0?'countPulse':text?'battleCall':'';el.textContent=text;}
+  }else if(!m.closed)put('countdown','');
  }else{
   const countdownEl=document.getElementById('countdown');
   const text=grace?(now<m.deadline+500?'BATTLE!':'復帰猶予 '+remaining+'秒'):String(remaining);
@@ -70,20 +75,40 @@ function rankedTick(){
 }
 function rankedReveal(m){
  rankedSeenReveal=m.reveal.turn;rankedAnimating=true;const token=++rankedVisualToken;
+ rankedVisualCountdownEnd=performance.now()+3000;
+ const valid=()=>rankedActive&&token===rankedVisualToken;
  const action=p=>m.reveal.actions[p]<3?basicActions[['charge','attack','block'][m.reveal.actions[p]]]:techniquePool[m.reveal.actions[p]-3];
- const a1=action(1),a2=action(2);showTechniqueReveal(a1,a2);rankedClockStart(m);
+ const a1=action(1),a2=action(2);
+ document.getElementById('resultMessage').textContent='';
+ locked[1]=true;locked[2]=true;
+ rankedClockStart(m);
  rankedEffectTimer=setTimeout(()=>{
-  if(!rankedActive||token!==rankedVisualToken)return;
-  clearTimeout(window._techniqueRevealCleanupTimeout);
-  const d1=m.reveal.damage?.[1]||0,d2=m.reveal.damage?.[2]||0;
-  playBattleSituationSE(a1,a2,d1,d2);
-  playBattleEffect(a1,a2,()=>{if(!rankedActive||token!==rankedVisualToken)return;rankedAnimating=false;rankedApply(rankedMatch);},d1,d2);
- },typeof ONLINE_REVEAL_MS==='number'?ONLINE_REVEAL_MS:1300);
+  if(!valid())return;
+  document.getElementById('countdown').textContent='';
+  showTechniqueReveal(a1,a2);
+  rankedEffectTimer=setTimeout(()=>{
+   if(!valid())return;
+   clearTimeout(window._techniqueRevealCleanupTimeout);
+   const d1=m.reveal.damage?.[1]||0,d2=m.reveal.damage?.[2]||0;
+   playBattleSituationSE(a1,a2,d1,d2);
+   playBattleEffect(a1,a2,()=>{
+    if(!valid())return;
+    const latest=rankedMatch;
+    rankedAnimating=false;rankedVisualCountdownEnd=0;
+    // Commit this turn only after the effect's completion callback.
+    rankedApply(m,true);
+    if(latest!==m)rankedApply(latest);
+   },d1,d2);
+  },typeof ONLINE_REVEAL_MS==='number'?ONLINE_REVEAL_MS:1300);
+ },3500);
 }
-function rankedApply(m){
+function rankedApply(m,visualCommit=false){
  if(!rankedActive||!m)return;
- if(rankedMatch?.id===m.id&&(m.revision<rankedMatch.revision||m.serverNow<rankedMatch.serverNow))return;
- const entering=!rankedMatch,wasPhase=rankedMatch?.phase;rankedMatch=m;gameMode='ranked';
+ if(!visualCommit&&rankedMatch?.id===m.id&&(m.revision<rankedMatch.revision||m.serverNow<rankedMatch.serverNow))return;
+ const entering=!rankedMatch,wasPhase=rankedMatch?.phase;if(!visualCommit)rankedMatch=m;gameMode='ranked';
+ // Polling may receive newer snapshots while a previous turn is on screen.
+ if(rankedAnimating&&!visualCommit)return;
+ if(!entering&&!visualCommit&&m.reveal&&rankedSeenReveal!==m.reveal.turn){rankedReveal(m);return;}
  // Initial snapshots restore the board; only subsequent turns play effects.
  if(entering&&m.reveal)rankedSeenReveal=m.reveal.turn;
  rankedClockStart(m);
@@ -116,7 +141,7 @@ function rankedApply(m){
  document.getElementById('battleHomeButton').hidden=false;document.getElementById('battleHomeButton').textContent=m.closed?'ホームへ':'降参して戻る';
  if(m.closed||rankedAnimating||m.serverNow<m.opensAt)document.getElementById('countdown').textContent='';
  if(!m.closed){document.getElementById('resultMessage').textContent=inGrace?(m.ownAction!==null?'相手の復帰を待っています':'復帰しました。期限内に行動を確定してください'):m.ownAction!==null?'行動を確定しました':'';}
- if(m.reveal&&rankedSeenReveal!==m.reveal.turn&&!rankedAnimating){rankedReveal(m);}
+ 
  if(m.closed&&!rankedAnimating){showBattleResult(m.result.winner===0?'DRAW':m.result.winner+'P WIN');rankedResult(m);}
 
 }
