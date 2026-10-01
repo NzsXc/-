@@ -3,7 +3,7 @@ import {calculate,stateFields} from './free-calculator.js';
 export function createFreeTransport(db,auth){
  let offset=0;onValue(ref(db,'.info/serverTimeOffset'),s=>{offset=s.val()||0;});
  const now=()=>Date.now()+offset,read=async p=>(await get(ref(db,p))).val();
- async function profile(){const u=auth.currentUser?.uid;if(!u)throw Error('ログインしてください');let a=await read('freeAccounts/'+u);if(!a){a={name:String(auth.currentUser.isAnonymous?'ゲスト':globalThis.window?.loggedInPlayerData?.name||'プレイヤー').slice(0,24),guest:!!auth.currentUser.isAnonymous,rating:1000,games:0,onlineWins:0,friendWins:0,active:'',lastSettled:''};try{await set(ref(db,'freeAccounts/'+u),a);}catch(e){a=await read('freeAccounts/'+u);if(!a)throw e;}}if(Number(a.rating)<1000){a={...a,rating:1000};await update(ref(db,'freeAccounts/'+u),{rating:1000});}return a;}
+ async function profile(){const u=auth.currentUser?.uid;if(!u)throw Error('ログインしてください');let a=await read('freeAccounts/'+u);if(!a){a={name:String(auth.currentUser.isAnonymous?'ゲスト':globalThis.window?.loggedInPlayerData?.name||'プレイヤー').slice(0,24),guest:!!auth.currentUser.isAnonymous,rating:1000,games:0,active:'',lastSettled:''};try{await set(ref(db,'freeAccounts/'+u),a);}catch(e){a=await read('freeAccounts/'+u);if(!a)throw e;}}if(Number(a.rating)<1000){a={...a,rating:1000};await update(ref(db,'freeAccounts/'+u),{rating:1000});}return a;}
  // 次ターンのstateは前ターン演出より先に作られる。演出（3秒カウント＋公開＋効果）が
  // 終わる前に入力期限を進めないよう、2ターン目以降にも十分な同期猶予を設ける。
  const turnOpensAt=s=>s.startedAt+(s.turn>1?8500:5600);
@@ -21,7 +21,7 @@ export function createFreeTransport(db,auth){
     const winner=g.resigned?.[1]?2:g.resigned?.[2]?1:s&&s.hp1>0&&s.hp2>0&&s.turn<=300&&abandoned?(finalMoves[1]!=null?1:finalMoves[2]!=null?2:0):s?(s.hp1<=0?(s.hp2<=0?0:2):s.hp2<=0?1:0):g.ready[1]?(g.ready[2]?0:1):g.ready[2]?2:0;
     const accounts={1:await read('freeAccounts/'+g.players[1]),2:await read('freeAccounts/'+g.players[2])};
     const amount=g.kind==='friend'||winner===0?0:Math.max(10,30+Math.trunc((accounts[3-winner].rating-accounts[winner].rating)/20));
-    const patch={},ledger={at:serverTimestamp(),winner};for(const p of [1,2]){const a=accounts[p],before=Math.max(1000,Number(a.rating)||1000),wanted=winner===0?before:winner===p?before+amount:before-amount,after=Math.max(1000,wanted),d=after-before,isWin=winner===p;Object.assign(ledger,{['before'+p]:before,['after'+p]:after,['delta'+p]:d});patch['freeAccounts/'+g.players[p]]={...a,rating:after,games:Number(a.games||0)+1,onlineWins:Number(a.onlineWins||0)+(isWin&&g.kind!=='friend'?1:0),friendWins:Number(a.friendWins||0)+(isWin&&g.kind==='friend'?1:0),active:'',lastSettled:id};}patch[path+'/settled']=ledger;
+    const patch={},ledger={at:serverTimestamp(),winner};for(const p of [1,2]){const a=accounts[p],before=Math.max(1000,Number(a.rating)||1000),wanted=winner===0?before:winner===p?before+amount:before-amount,after=Math.max(1000,wanted),d=after-before,safe={...a};delete safe.onlineWins;delete safe.friendWins;Object.assign(ledger,{['before'+p]:before,['after'+p]:after,['delta'+p]:d});patch['freeAccounts/'+g.players[p]]={...safe,rating:after,games:Number(a.games||0)+1,active:'',lastSettled:id};}patch[path+'/settled']=ledger;
     try{await update(ref(db),patch);}catch(e){if(!await read(path+'/settled'))throw e;}continue;
    }
    if(!s&&!terminal&&g.ready[1]&&g.ready[2]){try{await set(ref(db,path+'/state'),initial());}catch(e){if(!await read(path+'/state'))throw e;}continue;}
