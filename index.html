@@ -2766,32 +2766,36 @@ button{min-height:44px;}
     status.textContent="公開されている対戦記録を読み込んでいます…";
     titles.replaceChildren();
     showScreen("playerCardScreen");
-    try{
-      const [loadoutSnapshot,gamesSnapshot]=await Promise.all([
-        get(ref(db,`titleLoadouts/${player.uid}`)),
-        get(ref(db,"freeGames"))
-      ]);
-      const loadout=loadoutSnapshot.val() || {};
-      const ids=[0,1,2].map(index=>loadout[index] || loadout[String(index)] || "");
-      titles.replaceChildren(...ids.map(id=>window.TitleCatalog?.badge?.(id) || document.createTextNode("-")));
-      let random=0,friend=0,total=0;
-      for(const match of Object.values(gamesSnapshot.val() || {})){
-        const side=match?.players?.[1]===player.uid?1:match?.players?.[2]===player.uid?2:0;
-        if(!side || !match?.settled)continue;
-        total++;
-        if(Number(match.settled.winner)!==side)continue;
-        if(match.kind==="friend")friend++;else random++;
-      }
-      rankedWins.textContent=String(random);friendWins.textContent=String(friend);
-      games.textContent=String(Math.max(total,Number(player.games)||0));
-      status.textContent="サーバーに確定保存された対戦結果だけを集計しています。";
-    }catch(error){
-      console.error("プレイヤーカードを取得できませんでした",error);
-      rankedWins.textContent="—";friendWins.textContent="—";
-      titles.replaceChildren(document.createTextNode("称号を取得できませんでした"));
-      status.textContent="戦績の公開が許可されていないか、通信に失敗しました。";
-    }
-  };
+   try{
+  const loadoutSnapshot=await get(ref(db,`titleLoadouts/${player.uid}`));
+  const loadout=loadoutSnapshot.val() || {};
+  const ids=[0,1,2].map(index=>loadout[index] || loadout[String(index)] || "");
+  titles.replaceChildren(...ids.map(id=>window.TitleCatalog?.badge?.(id) || document.createTextNode("-")));
+}catch(error){
+  console.error("称号を取得できませんでした",error);
+  titles.replaceChildren(document.createTextNode("称号を取得できませんでした"));
+}
+
+try{
+  const gamesSnapshot=await get(ref(db,"freeGames"));
+  let random=0,friend=0,total=0;
+  for(const match of Object.values(gamesSnapshot.val() || {})){
+    const side=match?.players?.[1]===player.uid?1:match?.players?.[2]===player.uid?2:0;
+    if(!side || !match?.settled)continue;
+    total++;
+    if(Number(match.settled.winner)!==side)continue;
+    if(match.kind==="friend")friend++;else random++;
+  }
+  rankedWins.textContent=String(random);
+  friendWins.textContent=String(friend);
+  games.textContent=String(Math.max(total,Number(player.games)||0));
+  status.textContent="サーバーに確定保存された対戦結果だけを集計しています。";
+}catch(error){
+  console.error("戦績を取得できませんでした",error);
+  rankedWins.textContent="—";
+  friendWins.textContent="—";
+  status.textContent="戦績の公開が許可されていないか、通信に失敗しました。";
+};
 
   let roomCode = null;
   let localPlayer = null;
