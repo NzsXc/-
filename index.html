@@ -2718,8 +2718,9 @@ button{min-height:44px;}
         name:String(data?.name || "プレイヤー"),
         rating:Math.max(1000,Number(data?.rating ?? data?.rankRate ?? 1000)),
         games:Math.max(0,Number(data?.games || 0)),
-        onlineWins:Math.max(0,Number(data?.onlineWins || 0)),
-        friendWins:Math.max(0,Number(data?.friendWins || 0)),guest:!!data?.guest
+        onlineWins:Number.isFinite(Number(data?.onlineWins))?Math.max(0,Number(data.onlineWins)):null,
+        friendWins:Number.isFinite(Number(data?.friendWins))?Math.max(0,Number(data.friendWins)):null,
+        guest:!!data?.guest
       })).filter(player=>!player.guest && Number.isFinite(player.rating))
         .sort((a,b)=>b.rating-a.rating || a.name.localeCompare(b.name,"ja"));
       if(!players.length){
@@ -2761,9 +2762,12 @@ button{min-height:44px;}
     const status=document.getElementById("playerCardStatus");
     name.textContent=player.name;
     rate.textContent=`RATE ${Math.max(1000,Number(player.rating)||1000)}`;
-    rankedWins.textContent=String(player.onlineWins||0);friendWins.textContent=String(player.friendWins||0);
+    rankedWins.textContent=player.onlineWins===null?"—":String(player.onlineWins);
+    friendWins.textContent=player.friendWins===null?"—":String(player.friendWins);
     games.textContent=String(Math.max(0,Number(player.games)||0));
-    status.textContent="公開されている対戦記録を読み込んでいます…";
+    status.textContent=player.onlineWins===null || player.friendWins===null
+      ? "勝利数の記録開始前に作成されたプレイヤーです。今後の確定結果から記録されます。"
+      : "サーバーに確定保存された集計値を表示しています。";
     titles.replaceChildren();
     showScreen("playerCardScreen");
    try{
@@ -2776,26 +2780,7 @@ button{min-height:44px;}
   titles.replaceChildren(document.createTextNode("称号を取得できませんでした"));
 }
 
-try{
-  const gamesSnapshot=await get(ref(db,"freeGames"));
-  let random=0,friend=0,total=0;
-  for(const match of Object.values(gamesSnapshot.val() || {})){
-    const side=match?.players?.[1]===player.uid?1:match?.players?.[2]===player.uid?2:0;
-    if(!side || !match?.settled)continue;
-    total++;
-    if(Number(match.settled.winner)!==side)continue;
-    if(match.kind==="friend")friend++;else random++;
-  }
-  rankedWins.textContent=String(random);
-  friendWins.textContent=String(friend);
-  games.textContent=String(Math.max(total,Number(player.games)||0));
-  status.textContent="サーバーに確定保存された対戦結果だけを集計しています。";
-}catch(error){
-  console.error("戦績を取得できませんでした",error);
-  rankedWins.textContent="—";
-  friendWins.textContent="—";
-  status.textContent="戦績の公開が許可されていないか、通信に失敗しました。";
-}
+// freeGames全体はFirebaseルールで非公開。ランキングで取得済みの公開集計値だけを使う。
 };
 
   let roomCode = null;
