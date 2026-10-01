@@ -236,12 +236,23 @@ body{
 .rankingHeader h1{margin:0;font-size:clamp(25px,4vw,36px);}
 .rankingList{overflow:auto;display:flex;flex-direction:column;gap:8px;padding:2px;}
 .rankingRow{display:grid;grid-template-columns:64px minmax(0,1fr) auto;align-items:center;gap:12px;min-height:58px;padding:10px 16px;border:1px solid rgba(255,255,255,.14);border-radius:14px;background:linear-gradient(145deg,#252833,#171922);}
+.rankingRow{width:100%;color:#fff;text-align:left;cursor:pointer;font:inherit;}
+.rankingRow:hover,.rankingRow:focus-visible{background:linear-gradient(145deg,#343846,#20232e);border-color:rgba(255,214,90,.55);outline:none;}
 .rankingRow.me{border-color:#ffd65a;box-shadow:0 0 18px rgba(255,214,90,.14);}
 .rankingPlace{font-size:20px;font-weight:900;text-align:center;color:#ffd65a;}
 .rankingName{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:800;}
 .rankingRate{font-size:18px;font-weight:900;}
 .rankingStatus{text-align:center;color:#c9c9d1;padding:24px 10px;}
 .rankingClose{position:static;padding:9px 18px;}
+.playerCardPanel{width:min(560px,90vw);padding:22px;border:1px solid rgba(255,255,255,.16);border-radius:22px;background:linear-gradient(145deg,#252833,#14161e);box-shadow:0 22px 60px rgba(0,0,0,.45);}
+.playerCardPanel h1{margin:0 0 18px;text-align:center;overflow-wrap:anywhere;}
+.playerCardRate{text-align:center;font-size:32px;font-weight:900;color:#ffd65a;margin-bottom:18px;}
+.playerCardTitles{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;min-height:34px;margin-bottom:20px;}
+.playerCardStats{display:grid;grid-template-columns:1fr auto;gap:0;border:1px solid rgba(255,255,255,.13);border-radius:14px;overflow:hidden;}
+.playerCardStats dt,.playerCardStats dd{margin:0;padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.1);}
+.playerCardStats dd{text-align:right;font-weight:900;}
+.playerCardStats dt:last-of-type,.playerCardStats dd:last-of-type{border-bottom:0;}
+.playerCardNote{margin:14px 0;color:#aaa;font-size:12px;text-align:center;}
 
 /* =========================
    TIP画面
@@ -2016,6 +2027,21 @@ button{min-height:44px;}
   </div>
 </div>
 
+<div id="playerCardScreen" class="screen">
+  <div class="playerCardPanel">
+    <h1 id="playerCardName">プレイヤー</h1>
+    <div id="playerCardRate" class="playerCardRate">RATE 1000</div>
+    <div id="playerCardTitles" class="playerCardTitles" aria-label="装備中の称号"></div>
+    <dl class="playerCardStats">
+      <dt>オンライン対戦勝利数</dt><dd id="playerCardRankedWins">—</dd>
+      <dt>友達対戦勝利数</dt><dd id="playerCardFriendWins">—</dd>
+      <dt>総対戦数</dt><dd id="playerCardGames">—</dd>
+    </dl>
+    <p id="playerCardStatus" class="playerCardNote">公開されている対戦記録から集計します。</p>
+    <button class="onlineMainButton" onclick="showScreen('rankingScreen')">ランキングへ戻る</button>
+  </div>
+</div>
+
 
 <!-- =========================
      観戦一覧画面
@@ -2690,8 +2716,10 @@ button{min-height:44px;}
       const players=Object.entries(values).map(([uid,data])=>({
         uid,
         name:String(data?.name || "プレイヤー"),
-        rating:Number(data?.rating ?? data?.rankRate ?? 0),
-        guest:!!data?.guest
+        rating:Math.max(1000,Number(data?.rating ?? data?.rankRate ?? 1000)),
+        games:Math.max(0,Number(data?.games || 0)),
+        onlineWins:Math.max(0,Number(data?.onlineWins || 0)),
+        friendWins:Math.max(0,Number(data?.friendWins || 0)),guest:!!data?.guest
       })).filter(player=>!player.guest && Number.isFinite(player.rating))
         .sort((a,b)=>b.rating-a.rating || a.name.localeCompare(b.name,"ja"));
       if(!players.length){
@@ -2699,8 +2727,11 @@ button{min-height:44px;}
         return;
       }
       list.replaceChildren(...players.slice(0,100).map((player,index)=>{
-        const row=document.createElement("div");
+        const row=document.createElement("button");
+        row.type="button";
         row.className="rankingRow"+(auth.currentUser?.uid===player.uid?" me":"");
+        row.setAttribute("aria-label",`${index+1}位 ${player.name}、レート${player.rating}。プレイヤーカードを表示`);
+        row.addEventListener("click",()=>window.openRankingPlayerCard(player));
         const place=document.createElement("div");
         place.className="rankingPlace";
         place.textContent=index===0?"🥇":index===1?"🥈":index===2?"🥉":String(index+1);
@@ -2716,6 +2747,49 @@ button{min-height:44px;}
     }catch(error){
       console.error("ランキングを取得できませんでした",error);
       list.innerHTML='<div class="rankingStatus">ランキングを取得できませんでした。通信状態を確認して、もう一度お試しください。</div>';
+    }
+  };
+
+  window.openRankingPlayerCard=async function(player){
+    if(!player?.uid)return;
+    const name=document.getElementById("playerCardName");
+    const rate=document.getElementById("playerCardRate");
+    const titles=document.getElementById("playerCardTitles");
+    const rankedWins=document.getElementById("playerCardRankedWins");
+    const friendWins=document.getElementById("playerCardFriendWins");
+    const games=document.getElementById("playerCardGames");
+    const status=document.getElementById("playerCardStatus");
+    name.textContent=player.name;
+    rate.textContent=`RATE ${Math.max(1000,Number(player.rating)||1000)}`;
+    rankedWins.textContent=String(player.onlineWins||0);friendWins.textContent=String(player.friendWins||0);
+    games.textContent=String(Math.max(0,Number(player.games)||0));
+    status.textContent="公開されている対戦記録を読み込んでいます…";
+    titles.replaceChildren();
+    showScreen("playerCardScreen");
+    try{
+      const [loadoutSnapshot,gamesSnapshot]=await Promise.all([
+        get(ref(db,`titleLoadouts/${player.uid}`)),
+        get(ref(db,"freeGames"))
+      ]);
+      const loadout=loadoutSnapshot.val() || {};
+      const ids=[0,1,2].map(index=>loadout[index] || loadout[String(index)] || "");
+      titles.replaceChildren(...ids.map(id=>window.TitleCatalog?.badge?.(id) || document.createTextNode("-")));
+      let random=0,friend=0,total=0;
+      for(const match of Object.values(gamesSnapshot.val() || {})){
+        const side=match?.players?.[1]===player.uid?1:match?.players?.[2]===player.uid?2:0;
+        if(!side || !match?.settled)continue;
+        total++;
+        if(Number(match.settled.winner)!==side)continue;
+        if(match.kind==="friend")friend++;else random++;
+      }
+      rankedWins.textContent=String(random);friendWins.textContent=String(friend);
+      games.textContent=String(Math.max(total,Number(player.games)||0));
+      status.textContent="サーバーに確定保存された対戦結果だけを集計しています。";
+    }catch(error){
+      console.error("プレイヤーカードを取得できませんでした",error);
+      rankedWins.textContent="—";friendWins.textContent="—";
+      titles.replaceChildren(document.createTextNode("称号を取得できませんでした"));
+      status.textContent="戦績の公開が許可されていないか、通信に失敗しました。";
     }
   };
 
@@ -3776,6 +3850,7 @@ function beginOnlineBattleCountdown(startAt){
   window._onlineCountdownKey=countdownKey;
   onlineCountdownStarted = true;
   onlineTurnPhase = "countdown";
+  onlineInputDeadline = 0;
   clearInterval(countdownTimer);
   clearTimeout(window._onlineCountdownTimeout);
   countdownTimer = null;
@@ -3795,7 +3870,7 @@ function beginOnlineBattleCountdown(startAt){
 
     if(remainingMs > 0){
       // 10秒入力がすでに終了した端末では、遅れて届いた3秒状態で表示を戻さない。
-      if(onlineInputDeadline && onlineNow() >= onlineInputDeadline){
+      if(onlineInputDeadline && performance.now() >= onlineInputDeadline){
         countdown=0;
         onlineTurnPhase="resolving";
         if(el){el.className="battleCall";el.textContent="BATTLE!";}
@@ -3839,7 +3914,7 @@ function startOnlineBattleCountdownIfReady(){
 
   // 既に残り3秒以下なら、表示中のカウントを3へ戻さずそのまま使う。
   // 0秒付近で相手の選択が届いた場合は、ここで確定を再試行する。
-  if(countdown <= 0 || (onlineInputDeadline && onlineNow() >= onlineInputDeadline)){
+  if(countdown <= 0 || (onlineInputDeadline && performance.now() >= onlineInputDeadline)){
     onlineTurnPhase="resolving";
     finishTurn();
     return;
@@ -3865,6 +3940,7 @@ function startOnlineBattleCountdownIfReady(){
 
   onlineCountdownStarted = true;
   onlineTurnPhase = "countdown";
+  onlineInputDeadline = 0;
   window.onlineBattle.publishBattleState(battle).catch(console.error);
   // P1もFirebaseから受け取った状態だけで開始する。ローカル即時開始との二重化を防ぐ。
 }
@@ -4459,7 +4535,9 @@ function startTurnCore(){
   onlineCountdownStarted = false;
   window._onlineCountdownKey = null;
   onlineTurnStartedAt = onlineNow();
-  onlineInputDeadline = onlineTurnStartedAt + 10000;
+  // サーバー時刻補正は接続直後に数秒変動し得るため、表示用10秒には使わない。
+  // ターンが開いた瞬間から、端末の単調増加時計で必ず10秒を等速表示する。
+  onlineInputDeadline = performance.now() + 10000;
   onlineTurnPhase = "input";
   if(gameMode=== "online"){
     onlineInputTurn=onlineTurnNumber;
@@ -4510,8 +4588,8 @@ function startTurnCore(){
   const timerTurn=onlineInputTurn;
   // 1秒ずつ減算すると、画面遷移や通信処理で遅れた分だけ6などから始まって見える。
   // 固定した終了時刻から毎回再計算し、10を丸1秒表示して両端末のズレも吸収する。
-  const inputDeadline=gameMode==="online" ? onlineInputDeadline : performance.now()+10000;
-  const inputNow=()=>gameMode==="online" ? onlineNow() : performance.now();
+  const inputDeadline=onlineInputDeadline || performance.now()+10000;
+  const inputNow=()=>performance.now();
   const tickInputCountdown=()=>{
     if(gameMode==="online" && (timerSession!==onlineMatchSession || timerTurn!==onlineTurnNumber || !onlineInputOpen || onlineTurnPhase!=="input"))return;
     const remaining=Math.max(0,inputDeadline-inputNow());
@@ -4537,7 +4615,8 @@ function startTurnCore(){
       if(countdown===0 && (gameMode!=="online" || (timerSession===onlineMatchSession && timerTurn===onlineInputTurn && timerTurn===onlineTurnNumber)))finishTurn();
     },500);
   };
-  countdownTimer=setTimeout(tickInputCountdown,100);
+  // 10を最初の丸1秒間表示してから、一定間隔で9へ進める。
+  countdownTimer=setTimeout(tickInputCountdown,1000);
 }
 
 /* =========================
