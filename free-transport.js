@@ -4,7 +4,9 @@ export function createFreeTransport(db,auth){
  let offset=0;onValue(ref(db,'.info/serverTimeOffset'),s=>{offset=s.val()||0;});
  const now=()=>Date.now()+offset,read=async p=>(await get(ref(db,p))).val();
  async function profile(){const u=auth.currentUser?.uid;if(!u)throw Error('ログインしてください');let a=await read('freeAccounts/'+u);if(!a){a={name:String(auth.currentUser.isAnonymous?'ゲスト':globalThis.window?.loggedInPlayerData?.name||'プレイヤー').slice(0,24),guest:!!auth.currentUser.isAnonymous,rating:1000,games:0,onlineWins:0,friendWins:0,active:'',lastSettled:''};try{await set(ref(db,'freeAccounts/'+u),a);}catch(e){a=await read('freeAccounts/'+u);if(!a)throw e;}}if(Number(a.rating)<1000){a={...a,rating:1000};await update(ref(db,'freeAccounts/'+u),{rating:1000});}return a;}
- const turnOpensAt=s=>s.startedAt+(s.turn>1?2500:5100);
+ // 次ターンのstateは前ターン演出より先に作られる。演出（3秒カウント＋公開＋効果）が
+ // 終わる前に入力期限を進めないよう、2ターン目以降にも十分な同期猶予を設ける。
+ const turnOpensAt=s=>s.startedAt+(s.turn>1?8500:5600);
  const initial=()=>Object.fromEntries(stateFields.map(k=>[k,k==='turn'?1:k==='startedAt'?serverTimestamp():k.startsWith('hp')?10:k.startsWith('seal')||k.startsWith('momentum')?false:k.startsWith('last')?'':0]));
  async function status(id){
   const u=auth.currentUser.uid,path='freeGames/'+id;let g;

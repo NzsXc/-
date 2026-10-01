@@ -43,18 +43,33 @@ async function rankedPoll(epoch){
  }finally{rankedPolling=false;}
 }
 let rankedFrame=0,rankedClockAt=0,rankedClockServer=0,rankedAnimating=false,rankedEffectTimer=0,rankedVisualToken=0,rankedVisualCountdownEnd=0;
-function rankedVisualStop(){PlayerIntro.reset();cancelAnimationFrame(rankedFrame);rankedFrame=0;clearTimeout(rankedEffectTimer);rankedVisualToken++;rankedAnimating=false;rankedVisualCountdownEnd=0;stopCountdownRing();stopTurnCountdownSE();clearTimeout(window._techniqueRevealCleanupTimeout);document.getElementById('battleEffectLayer')?.replaceChildren();}
+let rankedTurnClockKey='',rankedTurnOpensAt=0,rankedTurnDeadline=0;
+function rankedVisualStop(){PlayerIntro.reset();cancelAnimationFrame(rankedFrame);rankedFrame=0;clearTimeout(rankedEffectTimer);rankedVisualToken++;rankedAnimating=false;rankedVisualCountdownEnd=0;rankedTurnClockKey='';rankedTurnOpensAt=0;rankedTurnDeadline=0;stopCountdownRing();stopTurnCountdownSE();clearTimeout(window._techniqueRevealCleanupTimeout);document.getElementById('battleEffectLayer')?.replaceChildren();}
 function rankedClockStart(m){
  rankedClockAt=performance.now();rankedClockServer=m.serverNow;
  if(!rankedFrame){rankedTick();}
 }
+function rankedSyncTurnClock(m){
+ if(!m?.state)return;
+ const key=m.id+':'+m.state.turn;
+ if(rankedTurnClockKey===key)return;
+ rankedTurnClockKey=key;
+ // サーバーの開始時刻は一度だけ端末の単調増加時計へ写す。
+ // 以後のpoll応答では締切を再計算しないため、数字が飛んだり加速したりしない。
+ rankedTurnOpensAt=performance.now()+Math.max(0,Number(m.opensAt)-Number(m.serverNow));
+ rankedTurnDeadline=rankedTurnOpensAt+10000;
+}
 function rankedTick(){
  rankedFrame=0;const m=rankedMatch;if(!rankedActive||!m)return;
  const now=rankedClockServer+performance.now()-rankedClockAt;
+ const localNow=performance.now();
+ const turnOpen=!!m.state&&rankedTurnClockKey===m.id+':'+m.state.turn&&localNow>=rankedTurnOpensAt;
+ const inputExpired=turnOpen&&localNow>=rankedTurnDeadline;
+ const turnRemaining=turnOpen?Math.max(0,Math.ceil((rankedTurnDeadline-localNow)/1000)):10;
  const put=(id,text)=>{const el=document.getElementById(id);if(el&&el.textContent!==text)el.textContent=text;};
- if(m.state?.turn===1&&now>=m.opensAt)PlayerIntro.cancel();
+ if(m.state?.turn===1&&turnOpen)PlayerIntro.cancel();
  const grace=now>=m.deadline,remaining=Math.max(0,Math.ceil(((grace?m.graceDeadline:m.deadline)-now)/1000));
- if(m.closed||rankedAnimating||!m.state||now<m.opensAt){stopCountdownRing();stopTurnCountdownSE();
+ if(m.closed||rankedAnimating||!m.state||!turnOpen){stopCountdownRing();stopTurnCountdownSE();
   if(!m.closed&&m.phase==='select')put('techTitle',grace?'復帰猶予：あと'+remaining+'秒（未確定側は期限後に敗北）':m.ready[m.you]?'技を確定しました。相手を待っています…':(m.kind==='friend'?'ルーム対戦':'ランダム対戦')+'：技選択（残り'+remaining+'秒）');
   else if(rankedAnimating){
    const left=rankedVisualCountdownEnd-performance.now();
@@ -64,13 +79,13 @@ function rankedTick(){
   }else if(!m.closed)put('countdown','');
  }else{
   const countdownEl=document.getElementById('countdown');
-  const text=grace?(now<m.deadline+500?'BATTLE!':'復帰猶予 '+remaining+'秒'):String(remaining);
-  if(countdownEl&&countdownEl.textContent!==text){countdownEl.className='';void countdownEl.offsetWidth;countdownEl.className=grace?(now<m.deadline+500?'battleCall':''):'countPulse';countdownEl.textContent=text;}
+  const text=inputExpired?(localNow<rankedTurnDeadline+500?'BATTLE!':'復帰猶予 '+remaining+'秒'):String(turnRemaining);
+  if(countdownEl&&countdownEl.textContent!==text){countdownEl.className='';void countdownEl.offsetWidth;countdownEl.className=inputExpired?(localNow<rankedTurnDeadline+500?'battleCall':''):'countPulse';countdownEl.textContent=text;}
   const ring=document.getElementById('countdownRing');
-  if(grace){stopCountdownRing();stopTurnCountdownSE();put('resultMessage',m.ownAction!==null?'相手の復帰を待っています':'期限内に行動を確定してください');}
-  else{ring?.classList.add('active','step');setCountdownRingStep(10-remaining);startTurnCountdownSE();}
+  if(inputExpired){stopCountdownRing();stopTurnCountdownSE();put('resultMessage',m.ownAction!==null?'相手の復帰を待っています':'期限内に行動を確定してください');}
+  else{ring?.classList.add('active','step');setCountdownRingStep(10-turnRemaining);startTurnCountdownSE();}
  }
- if(m.state){locked[m.you]=rankedAnimating||m.closed||rankedSending||m.ownAction!==null||now<m.opensAt||now>=(m.graceDeadline??m.deadline);document.getElementById('player'+m.you+'Area').classList.toggle('locked',locked[m.you]);}
+ if(m.state){locked[m.you]=rankedAnimating||m.closed||rankedSending||m.ownAction!==null||!turnOpen||inputExpired;document.getElementById('player'+m.you+'Area').classList.toggle('locked',locked[m.you]);}
  if(!m.closed||rankedAnimating)rankedFrame=requestAnimationFrame(rankedTick);
 }
 function rankedReveal(m){
@@ -82,6 +97,7 @@ function rankedReveal(m){
  document.getElementById('resultMessage').textContent='';
  locked[1]=true;locked[2]=true;
  rankedClockStart(m);
+ rankedSyncTurnClock(m);
  rankedEffectTimer=setTimeout(()=>{
   if(!valid())return;
   document.getElementById('countdown').textContent='';
@@ -112,6 +128,7 @@ function rankedApply(m,visualCommit=false){
  // Initial snapshots restore the board; only subsequent turns play effects.
  if(entering&&m.reveal)rankedSeenReveal=m.reveal.turn;
  rankedClockStart(m);
+ rankedSyncTurnClock(m);
  const me=m.you;selectingPlayer=me;
  const inGrace=!m.closed&&m.serverNow>=m.deadline,remaining=Math.max(0,Math.ceil(((m.graceDeadline??m.deadline)-m.serverNow)/1000));
  if(m.phase==='select'){
@@ -136,7 +153,8 @@ function rankedApply(m,visualCommit=false){
  if(!m.closed&&m.state.turn===1){
   PlayerIntro.start({key:'ranked:'+m.id,startAt:m.opensAt-PlayerIntro.DURATION_MS,now:()=>rankedClockServer+performance.now()-rankedClockAt,players:m.players});
  }else PlayerIntro.cancel();
- locked[me]=m.ownAction!==null||rankedSending||m.closed||m.serverNow<m.opensAt;locked[3-me]=true;
+ const localTurnOpen=rankedTurnClockKey===m.id+':'+m.state.turn&&performance.now()>=rankedTurnOpensAt;
+ locked[me]=m.ownAction!==null||rankedSending||m.closed||!localTurnOpen||performance.now()>=rankedTurnDeadline;locked[3-me]=true;
  for(const p of [1,2])document.getElementById('player'+p+'Area').classList.toggle('locked',locked[p]);
  document.getElementById('battleHomeButton').hidden=false;document.getElementById('battleHomeButton').textContent=m.closed?'ホームへ':'降参して戻る';
  if(m.closed||rankedAnimating||m.serverNow<m.opensAt)document.getElementById('countdown').textContent='';
