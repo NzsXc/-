@@ -231,28 +231,43 @@ body{
 }
 
 /* レートランキング */
-.rankingPanel{width:min(720px,90vw);max-height:72vh;display:flex;flex-direction:column;gap:12px;}
-.rankingHeader{display:flex;align-items:center;justify-content:space-between;gap:12px;}
-.rankingHeader h1{margin:0;font-size:clamp(25px,4vw,36px);}
-.rankingList{overflow:auto;display:flex;flex-direction:column;gap:8px;padding:2px;}
-.rankingRow{display:grid;grid-template-columns:64px minmax(0,1fr) auto;align-items:center;gap:12px;min-height:58px;padding:10px 16px;border:1px solid rgba(255,255,255,.14);border-radius:14px;background:linear-gradient(145deg,#252833,#171922);}
-.rankingRow{width:100%;color:#fff;text-align:left;cursor:pointer;font:inherit;}
-.rankingRow:hover,.rankingRow:focus-visible{background:linear-gradient(145deg,#343846,#20232e);border-color:rgba(255,214,90,.55);outline:none;}
-.rankingRow.me{border-color:#ffd65a;box-shadow:0 0 18px rgba(255,214,90,.14);}
-.rankingPlace{font-size:20px;font-weight:900;text-align:center;color:#ffd65a;}
-.rankingName{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:800;}
-.rankingRate{font-size:18px;font-weight:900;}
-.rankingStatus{text-align:center;color:#c9c9d1;padding:24px 10px;}
+.rankingPanel{position:relative;width:min(900px,94vw);max-height:88vh;display:flex;flex-direction:column;gap:18px;padding:30px 32px;border:1px solid rgba(139,222,242,.28);background:linear-gradient(145deg,rgba(18,42,68,.94),rgba(10,20,40,.97));box-shadow:0 30px 90px rgba(0,0,0,.55),inset 0 1px rgba(216,244,255,.08);clip-path:polygon(0 16px,16px 0,100% 0,100% calc(100% - 16px),calc(100% - 16px) 100%,0 100%);}
+.rankingPanel::before,.rankingPanel::after{content:"";position:absolute;height:2px;background:linear-gradient(90deg,transparent,#6ad6f2,#8168d8,transparent);filter:drop-shadow(0 0 7px #6ad6f2);pointer-events:none;}
+.rankingPanel::before{left:20px;right:42%;top:13px}.rankingPanel::after{left:48%;right:20px;bottom:13px}
+.rankingHeader{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;}
+.rankingHeading{min-width:0}.rankingKicker{display:block;margin-bottom:5px;color:#9fbed0;font-size:10px;letter-spacing:.22em;}
+.rankingHeader h1{margin:0;font-size:clamp(25px,4vw,38px);letter-spacing:.1em;}
+.rankingList{overflow:auto;display:flex;flex-direction:column;gap:10px;padding:2px 7px 2px 2px;scrollbar-color:#3b7390 #0b1729;}
+.rankingRow{position:relative;display:grid;grid-template-columns:72px minmax(0,1fr) 126px;align-items:stretch;gap:0;min-height:70px;padding:0;border:1px solid transparent;background:linear-gradient(90deg,rgba(24,52,77,.96),rgba(16,29,52,.97)) padding-box,linear-gradient(110deg,#163f6b,#39bde8,#b9f8ff,#278fd4,#173760,#68dfff,#163f6b) border-box;background-size:100% 100%,260% 100%;width:100%;color:#eefaff;text-align:left;cursor:pointer;font:inherit;overflow:hidden;clip-path:polygon(0 10px,10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%);transition:transform .18s,box-shadow .18s;animation:rankingEdgeFlow 6.4s linear infinite;}
+.rankingRow::after{content:"";position:absolute;left:72px;right:126px;bottom:0;height:2px;background:linear-gradient(90deg,#6ad6f2,transparent 62%);opacity:.35;pointer-events:none;}
+.rankingRow:hover,.rankingRow:focus-visible{transform:translateX(4px);background:linear-gradient(90deg,rgba(36,80,107,.97),rgba(24,38,68,.97)) padding-box,linear-gradient(110deg,#216295,#67ddff,#e5fdff,#4dbdf2,#284e87,#92ecff,#216295) border-box;background-size:100% 100%,260% 100%;box-shadow:0 0 24px rgba(79,200,239,.24),0 0 7px rgba(110,223,255,.2);outline:none;}
+.rankingRow.me{box-shadow:inset 3px 0 #9b72ff,0 0 20px rgba(155,114,255,.14);}
+.rankingPlace{position:relative;display:grid;place-items:center;border-right:1px solid rgba(113,210,238,.4);font:800 23px/1 Inter,"Arial Narrow","Yu Gothic UI",sans-serif;font-variant-numeric:tabular-nums;color:#c88a22;filter:drop-shadow(0 0 4px rgba(255,200,47,.3));}
+.rankingPlace::after{content:attr(data-place);position:absolute;inset:0;display:grid;place-items:center;background:linear-gradient(110deg,#b57a1d 0%,#e7b744 34%,#fff7bb 46%,#ffd55e 56%,#b57a1d 100%);background-size:200% 100%;background-repeat:repeat-x;background-clip:text;-webkit-background-clip:text;color:transparent;-webkit-text-fill-color:transparent;animation:rankingGoldSheen 3s linear infinite;}
+.rankingIdentity{position:relative;min-width:0;display:flex;align-items:center;padding:0 28px;}
+.rankingIdentity::before{content:"";position:absolute;left:13px;width:7px;height:7px;border:2px solid #6ad6f2;transform:rotate(45deg);box-shadow:0 0 9px #6ad6f2;}
+.rankingName{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:18px;font-weight:780;letter-spacing:.045em;}
+.rankingYou{flex:none;margin-left:10px;padding:3px 7px;border:1px solid rgba(169,131,255,.45);color:#cdbbff;font-size:10px;letter-spacing:.08em;}
+.rankingRate{align-self:center;padding-right:22px;text-align:right;font:780 21px/1 Inter,"Arial Narrow","Yu Gothic UI",sans-serif;font-variant-numeric:tabular-nums;letter-spacing:.035em;color:#dcf8ff;}
+.rankingRate::before{content:"RATE";display:block;margin-bottom:5px;color:#7aa8bc;font:600 9px/1 Inter,sans-serif;letter-spacing:.25em;}
+.rankingStatus{text-align:center;color:#b6ceda;padding:24px 10px;}
 .rankingClose{position:static;padding:9px 18px;}
-.playerCardPanel{width:min(560px,90vw);padding:22px;border:1px solid rgba(255,255,255,.16);border-radius:22px;background:linear-gradient(145deg,#252833,#14161e);box-shadow:0 22px 60px rgba(0,0,0,.45);}
-.playerCardPanel h1{margin:0 0 18px;text-align:center;overflow-wrap:anywhere;}
-.playerCardRate{text-align:center;font-size:32px;font-weight:900;color:#ffd65a;margin-bottom:18px;}
-.playerCardTitles{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;min-height:34px;margin-bottom:20px;}
-.playerCardStats{display:grid;grid-template-columns:1fr auto;gap:0;border:1px solid rgba(255,255,255,.13);border-radius:14px;overflow:hidden;}
-.playerCardStats dt,.playerCardStats dd{margin:0;padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.1);}
-.playerCardStats dd{text-align:right;font-weight:900;}
+.playerCardPanel{position:relative;width:min(760px,92vw);padding:30px;border:1px solid rgba(135,223,240,.47);border-radius:0;background:linear-gradient(135deg,rgba(19,45,72,.98),rgba(18,22,47,.98));box-shadow:0 22px 70px rgba(0,0,0,.67);clip-path:polygon(0 18px,18px 0,100% 0,100% calc(100% - 18px),calc(100% - 18px) 100%,0 100%);}
+.playerCardPanel::before{content:"PLAYER DATA";display:block;margin-bottom:9px;color:#8eb6c9;font-size:10px;letter-spacing:.32em;}
+.playerCardPanel h1{margin:0 0 18px;padding-left:18px;border-left:3px solid #6ad6f2;text-align:left;overflow-wrap:anywhere;font-size:clamp(26px,4vw,42px);letter-spacing:.07em;}
+.playerCardRate{margin:0 0 18px;padding:14px 18px;border-left:3px solid #6ad6f2;background:linear-gradient(90deg,rgba(99,216,242,.07),transparent);text-align:left;font:850 clamp(40px,6vw,66px)/1 Inter,"Arial Narrow","Yu Gothic UI",sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.025em;color:#f4fdff;text-shadow:0 0 28px rgba(98,216,255,.33);}
+.playerCardTitles{display:flex;flex-wrap:wrap;justify-content:flex-start;gap:8px;min-height:34px;margin-bottom:20px;}
+.playerCardTitles>*{padding:6px 10px;border:1px solid rgba(121,220,237,.4);background:linear-gradient(90deg,rgba(85,203,229,.1),rgba(155,114,255,.08));color:#c7edf5;font-size:11px;font-weight:700;letter-spacing:.06em;}
+.playerCardStats{display:grid;grid-template-columns:1fr auto;gap:0;border:1px solid rgba(118,153,189,.3);overflow:hidden;background:rgba(9,22,43,.53);}
+.playerCardStats dt,.playerCardStats dd{margin:0;padding:13px 16px;border-bottom:1px solid rgba(255,255,255,.08);}
+.playerCardStats dt{color:#9db9ca;font-size:12px;letter-spacing:.08em}.playerCardStats dd{text-align:right;font:800 28px/1 Inter,"Arial Narrow","Yu Gothic UI",sans-serif;font-variant-numeric:tabular-nums;}
+.playerCardStats dt:nth-of-type(1)+dd{color:#ffe28c}.playerCardStats dt:nth-of-type(2)+dd{color:#8eeaff}.playerCardStats dt:nth-of-type(3)+dd{color:#c6adff}
 .playerCardStats dt:last-of-type,.playerCardStats dd:last-of-type{border-bottom:0;}
-.playerCardNote{margin:14px 0;color:#aaa;font-size:12px;text-align:center;}
+.playerCardNote{margin:14px 0;color:#89a6b6;font-size:12px;text-align:center;}
+@keyframes rankingEdgeFlow{0%{background-position:0 0,130% 0}100%{background-position:0 0,-130% 0}}
+@keyframes rankingGoldSheen{0%{background-position:0 0}100%{background-position:200% 0}}
+@media(prefers-reduced-motion:reduce){.rankingRow,.rankingPlace::after{animation:none}.rankingRow{background-position:0 0,50% 0}.rankingPlace::after{background-position:50% 0}}
+@media(max-width:600px){.rankingPanel{padding:24px 14px}.rankingRow{grid-template-columns:52px minmax(0,1fr) 88px}.rankingRow::after{left:52px;right:88px}.rankingIdentity{padding:0 10px 0 24px}.rankingIdentity::before{left:8px}.rankingRate{padding-right:10px;font-size:18px}.rankingName{font-size:15px}.rankingHeader{align-items:center}.rankingClose{padding:8px 12px}}
 
 /* =========================
    TIP画面
@@ -2064,7 +2079,7 @@ button{min-height:44px;}
 <div id="rankingScreen" class="screen">
   <div class="rankingPanel">
     <div class="rankingHeader">
-      <h1>👑 レートランキング</h1>
+      <div class="rankingHeading"><span class="rankingKicker">RATE ARCHIVE / TOP PLAYERS</span><h1>レートランキング</h1></div>
       <button class="onlineBackButton rankingClose" onclick="showScreen('onlineScreen')">戻る</button>
     </div>
     <div id="rankingList" class="rankingList" aria-live="polite">
@@ -2782,14 +2797,25 @@ button{min-height:44px;}
         row.addEventListener("click",()=>window.openRankingPlayerCard(player));
         const place=document.createElement("div");
         place.className="rankingPlace";
-        place.textContent=index===0?"🥇":index===1?"🥈":index===2?"🥉":String(index+1);
-        const name=document.createElement("div");
+        const rankText=String(index+1).padStart(2,"0");
+        place.textContent=rankText;
+        place.dataset.place=rankText;
+        const identity=document.createElement("div");
+        identity.className="rankingIdentity";
+        const name=document.createElement("span");
         name.className="rankingName";
-        name.textContent=player.name+(auth.currentUser?.uid===player.uid?"（あなた）":"");
+        name.textContent=player.name;
+        identity.append(name);
+        if(auth.currentUser?.uid===player.uid){
+          const you=document.createElement("span");
+          you.className="rankingYou";
+          you.textContent="YOU";
+          identity.append(you);
+        }
         const rate=document.createElement("div");
         rate.className="rankingRate";
         rate.textContent=String(player.rating);
-        row.append(place,name,rate);
+        row.append(place,identity,rate);
         return row;
       }));
     }catch(error){
