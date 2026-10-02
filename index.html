@@ -1904,6 +1904,44 @@ button{min-height:44px;}
 #playerLoginMessage{min-height:1.5em;margin-top:12px;font-size:13px;color:#ffd0d0;}
 
 </style>
+<style id="confirmed-opening-and-mode-ui">
+#openingTransition{position:fixed;inset:0;z-index:10000;overflow:hidden;background:#315c80;pointer-events:auto}
+#openingTransition.finished{display:none}
+.openingShutter{position:absolute;inset:-22%;background:#315c80;will-change:transform}
+.openingShutter::before{content:"";position:absolute;inset:-45px;opacity:.22;background-image:linear-gradient(rgba(155,220,255,.11) 1px,transparent 1px),linear-gradient(90deg,rgba(155,220,255,.11) 1px,transparent 1px);background-size:40px 40px;animation:confirmedGridDrift 9s linear infinite}
+.openingShutter.top{clip-path:polygon(0 0,100% 0,100% 20%,0 82%)}
+.openingShutter.bottom{clip-path:polygon(100% 15%,100% 100%,0 100%,0 77%)}
+#openingTransition.playing .openingShutter.top{animation:confirmedOpenTop 1.45s .72s cubic-bezier(.76,0,.2,1) forwards}
+#openingTransition.playing .openingShutter.bottom{animation:confirmedOpenBottom 1.45s .72s cubic-bezier(.76,0,.2,1) forwards}
+.openingSlash{position:absolute;z-index:2;left:-18%;top:48%;width:138%;height:4.2%;border-radius:50%;background:#fff;opacity:0;transform:translateY(-50%) rotate(-31deg) scaleX(.05);transform-origin:center;filter:drop-shadow(0 0 16px rgba(210,242,255,.9))}
+.openingSlash::after{content:"";position:absolute;inset:-45% 5%;background:#83d8ff;filter:blur(18px);opacity:.65}
+#openingTransition.playing .openingSlash{animation:confirmedSlashCut 1.05s .18s cubic-bezier(.2,.72,.15,1) forwards}
+.openingFlash{position:absolute;inset:0;z-index:3;background:#fff;opacity:0;pointer-events:none}
+#openingTransition.playing .openingFlash{animation:confirmedOpeningFlash .45s .72s ease-out forwards}
+.openingCopy{position:absolute;z-index:4;left:50%;top:50%;transform:translate(-50%,-50%);color:#ecf8ff;text-align:center;letter-spacing:.14em;text-shadow:0 0 18px rgba(111,203,255,.5)}
+.openingCopy strong{display:block;font-size:clamp(25px,4vw,54px);font-weight:900;white-space:nowrap}
+.openingCopy span{display:block;margin-top:14px;font-size:clamp(10px,1.2vw,15px);opacity:.65;letter-spacing:.28em}
+#openingTransition.playing .openingCopy{animation:confirmedCopyOut .5s .55s ease-in forwards}
+#screenQuickFade{position:fixed;inset:0;z-index:9999;background:#07101e;opacity:0;pointer-events:none}
+#screenQuickFade.in{animation:confirmedFadeIn .11s ease-out forwards}
+#screenQuickFade.out{animation:confirmedFadeOut .12s ease-in forwards}
+#modeScreen .modeChoiceBox{position:relative;display:block;min-height:110px;overflow:hidden;border-radius:22px}
+#modeScreen .modeChoiceButton:not(.localModeButton){position:absolute;top:0;bottom:0;width:calc(50% + 12px);border:0;box-shadow:none;background:transparent}
+#modeScreen .modeChoiceButton:not(.localModeButton):first-child{left:0;padding-right:12px;border-radius:20px 0 0 20px;clip-path:polygon(0 0,calc(100% - 2px) 0,calc(100% - 22px) 100%,0 100%)}
+#modeScreen .modeChoiceButton:not(.localModeButton):last-child{right:0;padding-left:12px;border-radius:0 20px 20px 0;clip-path:polygon(22px 0,100% 0,100% 100%,2px 100%)}
+#modeScreen .modeChoiceButton:not(.localModeButton):hover,#modeScreen .modeChoiceButton:not(.localModeButton):active{background:rgba(255,255,255,.14)}
+#modeScreen .modeSlash{position:absolute;z-index:3;left:50%;top:0;width:0;height:100%;min-height:0;pointer-events:none}
+#modeScreen .modeSlash::before{position:absolute;left:0;top:-12%;display:block;width:6px;height:124%;min-height:0;background:#d9f3ff;box-shadow:0 0 8px rgba(191,232,255,.75),0 0 18px rgba(90,190,255,.38);transform:translateX(-50%) rotate(10deg);transform-origin:center;border-radius:2px}
+@keyframes confirmedSlashCut{0%{opacity:0;transform:translateY(-50%) rotate(-31deg) scaleX(.03)}18%{opacity:1}62%{opacity:1;transform:translateY(-50%) rotate(-31deg) scaleX(1)}100%{opacity:0;transform:translateY(-50%) rotate(-31deg) scaleX(1.08)}}
+@keyframes confirmedOpeningFlash{0%{opacity:0}20%{opacity:.72}100%{opacity:0}}
+@keyframes confirmedOpenTop{to{transform:translate(23%,-88%)}}
+@keyframes confirmedOpenBottom{to{transform:translate(-23%,88%)}}
+@keyframes confirmedCopyOut{to{opacity:0;transform:translate(-50%,-55%) scale(.94);filter:blur(5px)}}
+@keyframes confirmedGridDrift{to{transform:translate(40px,40px)}}
+@keyframes confirmedFadeIn{to{opacity:1}}
+@keyframes confirmedFadeOut{from{opacity:1}to{opacity:0}}
+@media(prefers-reduced-motion:reduce){.openingShutter,.openingSlash,.openingFlash,.openingCopy{animation-duration:.01ms!important;animation-delay:0ms!important}}
+</style>
 <!-- PWA settings -->
 <link rel="manifest" href="./manifest.webmanifest">
 <meta name="theme-color" content="#111111">
@@ -1919,6 +1957,13 @@ button{min-height:44px;}
 
 <body>
 
+<div id="openingTransition" aria-hidden="true">
+  <div class="openingShutter top"></div><div class="openingShutter bottom"></div>
+  <div class="openingSlash"></div><div class="openingFlash"></div>
+  <div class="openingCopy"><strong>心理バトル</strong><span>MIND BATTLE</span></div>
+</div>
+<div id="screenQuickFade" aria-hidden="true"></div>
+
 <button id="roomCodeButton" type="button" hidden onclick="copyRoomCode()" aria-label="ルームコードをコピー" title="タップしてルームコードをコピー">ルームコード <span id="roomCodeText"></span> ⧉</button>
 
 
@@ -1928,7 +1973,7 @@ button{min-height:44px;}
 
 <div id="startScreen"
      class="screen active"
-     onclick="showScreen('modeScreen')">
+     onclick="startToMode()">
 
   <div class="startTitle">
     心理バトル
@@ -1963,7 +2008,7 @@ button{min-height:44px;}
 
   <div class="modeChoiceBox" aria-label="バトルモード選択">
     <button class="modeChoiceButton" onclick="openSoloSettings()">
-      一人で
+      ひとりで
     </button>
 
     <div class="modeSlash" aria-hidden="true"></div>
@@ -2049,7 +2094,7 @@ button{min-height:44px;}
 ========================= -->
 
 <div id="soloScreen" class="screen">
-  <div class="screenTitle">一人で</div>
+  <div class="screenTitle">ひとりで</div>
   <div class="settingsPanel">
     <label>BOTの強さ<select id="botDifficulty"><option value="easy">弱い</option><option value="normal" selected>普通</option><option value="hard">強い</option></select></label>
     <p id="botDifficultyNote" class="settingsNote">1手先を考えて行動します。</p>
@@ -6388,6 +6433,20 @@ updateTechniqueDisplay();
   <audio id="turnCountdownSE" preload="auto" loop src="sounds/pendulum.mp3"></audio>
 </div>
 
+<!-- Confirmed opening and start-to-mode transition -->
+<script>
+(function(){
+  const opening=document.getElementById('openingTransition');
+  const fade=document.getElementById('screenQuickFade');
+  let changing=false;
+  window.startToMode=function(){
+    if(changing||!opening.classList.contains('finished'))return;
+    changing=true;fade.className='in';
+    setTimeout(()=>{showScreen('modeScreen');fade.className='out';setTimeout(()=>{fade.className='';changing=false;},130);},105);
+  };
+  requestAnimationFrame(()=>{opening.classList.add('playing');setTimeout(()=>opening.classList.add('finished'),2350);});
+})();
+</script>
 <!-- PWA registration -->
 <script src="./pwa-register.js" defer></script>
 </body>
