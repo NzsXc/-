@@ -2033,6 +2033,7 @@ button{min-height:44px;}
     <div id="playerCardRate" class="playerCardRate">RATE 1000</div>
     <div id="playerCardTitles" class="playerCardTitles" aria-label="装備中の称号"></div>
     <dl class="playerCardStats">
+      <dt>総勝利数</dt><dd id="playerCardTotalWins">—</dd>
       <dt>オンライン対戦勝利数</dt><dd id="playerCardRankedWins">—</dd>
       <dt>友達対戦勝利数</dt><dd id="playerCardFriendWins">—</dd>
       <dt>総対戦数</dt><dd id="playerCardGames">—</dd>
@@ -2756,14 +2757,18 @@ button{min-height:44px;}
     const name=document.getElementById("playerCardName");
     const rate=document.getElementById("playerCardRate");
     const titles=document.getElementById("playerCardTitles");
+    const totalWins=document.getElementById("playerCardTotalWins");
     const rankedWins=document.getElementById("playerCardRankedWins");
     const friendWins=document.getElementById("playerCardFriendWins");
     const games=document.getElementById("playerCardGames");
     const status=document.getElementById("playerCardStatus");
     name.textContent=player.name;
     rate.textContent=`RATE ${Math.max(1000,Number(player.rating)||1000)}`;
-    rankedWins.textContent=player.onlineWins===null?"—":String(player.onlineWins);
-    friendWins.textContent=player.friendWins===null?"—":String(player.friendWins);
+    const rankedCount=player.onlineWins===null?0:Math.max(0,Number(player.onlineWins)||0);
+    const friendCount=player.friendWins===null?0:Math.max(0,Number(player.friendWins)||0);
+    totalWins.textContent=String(rankedCount+friendCount);
+    rankedWins.textContent=String(rankedCount);
+    friendWins.textContent=String(friendCount);
     games.textContent=String(Math.max(0,Number(player.games)||0));
     status.textContent=player.onlineWins===null || player.friendWins===null
       ? "勝利数の記録開始前に作成されたプレイヤーです。今後の確定結果から記録されます。"
