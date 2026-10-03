@@ -253,7 +253,7 @@ body{
 .rankingStatus{text-align:center;color:#b6ceda;padding:24px 10px;}
 .rankingClose{position:static;padding:9px 18px;}
 .playerCardPanel{position:relative;width:min(900px,94vw);padding:34px;border:1px solid rgba(135,223,240,.47);border-radius:0;background:linear-gradient(135deg,rgba(19,45,72,.99),rgba(18,22,47,.99));box-shadow:0 24px 80px rgba(0,0,0,.7);clip-path:polygon(0 18px,18px 0,100% 0,100% calc(100% - 18px),calc(100% - 18px) 100%,0 100%);overflow:hidden;transform-origin:center;}
-#playerCardScreen.active .playerCardPanel{animation:playerCardOpen .5s linear both;will-change:transform,opacity;}
+#playerCardScreen.active .playerCardPanel{animation:playerCardOpen .38s linear both;will-change:transform,opacity;}
 .playerCardCircuit{position:absolute;z-index:0;width:290px;height:96px;pointer-events:none;opacity:.46;overflow:visible}.playerCardCircuit.top{top:0;right:0}.playerCardCircuit.bottom{bottom:0;left:0;transform:rotate(180deg)}
 .playerCardCircuit path{fill:none;stroke:url(#playerCardCircuitGlow);stroke-width:1.2;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 4px #63e7ff)}.playerCardCircuit circle{fill:#c9fbff;filter:drop-shadow(0 0 5px #73eaff)}
 .playerCardCircuit path.pulse{stroke:#fff;stroke-width:2;stroke-dasharray:16 420;stroke-dashoffset:436;opacity:0;filter:drop-shadow(0 0 3px #fff) drop-shadow(0 0 7px #75eaff);animation:playerCardCurrent 2s linear infinite}.playerCardCircuit path.p2{animation-delay:.32s}.playerCardCircuit path.p3{animation-delay:.67s}
@@ -2874,6 +2874,7 @@ button{min-height:44px;}
     });
     titles.replaceChildren(...titlePlaceholders);
     showScreen("playerCardScreen");
+    playUISound("uiMenuOpenSE");
    try{
   const loadoutSnapshot=await get(ref(db,`titleLoadouts/${player.uid}`));
   if(requestId!==playerCardRequestId)return;
@@ -5382,46 +5383,8 @@ let battleSEUnlocked=false;
 
 function unlockBattleSE(){
   if(battleSEUnlocked)return;
-  const ids=[
-    "seBleach","seShieldBreak","seCounter","seAntiGuard",
-    "seMomentum","seRampage","sePunish","seFinisher","seAttackClash",
-    "seDecision33","seDecision10","seDecision38","seDataAnalysis"
-  ];
-
-  ids.forEach(id=>{
-    const el=document.getElementById(id);
-    if(!el)return;
-    try{
-      el.muted=true;
-      el.volume=0;
-      el.currentTime=0;
-      const p=el.play();
-      if(p && typeof p.then === "function"){
-        p.then(()=>{
-          el.pause();
-          el.currentTime=0;
-          el.muted=false;
-          el.volume=0.75;
-        }).catch(()=>{
-          el.pause();
-          el.currentTime=0;
-          el.muted=false;
-          el.volume=0.75;
-        });
-      }else{
-        el.pause();
-        el.currentTime=0;
-        el.muted=false;
-        el.volume=0.75;
-      }
-    }catch(e){
-      el.pause();
-      el.currentTime=0;
-      el.muted=false;
-      el.volume=0.75;
-    }
-  });
-
+  // スマホでは無音再生による事前解放が遅れて実音になることがあるため、
+  // 起動時・初回タップ時には音源を再生せず、操作済み状態だけを記録する。
   battleSEUnlocked=true;
 }
 
@@ -5429,6 +5392,7 @@ window.addEventListener("pointerdown",unlockBattleSE,{once:true});
 window.addEventListener("keydown",unlockBattleSE,{once:true});
 
 function playBattleSE(id){
+  if(!battleSEUnlocked)return;
   const el=document.getElementById(id);
   if(!el)return;
   try{
@@ -5440,6 +5404,31 @@ function playBattleSE(id){
   }catch(e){
     console.warn("SE再生エラー:",id,e);
   }
+}
+
+function playUISound(id){
+  playBattleSE(id);
+}
+
+// メニュー系の通常ボタンは同じ決定音に統一する。バトル行動と技送りは既存SEを使う。
+document.addEventListener("click",event=>{
+  const target=event.target.closest("button,#startScreen");
+  if(!target || target.matches(".action,.techArrow,.rankingRow,#techConfirmButton,[data-no-ui-se]"))return;
+  playUISound("uiDecisionSE");
+});
+
+// 両プレイヤーの対戦カード演出開始時に一度だけ鳴らす。
+if(window.PlayerIntro?.start){
+  const originalPlayerIntroStart=window.PlayerIntro.start.bind(window.PlayerIntro);
+  let lastIntroSoundKey="";
+  window.PlayerIntro.start=options=>{
+    const key=String(options?.key||"");
+    if((gameMode==="online" || rankedActive) && key!==lastIntroSoundKey){
+      lastIntroSoundKey=key;
+      playUISound("uiBattleCardSE");
+    }
+    return originalPlayerIntroStart(options);
+  };
 }
 
 // バトルSEの発生条件。攻撃演出そのものとは分離しておく。
@@ -6488,9 +6477,12 @@ updateTechniqueDisplay();
   <audio id="seAttackClash" preload="auto" src="sounds/se_attack_clash.mp3"></audio>
   <audio id="seDecision33" preload="auto" src="sounds/decision33.mp3"></audio>
   <audio id="seDecision10" preload="auto" src="sounds/decision10.mp3"></audio>
-  <audio id="seDecision38" preload="auto" src="sounds/decision38.mp3"></audio>
+  <audio id="seDecision38" preload="auto" src="decision-38.mp3"></audio>
   <audio id="seDataAnalysis" preload="auto" src="sounds/data_analysis.mp3"></audio>
   <audio id="turnCountdownSE" preload="auto" loop src="sounds/pendulum.mp3"></audio>
+  <audio id="uiDecisionSE" preload="auto" src="decision-38.mp3"></audio>
+  <audio id="uiMenuOpenSE" preload="auto" src="menu-open-4.mp3"></audio>
+  <audio id="uiBattleCardSE" preload="auto" src="battle-card-1.mp3"></audio>
 </div>
 
 <!-- Confirmed opening and start-to-mode transition -->
