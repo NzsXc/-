@@ -253,7 +253,7 @@ body{
 .rankingStatus{text-align:center;color:#b6ceda;padding:24px 10px;}
 .rankingClose{position:static;padding:9px 18px;}
 .playerCardPanel{position:relative;width:min(900px,94vw);padding:34px;border:1px solid rgba(135,223,240,.47);border-radius:0;background:linear-gradient(135deg,rgba(19,45,72,.99),rgba(18,22,47,.99));box-shadow:0 24px 80px rgba(0,0,0,.7);clip-path:polygon(0 18px,18px 0,100% 0,100% calc(100% - 18px),calc(100% - 18px) 100%,0 100%);overflow:hidden;transform-origin:center;}
-#playerCardScreen.active .playerCardPanel{animation:playerCardOpen .5s cubic-bezier(.2,.82,.24,1) both;}
+#playerCardScreen.active .playerCardPanel{animation:playerCardOpen .5s linear both;will-change:transform,opacity;}
 .playerCardCircuit{position:absolute;z-index:0;width:290px;height:96px;pointer-events:none;opacity:.46;overflow:visible}.playerCardCircuit.top{top:0;right:0}.playerCardCircuit.bottom{bottom:0;left:0;transform:rotate(180deg)}
 .playerCardCircuit path{fill:none;stroke:url(#playerCardCircuitGlow);stroke-width:1.2;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 4px #63e7ff)}.playerCardCircuit circle{fill:#c9fbff;filter:drop-shadow(0 0 5px #73eaff)}
 .playerCardCircuit path.pulse{stroke:#fff;stroke-width:2;stroke-dasharray:16 420;stroke-dashoffset:436;opacity:0;filter:drop-shadow(0 0 3px #fff) drop-shadow(0 0 7px #75eaff);animation:playerCardCurrent 2s linear infinite}.playerCardCircuit path.p2{animation-delay:.32s}.playerCardCircuit path.p3{animation-delay:.67s}
@@ -264,21 +264,23 @@ body{
 .playerCardPanel h1{margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left;font-size:clamp(26px,4.2vw,46px);font-weight:850;letter-spacing:.06em;}
 .playerCardRateLabel{margin-top:18px}.playerCardRate{font:850 clamp(34px,5vw,54px)/.9 Inter,"Arial Narrow","Yu Gothic UI",sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.04em;color:#f5fdff;text-shadow:0 0 28px rgba(98,216,255,.33);}
 .playerCardTitles{min-width:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;padding-left:20px;border-left:1px solid rgba(106,214,242,.27);}
-.playerCardTitles>*{position:relative;min-height:42px;display:flex;align-items:center;justify-content:center;padding:7px 8px;border:1px solid rgba(121,220,237,.4);background:linear-gradient(90deg,rgba(85,203,229,.1),rgba(155,114,255,.08));color:#d3f5fb;font-size:10px;font-weight:750;letter-spacing:.035em;text-align:center;overflow:hidden;}
+.playerCardTitles>*{position:relative;width:100%;height:42px;min-width:0;margin:0;display:flex;align-items:center;justify-content:center;padding:7px 8px;border:1px solid rgba(121,220,237,.4);background:linear-gradient(90deg,rgba(85,203,229,.1),rgba(155,114,255,.08));color:#d3f5fb;font-size:10px;font-weight:750;letter-spacing:.035em;text-align:center;overflow:hidden;}
+.playerCardTitlePlaceholder{color:transparent!important;background:linear-gradient(100deg,rgba(85,203,229,.06) 25%,rgba(117,234,255,.17) 42%,rgba(85,203,229,.06) 60%)!important;background-size:240% 100%!important;animation:playerCardTitleLoading 1.2s linear infinite}
 .playerCardRecord{margin-top:20px;padding:12px;border:1px solid rgba(118,153,189,.24);background:rgba(9,22,43,.44)}
 .playerCardRecordTitle{margin:0 0 9px;color:#769eb1;font-size:9px;letter-spacing:.2em}.playerCardStats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
 .playerCardStat{position:relative;min-height:67px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 13px;border:1px solid rgba(118,153,189,.3);background:linear-gradient(145deg,#10243c,#0a172b);overflow:hidden}.playerCardStat::after{content:"";position:absolute;right:-15px;bottom:-30px;width:80px;height:80px;border:1px solid currentColor;opacity:.08;transform:rotate(45deg)}
 .playerCardStatLabel{color:#fff;font-size:10px;font-weight:700;letter-spacing:.06em;text-shadow:0 1px 2px rgba(0,4,12,.72)}.playerCardStatValue{font:820 clamp(20px,2.7vw,28px)/1 Inter,"Arial Narrow","Yu Gothic UI",sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
 .playerCardStat.total .playerCardStatValue{color:#ffe28c}.playerCardStat.online .playerCardStatValue{color:#8eeaff}.playerCardStat.friend .playerCardStatValue{color:#c6adff}.playerCardStat.games .playerCardStatValue{color:#fff;text-shadow:0 0 12px rgba(223,248,255,.2)}
 .playerCardFooter{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:18px}.playerCardNote{margin:0;color:#7896a7;font-size:11px}.playerCardBack{min-width:140px;margin:0;padding:10px 18px}
-@keyframes playerCardOpen{0%{opacity:0;transform:scale(.12)}55%{opacity:1}100%{opacity:1;transform:scale(1)}}
+@keyframes playerCardOpen{0%{opacity:0;transform:scale(.14)}20%{opacity:.3;transform:scale(.31)}40%{opacity:.56;transform:scale(.48)}60%{opacity:.76;transform:scale(.65)}80%{opacity:.9;transform:scale(.82)}100%{opacity:1;transform:scale(1)}}
+@keyframes playerCardTitleLoading{0%{background-position:120% 0}100%{background-position:-120% 0}}
 @keyframes playerCardCurrent{0%,10%{stroke-dashoffset:436;opacity:0}18%{opacity:1}76%{opacity:1}88%,100%{stroke-dashoffset:0;opacity:0}}
 @keyframes rankingEdgeFlow{0%{background-position:0 0,130% 0}100%{background-position:0 0,-130% 0}}
 @keyframes rankingGoldSheen{0%{background-position:0 0}100%{background-position:200% 0}}
 @media(prefers-reduced-motion:reduce){.rankingRow,.rankingPlace::after,.playerCardCircuit path.pulse{animation:none}.rankingRow{background-position:0 0,50% 0}.rankingPlace::after{background-position:50% 0}.playerCardCircuit path.pulse{opacity:.45;stroke-dashoffset:210}#playerCardScreen.active .playerCardPanel{animation-duration:.5s}}
 @media(max-width:760px){.playerCardPanel{padding:25px 15px}.playerCardProfile{grid-template-columns:1fr;gap:18px;padding:16px}.playerCardTitles{padding:14px 0 0;border-left:0;border-top:1px solid rgba(106,214,242,.27)}.playerCardStats{gap:7px}.playerCardFooter{align-items:flex-end}.playerCardNote{max-width:58%}}
 @media(max-width:600px){.rankingPanel{padding:24px 14px}.rankingRow{grid-template-columns:52px minmax(0,1fr) 88px}.rankingRow::after{left:52px;right:88px}.rankingIdentity{padding:0 10px 0 24px}.rankingIdentity::before{left:8px}.rankingRate{padding-right:10px;font-size:18px}.rankingName{font-size:15px}.rankingHeader{align-items:center}.rankingClose{padding:8px 12px}}
-@media(max-width:520px){.playerCardTitles{grid-template-columns:1fr}.playerCardTitles>*{min-height:34px}.playerCardStat{flex-direction:column;align-items:flex-start;min-height:72px}.playerCardStatLabel{font-size:9px}}
+@media(max-width:520px){.playerCardTitles{grid-template-columns:1fr}.playerCardTitles>*{height:34px}.playerCardStat{flex-direction:column;align-items:flex-start;min-height:72px}.playerCardStatLabel{font-size:9px}}
 
 /* =========================
    TIP画面
@@ -2840,8 +2842,10 @@ button{min-height:44px;}
     }
   };
 
+  let playerCardRequestId=0;
   window.openRankingPlayerCard=async function(player){
     if(!player?.uid)return;
+    const requestId=++playerCardRequestId;
     const name=document.getElementById("playerCardName");
     const rate=document.getElementById("playerCardRate");
     const titles=document.getElementById("playerCardTitles");
@@ -2861,16 +2865,29 @@ button{min-height:44px;}
     status.textContent=player.onlineWins===null || player.friendWins===null
       ? "勝利数の記録開始前に作成されたプレイヤーです。今後の確定結果から記録されます。"
       : "サーバーに確定保存された集計値を表示しています。";
-    titles.replaceChildren();
+    const titlePlaceholders=Array.from({length:3},()=>{
+      const placeholder=document.createElement("span");
+      placeholder.className="playerCardTitlePlaceholder";
+      placeholder.setAttribute("aria-hidden","true");
+      placeholder.textContent="称号を読み込み中";
+      return placeholder;
+    });
+    titles.replaceChildren(...titlePlaceholders);
     showScreen("playerCardScreen");
    try{
   const loadoutSnapshot=await get(ref(db,`titleLoadouts/${player.uid}`));
+  if(requestId!==playerCardRequestId)return;
   const loadout=loadoutSnapshot.val() || {};
   const ids=[0,1,2].map(index=>loadout[index] || loadout[String(index)] || "");
-  titles.replaceChildren(...ids.map(id=>window.TitleCatalog?.badge?.(id) || document.createTextNode("-")));
+  titles.replaceChildren(...ids.map(id=>{
+    const badge=window.TitleCatalog?.badge?.(id);
+    if(badge)return badge;
+    const empty=document.createElement("span");empty.textContent="—";return empty;
+  }));
 }catch(error){
+  if(requestId!==playerCardRequestId)return;
   console.error("称号を取得できませんでした",error);
-  titles.replaceChildren(document.createTextNode("称号を取得できませんでした"));
+  titles.replaceChildren(...["取得できませんでした","—","—"].map(text=>{const item=document.createElement("span");item.textContent=text;return item;}));
 }
 
 // freeGames全体はFirebaseルールで非公開。ランキングで取得済みの公開集計値だけを使う。
