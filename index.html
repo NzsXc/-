@@ -1582,6 +1582,42 @@ body{
   background:rgba(100,40,160,.24);
   color:#d3a3ff;
 }
+.ruinIndicator{
+  border-color:rgba(148,48,58,.72);
+  background:rgba(72,15,22,.88);
+  color:#e8848d;
+  box-shadow:0 0 10px rgba(105,20,30,.32);
+}
+.momentumReadyIndicator{
+  border-color:rgba(255,76,92,.72);
+  background:rgba(125,16,30,.42);
+  color:#ff9aa5;
+  box-shadow:0 0 10px rgba(255,35,60,.22);
+}
+.ruinCurseEffect{
+  position:absolute;
+  width:190px;
+  height:190px;
+  border:3px solid #7c202b;
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(105,19,31,.62),rgba(47,5,13,.48) 42%,transparent 72%);
+  box-shadow:0 0 22px #5e111d,inset 0 0 30px rgba(145,28,43,.72);
+  transform:translate(-50%,-50%) scale(.15);
+  animation:ruinCursePulse .82s ease-out forwards;
+  pointer-events:none;
+}
+.ruinCurseMark{
+  position:absolute;
+  color:#9f3340;
+  font-size:72px;
+  font-weight:1000;
+  text-shadow:0 0 14px #4d0912,0 0 30px #731320;
+  transform:translate(-50%,-50%) scale(.3) rotate(-12deg);
+  animation:ruinMarkAppear .82s ease-out forwards;
+  pointer-events:none;
+}
+@keyframes ruinCursePulse{55%{opacity:1;transform:translate(-50%,-50%) scale(1.08)}100%{opacity:0;transform:translate(-50%,-50%) scale(1.28)}}
+@keyframes ruinMarkAppear{45%{opacity:1;transform:translate(-50%,-50%) scale(1.05) rotate(0)}100%{opacity:0;transform:translate(-50%,-50%) scale(.88) rotate(8deg)}}
 /* TIP 1：TIP 2本文と同じ文字設定 */
 .tipIntroPage{
   font-size:14px;
@@ -3167,8 +3203,8 @@ let hp = {
 };
 
 let gauge = {
-  1:0,
-  2:0
+  1:8,
+  2:8
 };
 
 let selectedAction = {
@@ -3181,6 +3217,8 @@ let lastLastAction = {1:null,2:null};
 // モーメンタムの「次の1回だけ2ダメージ」判定
 let momentumBonus = {1:false,2:false};
 let blockSeal = {1:false,2:false};
+// ルインが有効な残りターン数（付与した次のターンから数える）。
+let ruinTurns = {1:0,2:0};
 // エンハンスが有効な残りターン数。使用した次の2ターンに適用する。
 let enhanceTurns = {1:0,2:0};
 
@@ -3231,7 +3269,7 @@ const basicActions = {
     cost:0,
     type:"block",
     description:
-      "ブロック状態になる"
+      "ブロック状態になる / ブロック系技は連続使用不可"
   }
 
 };
@@ -3262,7 +3300,7 @@ const techniquePool = [
     type:"reflect",
     skill:"tech2",
     description:
-      "ゲージ2消費 / 相手の攻撃を無効化し、威力に関係なく1ダメージだけ相手に返す"
+      "ゲージ2消費 / 相手の攻撃を無効化し、威力に関係なく1ダメージだけ相手に返す / 連続使用不可"
   },
 
   {
@@ -3287,12 +3325,14 @@ const techniquePool = [
       "ゲージ2消費 / 自分のHPを1回復"
   },
 
-  {name:"フォーサイト",cost:1,power:0,pierce:false,type:"block",skill:"tech5",description:"ゲージ1消費 / ブロック状態 / 相手がチャージならゲージ+3"},
+  {name:"フォーサイト",cost:1,power:0,pierce:false,type:"block",skill:"tech5",description:"ゲージ1消費 / ブロック状態 / 相手がチャージならゲージ+3 / ブロックとまとめて連続使用不可"},
   {name:"モーメンタム",cost:2,power:1,pierce:false,type:"attack",skill:"tech6",description:"ゲージ2消費 / 1ダメージ / 2連続使用ならさらに+1"},
-  {name:"ランページ",cost:0,power:0,pierce:false,type:"special",skill:"tech7",description:"前のターンにチャージしていた場合のみ / ゲージ+8 / HP-2"},
-  {name:"アンチガード",cost:0,power:0,pierce:false,type:"seal",skill:"tech8",description:"相手のブロック系技を封印 / 相手のゲージが7に達すると解除"},
+  {name:"ランページ",cost:0,power:0,pierce:false,type:"special",skill:"tech7",description:"ゲージ+8 / HP-2"},
+  {name:"アンチガード",cost:0,power:0,pierce:false,type:"seal",skill:"tech8",description:"相手のブロック系技とカウンターを封印 / 相手のゲージが7に達すると解除"},
   {name:"エンハンス",cost:2,power:0,pierce:false,type:"enhance",skill:"tech9",description:"ゲージ2消費 / 次の2ターン、攻撃力+1 / 再使用で残り2ターンに更新"},
-  {name:"サイフォン",cost:3,power:0,pierce:false,type:"siphon",skill:"tech10",description:"ゲージ3消費 / 相手のゲージを最大2奪い、奪った分だけ自分に加える"}
+  {name:"サイフォン",cost:3,power:0,pierce:false,type:"siphon",skill:"tech10",description:"ゲージ3消費 / 相手のゲージを最大2奪い、奪った分だけ自分に加える"},
+  {name:"ルイン",cost:1,power:0,pierce:false,type:"ruin",skill:"tech11",description:"ゲージ1消費 / 次のターンから3ターン、相手がチャージするたび1ダメージ"},
+  {name:"ミラー",cost:2,power:0,pierce:false,type:"mirror",skill:"tech12",description:"ゲージ2消費 / 相手と同じ行動をする（表示名と消費コストはミラーのまま）"}
 
 ];
 
@@ -3470,8 +3510,8 @@ async function enterSpectator(code,p1,p2){
   gameMode="spectator";
   onlineBattleStarted=false;
   onlineTurnNumber=0;
-  hp={1:10,2:10}; gauge={1:0,2:0};
-  enhanceTurns={1:0,2:0}; blockSeal={1:false,2:false};
+  hp={1:10,2:10}; gauge={1:8,2:8};
+  enhanceTurns={1:0,2:0}; blockSeal={1:false,2:false}; ruinTurns={1:0,2:0};
   selectedAction={1:null,2:null}; locked={1:true,2:true};
   player1Techs=[]; player2Techs=[];
   const battleScreen=document.getElementById("battleScreen");
@@ -3515,6 +3555,7 @@ function applySpectatorState(state){
     if(state.gauge?.[side]!=null)gauge[side]=Number(state.gauge[side]);
     if(state.enhanceTurns?.[side]!=null)enhanceTurns[side]=Number(state.enhanceTurns[side]);
     if(state.blockSeal?.[side]!=null)blockSeal[side]=!!state.blockSeal[side];
+    if(state.ruinTurns?.[side]!=null)ruinTurns[side]=Number(state.ruinTurns[side]);
   }
   if(state.lastAction)lastAction=state.lastAction;
   updateSpectatorBattleUI();
@@ -3560,8 +3601,10 @@ function receiveSpectatorBattleState(state,roomData){
     window._spectatorEffectStartTimer=setTimeout(()=>{
       if(session!==spectatorSession || !spectatorActive || onlineTurnNumber!==turn)return;
       clearOnlineTechniqueDescription();
-      playBattleSituationSE(a1,a2,Number(state.damageTo1||0),Number(state.damageTo2||0));
-      playBattleEffect(a1,a2,()=>{
+      const effectA1=state.resolvedActions?.[1] || a1;
+      const effectA2=state.resolvedActions?.[2] || a2;
+      playBattleSituationSE(effectA1,effectA2,Number(state.damageTo1||0),Number(state.damageTo2||0));
+      playBattleEffect(effectA1,effectA2,()=>{
         if(session!==spectatorSession || !spectatorActive || onlineTurnNumber!==turn)return;
         applySpectatorState(state);
         if(state.result)showBattleResult(state.result);
@@ -3869,9 +3912,9 @@ function maybeStartOnlineBattle(){
     if(title) title.textContent="READY! 同期後に対戦開始…";
     const battle = {
       phase:"starting", turn:1, startAt:onlineNow()+ONLINE_EVENT_LEAD_MS+PlayerIntro.DURATION_MS,
-      hp:{1:10,2:10}, gauge:{1:0,2:0},
+      hp:{1:10,2:10}, gauge:{1:8,2:8},
       lastAction:{1:null,2:null}, lastLastAction:{1:null,2:null},
-      momentumBonus:{1:false,2:false}, enhanceTurns:{1:0,2:0}, blockSeal:{1:false,2:false},
+      momentumBonus:{1:false,2:false}, enhanceTurns:{1:0,2:0}, blockSeal:{1:false,2:false}, ruinTurns:{1:0,2:0},
       resolvedTurn:0, result:""
     };
     window.onlineBattle.publishBattleState(battle).then(()=>{
@@ -4031,7 +4074,7 @@ function startOnlineBattleCountdownIfReady(){
     turn: onlineTurnNumber,
     startAt,
     hp:{1:hp[1],2:hp[2]}, gauge:{1:gauge[1],2:gauge[2]},
-    lastAction,lastLastAction,momentumBonus, enhanceTurns,blockSeal,
+    lastAction,lastLastAction,momentumBonus, enhanceTurns,blockSeal,ruinTurns,
     resolvedTurn:Number(window._lastOnlineResolvedTurn || 0),result:"",
     actions: {
       1: {id: selectedAction[1].id, data: selectedAction[1].data},
@@ -4083,6 +4126,7 @@ function receiveOnlineBattleState(state){
     hp={1:Number(state.hp?.[1] ?? hp[1]),2:Number(state.hp?.[2] ?? hp[2])};
     gauge={1:Number(state.gauge?.[1] ?? gauge[1]),2:Number(state.gauge?.[2] ?? gauge[2])};
     enhanceTurns={1:Number(state.enhanceTurns?.[1] ?? enhanceTurns[1]),2:Number(state.enhanceTurns?.[2] ?? enhanceTurns[2])};
+    ruinTurns={1:Number(state.ruinTurns?.[1] ?? ruinTurns[1]),2:Number(state.ruinTurns?.[2] ?? ruinTurns[2])};
     window._lastOnlineResolvedTurn=Number(state.resolvedTurn || state.turn);
     updateBattleUI();
     showBattleResult(state.result || (hp[1]<=0 && hp[2]<=0 ? "DRAW" : hp[1]<=0 ? "2P WIN" : hp[2]<=0 ? "1P WIN" : ""));
@@ -4149,20 +4193,23 @@ function receiveOnlineBattleState(state){
     window._onlineEffectStartTimeout=setTimeout(()=>{
       if(session!==onlineMatchSession || gameMode!=="online" || Number(onlineTurnNumber)!==Number(state.turn))return;
       clearOnlineTechniqueDescription();
+      const resolved1=state.resolvedActions?.[1] || a1.data;
+      const resolved2=state.resolvedActions?.[2] || a2.data;
       playBattleSituationSE(
-        a1.data,
-        a2.data,
+        resolved1,
+        resolved2,
         Number(state.damageTo1||0),
         Number(state.damageTo2||0)
       );
       playBattleEffect(
-        a1.data,
-        a2.data,
+        resolved1,
+        resolved2,
         ()=>{
           if(session!==onlineMatchSession || gameMode!=="online" || Number(onlineTurnNumber)!==Number(state.turn)) return;
           hp={1:Number(state.hp?.[1] ?? hp[1]),2:Number(state.hp?.[2] ?? hp[2])};
           gauge={1:Number(state.gauge?.[1] ?? gauge[1]),2:Number(state.gauge?.[2] ?? gauge[2])};
     enhanceTurns={1:Number(state.enhanceTurns?.[1] ?? enhanceTurns[1]),2:Number(state.enhanceTurns?.[2] ?? enhanceTurns[2])};
+          ruinTurns={1:Number(state.ruinTurns?.[1] ?? ruinTurns[1]),2:Number(state.ruinTurns?.[2] ?? ruinTurns[2])};
           lastAction=state.lastAction||lastAction;
           lastLastAction=state.lastLastAction||lastLastAction;
           momentumBonus=state.momentumBonus||momentumBonus;
@@ -4190,13 +4237,13 @@ function receiveOnlineBattleState(state){
             lastAction[1] = {id:a1.id,data:a1.data};
             lastAction[2] = {id:a2.id,data:a2.data};
            // モーメンタムは連続使用するたびに 1 → 2 → 1 → 2 と交互にする。
-if(a1.data.skill === "tech6"){
+if(resolved1.skill === "tech6"){
   momentumBonus[1] = !momentumBonus[1];
 }else{
   momentumBonus[1] = false;
 }
 
-if(a2.data.skill === "tech6"){
+if(resolved2.skill === "tech6"){
   momentumBonus[2] = !momentumBonus[2];
 }else{
   momentumBonus[2] = false;
@@ -4213,7 +4260,7 @@ if(a2.data.skill === "tech6"){
               lastAction,
               lastLastAction,
               momentumBonus, enhanceTurns,
-              blockSeal,
+              blockSeal, ruinTurns,
               result:""
             };
 
@@ -4233,8 +4280,9 @@ if(a2.data.skill === "tech6"){
     if(!onlineBattleStarted){
       onlineBattleStarted=true;
       hp={1:Number(state.hp?.[1] ?? 10),2:Number(state.hp?.[2] ?? 10)};
-      gauge={1:Number(state.gauge?.[1] ?? 0),2:Number(state.gauge?.[2] ?? 0)};
+      gauge={1:Number(state.gauge?.[1] ?? 8),2:Number(state.gauge?.[2] ?? 8)};
     enhanceTurns={1:Number(state.enhanceTurns?.[1] ?? enhanceTurns[1]),2:Number(state.enhanceTurns?.[2] ?? enhanceTurns[2])};
+      ruinTurns={1:Number(state.ruinTurns?.[1] ?? ruinTurns[1]),2:Number(state.ruinTurns?.[2] ?? ruinTurns[2])};
       lastAction=state.lastAction||{1:null,2:null};
       lastLastAction=state.lastLastAction||{1:null,2:null};
       momentumBonus=state.momentumBonus||{1:false,2:false};
@@ -4254,6 +4302,7 @@ if(a2.data.skill === "tech6"){
     hp={1:Number(state.hp?.[1] ?? hp[1]),2:Number(state.hp?.[2] ?? hp[2])};
     gauge={1:Number(state.gauge?.[1] ?? gauge[1]),2:Number(state.gauge?.[2] ?? gauge[2])};
     enhanceTurns={1:Number(state.enhanceTurns?.[1] ?? enhanceTurns[1]),2:Number(state.enhanceTurns?.[2] ?? enhanceTurns[2])};
+    ruinTurns={1:Number(state.ruinTurns?.[1] ?? ruinTurns[1]),2:Number(state.ruinTurns?.[2] ?? ruinTurns[2])};
     lastAction=state.lastAction||lastAction;
     lastLastAction=state.lastLastAction||lastLastAction;
     momentumBonus=state.momentumBonus||momentumBonus;
@@ -4279,6 +4328,7 @@ if(a2.data.skill === "tech6"){
       hp={1:Number(state.hp?.[1] ?? hp[1]),2:Number(state.hp?.[2] ?? hp[2])};
       gauge={1:Number(state.gauge?.[1] ?? gauge[1]),2:Number(state.gauge?.[2] ?? gauge[2])};
     enhanceTurns={1:Number(state.enhanceTurns?.[1] ?? enhanceTurns[1]),2:Number(state.enhanceTurns?.[2] ?? enhanceTurns[2])};
+      ruinTurns={1:Number(state.ruinTurns?.[1] ?? ruinTurns[1]),2:Number(state.ruinTurns?.[2] ?? ruinTurns[2])};
       lastAction=state.lastAction||lastAction;
       lastLastAction=state.lastLastAction||lastLastAction;
       momentumBonus=state.momentumBonus||momentumBonus;
@@ -4314,15 +4364,17 @@ if(a2.data.skill === "tech6"){
         apply();
       }else{
         window._lastOnlineEffectTurn=Number(state.resolvedTurn);
+        const effectA1=state.resolvedActions?.[1] || a1.data || a1;
+        const effectA2=state.resolvedActions?.[2] || a2.data || a2;
         playBattleSituationSE(
-          a1,
-          a2,
+          effectA1,
+          effectA2,
           Number(state.damageTo1 || 0),
           Number(state.damageTo2 || 0)
         );
         playBattleEffect(
-          a1,
-          a2,
+          effectA1,
+          effectA2,
           apply,
           Number(state.damageTo1 || 0),
           Number(state.damageTo2 || 0)
@@ -4336,8 +4388,9 @@ if(a2.data.skill === "tech6"){
 
 function setupBattleFromOnlineState(state){
   hp={1:Number(state.hp?.[1] ?? 10),2:Number(state.hp?.[2] ?? 10)};
-  gauge={1:Number(state.gauge?.[1] ?? 0),2:Number(state.gauge?.[2] ?? 0)};
+  gauge={1:Number(state.gauge?.[1] ?? 8),2:Number(state.gauge?.[2] ?? 8)};
   enhanceTurns={1:Number(state.enhanceTurns?.[1] ?? 0),2:Number(state.enhanceTurns?.[2] ?? 0)};
+  ruinTurns={1:Number(state.ruinTurns?.[1] ?? 0),2:Number(state.ruinTurns?.[2] ?? 0)};
   blockSeal={1:!!state.blockSeal?.[1],2:!!state.blockSeal?.[2]};
   lastAction=state.lastAction||{1:null,2:null};
   lastLastAction=state.lastLastAction||{1:null,2:null};
@@ -4481,8 +4534,8 @@ function setupBattle(){
   hp[1] = 10;
   hp[2] = 10;
 
-  gauge[1] = 0;
-  gauge[2] = 0;
+  gauge[1] = 8;
+  gauge[2] = 8;
 
   selectedAction[1] = null;
   selectedAction[2] = null;
@@ -4495,6 +4548,8 @@ function setupBattle(){
   momentumBonus[2] = false;
   blockSeal[1] = false;
   blockSeal[2] = false;
+  ruinTurns[1] = 0;
+  ruinTurns[2] = 0;
   enhanceTurns[1] = 0;
   enhanceTurns[2] = 0;
 
@@ -4503,8 +4558,8 @@ function setupBattle(){
 
   displayedHp[1] = 10;
   displayedHp[2] = 10;
-  displayedGauge[1] = 0;
-  displayedGauge[2] = 0;
+  displayedGauge[1] = 8;
+  displayedGauge[2] = 8;
 
   updateBattleUI();
 
@@ -4973,20 +5028,20 @@ function chooseAction(player,action){
   const data=getActionData(player,action);
   if(!data)return;
 
-  // 技8でブロック系（通常ブロック・技5）が封印中
-  if(blockSeal[player] && (action === "block" || data.skill === "tech5"))return;
+  // 技8でブロック系（通常ブロック・技5）とカウンターが封印中
+  if(blockSeal[player] && (action === "block" || data.skill === "tech5" || data.skill === "tech2"))return;
 
-  // ブロックの連続使用は禁止
+  // 通常ブロックとフォーサイトを同じブロック系として連続使用禁止。
   if(
-    action === "block" &&
+    data.type === "block" &&
     lastAction[player] &&
     lastAction[player].data.type === "block"
   ){
     return;
   }
 
-  // 技7：前のターンにチャージしていた場合のみ
-  if(data.skill === "tech7" && (!lastAction[player] || lastAction[player].data.type !== "charge"))return;
+  // カウンターの連続使用は禁止。
+  if(data.skill === "tech2" && lastAction[player]?.data?.skill === "tech2")return;
 
   // 技8：相手のゲージが7未満の場合のみ
   if(data.skill === "tech8"){
@@ -5187,36 +5242,48 @@ function resolveBattle(){
   gauge[1] = Math.max(0, gauge[1] - Number(a1.cost || 0));
   gauge[2] = Math.max(0, gauge[2] - Number(a2.cost || 0));
 
-  const attack1 = a1.type === "attack";
-  const attack2 = a2.type === "attack";
-  const reflect1 = a1.type === "reflect";
-  const reflect2 = a2.type === "reflect";
+  // ミラーは表示と消費だけ元の技を保ち、効果判定では相手の行動になる。
+  // ミラー同士は循環を避けるため効果なし。
+  const noEffect={name:"ミラー",cost:0,power:0,pierce:false,type:"none",skill:"mirror-none"};
+  const e1 = a1.skill === "tech12" ? (a2.skill === "tech12" ? noEffect : a2) : a1;
+  const e2 = a2.skill === "tech12" ? (a1.skill === "tech12" ? noEffect : a1) : a2;
+
+  const attack1 = e1.type === "attack";
+  const attack2 = e2.type === "attack";
+  let reflect1 = e1.type === "reflect" && !blockSeal[1];
+  let reflect2 = e2.type === "reflect" && !blockSeal[2];
 
   // 技8：アンチガードの封印判定は「技を選んだ時点の相手ゲージ」で決まる。
   // コスト消費後のゲージでは判定しない。
   // 重要：block1 / block2 を計算する“前”に封印状態を反映する。
-  if(a1.skill === "tech8" && gaugeBeforeCost[2] < 7) blockSeal[2] = true;
-  if(a2.skill === "tech8" && gaugeBeforeCost[1] < 7) blockSeal[1] = true;
+  if(e1.skill === "tech8" && gaugeBeforeCost[2] < 7) blockSeal[2] = true;
+  if(e2.skill === "tech8" && gaugeBeforeCost[1] < 7) blockSeal[1] = true;
+  reflect1 = e1.type === "reflect" && !blockSeal[1];
+  reflect2 = e2.type === "reflect" && !blockSeal[2];
 
-  const block1 = a1.type === "block" && !blockSeal[1];
-  const block2 = a2.type === "block" && !blockSeal[2];
+  const block1 = e1.type === "block" && !blockSeal[1];
+  const block2 = e2.type === "block" && !blockSeal[2];
 
   // チャージ
-  if(a1.type === "charge") gauge[1] = Math.min(10, gauge[1] + 2);
-  if(a2.type === "charge") gauge[2] = Math.min(10, gauge[2] + 2);
+  if(e1.type === "charge") gauge[1] = Math.min(10, gauge[1] + 2);
+  if(e2.type === "charge") gauge[2] = Math.min(10, gauge[2] + 2);
+
+  // 既に付与されていたルインだけがこのターンに発動する。
+  if(ruinTurns[1] > 0 && e1.type === "charge") damageTo1 += 1;
+  if(ruinTurns[2] > 0 && e2.type === "charge") damageTo2 += 1;
 
   // 技5：相手がチャージなら自分のゲージ+3
-  if(a1.skill === "tech5" && a2.type === "charge") gauge[1] = Math.min(10, gauge[1] + 3);
-  if(a2.skill === "tech5" && a1.type === "charge") gauge[2] = Math.min(10, gauge[2] + 3);
+  if(e1.skill === "tech5" && e2.type === "charge") gauge[1] = Math.min(10, gauge[1] + 3);
+  if(e2.skill === "tech5" && e1.type === "charge") gauge[2] = Math.min(10, gauge[2] + 3);
 
   // 技4：HP+1
-  if(a1.skill === "tech4") hp[1] = Math.min(10, hp[1] + 1);
-  if(a2.skill === "tech4") hp[2] = Math.min(10, hp[2] + 1);
+  if(e1.skill === "tech4") hp[1] = Math.min(10, hp[1] + 1);
+  if(e2.skill === "tech4") hp[2] = Math.min(10, hp[2] + 1);
 
   // 強化はこのターンの開始時点の残数で判定する。
   // モーメンタムを含む全攻撃技の実威力を先に求め、衝突時にも同じ値を使う。
-  const power1 = attack1 ? (a1.skill === "tech6" ? (momentumBonus[1] ? 2 : 1) : Number(a1.power || 0)) + (enhanceTurns[1] > 0 ? 1 : 0) : 0;
-  const power2 = attack2 ? (a2.skill === "tech6" ? (momentumBonus[2] ? 2 : 1) : Number(a2.power || 0)) + (enhanceTurns[2] > 0 ? 1 : 0) : 0;
+  const power1 = attack1 ? (e1.skill === "tech6" ? (momentumBonus[1] ? 2 : 1) : Number(e1.power || 0)) + (enhanceTurns[1] > 0 ? 1 : 0) : 0;
+  const power2 = attack2 ? (e2.skill === "tech6" ? (momentumBonus[2] ? 2 : 1) : Number(e2.power || 0)) + (enhanceTurns[2] > 0 ? 1 : 0) : 0;
 
   // カウンターは攻撃を無効化して固定1ダメージを返す。エンハンスの対象外。
   if(reflect1 && attack2) damageTo2 += 1;
@@ -5227,37 +5294,43 @@ function resolveBattle(){
     if(power1 > power2) damageTo2 += power1 - power2;
     else if(power2 > power1) damageTo1 += power2 - power1;
   }else{
-    if(attack1 && !reflect2 && (!block2 || a1.pierce)) damageTo2 += power1;
-    if(attack2 && !reflect1 && (!block1 || a2.pierce)) damageTo1 += power2;
+    if(attack1 && !reflect2 && (!block2 || e1.pierce)) damageTo2 += power1;
+    if(attack2 && !reflect1 && (!block1 || e2.pierce)) damageTo1 += power2;
   }
 
   // 技3：チャージ中の相手には追加2ダメージ。
-  if(a1.skill === "tech3" && a2.type === "charge" && !block2 && !reflect2) damageTo2 += 2;
-  if(a2.skill === "tech3" && a1.type === "charge" && !block1 && !reflect1) damageTo1 += 2;
+  if(e1.skill === "tech3" && e2.type === "charge" && !block2 && !reflect2) damageTo2 += 2;
+  if(e2.skill === "tech3" && e1.type === "charge" && !block1 && !reflect1) damageTo1 += 2;
 
-  // 技7：前ターンチャージ後のみ使用可能。ゲージ+8、HP-2
-  if(a1.skill === "tech7"){
+  // 技7：ゲージ+8、HP-2
+  if(e1.skill === "tech7"){
     gauge[1] = Math.min(10, gauge[1] + 8);
   }
-  if(a2.skill === "tech7"){
+  if(e2.skill === "tech7"){
     gauge[2] = Math.min(10, gauge[2] + 8);
   }
 
   // サイフォン：双方の消費・ゲージ獲得後に、同じ時点の残量から奪う量を決める。
   // 同時使用でも処理順で結果が変わらず、相手が0ならゲージを生み出さない。
   const siphonGauge = {1:gauge[1],2:gauge[2]};
-  const stolenBy1 = a1.skill === "tech10" ? Math.min(2,siphonGauge[2]) : 0;
-  const stolenBy2 = a2.skill === "tech10" ? Math.min(2,siphonGauge[1]) : 0;
+  const stolenBy1 = e1.skill === "tech10" ? Math.min(2,siphonGauge[2]) : 0;
+  const stolenBy2 = e2.skill === "tech10" ? Math.min(2,siphonGauge[1]) : 0;
   gauge[1] = Math.min(10,Math.max(0,siphonGauge[1] + stolenBy1 - stolenBy2));
   gauge[2] = Math.min(10,Math.max(0,siphonGauge[2] + stolenBy2 - stolenBy1));
 
   // 既存の強化は毎ターン消費する。新規使用・再使用では次の2ターンへ更新する。
-  enhanceTurns[1] = a1.skill === "tech9" ? 2 : Math.max(0,enhanceTurns[1] - 1);
-  enhanceTurns[2] = a2.skill === "tech9" ? 2 : Math.max(0,enhanceTurns[2] - 1);
+  enhanceTurns[1] = e1.skill === "tech9" ? 2 : Math.max(0,enhanceTurns[1] - 1);
+  enhanceTurns[2] = e2.skill === "tech9" ? 2 : Math.max(0,enhanceTurns[2] - 1);
+
+  // ルインは既存分を1ターン消費した後、新規付与を3ターンに設定する。
+  ruinTurns[1] = Math.max(0,ruinTurns[1] - 1);
+  ruinTurns[2] = Math.max(0,ruinTurns[2] - 1);
+  if(e1.skill === "tech11") ruinTurns[2] = 3;
+  if(e2.skill === "tech11") ruinTurns[1] = 3;
 
   // ランページの自傷ダメージも表示対象にする。
-  if(a1.skill === "tech7") damageTo1 += 2;
-  if(a2.skill === "tech7") damageTo2 += 2;
+  if(e1.skill === "tech7") damageTo1 += 2;
+  if(e2.skill === "tech7") damageTo2 += 2;
 
   // アンチガードの封印解除は「封印されている本人」のゲージだけを見る。
   // 1Pが2Pを封印 → 2P自身のゲージが7以上で解除。
@@ -5299,7 +5372,8 @@ function resolveBattle(){
       lastAction,
       lastLastAction,
       momentumBonus, enhanceTurns,
-      blockSeal,
+      blockSeal, ruinTurns,
+      resolvedActions:{1:e1,2:e2},
       result:effectHp[1]<=0 && effectHp[2]<=0 ? "DRAW" :
              effectHp[1]<=0 ? "2P WIN" : effectHp[2]<=0 ? "1P WIN" : ""
     };
@@ -5313,20 +5387,20 @@ function resolveBattle(){
   // オフラインでは従来どおり技公開の1秒後に演出開始。
   setTimeout(()=>{
     clearOnlineTechniqueDescription();
-    playBattleSituationSE(a1,a2,damageTo1,damageTo2);
-    playBattleEffect(a1,a2,()=>{
+    playBattleSituationSE(e1,e2,damageTo1,damageTo2);
+    playBattleEffect(e1,e2,()=>{
     hp[1] = Math.max(0, hp[1] - damageTo1);
     hp[2] = Math.max(0, hp[2] - damageTo2);
 
     updateBattleUI();
 // モーメンタムは連続使用するたびに 1 → 2 → 1 → 2 と交互にする。
-if(a1.skill === "tech6"){
+if(e1.skill === "tech6"){
   momentumBonus[1] = !momentumBonus[1];
 }else{
   momentumBonus[1] = false;
 }
 
-if(a2.skill === "tech6"){
+if(e2.skill === "tech6"){
   momentumBonus[2] = !momentumBonus[2];
 }else{
   momentumBonus[2] = false;
@@ -5352,7 +5426,7 @@ if(a2.skill === "tech6"){
         resolvedTurn: finishedTurn,
         actions:{1:{id:selectedAction[1].id,data:a1},2:{id:selectedAction[2].id,data:a2}},
         hp:{1:hp[1],2:hp[2]}, gauge:{1:gauge[1],2:gauge[2]},
-        lastAction, lastLastAction, momentumBonus, enhanceTurns, blockSeal, result:battleResult
+        lastAction, lastLastAction, momentumBonus, enhanceTurns, blockSeal, ruinTurns, result:battleResult
       };
       window.onlineBattle.publishBattleState(state).catch(console.error);
       window.onlineBattle.clearActions(finishedTurn).catch(console.error);
@@ -5455,6 +5529,12 @@ function playBattleSituationSE(a1,a2,damageTo1=0,damageTo2=0){
   const rampage2=a2?.skill==="tech7";
   const antiGuard1=a1?.skill==="tech8";
   const antiGuard2=a2?.skill==="tech8";
+  const enhance1=a1?.skill==="tech9";
+  const enhance2=a2?.skill==="tech9";
+  const siphon1=a1?.skill==="tech10";
+  const siphon2=a2?.skill==="tech10";
+  const ruin1=a1?.skill==="tech11";
+  const ruin2=a2?.skill==="tech11";
 
   // 攻撃技同士は共通の「打撃3」。
   if(attack1 && attack2){
@@ -5493,6 +5573,14 @@ function playBattleSituationSE(a1,a2,damageTo1=0,damageTo2=0){
   // ランページ発動時。
   if(rampage1) playBattleSE("seRampage");
   if(rampage2) playBattleSE("seRampage");
+
+  // 支援技の専用効果音。
+  if(enhance1) playBattleSE("seEnhance");
+  if(enhance2) playBattleSE("seEnhance");
+  if(siphon1) playBattleSE("seSiphon");
+  if(siphon2) playBattleSE("seSiphon");
+  if(ruin1) playBattleSE("seRuin");
+  if(ruin2) playBattleSE("seRuin");
 
   // パニッシュ命中。チャージ中なら必殺技ヒット、それ以外は打撃6。
   if(punish1 && Number(damageTo2)>0){
@@ -5541,7 +5629,10 @@ function playBattleEffect(a1,a2,callback,damageTo1=0,damageTo2=0,isSpectator=fal
   if(a2.skill === "tech9") createEnhanceAt(layer,"p2");
   if(a1.skill === "tech10") createSiphonAt(layer,"p1");
   if(a2.skill === "tech10") createSiphonAt(layer,"p2");
-  const hasSupportEffect = [a1,a2].some(action=>action.skill === "tech9" || action.skill === "tech10");
+  // ルインは使用者ではなく、付与される相手側へ暗赤色の呪印を出す。
+  if(a1.skill === "tech11") createRuinAt(layer,"p2");
+  if(a2.skill === "tech11") createRuinAt(layer,"p1");
+  const hasSupportEffect = [a1,a2].some(action=>["tech9","tech10","tech11"].includes(action.skill));
 
   // ===== 複数行動の同時演出 =====
   // 攻撃＋ヒール、攻撃＋アンチガードなどで、専用演出のreturnが
@@ -5872,6 +5963,19 @@ function createEnhanceAt(layer,side){
   ring.style.left=aura.style.left;
   ring.style.top=aura.style.top;
   layer.appendChild(ring);
+}
+
+function createRuinAt(layer,side){
+  const curse=document.createElement("div");
+  curse.className="ruinCurseEffect";
+  setBattleEffectPosition(curse,layer,side);
+  layer.appendChild(curse);
+
+  const mark=document.createElement("div");
+  mark.className="ruinCurseMark";
+  mark.textContent="✕";
+  setBattleEffectPosition(mark,layer,side);
+  layer.appendChild(mark);
 }
 
 function createSiphonAt(layer,recipient){
@@ -6237,15 +6341,71 @@ function updateBlockSealIndicators(){
     indicator.classList.add("enhanceIndicator","blockSealIndicator");
     indicator.setAttribute("role","status");
     indicator.hidden=!blockSeal[player];
-    indicator.textContent="防御技封印";
-    indicator.title="アンチガード：防御技封印（ゲージが7以上になると解除）";
+    indicator.textContent="防御技・カウンター封印";
+    indicator.title="アンチガード：ブロック系技・カウンター封印（ゲージが7以上になると解除）";
     indicator.setAttribute("aria-label",indicator.title);
+  });
+}
+
+function updateRuinIndicators(){
+  [1,2].forEach(player=>{
+    const name=document.querySelector(`#player${player}Area .playerName`);
+    let indicator=document.getElementById(`p${player}Ruin`);
+    if(name && !indicator){
+      indicator=document.createElement("span");
+      indicator.id=`p${player}Ruin`;
+      name.appendChild(indicator);
+    }
+    if(!indicator)return;
+    const turns=Math.max(0,Number(ruinTurns[player]) || 0);
+    indicator.classList.add("enhanceIndicator","ruinIndicator");
+    indicator.setAttribute("role","status");
+    indicator.hidden=turns===0;
+    indicator.textContent=`ルイン ${turns}T`;
+    indicator.title=`ルイン：チャージするたび1ダメージ（残り${turns}ターン）`;
+    indicator.setAttribute("aria-label",indicator.title);
+  });
+}
+
+function updateActionChainIndicators(){
+  [1,2].forEach(player=>{
+    const name=document.querySelector(`#player${player}Area .playerName`);
+    if(!name)return;
+    const ensureIndicator=(suffix,classes)=>{
+      let indicator=document.getElementById(`p${player}${suffix}`);
+      if(!indicator){
+        indicator=document.createElement("span");
+        indicator.id=`p${player}${suffix}`;
+        name.appendChild(indicator);
+      }
+      indicator.className=classes;
+      indicator.setAttribute("role","status");
+      return indicator;
+    };
+
+    const previous=lastAction[player]?.data;
+    const blockLock=ensureIndicator("BlockRepeat","enhanceIndicator blockSealIndicator");
+    blockLock.hidden=previous?.type!=="block";
+    blockLock.textContent="ブロック系連続×";
+    blockLock.title="前ターンにブロック系技を使用したため、このターンは連続使用できません";
+
+    const counterLock=ensureIndicator("CounterRepeat","enhanceIndicator blockSealIndicator");
+    counterLock.hidden=previous?.skill!=="tech2";
+    counterLock.textContent="カウンター連続×";
+    counterLock.title="前ターンにカウンターを使用したため、このターンは連続使用できません";
+
+    const momentumReady=ensureIndicator("MomentumReady","enhanceIndicator momentumReadyIndicator");
+    momentumReady.hidden=!momentumBonus[player];
+    momentumReady.textContent="モーメンタム火力↑↑";
+    momentumReady.title="次に使用するモーメンタムは2ダメージになります";
   });
 }
 
 function updateBattleUI(){
   updateBlockSealIndicators();
+  updateRuinIndicators();
   updateEnhanceIndicators();
+  updateActionChainIndicators();
   [1,2].forEach(player=>{
     const hpText=document.getElementById("hp"+player+"Text");
     const hpFill=document.getElementById("hp"+player+"Fill");
@@ -6289,6 +6449,7 @@ function updateBattleUI(){
 ========================= */
 
 function updateDisabledActions(){
+  updateActionChainIndicators();
   [1,2].forEach(player=>{
     const techs = player===1 ? player1Techs : player2Techs;
     techs.forEach((tech,index)=>{
@@ -6296,9 +6457,10 @@ function updateDisabledActions(){
       if(!el || !tech)return;
       const opponent=player===1?2:1;
       let disabled=tech.cost>gauge[player];
-      if(tech.skill==="tech7" && (!lastAction[player] || lastAction[player].data.type!=="charge")) disabled=true;
       if(tech.skill==="tech8" && gauge[opponent]>=7) disabled=true;
-      if(blockSeal[player] && tech.skill==="tech5") disabled=true;
+      if(blockSeal[player] && (tech.skill==="tech5" || tech.skill==="tech2")) disabled=true;
+      if(tech.skill==="tech5" && lastAction[player]?.data?.type==="block") disabled=true;
+      if(tech.skill==="tech2" && lastAction[player]?.data?.skill==="tech2") disabled=true;
       el.classList.toggle("disabled",disabled);
     });
 
@@ -6443,6 +6605,7 @@ function returnBattleHomeCore(){
   selectedAction={1:null,2:null}; locked={1:false,2:false};
   enhanceTurns={1:0,2:0};
   blockSeal={1:false,2:false};
+  ruinTurns={1:0,2:0};
   selectedTechniques={1:[0,1,2],2:[0,1,2]};
   stopCountdownRing(); stopTurnCountdownSE(); stopBattleBGM();
   document.getElementById("battleHomeButton").hidden=true;
@@ -6479,6 +6642,9 @@ updateTechniqueDisplay();
   <audio id="seDecision10" preload="auto" src="sounds/decision10.mp3"></audio>
   <audio id="seDecision38" preload="auto" src="sounds/decision-38.mp3"></audio>
   <audio id="seDataAnalysis" preload="auto" src="sounds/data_analysis.mp3"></audio>
+  <audio id="seEnhance" preload="auto" src="sounds/enhance.mp3"></audio>
+  <audio id="seSiphon" preload="auto" src="sounds/siphon.mp3"></audio>
+  <audio id="seRuin" preload="auto" src="sounds/ruin.mp3"></audio>
   <audio id="turnCountdownSE" preload="auto" loop src="sounds/pendulum.mp3"></audio>
   <audio id="uiDecisionSE" preload="auto" src="sounds/decision-38.mp3"></audio>
   <audio id="uiMenuOpenSE" preload="auto" src="sounds/menu-open-4.mp3"></audio>
