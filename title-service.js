@@ -10,7 +10,7 @@ export function createTitleService(db,auth){
  }
  async function claimTurn(who,game,turn,side){
   if(uid()!==who)return;
-  const action=await read('freeGames/'+game+'/moves/'+turn+'/'+side);if(!Number.isInteger(action)||action<3||action>12)return;
+  const action=await read('freeGames/'+game+'/moves/'+turn+'/'+side);if(!Number.isInteger(action)||action<3||action>14)return;
   const skill=action-2,proof='titleReceipts/'+who+'/'+game+'/'+turn,total='titleProgress/'+who+'/uses/'+skill;
   for(let attempt=0;attempt<4;attempt++){
    if(uid()!==who)return;
