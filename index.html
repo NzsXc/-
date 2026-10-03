@@ -252,22 +252,33 @@ body{
 .rankingRate::before{content:"RATE";display:block;margin-bottom:5px;color:#7aa8bc;font:600 9px/1 Inter,sans-serif;letter-spacing:.25em;}
 .rankingStatus{text-align:center;color:#b6ceda;padding:24px 10px;}
 .rankingClose{position:static;padding:9px 18px;}
-.playerCardPanel{position:relative;width:min(760px,92vw);padding:30px;border:1px solid rgba(135,223,240,.47);border-radius:0;background:linear-gradient(135deg,rgba(19,45,72,.98),rgba(18,22,47,.98));box-shadow:0 22px 70px rgba(0,0,0,.67);clip-path:polygon(0 18px,18px 0,100% 0,100% calc(100% - 18px),calc(100% - 18px) 100%,0 100%);}
-.playerCardPanel::before{content:"PLAYER DATA";display:block;margin-bottom:9px;color:#8eb6c9;font-size:10px;letter-spacing:.32em;}
-.playerCardPanel h1{margin:0 0 18px;padding-left:18px;border-left:3px solid #6ad6f2;text-align:left;overflow-wrap:anywhere;font-size:clamp(26px,4vw,42px);letter-spacing:.07em;}
-.playerCardRate{margin:0 0 18px;padding:14px 18px;border-left:3px solid #6ad6f2;background:linear-gradient(90deg,rgba(99,216,242,.07),transparent);text-align:left;font:850 clamp(40px,6vw,66px)/1 Inter,"Arial Narrow","Yu Gothic UI",sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.025em;color:#f4fdff;text-shadow:0 0 28px rgba(98,216,255,.33);}
-.playerCardTitles{display:flex;flex-wrap:wrap;justify-content:flex-start;gap:8px;min-height:34px;margin-bottom:20px;}
-.playerCardTitles>*{padding:6px 10px;border:1px solid rgba(121,220,237,.4);background:linear-gradient(90deg,rgba(85,203,229,.1),rgba(155,114,255,.08));color:#c7edf5;font-size:11px;font-weight:700;letter-spacing:.06em;}
-.playerCardStats{display:grid;grid-template-columns:1fr auto;gap:0;border:1px solid rgba(118,153,189,.3);overflow:hidden;background:rgba(9,22,43,.53);}
-.playerCardStats dt,.playerCardStats dd{margin:0;padding:13px 16px;border-bottom:1px solid rgba(255,255,255,.08);}
-.playerCardStats dt{color:#9db9ca;font-size:12px;letter-spacing:.08em}.playerCardStats dd{text-align:right;font:800 28px/1 Inter,"Arial Narrow","Yu Gothic UI",sans-serif;font-variant-numeric:tabular-nums;}
-.playerCardStats dt:nth-of-type(1)+dd{color:#ffe28c}.playerCardStats dt:nth-of-type(2)+dd{color:#8eeaff}.playerCardStats dt:nth-of-type(3)+dd{color:#c6adff}
-.playerCardStats dt:last-of-type,.playerCardStats dd:last-of-type{border-bottom:0;}
-.playerCardNote{margin:14px 0;color:#89a6b6;font-size:12px;text-align:center;}
+.playerCardPanel{position:relative;width:min(900px,94vw);padding:34px;border:1px solid rgba(135,223,240,.47);border-radius:0;background:linear-gradient(135deg,rgba(19,45,72,.99),rgba(18,22,47,.99));box-shadow:0 24px 80px rgba(0,0,0,.7);clip-path:polygon(0 18px,18px 0,100% 0,100% calc(100% - 18px),calc(100% - 18px) 100%,0 100%);overflow:hidden;transform-origin:center;}
+#playerCardScreen.active .playerCardPanel{animation:playerCardOpen .5s cubic-bezier(.2,.82,.24,1) both;}
+.playerCardCircuit{position:absolute;z-index:0;width:290px;height:96px;pointer-events:none;opacity:.46;overflow:visible}.playerCardCircuit.top{top:0;right:0}.playerCardCircuit.bottom{bottom:0;left:0;transform:rotate(180deg)}
+.playerCardCircuit path{fill:none;stroke:url(#playerCardCircuitGlow);stroke-width:1.2;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 4px #63e7ff)}.playerCardCircuit circle{fill:#c9fbff;filter:drop-shadow(0 0 5px #73eaff)}
+.playerCardCircuit path.pulse{stroke:#fff;stroke-width:2;stroke-dasharray:16 420;stroke-dashoffset:436;opacity:0;filter:drop-shadow(0 0 3px #fff) drop-shadow(0 0 7px #75eaff);animation:playerCardCurrent 2s linear infinite}.playerCardCircuit path.p2{animation-delay:.32s}.playerCardCircuit path.p3{animation-delay:.67s}
+.playerCardContent{position:relative;z-index:1;text-shadow:0 1px 2px rgba(0,5,15,.58)}
+.playerCardEyebrow{margin-bottom:13px;color:#8eb6c9;font-size:10px;letter-spacing:.32em}
+.playerCardProfile{display:grid;grid-template-columns:minmax(230px,.72fr) minmax(420px,1.28fr);align-items:center;gap:25px;padding:20px 22px;border-left:3px solid #6ad6f2;background:linear-gradient(90deg,rgba(99,216,242,.05),transparent 72%)}
+.playerCardIdentity{min-width:0}.playerCardNameLabel,.playerCardRateLabel{display:block;margin-bottom:8px;color:#789eb1;font-size:9px;font-weight:700;letter-spacing:.25em}
+.playerCardPanel h1{margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left;font-size:clamp(26px,4.2vw,46px);font-weight:850;letter-spacing:.06em;}
+.playerCardRateLabel{margin-top:18px}.playerCardRate{font:850 clamp(34px,5vw,54px)/.9 Inter,"Arial Narrow","Yu Gothic UI",sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.04em;color:#f5fdff;text-shadow:0 0 28px rgba(98,216,255,.33);}
+.playerCardTitles{min-width:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;padding-left:20px;border-left:1px solid rgba(106,214,242,.27);}
+.playerCardTitles>*{position:relative;min-height:42px;display:flex;align-items:center;justify-content:center;padding:7px 8px;border:1px solid rgba(121,220,237,.4);background:linear-gradient(90deg,rgba(85,203,229,.1),rgba(155,114,255,.08));color:#d3f5fb;font-size:10px;font-weight:750;letter-spacing:.035em;text-align:center;overflow:hidden;}
+.playerCardRecord{margin-top:20px;padding:12px;border:1px solid rgba(118,153,189,.24);background:rgba(9,22,43,.44)}
+.playerCardRecordTitle{margin:0 0 9px;color:#769eb1;font-size:9px;letter-spacing:.2em}.playerCardStats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
+.playerCardStat{position:relative;min-height:67px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 13px;border:1px solid rgba(118,153,189,.3);background:linear-gradient(145deg,#10243c,#0a172b);overflow:hidden}.playerCardStat::after{content:"";position:absolute;right:-15px;bottom:-30px;width:80px;height:80px;border:1px solid currentColor;opacity:.08;transform:rotate(45deg)}
+.playerCardStatLabel{color:#fff;font-size:10px;font-weight:700;letter-spacing:.06em;text-shadow:0 1px 2px rgba(0,4,12,.72)}.playerCardStatValue{font:820 clamp(20px,2.7vw,28px)/1 Inter,"Arial Narrow","Yu Gothic UI",sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.playerCardStat.total .playerCardStatValue{color:#ffe28c}.playerCardStat.online .playerCardStatValue{color:#8eeaff}.playerCardStat.friend .playerCardStatValue{color:#c6adff}.playerCardStat.games .playerCardStatValue{color:#fff;text-shadow:0 0 12px rgba(223,248,255,.2)}
+.playerCardFooter{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:18px}.playerCardNote{margin:0;color:#7896a7;font-size:11px}.playerCardBack{min-width:140px;margin:0;padding:10px 18px}
+@keyframes playerCardOpen{0%{opacity:0;transform:scale(.12)}55%{opacity:1}100%{opacity:1;transform:scale(1)}}
+@keyframes playerCardCurrent{0%,10%{stroke-dashoffset:436;opacity:0}18%{opacity:1}76%{opacity:1}88%,100%{stroke-dashoffset:0;opacity:0}}
 @keyframes rankingEdgeFlow{0%{background-position:0 0,130% 0}100%{background-position:0 0,-130% 0}}
 @keyframes rankingGoldSheen{0%{background-position:0 0}100%{background-position:200% 0}}
-@media(prefers-reduced-motion:reduce){.rankingRow,.rankingPlace::after{animation:none}.rankingRow{background-position:0 0,50% 0}.rankingPlace::after{background-position:50% 0}}
+@media(prefers-reduced-motion:reduce){.rankingRow,.rankingPlace::after,.playerCardCircuit path.pulse{animation:none}.rankingRow{background-position:0 0,50% 0}.rankingPlace::after{background-position:50% 0}.playerCardCircuit path.pulse{opacity:.45;stroke-dashoffset:210}#playerCardScreen.active .playerCardPanel{animation-duration:.5s}}
+@media(max-width:760px){.playerCardPanel{padding:25px 15px}.playerCardProfile{grid-template-columns:1fr;gap:18px;padding:16px}.playerCardTitles{padding:14px 0 0;border-left:0;border-top:1px solid rgba(106,214,242,.27)}.playerCardStats{gap:7px}.playerCardFooter{align-items:flex-end}.playerCardNote{max-width:58%}}
 @media(max-width:600px){.rankingPanel{padding:24px 14px}.rankingRow{grid-template-columns:52px minmax(0,1fr) 88px}.rankingRow::after{left:52px;right:88px}.rankingIdentity{padding:0 10px 0 24px}.rankingIdentity::before{left:8px}.rankingRate{padding-right:10px;font-size:18px}.rankingName{font-size:15px}.rankingHeader{align-items:center}.rankingClose{padding:8px 12px}}
+@media(max-width:520px){.playerCardTitles{grid-template-columns:1fr}.playerCardTitles>*{min-height:34px}.playerCardStat{flex-direction:column;align-items:flex-start;min-height:72px}.playerCardStatLabel{font-size:9px}}
 
 /* =========================
    TIP画面
@@ -2090,17 +2101,22 @@ button{min-height:44px;}
 
 <div id="playerCardScreen" class="screen">
   <div class="playerCardPanel">
-    <h1 id="playerCardName">プレイヤー</h1>
-    <div id="playerCardRate" class="playerCardRate">RATE 1000</div>
-    <div id="playerCardTitles" class="playerCardTitles" aria-label="装備中の称号"></div>
-    <dl class="playerCardStats">
-      <dt>総勝利数</dt><dd id="playerCardTotalWins">—</dd>
-      <dt>オンライン対戦勝利数</dt><dd id="playerCardRankedWins">—</dd>
-      <dt>友達対戦勝利数</dt><dd id="playerCardFriendWins">—</dd>
-      <dt>総対戦数</dt><dd id="playerCardGames">—</dd>
-    </dl>
-    <p id="playerCardStatus" class="playerCardNote">公開されている対戦記録から集計します。</p>
-    <button class="onlineMainButton" onclick="showScreen('rankingScreen')">ランキングへ戻る</button>
+    <svg class="playerCardCircuit top" viewBox="0 0 290 96" aria-hidden="true"><defs><linearGradient id="playerCardCircuitGlow" x1="0" x2="1"><stop stop-color="#278fd4"/><stop offset=".55" stop-color="#75eaff"/><stop offset="1" stop-color="#9b72ff"/></linearGradient></defs><path d="M290 13h-65l-10 10h-31l-9 9h-29l-9 9H92"/><circle cx="92" cy="41" r="2.4"/><path d="M290 29h-51l-10 10v18h-34l-8 8h-24"/><circle cx="163" cy="65" r="2.4"/><path d="M290 47h-43l-10 10v23h-42"/><circle cx="195" cy="80" r="2.4"/><path class="pulse" d="M290 13h-65l-10 10h-31l-9 9h-29l-9 9H92"/><path class="pulse p2" d="M290 29h-51l-10 10v18h-34l-8 8h-24"/><path class="pulse p3" d="M290 47h-43l-10 10v23h-42"/></svg>
+    <svg class="playerCardCircuit bottom" viewBox="0 0 290 96" aria-hidden="true"><path d="M290 13h-65l-10 10h-31l-9 9h-29l-9 9H92"/><circle cx="92" cy="41" r="2.4"/><path d="M290 29h-51l-10 10v18h-34l-8 8h-24"/><circle cx="163" cy="65" r="2.4"/><path d="M290 47h-43l-10 10v23h-42"/><circle cx="195" cy="80" r="2.4"/><path class="pulse" d="M290 13h-65l-10 10h-31l-9 9h-29l-9 9H92"/><path class="pulse p2" d="M290 29h-51l-10 10v18h-34l-8 8h-24"/><path class="pulse p3" d="M290 47h-43l-10 10v23h-42"/></svg>
+    <div class="playerCardContent">
+      <div class="playerCardEyebrow">PLAYER DATA / RATE ARCHIVE</div>
+      <div class="playerCardProfile">
+        <div class="playerCardIdentity"><span class="playerCardNameLabel">PLAYER NAME</span><h1 id="playerCardName">プレイヤー</h1><span class="playerCardRateLabel">RATE</span><div id="playerCardRate" class="playerCardRate">1000</div></div>
+        <div id="playerCardTitles" class="playerCardTitles" aria-label="装備中の称号"></div>
+      </div>
+      <section class="playerCardRecord"><h2 class="playerCardRecordTitle">BATTLE RECORD / 対戦記録</h2><div class="playerCardStats">
+        <div class="playerCardStat total"><span class="playerCardStatLabel">総勝利数</span><strong id="playerCardTotalWins" class="playerCardStatValue">—</strong></div>
+        <div class="playerCardStat online"><span class="playerCardStatLabel">オンライン対戦勝利数</span><strong id="playerCardRankedWins" class="playerCardStatValue">—</strong></div>
+        <div class="playerCardStat friend"><span class="playerCardStatLabel">友達対戦勝利数</span><strong id="playerCardFriendWins" class="playerCardStatValue">—</strong></div>
+        <div class="playerCardStat games"><span class="playerCardStatLabel">総対戦数</span><strong id="playerCardGames" class="playerCardStatValue">—</strong></div>
+      </div></section>
+      <div class="playerCardFooter"><p id="playerCardStatus" class="playerCardNote">公開されている対戦記録から集計します。</p><button class="onlineMainButton playerCardBack" onclick="showScreen('rankingScreen')">ランキングへ戻る</button></div>
+    </div>
   </div>
 </div>
 
@@ -2835,7 +2851,7 @@ button{min-height:44px;}
     const games=document.getElementById("playerCardGames");
     const status=document.getElementById("playerCardStatus");
     name.textContent=player.name;
-    rate.textContent=`RATE ${Math.max(1000,Number(player.rating)||1000)}`;
+    rate.textContent=String(Math.max(1000,Number(player.rating)||1000));
     const rankedCount=player.onlineWins===null?0:Math.max(0,Number(player.onlineWins)||0);
     const friendCount=player.friendWins===null?0:Math.max(0,Number(player.friendWins)||0);
     totalWins.textContent=String(rankedCount+friendCount);
