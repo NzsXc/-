@@ -158,7 +158,7 @@ function rankedApply(m,visualCommit=false){
  selectedTechniques={1:m.loadouts[1].slice(),2:m.loadouts[2].slice()};
  player1Techs=m.loadouts[1].map(i=>techniquePool[i]);player2Techs=m.loadouts[2].map(i=>techniquePool[i]);
  for(const p of [1,2]){
-  hp[p]=m.state.hp[p];gauge[p]=m.state.gauge[p];blockSeal[p]=m.state.seal[p];enhanceTurns[p]=m.state.enhance[p];momentumBonus[p]=m.state.momentum[p];
+  hp[p]=m.state.hp[p];gauge[p]=m.state.gauge[p];blockSeal[p]=m.state.seal[p];enhanceTurns[p]=m.state.enhance[p];momentumBonus[p]=m.state.momentum[p];ruinTurns[p]=m.state.ruin?.[p]||0;
   lastAction[p]=m.state.last[p]?{data:{type:m.state.last[p]}}:null;
  }
  if(entering||wasPhase==='select'){showScreen('battleScreen');setupActionNames();}
@@ -220,4 +220,3 @@ async function rankedLeave(){
  }
  rankedStop();returnBattleHomeCore();
 }
-
