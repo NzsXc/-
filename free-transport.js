@@ -1,5 +1,5 @@
 import {ref,get,set,update,push,serverTimestamp,onValue,runTransaction} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js';
-import {calculate,stateFields} from './free-calculator.js';
+import {calculate,stateFields} from './free-calculator.js?v=tech12-1';
 export function createFreeTransport(db,auth){
  let offset=0;onValue(ref(db,'.info/serverTimeOffset'),s=>{offset=s.val()||0;});
  const now=()=>Date.now()+offset;
@@ -63,7 +63,7 @@ export function createFreeTransport(db,auth){
   }));
   for(const [p,data] of playerData)players[p]=data;
   const loadouts={};if(g.ready[1]&&g.ready[2])for(const p of [1,2])loadouts[p]=await read(path+'/loadouts/'+p);
-  const state=s?{turn:s.turn,...Object.fromEntries(['hp','gauge','seal','enhance','momentum','last'].map(k=>[k,[null,s[k+'1'],s[k+'2']]]))}:null;
+  const state=s?{turn:s.turn,...Object.fromEntries(['hp','gauge','seal','enhance','momentum','ruin','last'].map(k=>[k,[null,s[k+'1'],s[k+'2']]]))}:null;
   const closed=!!g.settled,opensAt=s?turnOpensAt(s):0;
   if(s)window.titleService.recordMatch({id,side:me,resolvedThrough:s.turn-1}).catch(console.warn);
   if(closed)window.titleService.claimRatings().catch(console.warn);
