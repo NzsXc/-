@@ -1,5 +1,9 @@
 (()=>{
- const skills=[['ブリーチ','blue'],['カウンター','cyan'],['パニッシュ','orange'],['ヒール','lime'],['フォーサイト','cyan'],['モーメンタム','orange'],['ランページ','red'],['アンチガード','purple'],['エンハンス','red'],['サイフォン','navy']];
+ const skills=[
+  ['ブリーチ','blue'],['カウンター','cyan'],['パニッシュ','orange'],['ヒール','lime'],
+  ['フォーサイト','cyan'],['モーメンタム','orange'],['ランページ','red'],['アンチガード','purple'],
+  ['エンハンス','red'],['サイフォン','navy'],['ルイン','purple'],['ミラー','cyan']
+ ];
  const items=skills.flatMap(([name,color],i)=>[1,30].map(n=>({id:'tech'+(i+1)+'_'+n,name:name+(n===1?'使い':'マスター'),color,kind:'tech',skill:i+1,threshold:n,description:'ランダム・ルーム対戦で'+name+'を'+n+'回使う'})));
  items.push({id:'strategist',name:'Strategist',color:'bronze',kind:'rating',threshold:1050,description:'レート1050に到達'},{id:'astute',name:'Astute',color:'silver',kind:'rating',threshold:1100,description:'レート1100に到達'});
  for(const [id,name,color] of [['s1_champion','Season 1｜CHAMPION','rainbow'],['s1_second','Season 1｜2ND PLACE','rainbow'],['s1_third','Season 1｜3RD PLACE','rainbow'],['s1_challenger','Season1 | CHALLENGER','gold']])items.push({id,name,color,kind:'tournament',description:id==='s1_challenger'?'Season 1 大会参加':'Season 1 大会入賞'});
