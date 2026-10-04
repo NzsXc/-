@@ -2017,7 +2017,7 @@ button{min-height:44px;}
 <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
 <link rel="stylesheet" href="player-intro.css?v=2">
 <link rel="stylesheet" href="titles.css?v=2">
-<link rel="stylesheet" href="titles-design.css?v=1">
+<link rel="stylesheet" href="titles-design.css?v=2">
 </head>
 
 
@@ -6506,6 +6506,21 @@ function updateDisabledActions(){
    バトルBGM
 ========================= */
 
+function startMenuBGM(){
+  const audio=document.getElementById("menuBGM");
+  if(!audio || document.getElementById("battleScreen")?.classList.contains("active"))return;
+  audio.loop=true;
+  audio.volume=0.26;
+  if(!audio.paused)return;
+  const promise=audio.play();
+  if(promise && typeof promise.catch==="function")promise.catch(()=>{});
+}
+
+function pauseMenuBGM(){
+  const audio=document.getElementById("menuBGM");
+  if(audio)audio.pause();
+}
+
 function startBattleBGM(){
   if(document.getElementById("resultMessage")?.classList.contains("resultShow"))return;
   const audio=document.getElementById("battleBGM");
@@ -6536,9 +6551,11 @@ function stopBattleBGM(){
 // バトル画面以外では停止、バトル画面に入ったら再生
 function syncBattleBGM(screenId){
   if(screenId==="battleScreen"){
+    pauseMenuBGM();
     startBattleBGM();
   }else{
     stopBattleBGM();
+    startMenuBGM();
   }
 }
 
@@ -6546,12 +6563,16 @@ function syncBattleBGM(screenId){
 document.addEventListener("pointerdown",()=>{
   if(document.getElementById("battleScreen")?.classList.contains("active")){
     startBattleBGM();
+  }else{
+    startMenuBGM();
   }
 },{passive:true});
 
 document.addEventListener("keydown",()=>{
   if(document.getElementById("battleScreen")?.classList.contains("active")){
     startBattleBGM();
+  }else{
+    startMenuBGM();
   }
 });
 
@@ -6630,6 +6651,9 @@ updateTechniqueDisplay();
 
 </script>
 
+
+<!-- メニューBGM：画面遷移をまたいで再生位置を維持する -->
+<audio id="menuBGM" preload="auto" loop src="sounds/心の中の小さな宇宙.mp3"></audio>
 
 <!-- バトル中BGM：Reflect.mp3 -->
 <audio id="battleBGM" preload="auto" loop>

@@ -41,3 +41,54 @@
 @keyframes titleGloss{from{background-position:0 0}to{background-position:-200% 0}}@keyframes crystalPulse{0%,38%,56%,100%{opacity:.62;filter:brightness(1)}46%{opacity:1;filter:brightness(1.55) drop-shadow(0 0 4px #dff)}}
 @media(max-width:550px){.badge-item{width:100%}.badge-rainbow,.badge-gold{height:44px}.title-wing{width:42px;height:46px}.title-wing.left{left:-18px}.title-wing.right{right:-18px}}
 @media(prefers-reduced-motion:reduce){.badge-item .title-badge,.crystal-overlay,.crystal-overlay-more{animation:none!important}}
+
+/* Game integration sizing and vivid-color pass. */
+.titles-layout{width:min(1100px,100%)}
+.title-slots{gap:16px}.title-slot{min-height:138px;padding:15px}
+.title-grid{gap:14px}.title-entry{min-height:148px;padding:17px}
+.badge-item{width:min(100%,390px);height:50px}
+.badge-item::before{height:43px;filter:drop-shadow(0 2px 3px #ffffff8c) drop-shadow(0 2px 2px #0008)}
+.badge-item::after{left:2px;right:2px;height:36px}
+.badge-item .title-badge{max-width:calc(100% - 10px);font-size:22px;font-size:clamp(18px,8.4cqi,28px);line-height:1;-webkit-text-stroke:.8px #fff;text-shadow:0 1px 1px #0009}
+.badge-item.tier-use::after{background:var(--pale);box-shadow:inset 0 0 0 1px #fff9,inset 0 0 10px #fff7}
+.badge-item.tier-master::after{background:linear-gradient(110deg,color-mix(in srgb,var(--accent) 45%,#fff),#f8fbff,color-mix(in srgb,var(--accent) 60%,#fff),#fff,color-mix(in srgb,var(--accent) 44%,#fff));box-shadow:inset 0 0 0 1px #fff9,inset 0 0 11px #fff8}
+.badge-item .title-blue{color:#3479bd}.badge-item .title-cyan{color:#168ca3}.badge-item .title-orange{color:#a85e18}.badge-item .title-lime{color:#638a1d}.badge-item .title-red{color:#aa3041}.badge-item .title-purple{color:#813ab1}.badge-item .title-navy{color:#4f609b}
+.badge-item.skill-3 .title-badge,.badge-item.skill-7 .title-badge{color:#8b1822}
+.badge-item.kind-skill-name{height:52px}
+.badge-item.kind-skill-name.badge-blue{--accent:#398bd2;--accent-light:#9bd4ff;--surface:#071a2c;--surface2:#164b74}
+.badge-item.kind-skill-name.badge-cyan{--accent:#1fb8d0;--accent-light:#96f2ff;--surface:#06242d;--surface2:#126077}
+.badge-item.kind-skill-name.badge-orange{--accent:#d87a20;--accent-light:#ffc27e;--surface:#2b1404;--surface2:#74400f}
+.badge-item.kind-skill-name.badge-lime{--accent:#83b329;--accent-light:#d5f68e;--surface:#152204;--surface2:#486518}
+.badge-item.kind-skill-name.badge-red{--accent:#d33c51;--accent-light:#ff9eaa;--surface:#2a070c;--surface2:#721626}
+.badge-item.kind-skill-name.badge-purple{--accent:#a94cdb;--accent-light:#dda3ff;--surface:#20082f;--surface2:#63217f}
+.badge-item.kind-skill-name.badge-navy{--accent:#687ac1;--accent-light:#b9c5ff;--surface:#0d142d;--surface2:#34447d}
+.badge-item.kind-skill-name.skill-3,.badge-item.kind-skill-name.skill-7{--accent:#b91f2d;--accent-light:#ff7f8b;--surface:#210407;--surface2:#68101a}
+.badge-item.kind-skill-name::before{height:45px;background:var(--accent);filter:drop-shadow(0 0 5px color-mix(in srgb,var(--accent) 80%,transparent)) drop-shadow(0 2px 2px #0008)}
+.badge-item.kind-skill-name::after{height:38px;background:radial-gradient(circle at 12% 25%,#fff 0 1px,transparent 2px),radial-gradient(circle at 32% 76%,#fff 0 1px,transparent 2px),radial-gradient(circle at 61% 19%,#fff 0 1px,transparent 2px),radial-gradient(circle at 87% 73%,#fff 0 1px,transparent 2px),repeating-linear-gradient(132deg,transparent 0 21px,#ffffff16 22px 24px,transparent 25px 43px),linear-gradient(110deg,var(--surface),var(--surface2),var(--surface));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent-light) 80%,transparent),inset 0 0 14px color-mix(in srgb,var(--accent) 42%,transparent)}
+.badge-item.kind-skill-name .title-badge{max-width:calc(100% - 12px);font-size:27px;font-size:clamp(22px,11cqi,32px);color:var(--accent-light);-webkit-text-fill-color:currentColor;-webkit-text-stroke:.85px #fff;text-shadow:none;filter:drop-shadow(0 2px 1px #000) drop-shadow(0 0 3px var(--accent))}
+@supports ((-webkit-background-clip:text) or (background-clip:text)){
+ .badge-item.kind-skill-name .title-badge{background-image:repeating-linear-gradient(110deg,var(--accent) 0%,var(--accent-light) 11%,#fff 19%,var(--accent-light) 28%,var(--accent) 40%,var(--accent) 50%);background-size:200% 100%;background-clip:text;-webkit-background-clip:text;color:transparent;-webkit-text-fill-color:transparent;animation:titleGloss 5.5s linear infinite}
+}
+.skill-motif{height:36px}.master-motif{opacity:.7}.english-motif{opacity:.67}
+.badge-bronze::after{background:linear-gradient(110deg,#bc7a46,#f6d5b4,#c98c59,#ffe5ca,#ad6738)}.badge-silver::after{background:linear-gradient(110deg,#9aa8b5,#edf4fa,#b7c3ce,#fff,#8998a6)}.badge-rating-gold::after{background:linear-gradient(110deg,#d2a02c,#fff0a0,#e5bd53,#fff7ca,#bf8912)}
+.badge-bronze .title-badge{color:#82461f}.badge-silver .title-badge{color:#5b6a78}.badge-rating-gold .title-badge{color:#875b08}
+.badge-rainbow,.badge-gold{width:min(100%,560px);height:58px}.badge-rainbow::before,.badge-gold::before{height:50px}.badge-rainbow::after,.badge-gold::after{height:43px}
+.badge-rainbow .title-badge,.badge-gold .title-badge{max-width:calc(100% - 12px);font-size:27px;font-size:clamp(22px,5.7cqi,34px);-webkit-text-stroke:.85px #fff}
+.badge-rainbow .title-badge{-webkit-text-fill-color:transparent;background-image:linear-gradient(90deg,#f43b67,#f0a72a,#79c83e,#24b8dc,#8e68e8,#f43b67)}
+.badge-gold .title-badge{-webkit-text-fill-color:transparent;background-image:linear-gradient(90deg,#b87700,#ffd85a,#fff5b8,#d8930b,#ffe57b,#b87700)}
+.crystal-overlay,.crystal-overlay-more{height:43px}
+.title-wing{width:58px;height:61px}.title-wing.left{left:-27px}.title-wing.right{right:-27px}
+.title-slot .badge-item,.title-entry .badge-item{width:100%;max-width:none}
+.playerCardPanel{width:min(1120px,96vw)}
+.playerCardProfile{grid-template-columns:minmax(250px,.65fr) minmax(560px,1.35fr)}
+.playerCardTitles{grid-template-columns:1fr;gap:10px}
+.playerCardTitles>.badge-item{height:54px;padding:0;border:0;background:transparent;overflow:visible}
+.playerCardTitles>.badge-item::before{height:47px}.playerCardTitles>.badge-item::after{height:40px}
+.playerCardTitles>.badge-item .title-badge{font-size:25px;font-size:clamp(20px,7cqi,31px)}
+.intro-card{width:min(580px,calc(100% - 24px))}
+.intro-title-value .badge-item{width:100%;height:42px}
+.intro-title-value .badge-item::before{height:37px}.intro-title-value .badge-item::after{height:31px}
+.intro-title-value .badge-item .title-badge{font-size:19px;font-size:clamp(16px,7.5cqi,23px);padding:0}
+.intro-title-value .badge-rainbow,.intro-title-value .badge-gold{height:44px}.intro-title-value .badge-rainbow::before,.intro-title-value .badge-gold::before{height:39px}.intro-title-value .badge-rainbow::after,.intro-title-value .badge-gold::after{height:33px}
+@media(max-width:760px){.playerCardProfile{grid-template-columns:1fr}.playerCardTitles{min-width:0}.playerCardTitles>.badge-item{height:50px}}
+@media(max-width:550px){.titles-layout{width:100%}.title-slot{min-height:115px}.title-entry{min-height:140px}.badge-item{height:48px}.badge-item .title-badge{font-size:clamp(18px,8.4cqi,25px)}.badge-item.kind-skill-name .title-badge{font-size:clamp(21px,11cqi,29px)}.badge-rainbow,.badge-gold{height:54px}.playerCardPanel{width:96vw}.intro-card{width:calc(100% - 16px)}}
