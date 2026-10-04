@@ -2016,7 +2016,8 @@ button{min-height:44px;}
 <link rel="apple-touch-icon" href="./icons/icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
 <link rel="stylesheet" href="player-intro.css?v=2">
-<link rel="stylesheet" href="titles.css?v=1">
+<link rel="stylesheet" href="titles.css?v=2">
+<link rel="stylesheet" href="titles-design.css?v=1">
 </head>
 
 
@@ -2659,16 +2660,16 @@ button{min-height:44px;}
 </div>
 
 
-<script src="titles-catalog.js?v=tech12-1"></script>
+<script src="titles-catalog.js?v=tech12-2"></script>
 <script src="player-intro.js?v=1"></script>
-<script src="titles-client.js?v=tech12-1"></script>
+<script src="titles-client.js?v=tech12-2"></script>
 <script src="player-lightning.js?v=2"></script>
 <script src="bot-engine.js?v=tech12-fix-1"></script>
 <script src="bot-client.js?v=tech12-fix-1"></script>
 <script src="ranked-client.js?v=tech12-1"></script>
 <script src="lobby-client.js?v=protected-titles-1"></script>
 <script type="module">
-  import {createTitleService} from "./title-service.js?v=tech12-1";
+  import {createTitleService} from "./title-service.js?v=tech12-2";
   import {createProtectedRooms} from "./protected-rooms.js?v=1";
   import {createFreeTransport} from "./free-transport.js?v=all-fixes-1";
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
@@ -3361,6 +3362,9 @@ function showTipPage(page){
 
 function showScreen(id){
   if(id!=="battleScreen")PlayerIntro.cancel();
+
+  document.documentElement.classList.toggle("titles-open",id==="titlesScreen");
+  document.body.classList.toggle("titles-open",id==="titlesScreen");
 
   document
     .querySelectorAll(".screen")
@@ -5458,21 +5462,10 @@ let battleSEUnlocked=false;
 function unlockBattleSE(){
   if(battleSEUnlocked)return;
   document.querySelectorAll("#battleSEAudio audio").forEach(el=>{
-    try{
-      el.dataset.sePriming="1";
-      el.muted=false;
-      el.volume=0;
-      el.currentTime=0;
-      const p=el.play();
-      if(p&&typeof p.then==="function")p.then(()=>{
-        if(el.dataset.sePriming==="1"){
-          el.pause();
-          el.currentTime=0;
-          delete el.dataset.sePriming;
-          el.volume=0.75;
-        }
-      }).catch(()=>{delete el.dataset.sePriming;el.volume=0.75;});
-    }catch(e){delete el.dataset.sePriming;el.volume=0.75;}
+    el.pause();
+    el.currentTime=0;
+    el.muted=false;
+    el.volume=0.75;
   });
   battleSEUnlocked=true;
 }
@@ -5502,7 +5495,7 @@ function playUISound(id){
 
 // メニュー系の通常ボタンは同じ決定音に統一する。バトル行動と技送りは既存SEを使う。
 document.addEventListener("click",event=>{
-  const target=event.target.closest("button,#startScreen");
+  const target=event.target.closest("button");
   if(!target || target.matches(".action,.techArrow,.rankingRow,#techConfirmButton,[data-no-ui-se]"))return;
   playUISound("uiDecisionSE");
 });

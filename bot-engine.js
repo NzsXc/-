@@ -211,7 +211,7 @@ const combinations=[];
 for(let a=0;a<12;a++)for(let b=a+1;b<12;b++)for(let c=b+1;c<12;c++)combinations.push([a,b,c]);
 function initial(a=[0,1,2],b=[0,1,2]){
  for(const x of [a,b])if(x.length!==3||new Set(x).size!==3||x.some(i=>!Number.isInteger(i)||i<0||i>11))throw Error('技は異なる3つを選んでください');
- return {hp:[0,10,10],gauge:[0,0,0],seal:[false,false,false],enhance:[0,0,0],momentum:[false,false,false],ruin:[0,0,0],last:['','',''],loadouts:[null,a.slice(),b.slice()],turn:1};
+ return {hp:[0,10,10],gauge:[0,8,8],seal:[false,false,false],enhance:[0,0,0],momentum:[false,false,false],ruin:[0,0,0],last:['','',''],loadouts:[null,a.slice(),b.slice()],turn:1};
 }
 function terminal(s){return s.hp[1]<=0?(s.hp[2]<=0?0:-1):s.hp[2]<=0?1:null;}
 function legal(s,p){

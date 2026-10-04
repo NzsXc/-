@@ -15,11 +15,11 @@ function renderTitles(){
  for(let i=0;i<3;i++){const button=document.createElement('button');button.className='title-slot'+(i===titleSlot?' selected':'');button.disabled=!titleViewData||titleSaving;button.setAttribute('aria-pressed',String(i===titleSlot));const label=document.createElement('span');label.textContent='装備枠 '+(i+1);button.append(label,TitleCatalog.badge(titleViewData?titleDraft[i]:''));button.onclick=()=>{titleSlot=i;renderTitles();};slots.append(button);}
  document.getElementById('titleSave').disabled=!titleViewData||titleSaving;document.getElementById('titleClear').disabled=!titleViewData||titleSaving;document.getElementById('titleBack').disabled=titleSaving;
  const list=document.getElementById('titleCollection');list.replaceChildren();
- for(const [kind,label]of [['tournament','大会称号'],['rating','レート称号'],['tech','技の称号']]){
+ for(const [kind,label]of [['tournament','大会称号'],['rating','レート称号'],['tech','技の称号'],['skill-name','英名技称号']]){
   const h=document.createElement('h2');h.className='titles-group-label';h.textContent=label;list.append(h);const grid=document.createElement('div');grid.className='title-grid';
   for(const item of TitleCatalog.items.filter(t=>t.kind===kind)){
    const won=!!titleViewData&&TitleCatalog.unlocked(item,titleViewData),button=document.createElement('button');button.className='title-entry';button.disabled=!won||titleSaving;button.append(TitleCatalog.badge(item.id));const desc=document.createElement('span');desc.className='title-description';desc.textContent=item.description;button.append(desc);
-   const progress=document.createElement('span');progress.className='title-progress';progress.textContent=won?(titleDraft.includes(item.id)?'装備中':'獲得済み'):item.kind==='tech'?Math.min(item.threshold,Number(titleViewData?.uses?.[item.skill]?.count||0))+' / '+item.threshold+' 回':'未獲得';button.append(progress);
+   const progress=document.createElement('span');progress.className='title-progress';progress.textContent=won?(titleDraft.includes(item.id)?'装備中':'獲得済み'):(item.kind==='tech'||item.kind==='skill-name')?Math.min(item.threshold,Number(titleViewData?.uses?.[item.skill]?.count||0))+' / '+item.threshold+' 回':'未獲得';button.append(progress);
    button.onclick=()=>{titleDraft=titleDraft.map(id=>id===item.id?'':id);titleDraft[titleSlot]=item.id;renderTitles();};grid.append(button);
   }list.append(grid);
  }

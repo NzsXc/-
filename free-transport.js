@@ -63,7 +63,7 @@ const initialAccount = {
  // 次ターンのstateは前ターン演出より先に作られる。演出（3秒カウント＋公開＋効果）が
  // 終わる前に入力期限を進めないよう、2ターン目以降にも十分な同期猶予を設ける。
  const turnOpensAt=s=>s.startedAt+(s.turn>1?7500:5600);
- const initial=()=>Object.fromEntries(stateFields.map(k=>[k,k==='turn'?1:k==='startedAt'?serverTimestamp():k.startsWith('hp')?10:k.startsWith('seal')||k.startsWith('momentum')?false:k.startsWith('last')?'':0]));
+ const initial=()=>Object.fromEntries(stateFields.map(k=>[k,k==='turn'?1:k==='startedAt'?serverTimestamp():k.startsWith('hp')?10:k.startsWith('gauge')?8:k.startsWith('seal')||k.startsWith('momentum')?false:k.startsWith('last')?'':0]));
  async function status(id){
   const u=auth.currentUser.uid,path='freeGames/'+id;let g;
   for(let attempt=0;attempt<4;attempt++){

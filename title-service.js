@@ -6,7 +6,7 @@ export function createTitleService(db,auth){
  const cache=new Map();
  async function loadoutFor(who){if(!who)return ['','',''];const slots=await read('titleLoadouts/'+who)||{};const ids=[0,1,2].map(i=>window.TitleCatalog.byId[slots[i]]?slots[i]:'');cache.set(who,ids);return ids;}
  async function claimRatings(){const who=uid();if(!who)return;const a=await read('freeAccounts/'+who);if(!a)return;let peak=Number(a.rating||0);if(a.lastSettled){const players=await read('freeGames/'+a.lastSettled+'/players');const side=players?.[1]===who?1:players?.[2]===who?2:0;if(side){const ledger=await read('freeGames/'+a.lastSettled+'/settled');peak=Math.max(peak,Number(ledger?.['before'+side]||0),Number(ledger?.['after'+side]||0));}}
-  for(const rate of [1050,1100])if(peak>=rate&&!await read('ratingMilestones/'+who+'/'+rate)){try{await set(ref(db,'ratingMilestones/'+who+'/'+rate),true);}catch(e){if(!await read('ratingMilestones/'+who+'/'+rate))throw e;}}
+  for(const rate of [1050,1100,1150])if(peak>=rate&&!await read('ratingMilestones/'+who+'/'+rate)){try{await set(ref(db,'ratingMilestones/'+who+'/'+rate),true);}catch(e){if(!await read('ratingMilestones/'+who+'/'+rate))throw e;}}
  }
  async function claimTurn(who,game,turn,side){
   if(uid()!==who)return;
