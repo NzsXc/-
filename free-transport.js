@@ -90,10 +90,29 @@ export function createFreeTransport(db,auth){
   if(closed)window.titleService.claimRatings().catch(console.warn);
   return {id,kind:g.kind||'random',roomId:g.room||null,you:me,players,ready:g.ready,loadouts,state,closed,phase:closed?'finished':s?'turn':'select',revision:now(),serverNow:now(),opensAt,deadline:s?opensAt+10000:g.createdAt+60000,graceDeadline:s?opensAt+40000:g.createdAt+90000,ownAction:g.own??null,reveal:g.transition?{turn:g.transition.turn-1,actions:{1:g.transition.action1,2:g.transition.action2},damage:{1:g.transition.damage1,2:g.transition.damage2}}:null,result:closed?{winner:g.settled.winner,rated:g.kind!=='friend',reason:g.resigned?'resigned':g.abandoned&&s?.hp1>0&&s?.hp2>0?'reconnect-timeout':!s?'selection-timeout':s.misses1>=2||s.misses2>=2?'idle-forfeit':s.turn>300?'turn-limit':'battle'}:null,rating:closed?{before:g.settled['before'+me],after:g.settled['after'+me],delta:g.settled['delta'+me]}:null};
  }
+ async function resumeActive(account){
+  const u=auth.currentUser.uid,id=String(account?.active||'');
+  if(!id)return {};
+  const path='freeGames/'+id;
+  const [players,settled]=await Promise.all([read(path+'/players'),read(path+'/settled')]);
+  const belongs=players&&(players[1]===u||players[2]===u);
+  // Repair legacy/orphaned active pointers. Security rules only allow the owner
+  // to clear a pointer when the game is missing, settled, or belongs elsewhere.
+  if(!players||settled||!belongs){
+   await writeSet('freeAccounts/'+u+'/active','');
+   return settled&&belongs?{match:await status(id),recovered:true}:{recovered:true};
+  }
+  const match=await status(id);
+  const fresh=await read('freeAccounts/'+u);
+  // status() atomically settles expired games and clears both players. If a
+  // concurrent client already settled it, clear any legacy pointer left behind.
+  if(match.closed&&fresh?.active===id)await writeSet('freeAccounts/'+u+'/active','');
+  return {match};
+ }
  return async function request(d){
   const a=await profile(),u=auth.currentUser.uid;
   if(d.op==='profile')return a;
-  if(d.op==='resume'){const id=a.active;return id?{match:await status(id)}:{};}
+  if(d.op==='resume')return resumeActive(a);
   if(d.op==='friendJoin'){
    if(a.active)return {match:await status(a.active)};
    const lobby=await read('friendRooms/'+d.roomId);
