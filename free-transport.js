@@ -26,7 +26,23 @@ export function createFreeTransport(db,auth){
   const u=user.uid;
   let a=await read('freeAccounts/'+u);
   if(!a){
-   const initialAccount={name:String(user.isAnonymous?'ゲスト':globalThis.window?.loggedInPlayerData?.name||'プレイヤー').slice(0,24),guest:!!user.isAnonymous,rating:1000,games:0,onlineWins:0,friendWins:0,active:'',lastSettled:''};
+   const token = await user.getIdTokenResult(true);
+const guest = token.signInProvider === 'anonymous';
+
+const initialAccount = {
+  name: String(
+    guest
+      ? 'ゲスト'
+      : globalThis.window?.loggedInPlayerData?.name || 'プレイヤー'
+  ).slice(0, 24),
+  guest,
+  rating: 1000,
+  games: 0,
+  onlineWins: 0,
+  friendWins: 0,
+  active: '',
+  lastSettled: ''
+};
    try{await writeSet('freeAccounts/'+u,initialAccount);a=initialAccount;}
    catch(error){a=await read('freeAccounts/'+u);if(!a)throw error;}
   }
