@@ -118,3 +118,8 @@
 .intro-title-value .badge-item{height:38px;max-width:360px}.intro-title-value .badge-item::before{height:34px}.intro-title-value .badge-item::after{height:29px}
 .intro-title-value .badge-item .title-badge{font-size:18px;font-size:clamp(15px,7.5cqi,22px)}
 @media(max-width:550px){.title-entry .badge-item{max-width:330px}.title-entry .badge-rainbow,.title-entry .badge-gold{max-width:430px}.badge-item .title-badge{font-size:clamp(17px,8.4cqi,23px)}}
+
+/* Tournament text must stay bright even on locked collection entries. */
+.badge-rainbow .title-badge,.badge-gold .title-badge,.title-entry:disabled .badge-rainbow .title-badge,.title-entry:disabled .badge-gold .title-badge{opacity:1!important;color:#fff;-webkit-text-fill-color:transparent;-webkit-text-stroke:1.05px #fff;paint-order:stroke fill;text-shadow:none!important;filter:drop-shadow(0 1px 0 #06101c) drop-shadow(0 0 2px #ffffff73)!important}
+.badge-rainbow .title-badge,.title-entry:disabled .badge-rainbow .title-badge{background-image:linear-gradient(90deg,#ff5278 0%,#ffd84f 20%,#83e85a 40%,#39dfff 60%,#a77cff 80%,#ff5278 100%);background-size:200% 100%;background-clip:text;-webkit-background-clip:text}
+.badge-gold .title-badge,.title-entry:disabled .badge-gold .title-badge{background-image:linear-gradient(90deg,#ffc83d 0%,#fff2a1 22%,#fffde0 42%,#e9a91d 64%,#ffe477 82%,#ffc83d 100%);background-size:200% 100%;background-clip:text;-webkit-background-clip:text}
