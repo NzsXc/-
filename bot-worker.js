@@ -1,4 +1,4 @@
-importScripts('bot-engine.js');
+importScripts('bot-engine.js?v=tech12-fix-1');
 self.onmessage=({data})=>{
  try{
   const {state,model,difficulty='normal'}=data;

@@ -1,5 +1,5 @@
 import {ref,get,set,update,push,serverTimestamp,onValue,runTransaction} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js';
-import {calculate,stateFields} from './free-calculator.js?v=tech12-1';
+import {calculate,stateFields} from './free-calculator.js?v=all-fixes-1';
 export function createFreeTransport(db,auth){
  let offset=0;onValue(ref(db,'.info/serverTimeOffset'),s=>{offset=s.val()||0;});
  const now=()=>Date.now()+offset;
@@ -44,7 +44,10 @@ const initialAccount = {
    try{await writeSet('freeAccounts/'+u,initialAccount);a=initialAccount;}
    catch(error){a=await read('freeAccounts/'+u);if(!a)throw error;}
   }
-  if(Number(a.rating)<1000)a={...a,rating:1000};
+  if(Number(a.rating)<1000){
+   try{await writeSet('freeAccounts/'+u+'/rating',1000);}catch(error){const fresh=await read('freeAccounts/'+u);if(Number(fresh?.rating)<1000)throw error;}
+   a={...a,rating:1000};
+  }
   return a;
  }
  async function profile(){

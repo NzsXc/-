@@ -21,7 +21,7 @@ function botState(){
  const state=BattleAI.initial(selectedTechniques[1],selectedTechniques[2]);
  for(const p of [1,2]){
   state.hp[p]=hp[p];state.gauge[p]=gauge[p];state.seal[p]=blockSeal[p];
-  state.enhance[p]=enhanceTurns[p];state.momentum[p]=momentumBonus[p];
+  state.enhance[p]=enhanceTurns[p];state.momentum[p]=momentumBonus[p];state.ruin[p]=ruinTurns[p];
   state.last[p]=lastAction[p]?.data?.type||'';
  }
  state.turn=botTurn+1;return state;
@@ -55,7 +55,7 @@ async function startBotTurn(){
  const state=botState();
  try{
   const id=await new Promise((resolve,reject)=>{
-   const worker=new Worker('bot-worker.js?v=difficulty-2');botWorker=worker;
+    const worker=new Worker('bot-worker.js?v=tech12-fix-1');botWorker=worker;
    const timer=setTimeout(()=>{worker.terminate();reject(Error('Botの思考が時間内に完了しませんでした'));},15000);
    worker.onmessage=({data})=>{clearTimeout(timer);worker.terminate();data.ok?resolve(data.action):reject(Error(data.error));};
    worker.onerror=()=>{clearTimeout(timer);worker.terminate();reject(Error('Botの思考ファイルを読み込めません'));};

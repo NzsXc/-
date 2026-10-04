@@ -86,18 +86,23 @@ const techniquePool = [
 
   {name:"フォーサイト",cost:1,power:0,pierce:false,type:"block",skill:"tech5",description:"ゲージ1消費 / ブロック状態 / 相手がチャージならゲージ+3"},
   {name:"モーメンタム",cost:2,power:1,pierce:false,type:"attack",skill:"tech6",description:"ゲージ2消費 / 1ダメージ / 2連続使用ならさらに+1"},
-  {name:"ランページ",cost:0,power:0,pierce:false,type:"special",skill:"tech7",description:"前のターンにチャージしていた場合のみ / ゲージ+8 / HP-2"},
+  {name:"ランページ",cost:0,power:0,pierce:false,type:"special",skill:"tech7",description:"ゲージ+8 / HP-2"},
   {name:"アンチガード",cost:0,power:0,pierce:false,type:"seal",skill:"tech8",description:"相手のブロック系技を封印 / 相手のゲージが7に達すると解除"},
   {name:"エンハンス",cost:2,power:0,pierce:false,type:"enhance",skill:"tech9",description:"ゲージ2消費 / 次の2ターン、攻撃力+1 / 再使用で残り2ターンに更新"},
-  {name:"サイフォン",cost:3,power:0,pierce:false,type:"siphon",skill:"tech10",description:"ゲージ3消費 / 相手のゲージを最大2奪い、奪った分だけ自分に加える"}
+  {name:"サイフォン",cost:3,power:0,pierce:false,type:"siphon",skill:"tech10",description:"ゲージ3消費 / 相手のゲージを最大2奪い、奪った分だけ自分に加える"},
+  {name:"ルイン",cost:1,power:0,pierce:false,type:"ruin",skill:"tech11",description:"ゲージ1消費 / 次のターンから3ターン、相手がチャージするたび1ダメージ"},
+  {name:"ミラー",cost:2,power:0,pierce:false,type:"mirror",skill:"tech12",description:"ゲージ2消費 / 相手と同じ行動をする（表示名と消費コストはミラーのまま）"}
 
 ];
 
 
 function resolve(s,a1,a2){
- const hp=s.hp.slice(),gauge=s.gauge.slice(),blockSeal=s.seal.slice(),enhanceTurns=s.enhance.slice(),momentumBonus=s.momentum.slice();
-   let damageTo1 = 0;
-  let damageTo2 = 0;
+ const hp=s.hp.slice(),gauge=s.gauge.slice(),blockSeal=s.seal.slice(),enhanceTurns=s.enhance.slice(),momentumBonus=s.momentum.slice(),ruinTurns=(s.ruin||[0,0,0]).slice();
+  const raw1=a1,raw2=a2,noEffect={name:"ミラー",cost:0,power:0,pierce:false,type:"",skill:""};
+  a1=raw1.skill==='tech12'?(raw2.skill==='tech12'?noEffect:raw2):raw1;
+  a2=raw2.skill==='tech12'?(raw1.skill==='tech12'?noEffect:raw1):raw2;
+  let damageTo1 = ruinTurns[1]>0&&a1.type==='charge'?1:0;
+  let damageTo2 = ruinTurns[2]>0&&a2.type==='charge'?1:0;
 
   // アンチガードの条件は技選択時点の相手ゲージで判定する。
   // ヒール等のコスト消費後のゲージを使うと誤判定になる。
@@ -107,13 +112,11 @@ function resolve(s,a1,a2){
   };
 
   // 先に技のコストを消費
-  gauge[1] = Math.max(0, gauge[1] - Number(a1.cost || 0));
-  gauge[2] = Math.max(0, gauge[2] - Number(a2.cost || 0));
+  gauge[1] = Math.max(0, gauge[1] - Number(raw1.cost || 0));
+  gauge[2] = Math.max(0, gauge[2] - Number(raw2.cost || 0));
 
   const attack1 = a1.type === "attack";
   const attack2 = a2.type === "attack";
-  const reflect1 = a1.type === "reflect";
-  const reflect2 = a2.type === "reflect";
 
   // 技8：アンチガードの封印判定は「技を選んだ時点の相手ゲージ」で決まる。
   // コスト消費後のゲージでは判定しない。
@@ -121,6 +124,8 @@ function resolve(s,a1,a2){
   if(a1.skill === "tech8" && gaugeBeforeCost[2] < 7) blockSeal[2] = true;
   if(a2.skill === "tech8" && gaugeBeforeCost[1] < 7) blockSeal[1] = true;
 
+  const reflect1 = a1.type === "reflect" && !blockSeal[1];
+  const reflect2 = a2.type === "reflect" && !blockSeal[2];
   const block1 = a1.type === "block" && !blockSeal[1];
   const block2 = a2.type === "block" && !blockSeal[2];
 
@@ -158,7 +163,7 @@ function resolve(s,a1,a2){
   if(a1.skill === "tech3" && a2.type === "charge" && !block2 && !reflect2) damageTo2 += 2;
   if(a2.skill === "tech3" && a1.type === "charge" && !block1 && !reflect1) damageTo1 += 2;
 
-  // 技7：前ターンチャージ後のみ使用可能。ゲージ+8、HP-2
+  // 技7：ゲージ+8、HP-2
   if(a1.skill === "tech7"){
     gauge[1] = Math.min(10, gauge[1] + 8);
   }
@@ -178,6 +183,9 @@ function resolve(s,a1,a2){
   enhanceTurns[1] = a1.skill === "tech9" ? 2 : Math.max(0,enhanceTurns[1] - 1);
   enhanceTurns[2] = a2.skill === "tech9" ? 2 : Math.max(0,enhanceTurns[2] - 1);
 
+  ruinTurns[1] = a2.skill === "tech11" ? 3 : Math.max(0,ruinTurns[1] - 1);
+  ruinTurns[2] = a1.skill === "tech11" ? 3 : Math.max(0,ruinTurns[2] - 1);
+
   // ランページの自傷ダメージも表示対象にする。
   if(a1.skill === "tech7") damageTo1 += 2;
   if(a2.skill === "tech7") damageTo2 += 2;
@@ -194,25 +202,25 @@ function resolve(s,a1,a2){
 
 
  hp[1]=Math.max(0,hp[1]-damageTo1);hp[2]=Math.max(0,hp[2]-damageTo2);
- return {hp,gauge,seal:blockSeal,enhance:enhanceTurns,
+ return {hp,gauge,seal:blockSeal,enhance:enhanceTurns,ruin:ruinTurns,
  momentum:[false,a1.skill==='tech6'?!s.momentum[1]:false,a2.skill==='tech6'?!s.momentum[2]:false],
  last:['',a1.type,a2.type],loadouts:s.loadouts,turn:s.turn+1};
 }
 const ACTIONS=[basicActions.charge,basicActions.attack,basicActions.block,...techniquePool];
 const combinations=[];
-for(let a=0;a<10;a++)for(let b=a+1;b<10;b++)for(let c=b+1;c<10;c++)combinations.push([a,b,c]);
+for(let a=0;a<12;a++)for(let b=a+1;b<12;b++)for(let c=b+1;c<12;c++)combinations.push([a,b,c]);
 function initial(a=[0,1,2],b=[0,1,2]){
- for(const x of [a,b])if(x.length!==3||new Set(x).size!==3||x.some(i=>!Number.isInteger(i)||i<0||i>9))throw Error('技は異なる3つを選んでください');
- return {hp:[0,10,10],gauge:[0,0,0],seal:[false,false,false],enhance:[0,0,0],momentum:[false,false,false],last:['','',''],loadouts:[null,a.slice(),b.slice()],turn:1};
+ for(const x of [a,b])if(x.length!==3||new Set(x).size!==3||x.some(i=>!Number.isInteger(i)||i<0||i>11))throw Error('技は異なる3つを選んでください');
+ return {hp:[0,10,10],gauge:[0,0,0],seal:[false,false,false],enhance:[0,0,0],momentum:[false,false,false],ruin:[0,0,0],last:['','',''],loadouts:[null,a.slice(),b.slice()],turn:1};
 }
 function terminal(s){return s.hp[1]<=0?(s.hp[2]<=0?0:-1):s.hp[2]<=0?1:null;}
 function legal(s,p){
  if(terminal(s)!==null)return [];
  return [0,1,2,...s.loadouts[p].map(i=>i+3)].filter(id=>{
   const a=ACTIONS[id],o=3-p;
-  return a.cost<=s.gauge[p] && !(s.seal[p]&&(id===2||a.skill==='tech5'))
-   && !(id===2&&s.last[p]==='block') && !(id===0&&s.gauge[p]>=10)
-   && !(a.skill==='tech7'&&s.last[p]!=='charge') && !(a.skill==='tech8'&&s.gauge[o]>=7);
+   return a.cost<=s.gauge[p] && !(s.seal[p]&&(id===2||a.skill==='tech5'||a.skill==='tech2'))
+    && !(a.type==='block'&&s.last[p]==='block') && !(a.skill==='tech2'&&s.last[p]==='reflect') && !(id===0&&s.gauge[p]>=10)
+    && !(a.skill==='tech8'&&s.gauge[o]>=7);
  });
 }
 function step(s,a,b){
@@ -240,7 +248,7 @@ function matrixSolve(M,iterations=160){
  const hi=Math.max(...M.map(row=>row.reduce((z,x,j)=>z+x*q[j],0)));
  return {p,q,value:(lo+hi)/2,lower:lo,upper:hi,gap:hi-lo};
 }
-function key(s){return [s.hp[1],s.hp[2],s.gauge[1],s.gauge[2],+s.seal[1],+s.seal[2],s.enhance[1],s.enhance[2],+s.momentum[1],+s.momentum[2],s.last[1],s.last[2]].join(',');}
+function key(s){return [s.hp[1],s.hp[2],s.gauge[1],s.gauge[2],+s.seal[1],+s.seal[2],s.enhance[1],s.enhance[2],+s.momentum[1],+s.momentum[2],s.ruin?.[1]||0,s.ruin?.[2]||0,s.last[1],s.last[2]].join(',');}
 function analyze(s,{depth=2,iterations=160,maxNodes=100000,model=null}={}){
  if(terminal(s)!==null)return {terminal:terminal(s)};
  let nodes=0,completed=null;const cache=new Map(),budget=Symbol('budget');

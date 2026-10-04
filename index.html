@@ -2663,14 +2663,14 @@ button{min-height:44px;}
 <script src="player-intro.js?v=1"></script>
 <script src="titles-client.js?v=tech12-1"></script>
 <script src="player-lightning.js?v=2"></script>
-<script src="bot-engine.js"></script>
-<script src="bot-client.js?v=solo-settings-2"></script>
+<script src="bot-engine.js?v=tech12-fix-1"></script>
+<script src="bot-client.js?v=tech12-fix-1"></script>
 <script src="ranked-client.js?v=tech12-1"></script>
 <script src="lobby-client.js?v=protected-titles-1"></script>
 <script type="module">
   import {createTitleService} from "./title-service.js?v=tech12-1";
   import {createProtectedRooms} from "./protected-rooms.js?v=1";
-  import {createFreeTransport} from "./free-transport.js?v=stale-active-fix-2";
+  import {createFreeTransport} from "./free-transport.js?v=all-fixes-1";
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
   import {
     getAuth,
@@ -5041,7 +5041,7 @@ function chooseAction(player,action){
   }
 
   // カウンターの連続使用は禁止。
-  if(data.skill === "tech2" && lastAction[player]?.data?.skill === "tech2")return;
+  if(data.skill === "tech2" && lastAction[player]?.data?.type === "reflect")return;
 
   // 技8：相手のゲージが7未満の場合のみ
   if(data.skill === "tech8"){
@@ -5244,7 +5244,7 @@ function resolveBattle(){
 
   // ミラーは表示と消費だけ元の技を保ち、効果判定では相手の行動になる。
   // ミラー同士は循環を避けるため効果なし。
-  const noEffect={name:"ミラー",cost:0,power:0,pierce:false,type:"none",skill:"mirror-none"};
+  const noEffect={name:"ミラー",cost:0,power:0,pierce:false,type:"",skill:""};
   const e1 = a1.skill === "tech12" ? (a2.skill === "tech12" ? noEffect : a2) : a1;
   const e2 = a2.skill === "tech12" ? (a1.skill === "tech12" ? noEffect : a1) : a2;
 
@@ -5408,8 +5408,8 @@ if(e2.skill === "tech6"){
 
     lastLastAction[1] = lastAction[1];
     lastLastAction[2] = lastAction[2];
-    lastAction[1] = {id:selectedAction[1].id,data:a1};
-    lastAction[2] = {id:selectedAction[2].id,data:a2};
+    lastAction[1] = {id:selectedAction[1].id,data:e1};
+    lastAction[2] = {id:selectedAction[2].id,data:e2};
 
     const battleResult = hp[1] <= 0 && hp[2] <= 0 ? "DRAW" :
                          hp[1] <= 0 ? "2P WIN" :
@@ -5457,8 +5457,23 @@ let battleSEUnlocked=false;
 
 function unlockBattleSE(){
   if(battleSEUnlocked)return;
-  // スマホでは無音再生による事前解放が遅れて実音になることがあるため、
-  // 起動時・初回タップ時には音源を再生せず、操作済み状態だけを記録する。
+  document.querySelectorAll("#battleSEAudio audio").forEach(el=>{
+    try{
+      el.dataset.sePriming="1";
+      el.muted=false;
+      el.volume=0;
+      el.currentTime=0;
+      const p=el.play();
+      if(p&&typeof p.then==="function")p.then(()=>{
+        if(el.dataset.sePriming==="1"){
+          el.pause();
+          el.currentTime=0;
+          delete el.dataset.sePriming;
+          el.volume=0.75;
+        }
+      }).catch(()=>{delete el.dataset.sePriming;el.volume=0.75;});
+    }catch(e){delete el.dataset.sePriming;el.volume=0.75;}
+  });
   battleSEUnlocked=true;
 }
 
@@ -5470,6 +5485,7 @@ function playBattleSE(id){
   const el=document.getElementById(id);
   if(!el)return;
   try{
+    delete el.dataset.sePriming;
     el.muted=false;
     el.volume=0.75;
     el.currentTime=0;
@@ -6390,7 +6406,7 @@ function updateActionChainIndicators(){
     blockLock.title="前ターンにブロック系技を使用したため、このターンは連続使用できません";
 
     const counterLock=ensureIndicator("CounterRepeat","enhanceIndicator blockSealIndicator");
-    counterLock.hidden=previous?.skill!=="tech2";
+    counterLock.hidden=previous?.type!=="reflect";
     counterLock.textContent="カウンター連続×";
     counterLock.title="前ターンにカウンターを使用したため、このターンは連続使用できません";
 
@@ -6460,7 +6476,7 @@ function updateDisabledActions(){
       if(tech.skill==="tech8" && gauge[opponent]>=7) disabled=true;
       if(blockSeal[player] && (tech.skill==="tech5" || tech.skill==="tech2")) disabled=true;
       if(tech.skill==="tech5" && lastAction[player]?.data?.type==="block") disabled=true;
-      if(tech.skill==="tech2" && lastAction[player]?.data?.skill==="tech2") disabled=true;
+      if(tech.skill==="tech2" && lastAction[player]?.data?.type==="reflect") disabled=true;
       el.classList.toggle("disabled",disabled);
     });
 

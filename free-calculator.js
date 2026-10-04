@@ -23,7 +23,7 @@ export function calculate(s,moves){
  out.action1=chosen(s,moves,1);out.misses1=Number.isInteger(moves?.[1])?0:s.misses1+1;
  out.action2=chosen(s,moves,2);out.misses2=Number.isInteger(moves?.[2])?0:s.misses2+1;
  const raw1=ACTIONS[out.action1]||ACTIONS[0],raw2=ACTIONS[out.action2]||ACTIONS[0];
- const none={cost:0,type:'none',skill:'mirror-none',power:0,pierce:false};
+ const none={cost:0,type:'',skill:'',power:0,pierce:false};
  const e1=raw1.skill==='tech12'?(raw2.skill==='tech12'?none:raw2):raw1;
  const e2=raw2.skill==='tech12'?(raw1.skill==='tech12'?none:raw1):raw2;
  out.cost1=raw1.cost;out.cost2=raw2.cost;out.type1=e1.type;out.type2=e2.type;out.skill1=e1.skill;out.skill2=e2.skill;
