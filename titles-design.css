@@ -92,3 +92,29 @@
 .intro-title-value .badge-rainbow,.intro-title-value .badge-gold{height:44px}.intro-title-value .badge-rainbow::before,.intro-title-value .badge-gold::before{height:39px}.intro-title-value .badge-rainbow::after,.intro-title-value .badge-gold::after{height:33px}
 @media(max-width:760px){.playerCardProfile{grid-template-columns:1fr}.playerCardTitles{min-width:0}.playerCardTitles>.badge-item{height:50px}}
 @media(max-width:550px){.titles-layout{width:100%}.title-slot{min-height:115px}.title-entry{min-height:140px}.badge-item{height:48px}.badge-item .title-badge{font-size:clamp(18px,8.4cqi,25px)}.badge-item.kind-skill-name .title-badge{font-size:clamp(21px,11cqi,29px)}.badge-rainbow,.badge-gold{height:54px}.playerCardPanel{width:96vw}.intro-card{width:calc(100% - 16px)}}
+
+/* Preview parity: keep the approved proportions instead of stretching to the card width. */
+.title-entry:disabled .badge-item,.title-entry:disabled .title-badge{opacity:1!important;filter:none}
+.title-entry:disabled .title-description,.title-entry:disabled .title-progress{opacity:.7}
+.badge-item{width:min(100%,310px);height:44px}
+.badge-item::before{height:34px}.badge-item::after{height:31px}
+.badge-item .title-badge{font-size:21px;font-size:clamp(17px,8.4cqi,24px);max-width:calc(100% - 6px)}
+.badge-item.kind-skill-name{width:min(100%,310px);height:44px}
+.badge-item.kind-skill-name::before{height:38px}.badge-item.kind-skill-name::after{height:33px}
+.badge-item.kind-skill-name .title-badge{font-size:25px;font-size:clamp(20px,11cqi,28px)}
+.skill-motif{height:31px}
+.badge-rainbow,.badge-gold{width:min(100%,520px);height:52px}
+.badge-rainbow::before,.badge-gold::before{height:42px}
+.badge-rainbow::after,.badge-gold::after,.crystal-overlay,.crystal-overlay-more{height:39px}
+.badge-rainbow .title-badge,.badge-gold .title-badge{font-size:27px;font-size:clamp(21px,5.5cqi,30px);max-width:calc(100% - 6px)}
+.title-wing{width:50px;height:54px}.title-wing.left{left:-24px}.title-wing.right{right:-24px}
+.title-entry .badge-item{width:min(100%,310px);max-width:310px;align-self:center}
+.title-entry .badge-rainbow,.title-entry .badge-gold{width:min(100%,520px);max-width:520px}
+.title-slot .badge-item{width:min(100%,310px);max-width:310px;align-self:center}
+.title-slot .badge-rainbow,.title-slot .badge-gold{width:100%;max-width:400px}
+.playerCardTitles>.badge-item{width:100%;max-width:520px;height:52px;justify-self:center}
+.playerCardTitles>.badge-item::before{height:42px}.playerCardTitles>.badge-item::after{height:36px}
+.playerCardTitles>.badge-item .title-badge{font-size:24px;font-size:clamp(19px,7cqi,29px)}
+.intro-title-value .badge-item{height:38px;max-width:360px}.intro-title-value .badge-item::before{height:34px}.intro-title-value .badge-item::after{height:29px}
+.intro-title-value .badge-item .title-badge{font-size:18px;font-size:clamp(15px,7.5cqi,22px)}
+@media(max-width:550px){.title-entry .badge-item{max-width:330px}.title-entry .badge-rainbow,.title-entry .badge-gold{max-width:430px}.badge-item .title-badge{font-size:clamp(17px,8.4cqi,23px)}}
