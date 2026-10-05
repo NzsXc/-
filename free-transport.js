@@ -130,8 +130,11 @@ const initialAccount = {
   const a=await profile(),u=auth.currentUser.uid;
   if(d.op==='profile')return a;
   if(d.op==='resume')return resumeActive(a);
+  if(['friendJoin','join','queue','cancel'].includes(d.op)&&a.active){
+   const resumed=await resumeActive(a);
+   if(resumed.match&&!resumed.match.closed)return {match:resumed.match};
+  }
   if(d.op==='friendJoin'){
-   if(a.active)return {match:await status(a.active)};
    const lobby=await read('friendRooms/'+d.roomId);
    if(!lobby||lobby.host===u||lobby.game||lobby.heartbeat<=now()-15000)throw Error('この部屋には参加できません');
    const id=push(ref(db,'freeGames')).key;
@@ -152,7 +155,6 @@ const initialAccount = {
   }
   if(['join','queue','cancel'].includes(d.op)){
    if(auth.currentUser.isAnonymous)throw Error('ランダム対戦にはログインが必要です');
-   if(a.active)return {match:await status(a.active)};
    const qp='freeQueue/'+u;
    if(d.op==='cancel'){await set(ref(db,qp),null);const fresh=await profile();return fresh.active?{match:await status(fresh.active)}:{};}
    let q=await read(qp);try{await set(ref(db,qp),{joinedAt:q?.joinedAt??serverTimestamp(),heartbeat:serverTimestamp()});}catch(e){const fresh=await profile();if(fresh.active)return {match:await status(fresh.active)};throw e;}
