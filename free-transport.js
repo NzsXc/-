@@ -82,7 +82,7 @@ const initialAccount = {
    }
    if(!s&&!terminal&&g.ready[1]&&g.ready[2]){
     try{
-     await withTimeout(runTransaction(ref(db,path+'/state'),current=>current||initial(),{applyLocally:false}),8000,'対戦開始');
+     await withTimeout(runTransaction(ref(db,path+'/state'),current=>current===null?initial():undefined,{applyLocally:false}),8000,'対戦開始');
     }catch(e){if(!await read(path+'/state'))throw e;}
     continue;
    }
