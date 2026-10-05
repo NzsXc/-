@@ -128,3 +128,14 @@
 .badge-item.tier-master::after{background:var(--pale)}
 .badge-item.tier-master .master-motif{background:repeating-linear-gradient(128deg,transparent 0 14px,color-mix(in srgb,var(--accent) 76%,transparent) 15px 18px,#fff7 19px 20px,transparent 21px 34px);background-size:auto;background-repeat:repeat;-webkit-mask:none;mask:none;filter:none}
 .badge-item.tier-master .master-motif::before,.badge-item.tier-master .master-motif::after{content:none;display:none}
+
+/* Profile ribbons shrink as a unit within the available title column. */
+.playerCardProfile{grid-template-columns:minmax(0,.65fr) minmax(0,1.35fr)}
+.playerCardTitles>.badge-item{width:min(100%,300px);max-width:300px;height:auto;aspect-ratio:25/3;justify-self:center}
+.playerCardTitles>.badge-item.kind-tournament{width:min(100%,380px);max-width:380px;height:auto;aspect-ratio:10/1}
+.playerCardTitles>.badge-item::before,.playerCardTitles>.badge-item.kind-tournament::before{height:88%}
+.playerCardTitles>.badge-item::after,.playerCardTitles>.badge-item.kind-tournament::after{height:76%}
+.playerCardTitles>.badge-item .skill-motif,.playerCardTitles>.badge-item .crystal-overlay,.playerCardTitles>.badge-item .crystal-overlay-more{height:76%}
+.playerCardTitles>.badge-item .title-badge{font-size:min(18px,6cqi);line-height:1.05;max-width:calc(100% - 22px)}
+.playerCardTitles>.badge-item.kind-tournament .title-badge{font-size:min(16px,4.2cqi);max-width:calc(100% - 18px)}
+@media(max-width:760px){.playerCardProfile{grid-template-columns:1fr}}
