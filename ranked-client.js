@@ -58,7 +58,7 @@ async function rankedPoll(epoch){
 }
 let rankedFrame=0,rankedClockAt=0,rankedClockServer=0,rankedAnimating=false,rankedEffectTimer=0,rankedVisualToken=0,rankedVisualCountdownEnd=0;
 let rankedTurnClockKey='',rankedTurnOpensAt=0,rankedTurnDeadline=0;
-function rankedVisualStop(){PlayerIntro.reset();cancelAnimationFrame(rankedFrame);rankedFrame=0;clearTimeout(rankedEffectTimer);rankedVisualToken++;rankedAnimating=false;rankedVisualCountdownEnd=0;rankedTurnClockKey='';rankedTurnOpensAt=0;rankedTurnDeadline=0;stopCountdownRing();stopTurnCountdownSE();clearTimeout(window._techniqueRevealCleanupTimeout);document.getElementById('battleEffectLayer')?.replaceChildren();}
+function rankedVisualStop(){window.BattleEffects?.cancel();PlayerIntro.reset();cancelAnimationFrame(rankedFrame);rankedFrame=0;clearTimeout(rankedEffectTimer);rankedVisualToken++;rankedAnimating=false;rankedVisualCountdownEnd=0;rankedTurnClockKey='';rankedTurnOpensAt=0;rankedTurnDeadline=0;stopCountdownRing();stopTurnCountdownSE();clearTimeout(window._techniqueRevealCleanupTimeout);document.getElementById('battleEffectLayer')?.replaceChildren();}
 function rankedClockStart(m){
  rankedClockAt=performance.now();rankedClockServer=m.serverNow;
  if(!rankedFrame){rankedTick();}
@@ -207,6 +207,10 @@ async function rankedConfirm(){
 async function rankedChoose(player,action){
  if(PlayerIntro.isActive())return;
  const m=rankedMatch;if(!m||player!==m.you||rankedSending||m.phase!=='turn'||locked[player])return;
+ if(m.closed||!m.state||m.ownAction!=null||!m.loadouts?.[player])return;
+ const inputNow=performance.now();
+ if(rankedTurnDeadline>0&&(inputNow<rankedTurnOpensAt||inputNow>=rankedTurnDeadline))return;
+ if(!isBattleActionAvailable(player,action))return;
  const id=['charge','attack','block'].includes(action)?['charge','attack','block'].indexOf(action):m.loadouts[player][Number(action.replace('tech',''))]+3;
  rankedSending=true;locked[player]=true;
  try{const r=await rankedCommandRpc({op:'action',matchId:m.id,turn:m.state.turn,action:id});rankedSending=false;if(rankedActive&&rankedMatch?.id===m.id)rankedApply(r.match);}

@@ -2019,6 +2019,7 @@ button{min-height:44px;}
 <link rel="stylesheet" href="titles.css?v=2">
 <link rel="stylesheet" href="titles-design.css?v=4">
 <link rel="stylesheet" href="tournament-preview.css?v=1">
+<link rel="stylesheet" href="battle-action-art.css?v=confirmed-1">
 </head>
 
 
@@ -2382,7 +2383,7 @@ button{min-height:44px;}
          class="actionList">
 
 
-      <div
+      <button type="button"
         class="action"
         data-player="1"
         data-action="charge">
@@ -2395,10 +2396,10 @@ button{min-height:44px;}
           チャージ
         </div>
 
-      </div>
+      </button>
 
 
-      <div
+      <button type="button"
         class="action"
         data-player="1"
         data-action="attack">
@@ -2411,10 +2412,10 @@ button{min-height:44px;}
           攻撃
         </div>
 
-      </div>
+      </button>
 
 
-      <div
+      <button type="button"
         class="action"
         data-player="1"
         data-action="block">
@@ -2427,10 +2428,10 @@ button{min-height:44px;}
           ブロック
         </div>
 
-      </div>
+      </button>
 
 
-      <div
+      <button type="button"
         id="p1tech0"
         class="action"
         data-player="1"
@@ -2444,10 +2445,10 @@ button{min-height:44px;}
           技1
         </div>
 
-      </div>
+      </button>
 
 
-      <div
+      <button type="button"
         id="p1tech1"
         class="action"
         data-player="1"
@@ -2461,10 +2462,10 @@ button{min-height:44px;}
           技2
         </div>
 
-      </div>
+      </button>
 
 
-      <div
+      <button type="button"
         id="p1tech2"
         class="action"
         data-player="1"
@@ -2478,7 +2479,7 @@ button{min-height:44px;}
           技3
         </div>
 
-      </div>
+      </button>
 
     </div>
 
@@ -2555,7 +2556,7 @@ button{min-height:44px;}
          class="actionList">
 
 
-      <div
+      <button type="button"
         class="action"
         data-player="2"
         data-action="charge">
@@ -2568,10 +2569,10 @@ button{min-height:44px;}
           チャージ
         </div>
 
-      </div>
+      </button>
 
 
-      <div
+      <button type="button"
         class="action"
         data-player="2"
         data-action="attack">
@@ -2584,10 +2585,10 @@ button{min-height:44px;}
           攻撃
         </div>
 
-      </div>
+      </button>
 
 
-      <div
+      <button type="button"
         class="action"
         data-player="2"
         data-action="block">
@@ -2600,10 +2601,10 @@ button{min-height:44px;}
           ブロック
         </div>
 
-      </div>
+      </button>
 
 
-      <div
+      <button type="button"
         id="p2tech0"
         class="action"
         data-player="2"
@@ -2617,10 +2618,10 @@ button{min-height:44px;}
           技1
         </div>
 
-      </div>
+      </button>
 
 
-      <div
+      <button type="button"
         id="p2tech1"
         class="action"
         data-player="2"
@@ -2634,10 +2635,10 @@ button{min-height:44px;}
           技2
         </div>
 
-      </div>
+      </button>
 
 
-      <div
+      <button type="button"
         id="p2tech2"
         class="action"
         data-player="2"
@@ -2651,7 +2652,7 @@ button{min-height:44px;}
           技3
         </div>
 
-      </div>
+      </button>
 
     </div>
 
@@ -2667,8 +2668,10 @@ button{min-height:44px;}
 <script src="player-lightning.js?v=2"></script>
 <script src="bot-engine.js?v=tech12-fix-1"></script>
 <script src="bot-client.js?v=tech12-fix-1"></script>
-<script src="ranked-client.js?v=tech12-1"></script>
+<script src="ranked-client.js?v=confirmed-input-2"></script>
 <script src="lobby-client.js?v=protected-titles-1"></script>
+<script src="battle-action-art.js?v=confirmed-1"></script>
+<script src="battle-effects.js?v=confirmed-1"></script>
 <script type="module">
   import {createTitleService} from "./title-service.js?v=tech12-2";
   import {createProtectedRooms} from "./protected-rooms.js?v=1";
@@ -3362,6 +3365,7 @@ function showTipPage(page){
 ========================= */
 
 function showScreen(id){
+  if(id!=="battleScreen")window.BattleEffects?.cancel();
   if(id!=="battleScreen")PlayerIntro.cancel();
 
   document.documentElement.classList.toggle("titles-open",id==="titlesScreen");
@@ -3830,6 +3834,8 @@ function onlineNow(){
 }
 
 function resetOnlineMatchState(){
+  window.BattleEffects?.cancel();
+  window.confirmedRevealedActions=null;
   PlayerIntro.reset();
   const resultMessage=document.getElementById("resultMessage");
   if(resultMessage){resultMessage.textContent="";resultMessage.className="";}
@@ -4582,6 +4588,7 @@ function setupBattle(){
 ========================= */
 
 function setupActionNames(){
+  syncConfirmedActionArt();
 
   document
     .querySelector(
@@ -4961,6 +4968,7 @@ function updateOnlineTechniqueDescription(){
 }
 
 function showTechniqueReveal(a1,a2){
+  window.confirmedRevealedActions=[a1,a2];
   // カウントダウン終了後、技名を表示する瞬間にデータ解析SEを鳴らす。
   playBattleSE("seDataAnalysis");
 
@@ -5013,6 +5021,18 @@ function clearOnlineTechniqueDescription(){
    行動選択
 ========================= */
 
+function isBattleActionAvailable(player,action,data){
+  if((player!==1&&player!==2)||typeof action!=="string")return false;
+  data=data||getActionData(player,action);
+  if(!data||!Number.isFinite(data.cost)||data.cost<0||data.cost>gauge[player])return false;
+  if(blockSeal[player]&&(data.type==="block"||data.skill==="tech2"))return false;
+  if(data.type==="block"&&lastAction[player]?.data?.type==="block")return false;
+  if(data.skill==="tech2"&&lastAction[player]?.data?.type==="reflect")return false;
+  if(data.skill==="tech8"&&gauge[player===1?2:1]>=7)return false;
+  if(data.type==="charge"&&gauge[player]>=10)return false;
+  return true;
+}
+
 function chooseAction(player,action){
   if(PlayerIntro.isActive())return;
   if(rankedActive){rankedChoose(player,action);return;}
@@ -5031,7 +5051,7 @@ function chooseAction(player,action){
   if(locked[player])return;
 
   const data=getActionData(player,action);
-  if(!data)return;
+  if(!isBattleActionAvailable(player,action,data))return;
 
   // 技8でブロック系（通常ブロック・技5）とカウンターが封印中
   if(blockSeal[player] && (action === "block" || data.skill === "tech5" || data.skill === "tech2"))return;
@@ -5065,6 +5085,7 @@ function chooseAction(player,action){
   selectedAction[player]={id:action,data:data};
   locked[player]=true;
   document.getElementById("player"+player+"Area").classList.add("locked");
+  syncConfirmedActionArt();
 
   if(gameMode === "online") updateOnlineTechniqueDescription();
   else clearOnlineTechniqueDescription();
@@ -5671,6 +5692,19 @@ function playBattleSituationSE(a1,a2,damageTo1=0,damageTo2=0){
 }
 
 function playBattleEffect(a1,a2,callback,damageTo1=0,damageTo2=0,isSpectator=false){
+  if(window.BattleEffects){
+    let confirmedLayer=document.getElementById("battleEffectLayer");
+    if(!confirmedLayer){confirmedLayer=document.createElement("div");confirmedLayer.id="battleEffectLayer";document.getElementById("battleScreen").appendChild(confirmedLayer);}
+    const rawActions=window.confirmedRevealedActions||[a1,a2];
+    window.confirmedRevealedActions=null;
+    const played=window.BattleEffects.play({
+      layer:confirmedLayer,actions:[a1,a2],rawActions,damage:[damageTo1,damageTo2],
+      sealed:[blockSeal[1],blockSeal[2]],momentum:[momentumBonus[1],momentumBonus[2]],
+      onImpact(player,damage){createDamageNumber(document.getElementById("battleScreen"),player,damage);flashHitPlayer(player,isSpectator);},
+      onComplete:callback
+    });
+    if(played)return;
+  }
   let layer=document.getElementById("battleEffectLayer");
   if(!layer){
     layer=document.createElement("div");
@@ -6521,6 +6555,21 @@ function updateBattleUI(){
    ゲージ不足技を暗くする
 ========================= */
 
+function syncConfirmedActionArt(){
+  if(!window.BattleActionArt)return;
+  // A decorative renderer must never prevent an action from reaching its transport.
+  try{
+    const localPlayer=rankedActive?Number(rankedMatch?.you||0):botMatch?1:gameMode==="online"?Number(window.onlineBattle?.localPlayer||0):0;
+    const selected={};
+    if(rankedActive&&rankedMatch?.ownAction!=null){
+      const id=Number(rankedMatch.ownAction),loadout=rankedMatch.loadouts?.[localPlayer]||[];
+      selected[localPlayer]=id<3?["charge","attack","block"][id]:"tech"+loadout.indexOf(id-3);
+    }else if(!rankedActive){for(const player of [1,2])if(!localPlayer||player===localPlayer)selected[player]=selectedAction[player]?.id;}
+    window.BattleActionArt.update({loadouts:{1:player1Techs,2:player2Techs},selected,localPlayer,spectator:gameMode==="spectator"});
+  }catch(error){console.warn("技ボタンの表示更新に失敗しました",error);}
+}
+document.addEventListener("DOMContentLoaded",()=>syncConfirmedActionArt());
+
 function updateDisabledActions(){
   updateActionChainIndicators();
   [1,2].forEach(player=>{
@@ -6563,6 +6612,7 @@ function updateDisabledActions(){
       blockEl.classList.toggle("disabled", blockDisabled);
     }
   });
+  syncConfirmedActionArt();
 }
 
 

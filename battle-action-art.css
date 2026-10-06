@@ -1,0 +1,33 @@
+/* All action surfaces share the approved 5:3 composition. */
+#battleScreen .actionList{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+#battleScreen .action{position:relative;isolation:isolate;box-sizing:border-box;min-width:0;min-height:44px;aspect-ratio:5/3;padding:6px 3px;overflow:hidden;display:flex;flex-direction:row;align-items:flex-end;justify-content:center;border:1px solid #91c5e699;border-radius:3px;background:#18324e;color:#ecf9ff;font:inherit;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+#battleScreen .actionKey{display:none}
+#battleScreen .actionName{position:relative;z-index:1;max-width:100%;margin:0;text-align:center;font-size:12px;font-weight:500;line-height:1.3;overflow-wrap:anywhere;text-shadow:0 1px 3px #000,0 0 6px #000}
+#battleScreen .playerArea{--action-selected:#ff8294}
+#battleScreen #player2Area{--action-selected:#87cfff}
+#battleScreen .action.confirmed-selected{border-color:var(--action-selected);box-shadow:inset 0 0 0 1px var(--action-selected),0 0 9px color-mix(in srgb,var(--action-selected) 27%,transparent)}
+#battleScreen .action.confirmed-selected::after{content:'✓';position:absolute;top:3px;right:3px;width:16px;height:16px;background:#10243ee6;color:var(--action-selected);font-size:12px;text-align:center;line-height:16px;border-radius:2px;pointer-events:none}
+#battleScreen .playerArea.locked .action{filter:brightness(.72)}
+#battleScreen .playerArea.locked .action.confirmed-selected{filter:none}
+#battleScreen .action.disabled{opacity:.4}
+#battleScreen .action:focus-visible{outline:2px solid #e4faff;outline-offset:2px}
+#battleEffectLayer .confirmedEffectCanvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+#battleScreen .hpBar,#battleScreen .gaugeBar{position:relative;box-sizing:border-box;background:#0b172a;border:1px solid #a8d2e8;border-radius:3px;box-shadow:0 0 0 1px #071426,inset 0 1px 0 #e1f5ff70}
+#battleScreen .hpBar::after,#battleScreen .gaugeBar::after{content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,transparent calc(100% - 2px),#071426 0);background-size:10% 100%}
+@media(prefers-reduced-motion:reduce){#battleScreen .hpFill,#battleScreen .gaugeFill{animation:none!important}}
+
+#battleScreen .battleActionArt{position:absolute;inset:0;z-index:-2;container-type:size;pointer-events:none;color:var(--mp-symbol);background:radial-gradient(ellipse at 50% 25%,color-mix(in srgb,var(--mp-symbol) 6%,transparent),transparent 72%)}
+#battleScreen .battleActionArt img{display:block;width:100%;height:100%;object-fit:contain}
+#battleScreen .battleActionArt[data-kind="block"] img,#battleScreen .battleActionArt[data-kind="seal"] img,#battleScreen .battleActionArt[data-kind="counter"] img{height:76%}
+#battleScreen .battleActionArt[data-kind="block"] img,#battleScreen .battleActionArt[data-kind="foresight"] img,#battleScreen .battleActionArt[data-kind="seal"] img{position:relative;top:6%}
+#battleScreen .actionFrame{position:absolute;z-index:1;inset:0;color:var(--mp-symbol);background:currentColor;clip-path:polygon(0 0,var(--mp-frame-span-x) 0,0 var(--mp-frame-span-y));opacity:.95;pointer-events:none}
+#battleScreen .mp-frame-b{transform:rotate(180deg)}
+#battleScreen .actionFrame.mp-positive{clip-path:polygon(100% 0,calc(100% - var(--mp-frame-span-x)) 0,100% var(--mp-frame-span-y))}
+#battleScreen .actionFrame.mp-vertical{width:min(4px,4.5cqw);clip-path:none;transform:none}
+#battleScreen .mp-frame-b.mp-vertical{left:auto;right:0}
+#battleScreen .actionFrame.mp-corner{--mp-frame-thickness:min(3px,4cqw,4cqh);clip-path:polygon(0 0,42% 0,42% var(--mp-frame-thickness),var(--mp-frame-thickness) var(--mp-frame-thickness),var(--mp-frame-thickness) 75%,0 75%)}
+#battleScreen .actionFrame.mp-lines{background:repeating-linear-gradient(var(--mp-frame-angle),currentColor 0 1.5cqh,transparent 1.5cqh 4.3cqh)}
+#battleScreen .mp-frame-b.mp-symmetric{transform:rotate(180deg)}
+#battleScreen .battleActionArt[data-kind="rampage"] .actionFrame{color:#ff9c38}
+#battleScreen .remote-action .actionFrame{opacity:.65}
+#battleScreen .battleActionArt::after{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background:linear-gradient(180deg,#06142620,transparent 24%,#07132955 48%,#061426f5 100%)}
