@@ -5458,37 +5458,100 @@ if(e2.skill === "tech6"){
    バトル演出
 ========================= */
 
+// One AudioContext is unlocked by a tap; delayed battle effects share it.
 let battleSEUnlocked=false;
+let battleSEContext=null;
+let battleSEResume=null;
+const battleSEBuffers=new Map();
+
+function loadBattleSEBuffer(el){
+  if(battleSEBuffers.has(el.id))return battleSEBuffers.get(el.id);
+  const context=battleSEContext;
+  const src=el.getAttribute("src") || el.querySelector("source")?.getAttribute("src");
+  if(!src)return Promise.reject(new Error("効果音ファイルが未設定です: "+el.id));
+  const job=fetch(new URL(src,document.baseURI))
+    .then(response=>{
+      if(!response.ok)throw new Error("効果音の取得に失敗しました: "+response.status);
+      return response.arrayBuffer();
+    })
+    .then(bytes=>context.decodeAudioData(bytes))
+    .catch(error=>{battleSEBuffers.delete(el.id);throw error;});
+  battleSEBuffers.set(el.id,job);
+  return job;
+}
 
 function unlockBattleSE(){
-  if(battleSEUnlocked)return;
-  document.querySelectorAll("#battleSEAudio audio").forEach(el=>{
-    el.pause();
-    el.currentTime=0;
-    el.muted=false;
-    el.volume=0.75;
-  });
-  battleSEUnlocked=true;
-}
-
-window.addEventListener("pointerdown",unlockBattleSE,{once:true});
-window.addEventListener("keydown",unlockBattleSE,{once:true});
-
-function playBattleSE(id){
-  if(!battleSEUnlocked)return;
-  const el=document.getElementById(id);
-  if(!el)return;
+  const AudioContextClass=window.AudioContext || window.webkitAudioContext;
+  if(!AudioContextClass)return;
   try{
-    delete el.dataset.sePriming;
-    el.muted=false;
-    el.volume=0.75;
-    el.currentTime=0;
-    const p=el.play();
-    if(p && typeof p.catch === "function") p.catch(err=>console.warn("SE再生失敗:",id,err));
-  }catch(e){
-    console.warn("SE再生エラー:",id,e);
+    if(!battleSEContext || battleSEContext.state==="closed"){
+      battleSEContext=new AudioContextClass();
+      battleSEBuffers.clear();
+      battleSEContext.addEventListener("statechange",()=>{
+        battleSEUnlocked=battleSEContext.state==="running";
+      });
+    }
+    const context=battleSEContext;
+    // Call resume and start a silent buffer synchronously during the gesture.
+    // Setting a flag or calling play() on muted <audio> is not enough on mobile.
+    if(context.state!=="running"){
+      battleSEResume=Promise.resolve(context.resume()).then(()=>{
+        battleSEUnlocked=context.state==="running";
+      }).catch(error=>{
+        battleSEUnlocked=false;
+        console.warn("SE音声の有効化に失敗しました。次のタップで再試行します",error);
+      });
+      const silent=context.createBufferSource();
+      silent.buffer=context.createBuffer(1,1,context.sampleRate);
+      silent.connect(context.destination);
+      silent.onended=()=>silent.disconnect();
+      silent.start(0);
+    }else{
+      battleSEUnlocked=true;
+    }
+    document.querySelectorAll("#battleSEAudio audio:not([loop])").forEach(el=>{
+      loadBattleSEBuffer(el).catch(error=>console.warn("SE読み込み失敗:",el.id,error));
+    });
+  }catch(error){
+    battleSEUnlocked=false;
+    console.warn("SE音声の準備に失敗しました。次のタップで再試行します",error);
   }
 }
+
+// Keep listeners so failed activation and interruptions can recover on a tap.
+for(const type of ["pointerdown","pointerup","touchend","keydown"]){
+  window.addEventListener(type,unlockBattleSE,{passive:true});
+}
+
+function playBattleSE(id){
+  const el=document.getElementById(id);
+  if(!el)return;
+  if(battleSEContext){
+    const context=battleSEContext;
+    return Promise.resolve(battleSEResume)
+      .then(()=>loadBattleSEBuffer(el))
+      .then(buffer=>{
+        if(context.state!=="running")throw new Error("音声が停止中です。画面をタップしてください");
+        const source=context.createBufferSource();
+        const gain=context.createGain();
+        source.buffer=buffer;
+        gain.gain.value=0.75;
+        source.connect(gain);
+        gain.connect(context.destination);
+        source.onended=()=>{source.disconnect();gain.disconnect();};
+        source.start(0);
+      }).catch(error=>console.warn("SE再生失敗:",id,error));
+  }
+  // Compatibility fallback for browsers without Web Audio.
+  try{
+    el.muted=false;
+    el.volume=0.75;
+    el.currentTime=0;
+    const job=el.play();
+    if(job?.catch)job.catch(error=>console.warn("SE再生失敗:",id,error));
+  }catch(error){console.warn("SE再生エラー:",id,error);}
+}
+
 
 function playUISound(id){
   playBattleSE(id);
