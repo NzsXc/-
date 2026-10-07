@@ -64,11 +64,23 @@ const initialAccount = {
  // 終わる前に入力期限を進めないよう、2ターン目以降にも十分な同期猶予を設ける。
  const turnOpensAt=s=>s.startedAt+(s.turn>1?7500:5600);
  const initial=()=>Object.fromEntries(stateFields.map(k=>[k,k==='turn'?1:k==='startedAt'?serverTimestamp():k.startsWith('hp')?10:k.startsWith('gauge')?8:k.startsWith('seal')||k.startsWith('momentum')?false:k.startsWith('last')?'':0]));
+ const matchMetadata=new Map(),titleRecorded=new Map(),ratingClaimed=new Set();
+ async function metadata(id,g){
+  let data=matchMetadata.get(id);
+  if(data)return data;
+  const entries=await Promise.all([1,2].map(async p=>{
+   const [account,titles,loadout]=await Promise.all([read('freeAccounts/'+g.players[p]),loadTitles(g.players[p]),read('freeGames/'+id+'/loadouts/'+p)]);
+   return [p,{profile:{name:account?.name||'プレイヤー',rating:account?.guest?null:Number.isFinite(account?.rating)?account.rating:null,bot:false,titles},loadout}];
+  }));
+  data={players:{},loadouts:{}};
+  for(const [p,value]of entries){data.players[p]=value.profile;data.loadouts[p]=value.loadout;}
+  matchMetadata.set(id,data);return data;
+ }
  async function status(id){
   const u=auth.currentUser.uid,path='freeGames/'+id;let g;
   for(let attempt=0;attempt<4;attempt++){
    const keys=['players','createdAt','state','ready','resigned','settled','transition','kind','room'];g=Object.fromEntries(await Promise.all(keys.map(async k=>[k,await read(path+'/'+k)])));g.ready||={};
-   const me=g.players[1]===u?1:g.players[2]===u?2:0;if(!me)throw Error('参加者ではありません');g.me=me;
+   const me=g.players?.[1]===u?1:g.players?.[2]===u?2:0;if(!me)throw Error('参加者ではありません');g.me=me;
    const s=g.state;let finalMoves=null;const expires=s?turnOpensAt(s)+40000:0;
    if(s&&now()>=expires)finalMoves=await read(path+'/moves/'+s.turn)||{};
    const abandoned=!!s&&now()>=expires&&(finalMoves?.[1]==null||finalMoves?.[2]==null);g.abandoned=abandoned;
@@ -93,19 +105,22 @@ const initialAccount = {
    }
    break;
   }
-  const s=g.state,me=g.me,players={};
-  const playerData=await Promise.all([1,2].map(async p=>{
-   const account=await read('freeAccounts/'+g.players[p]);
-   const titles=await loadTitles(g.players[p]);
-   return [p,{name:account?.name||'プレイヤー',rating:account?.guest?null:Number.isFinite(account?.rating)?account.rating:null,bot:false,titles}];
-  }));
-  for(const [p,data] of playerData)players[p]=data;
-  const loadouts={};if(g.ready[1]&&g.ready[2])for(const p of [1,2])loadouts[p]=await read(path+'/loadouts/'+p);
+  const s=g.state,me=g.me;
+  const {players,loadouts}=g.ready[1]&&g.ready[2]?await metadata(id,g):{players:{},loadouts:{}};
   const state=s?{turn:s.turn,...Object.fromEntries(['hp','gauge','seal','enhance','momentum','ruin','last'].map(k=>[k,[null,s[k+'1'],s[k+'2']]]))}:null;
   const closed=!!g.settled,opensAt=s?turnOpensAt(s):0;
-  if(s)window.titleService.recordMatch({id,side:me,resolvedThrough:s.turn-1}).catch(console.warn);
-  if(closed)window.titleService.claimRatings().catch(console.warn);
-  return {id,kind:g.kind||'random',roomId:g.room||null,you:me,players,ready:g.ready,loadouts,state,closed,phase:closed?'finished':s?'turn':'select',revision:now(),serverNow:now(),opensAt,deadline:s?opensAt+10000:g.createdAt+60000,graceDeadline:s?opensAt+40000:g.createdAt+90000,ownAction:g.own??null,reveal:g.transition?{turn:g.transition.turn-1,actions:{1:g.transition.action1,2:g.transition.action2},damage:{1:g.transition.damage1,2:g.transition.damage2}}:null,result:closed?{winner:g.settled.winner,rated:g.kind!=='friend',reason:g.resigned?'resigned':g.abandoned&&s?.hp1>0&&s?.hp2>0?'reconnect-timeout':!s?'selection-timeout':s.misses1>=2||s.misses2>=2?'idle-forfeit':s.turn>300?'turn-limit':'battle'}:null,rating:closed?{before:g.settled['before'+me],after:g.settled['after'+me],delta:g.settled['delta'+me]}:null};
+  const titleKey=u+':'+id;
+  if(s&&(titleRecorded.get(titleKey)||0)<s.turn-1){
+   titleRecorded.set(titleKey,s.turn-1);
+   window.titleService?.recordMatch({id,side:me,resolvedThrough:s.turn-1}).catch(error=>{titleRecorded.delete(titleKey);console.warn(error);});
+  }
+  if(closed&&!ratingClaimed.has(titleKey)){
+   ratingClaimed.add(titleKey);
+   window.titleService?.claimRatings().catch(error=>{ratingClaimed.delete(titleKey);console.warn(error);});
+  }
+  // A match that expires before either loadout still needs player names for results.
+  if(closed&&!s)for(const p of [1,2]){const account=await read('freeAccounts/'+g.players[p]);players[p]={name:account?.name||'プレイヤー'};}
+  return {id,kind:g.kind||'random',roomId:g.room||null,you:me,players,ready:g.ready,loadouts,state,closed,phase:closed?'finished':s?'turn':'select',revision:now(),serverNow:now(),opensAt,deadline:s?opensAt+10000:g.createdAt+60000,graceDeadline:s?opensAt+40000:g.createdAt+90000,ownAction:g.own??null,reveal:g.transition?{turn:g.transition.turn-1,startedAt:s?.startedAt,actions:{1:g.transition.action1,2:g.transition.action2},damage:{1:g.transition.damage1,2:g.transition.damage2}}:null,result:closed?{winner:g.settled.winner,rated:g.kind!=='friend',reason:g.resigned?'resigned':g.abandoned&&s?.hp1>0&&s?.hp2>0?'reconnect-timeout':!s?'selection-timeout':s.misses1>=2||s.misses2>=2?'idle-forfeit':s.turn>300?'turn-limit':'battle'}:null,rating:closed?{before:g.settled['before'+me],after:g.settled['after'+me],delta:g.settled['delta'+me]}:null};
  }
  async function resumeActive(account){
   const u=auth.currentUser.uid,id=String(account?.active||'');
@@ -126,7 +141,7 @@ const initialAccount = {
   if(match.closed&&fresh?.active===id)await writeSet('freeAccounts/'+u+'/active','');
   return {match};
  }
- return async function request(d){
+ async function request(d){
   const a=await profile(),u=auth.currentUser.uid;
   if(d.op==='profile')return a;
   if(d.op==='resume')return resumeActive(a);
@@ -166,7 +181,7 @@ const initialAccount = {
    const waitedMs=Math.max(0,now()-(q?.joinedAt??now()));
    return {waitedMs,waiting:1,capacity:2};
   }
-  const id=d.matchId,path='freeGames/'+id,players=await read(path+'/players'),me=players[1]===u?1:players[2]===u?2:0;if(!me)throw Error('参加者ではありません');
+  const id=d.matchId,path='freeGames/'+id,players=await read(path+'/players'),me=players?.[1]===u?1:players?.[2]===u?2:0;if(!me)throw Error('参加者ではありません');
   if(d.op==='loadout'){
    try{
     await writeUpdate(path,{['loadouts/'+me]:d.loadout,['ready/'+me]:true});
@@ -177,12 +192,23 @@ const initialAccount = {
   }
   else if(d.op==='action'){
    const s=await read(path+'/state');
+   if(s&&s.turn!==d.turn)return {match:await status(id)};
    if(!s||now()<turnOpensAt(s))throw Error('プレイヤー紹介が終わるまでお待ちください');
+   // Writes are immutable. A retry after a lost acknowledgement must use the
+   // already accepted move, even when the timeout default differs from it.
+   if(await read(path+'/moves/'+d.turn+'/'+me)!=null)return {match:await status(id)};
    try{await writeSet(path+'/moves/'+d.turn+'/'+me,d.action);}
    catch(error){if(await read(path+'/moves/'+d.turn+'/'+me)!==d.action)throw error;}
   }
   else if(d.op==='resign')await writeSet(path+'/resigned/'+me,serverTimestamp());
   else if(d.op!=='status')throw Error('未対応の操作');
   return {match:await status(id)};
+ }
+ // Observe public children only; subscribing to the game root would expose
+ // hidden moves and is denied by the existing database rules.
+ request.watch=(id,onChange,onError)=>{
+  const stops=['state','ready','resigned','settled'].map(key=>onValue(ref(db,'freeGames/'+id+'/'+key),onChange,onError));
+  return ()=>stops.forEach(stop=>stop());
  };
+ return request;
 }

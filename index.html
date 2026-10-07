@@ -2664,18 +2664,18 @@ button{min-height:44px;}
 
 <script src="titles-catalog.js?v=tech12-2"></script>
 <script src="player-intro.js?v=1"></script>
-<script src="titles-client.js?v=tech12-2"></script>
+<script src="titles-client.js?v=sync-timeout-3"></script>
 <script src="player-lightning.js?v=2"></script>
 <script src="bot-engine.js?v=tech12-fix-1"></script>
 <script src="bot-client.js?v=tech12-fix-1"></script>
-<script src="ranked-client.js?v=confirmed-input-2"></script>
+<script src="ranked-client.js?v=sync-timeout-3"></script>
 <script src="lobby-client.js?v=protected-titles-1"></script>
 <script src="battle-action-art.js?v=confirmed-1"></script>
 <script src="battle-effects.js?v=confirmed-1"></script>
 <script type="module">
-  import {createTitleService} from "./title-service.js?v=tech12-2";
+  import {createTitleService} from "./title-service.js?v=sync-timeout-3";
   import {createProtectedRooms} from "./protected-rooms.js?v=1";
-  import {createFreeTransport} from "./free-transport.js?v=all-fixes-1";
+  import {createFreeTransport} from "./free-transport.js?v=sync-timeout-3";
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
   import {
     getAuth,
@@ -5212,13 +5212,14 @@ function finishTurn(){
     if(!me || onlineInputTurn!==onlineTurnNumber){turnResolving=false;return;}
     if(!selectedAction[me]){
       if(!onlineInputOpen){turnResolving=false;return;}
-      selectedAction[me]={id:"charge",data:basicActions.charge};
+      const automatic=gauge[me]>=10?'attack':'charge';
+      selectedAction[me]={id:automatic,data:basicActions[automatic]};
       locked[me]=true;
       document.getElementById("player"+me+"Area")?.classList.add("locked");
-      showOnlineTechniqueDescription(basicActions.charge);
-      // 本当に無入力だった場合だけ自動チャージ。送信成功を確認してから進む。
+      showOnlineTechniqueDescription(basicActions[automatic]);
+      // 無入力時は自動選択し、送信成功を確認してから進む。
       turnResolving=false;
-      sendSelectedOnlineAction(me,"charge",onlineInputTurn);
+      sendSelectedOnlineAction(me,automatic,onlineInputTurn);
       return;
     }
     if(!onlineActionAcknowledged || onlinePendingAction || onlineActionSendFailed || !selectedAction[1] || !selectedAction[2] || me!==1){
@@ -5233,12 +5234,14 @@ function finishTurn(){
   }
 
   if(!selectedAction[1]){
-    selectedAction[1]={id:"charge",data:basicActions.charge};
+    const automatic=gauge[1]>=10?'attack':'charge';
+    selectedAction[1]={id:automatic,data:basicActions[automatic]};
     locked[1]=true;
     document.getElementById("player1Area").classList.add("locked");
   }
   if(!selectedAction[2]){
-    selectedAction[2]={id:"charge",data:basicActions.charge};
+    const automatic=gauge[2]>=10?'attack':'charge';
+    selectedAction[2]={id:automatic,data:basicActions[automatic]};
     locked[2]=true;
     document.getElementById("player2Area").classList.add("locked");
   }

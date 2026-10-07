@@ -6,7 +6,7 @@ async function openTitles(){
  if(!window.titleService){document.getElementById('titlesStatus').textContent='接続を準備中です。少し待ってから開き直してください。';return;}
  if(!window.titleService.uid()){document.getElementById('titlesStatus').textContent='称号の獲得・保存にはログインが必要です。';return;}
  document.getElementById('titlesStatus').textContent='称号を読み込んでいます…';
- try{const data=await window.titleService.readOwn();if(epoch!==titleViewEpoch)return;titleViewData=data;titleDraft=[0,1,2].map(i=>data.loadout?.[i]||'');renderTitles();document.getElementById('titlesStatus').textContent='装備枠を選び、獲得済みの称号を押してください。';}
+ try{const data=await window.titleService.readOwn();if(epoch!==titleViewEpoch)return;titleViewData=data;titleDraft=[0,1,2].map(i=>data.loadout?.[i]||'');renderTitles();document.getElementById('titlesStatus').textContent=data.warnings?.length?'称号は読み込めましたが、獲得記録の同期に失敗しました。Firebaseのルールを確認してください。 '+data.warnings.join(' / '):'装備枠を選び、獲得済みの称号を押してください。';}
  catch(e){if(epoch===titleViewEpoch)document.getElementById('titlesStatus').textContent='読み込めません：'+e.message;}
 }
 function closeTitles(){if(titleSaving)return;titleViewEpoch++;showScreen('modeScreen');}
