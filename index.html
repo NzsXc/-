@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>心理バトル</title>
+<link rel="stylesheet" href="battle-history.css?v=history-1">
 
 <style>
 
@@ -2147,7 +2148,7 @@ button{min-height:44px;}
     <div class="playerCardContent">
       <div class="playerCardEyebrow">PLAYER DATA / RATE ARCHIVE</div>
       <div class="playerCardProfile">
-        <div class="playerCardIdentity"><span class="playerCardNameLabel">PLAYER NAME</span><h1 id="playerCardName">プレイヤー</h1><span class="playerCardRateLabel">RATE</span><div id="playerCardRate" class="playerCardRate">1000</div></div>
+        <div class="playerCardIdentity"><span class="playerCardNameLabel">PLAYER NAME</span><h1 id="playerCardName">プレイヤー</h1><span class="playerCardRateLabel">RATE</span><div class="playerCardRateRow"><div id="playerCardRate" class="playerCardRate">1000</div><button id="playerCardHistoryButton" type="button" class="historyButton">対戦履歴を見る</button></div></div>
         <div id="playerCardTitles" class="playerCardTitles" aria-label="装備中の称号"></div>
       </div>
       <section class="playerCardRecord"><h2 class="playerCardRecordTitle">BATTLE RECORD / 対戦記録</h2><div class="playerCardStats">
@@ -2673,9 +2674,11 @@ button{min-height:44px;}
 <script src="battle-action-art.js?v=confirmed-1"></script>
 <script src="battle-effects.js?v=confirmed-1"></script>
 <script type="module">
-  import {createTitleService} from "./title-service.js?v=sync-timeout-3";
-  import {createProtectedRooms} from "./protected-rooms.js?v=1";
-  import {createFreeTransport} from "./free-transport.js?v=sync-timeout-3";
+  import {createTitleService} from "./title-service.js?v=history-1";
+  import {createProtectedRooms} from "./protected-rooms.js?v=history-1";
+  import {createFreeTransport} from "./free-transport.js?v=history-1";
+  import {createBattleHistory} from "./battle-history.js?v=history-1";
+  import {createHistoryScreen} from "./battle-history-client.js?v=history-1";
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
   import {
     getAuth,
@@ -2710,9 +2713,11 @@ button{min-height:44px;}
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
   const auth = getAuth(app);
-  window.titleService=createTitleService(db,auth);
-  window.rankedTransport=createFreeTransport(db,auth);
-  window.protectedRooms=createProtectedRooms(db,auth,window.rankedTransport);
+  window.battleHistory=createBattleHistory(db,auth);
+  window.titleService=createTitleService(db,auth,window.battleHistory);
+  window.rankedTransport=createFreeTransport(db,auth,window.battleHistory);
+  window.protectedRooms=createProtectedRooms(db,auth,window.rankedTransport,window.battleHistory);
+  const historyScreen=createHistoryScreen(window.battleHistory);
 
   let loggedInPlayerData = null;
 
@@ -2755,6 +2760,7 @@ button{min-height:44px;}
     window.loggedInPlayerData=loggedInPlayerData;
     const protectedProfile=await window.rankedTransport({op:"profile"});
     loggedInPlayerData.rankRate=protectedProfile.rating;
+    if(protectedProfile.lastSettled)window.battleHistory.archiveFinished(protectedProfile.lastSettled).catch(error=>console.warn("終了済み対戦の整理を再試行します",error));
     window.titleService.claimRatings().catch(console.warn);
     if(protectedProfile.active)setTimeout(()=>{if(!rankedActive)startRanked(true);},0);
     updatePlayerLoginButton();
@@ -2887,6 +2893,7 @@ button{min-height:44px;}
   window.openRankingPlayerCard=async function(player){
     if(!player?.uid)return;
     const requestId=++playerCardRequestId;
+    document.getElementById("playerCardHistoryButton").onclick=()=>historyScreen.open(player);
     const name=document.getElementById("playerCardName");
     const rate=document.getElementById("playerCardRate");
     const titles=document.getElementById("playerCardTitles");

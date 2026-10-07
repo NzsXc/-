@@ -1,8 +1,13 @@
 import {ref,get,set,update} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js';
-export function createTitleService(db,auth){
+export function createTitleService(db,auth,history){
  const uid=()=>auth.currentUser&&!auth.currentUser.isAnonymous?auth.currentUser.uid:null;
  const read=async p=>{try{return (await get(ref(db,p))).val();}catch(error){throw new Error(p+'：'+error.message,{cause:error});}};
  let jobs=Promise.resolve();const cursors=new Map();
+ const archivedProofs=new Map();
+ async function archivedProof(id){
+  if(archivedProofs.has(id))return archivedProofs.get(id);
+  const h=await history?.find(id);if(h){archivedProofs.set(id,h);if(archivedProofs.size>20)archivedProofs.delete(archivedProofs.keys().next().value);}return h;
+ }
  const cache=new Map(),pending=new Map();
  async function loadoutFor(who){
   if(!who)return ['','',''];
@@ -15,12 +20,23 @@ export function createTitleService(db,auth){
   }).finally(()=>pending.delete(key));
   pending.set(key,job);return job;
  }
- async function claimRatings(){const who=uid();if(!who)return;const a=await read('freeAccounts/'+who);if(!a)return;let peak=Number(a.rating||0);if(a.lastSettled){const players=await read('freeGames/'+a.lastSettled+'/players');const side=players?.[1]===who?1:players?.[2]===who?2:0;if(side){const ledger=await read('freeGames/'+a.lastSettled+'/settled');peak=Math.max(peak,Number(ledger?.['before'+side]||0),Number(ledger?.['after'+side]||0));}}
+ async function claimRatings(){const who=uid();if(!who)return;const a=await read('freeAccounts/'+who);if(!a)return;let peak=Number(a.rating||0);if(a.lastSettled){
+  let players=await read('freeGames/'+a.lastSettled+'/players'),ledger=await read('freeGames/'+a.lastSettled+'/settled');
+  if(!players||!ledger){const h=await archivedProof(a.lastSettled);if(h){players={1:h.players[1].uid,2:h.players[2].uid};ledger=h.settled;}}
+  const side=players?.[1]===who?1:players?.[2]===who?2:0;if(side)peak=Math.max(peak,Number(ledger?.['before'+side]||0),Number(ledger?.['after'+side]||0));}
   for(const rate of [1050,1100,1150])if(peak>=rate&&!await read('ratingMilestones/'+who+'/'+rate)){try{await set(ref(db,'ratingMilestones/'+who+'/'+rate),true);}catch(e){if(!await read('ratingMilestones/'+who+'/'+rate))throw e;}}
  }
  async function claimTurn(who,game,turn,side){
   if(uid()!==who)return;
-  const action=await read('freeGames/'+game+'/moves/'+turn+'/'+side);if(!Number.isInteger(action)||action<3||action>14)return;
+  let action;
+  const cached=archivedProofs.get(game);
+  if(cached)action=cached.moves?.[turn]?.[side];
+  else{
+   try{action=await read('freeGames/'+game+'/moves/'+turn+'/'+side);}
+   catch(error){const h=await archivedProof(game);if(!h)throw error;action=h.moves?.[turn]?.[side];}
+   if(action==null){const h=await archivedProof(game);action=h?.moves?.[turn]?.[side];}
+  }
+  if(!Number.isInteger(action)||action<3||action>14)return;
   const skill=action-2,proof='titleReceipts/'+who+'/'+game+'/'+turn,total='titleProgress/'+who+'/uses/'+skill;
   for(let attempt=0;attempt<4;attempt++){
    if(uid()!==who)return;
@@ -34,7 +50,11 @@ export function createTitleService(db,auth){
   const key=who+':'+id;
   jobs=jobs.catch(()=>{}).then(async()=>{for(let turn=(cursors.get(key)||0)+1;turn<=Math.min(300,resolvedThrough);turn++){if(uid()!==who)return;await claimTurn(who,id,turn,side);cursors.set(key,turn);}});return jobs;
  }
- async function syncLastMatch(){const who=uid();if(!who)return;const a=await read('freeAccounts/'+who);for(const id of new Set([a?.lastSettled,a?.active].filter(Boolean))){const [players,state]=await Promise.all([read('freeGames/'+id+'/players'),read('freeGames/'+id+'/state')]);const side=players?.[1]===who?1:players?.[2]===who?2:0;if(side&&state)await recordMatch({id,side,resolvedThrough:state.turn-1});}}
+ async function syncLastMatch(){const who=uid();if(!who)return;const a=await read('freeAccounts/'+who);for(const id of new Set([a?.lastSettled,a?.active].filter(Boolean))){
+  const [players,state]=await Promise.all([read('freeGames/'+id+'/players'),read('freeGames/'+id+'/state')]);
+  if(players&&state){const side=players[1]===who?1:players[2]===who?2:0;if(side)await recordMatch({id,side,resolvedThrough:state.turn-1});}
+  else{const h=await archivedProof(id),side=h?.players?.[1]?.uid===who?1:h?.players?.[2]?.uid===who?2:0;if(side)await recordMatch({id,side,resolvedThrough:h.turnCount});}
+ }}
  async function readOwn(){
   const who=uid();if(!who)throw Error('ログインしてください');
   const warnings=[];

@@ -1,6 +1,7 @@
 import {ref,get,set,update,push,serverTimestamp,onValue,runTransaction} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js';
 import {calculate,stateFields} from './free-calculator.js?v=all-fixes-1';
-export function createFreeTransport(db,auth){
+import {historyMatch} from './battle-history-core.js?v=history-1';
+export function createFreeTransport(db,auth,history){
  let offset=0;onValue(ref(db,'.info/serverTimeOffset'),s=>{offset=s.val()||0;});
  const now=()=>Date.now()+offset;
  const withTimeout=(promise,ms,label)=>{
@@ -65,12 +66,17 @@ const initialAccount = {
  const turnOpensAt=s=>s.startedAt+(s.turn>1?7500:5600);
  const initial=()=>Object.fromEntries(stateFields.map(k=>[k,k==='turn'?1:k==='startedAt'?serverTimestamp():k.startsWith('hp')?10:k.startsWith('gauge')?8:k.startsWith('seal')||k.startsWith('momentum')?false:k.startsWith('last')?'':0]));
  const matchMetadata=new Map(),titleRecorded=new Map(),ratingClaimed=new Set();
+ const historyWarnings=new Set();
+ async function archivedStatus(id,u){
+  const h=await history?.find(id);
+  return h?{match:historyMatch(h,u,now())}:null;
+ }
  async function metadata(id,g){
   let data=matchMetadata.get(id);
   if(data)return data;
   const entries=await Promise.all([1,2].map(async p=>{
-   const [account,titles,loadout]=await Promise.all([read('freeAccounts/'+g.players[p]),loadTitles(g.players[p]),read('freeGames/'+id+'/loadouts/'+p)]);
-   return [p,{profile:{name:account?.name||'プレイヤー',rating:account?.guest?null:Number.isFinite(account?.rating)?account.rating:null,bot:false,titles},loadout}];
+   const [account,titles,loadout,snapshot]=await Promise.all([read('freeAccounts/'+g.players[p]),loadTitles(g.players[p]),read('freeGames/'+id+'/loadouts/'+p),read('freeGames/'+id+'/profiles/'+p).catch(()=>null)]);
+   return [p,{profile:{name:snapshot?.name||account?.name||'プレイヤー',rating:account?.guest?null:snapshot?.rating??(Number.isFinite(account?.rating)?account.rating:null),bot:false,titles:snapshot?Object.values(snapshot.titles):titles},loadout}];
   }));
   data={players:{},loadouts:{}};
   for(const [p,value]of entries){data.players[p]=value.profile;data.loadouts[p]=value.loadout;}
@@ -80,7 +86,17 @@ const initialAccount = {
   const u=auth.currentUser.uid,path='freeGames/'+id;let g;
   for(let attempt=0;attempt<4;attempt++){
    const keys=['players','createdAt','state','ready','resigned','settled','transition','kind','room'];g=Object.fromEntries(await Promise.all(keys.map(async k=>[k,await read(path+'/'+k)])));g.ready||={};
-   const me=g.players?.[1]===u?1:g.players?.[2]===u?2:0;if(!me)throw Error('参加者ではありません');g.me=me;
+   const me=g.players?.[1]===u?1:g.players?.[2]===u?2:0;
+   if(!me){const saved=await archivedStatus(id,u);if(saved)return saved.match;throw Error('参加者ではありません');}g.me=me;
+   try{await history?.markClient(id,g.players);}catch(error){console.warn('履歴対応状態の保存を再試行します',error);}
+   if(g.settled&&history){
+    try{
+     const h=await history.archiveFinished(id),m=historyMatch(h,u,now());
+     window.titleService?.recordMatch({id,side:me,resolvedThrough:h.turnCount}).catch(console.warn);
+     window.titleService?.claimRatings().catch(console.warn);
+     matchMetadata.delete(id);return m;
+    }catch(error){if(!historyWarnings.has(id)){historyWarnings.add(id);console.warn('対戦履歴を保存できないため、ルームを残します',error);}}
+   }
    const s=g.state;let finalMoves=null;const expires=s?turnOpensAt(s)+40000:0;
    if(s&&now()>=expires)finalMoves=await read(path+'/moves/'+s.turn)||{};
    const abandoned=!!s&&now()>=expires&&(finalMoves?.[1]==null||finalMoves?.[2]==null);g.abandoned=abandoned;
@@ -90,7 +106,7 @@ const initialAccount = {
     const accounts={1:await read('freeAccounts/'+g.players[1]),2:await read('freeAccounts/'+g.players[2])};
     const amount=g.kind==='friend'||winner===0?0:Math.max(10,30+Math.trunc((accounts[3-winner].rating-accounts[winner].rating)/20));
     const patch={},ledger={at:serverTimestamp(),winner};for(const p of [1,2]){const a=accounts[p],storedRating=Number(a.rating),before=Number.isFinite(storedRating)?storedRating:1000,wanted=winner===0?before:winner===p?before+amount:before-amount,after=Math.max(1000,wanted),d=after-before,won=winner===p;Object.assign(ledger,{['before'+p]:before,['after'+p]:after,['delta'+p]:d});patch['freeAccounts/'+g.players[p]]={...a,rating:after,games:Number(a.games||0)+1,onlineWins:Math.max(0,Number(a.onlineWins)||0)+(won&&g.kind!=='friend'?1:0),friendWins:Math.max(0,Number(a.friendWins)||0)+(won&&g.kind==='friend'?1:0),active:'',lastSettled:id};}patch[path+'/settled']=ledger;
-    try{await update(ref(db),patch);}catch(e){if(!await read(path+'/settled'))throw e;}continue;
+    try{await update(ref(db),patch);}catch(e){if(!await read(path+'/settled')){const saved=await archivedStatus(id,u);if(saved)return saved.match;throw e;}}continue;
    }
    if(!s&&!terminal&&g.ready[1]&&g.ready[2]){
     try{
@@ -101,12 +117,13 @@ const initialAccount = {
    if(s&&!terminal&&now()>=turnOpensAt(s)){
     g.own=await read(path+'/moves/'+s.turn+'/'+me);let moves=null;
     try{moves=await read(path+'/moves/'+s.turn);}catch(e){if(!String(e.code||e.message).toLowerCase().includes('permission'))throw e;}
-    if(moves?.[1]!=null&&moves?.[2]!=null){const c=calculate(s,moves||{},id),state=Object.fromEntries(stateFields.map(k=>[k,k==='startedAt'?serverTimestamp():c[k]]));try{await update(ref(db,path),{transition:c,state});}catch(e){const fresh=await read(path+'/state');if(fresh.turn===s.turn&&!await read(path+'/resigned'))throw e;}continue;}
+    if(moves?.[1]!=null&&moves?.[2]!=null){const c=calculate(s,moves||{},id),state=Object.fromEntries(stateFields.map(k=>[k,k==='startedAt'?serverTimestamp():c[k]]));try{await update(ref(db,path),{transition:c,state});}catch(e){const fresh=await read(path+'/state');if(!fresh){const saved=await archivedStatus(id,u);if(saved)return saved.match;throw e;}if(fresh.turn===s.turn&&!await read(path+'/resigned'))throw e;}continue;}
    }
    break;
   }
   const s=g.state,me=g.me;
   const {players,loadouts}=g.ready[1]&&g.ready[2]?await metadata(id,g):{players:{},loadouts:{}};
+  if(s&&(!loadouts[1]||!loadouts[2])){const saved=await archivedStatus(id,u);if(saved)return saved.match;throw Error('対戦情報を再取得してください');}
   const state=s?{turn:s.turn,...Object.fromEntries(['hp','gauge','seal','enhance','momentum','ruin','last'].map(k=>[k,[null,s[k+'1'],s[k+'2']]]))}:null;
   const closed=!!g.settled,opensAt=s?turnOpensAt(s):0;
   const titleKey=u+':'+id;
@@ -144,6 +161,7 @@ const initialAccount = {
  async function request(d){
   const a=await profile(),u=auth.currentUser.uid;
   if(d.op==='profile')return a;
+  if(d.op==='history'){if(!history)throw Error('対戦履歴の接続を準備中です');return {histories:await history.list(d.uid||u)};}
   if(d.op==='resume')return resumeActive(a);
   if(['friendJoin','join','queue','cancel'].includes(d.op)&&a.active){
    const resumed=await resumeActive(a);
@@ -181,8 +199,18 @@ const initialAccount = {
    const waitedMs=Math.max(0,now()-(q?.joinedAt??now()));
    return {waitedMs,waiting:1,capacity:2};
   }
-  const id=d.matchId,path='freeGames/'+id,players=await read(path+'/players'),me=players?.[1]===u?1:players?.[2]===u?2:0;if(!me)throw Error('参加者ではありません');
+  const id=d.matchId,path='freeGames/'+id,players=await read(path+'/players'),me=players?.[1]===u?1:players?.[2]===u?2:0;
+  if(!me){const saved=await archivedStatus(id,u);if(saved)return saved;throw Error('参加者ではありません');}
+  if(d.op!=='status'&&await read(path+'/settled'))return {match:await status(id)};
   if(d.op==='loadout'){
+   // Snapshot before ready/state. A rules-first rollout also remains compatible
+   // with older clients that do not send profiles.
+   try{
+    if(!await read(path+'/profiles/'+me)){
+     const [account,titles]=await Promise.all([read('freeAccounts/'+u),read('titleLoadouts/'+u)]);
+     await writeSet(path+'/profiles/'+me,{name:account.name,rating:account.rating,titles:Object.fromEntries([0,1,2].map(i=>[i,titles?.[i]||'']))});
+    }
+   }catch(error){console.warn('対戦時のプロフィールを保存できませんでした',error);}
    try{
     await writeUpdate(path,{['loadouts/'+me]:d.loadout,['ready/'+me]:true});
    }catch(error){
@@ -192,6 +220,7 @@ const initialAccount = {
   }
   else if(d.op==='action'){
    const s=await read(path+'/state');
+   if(!s){const saved=await archivedStatus(id,u);if(saved)return saved;}
    if(s&&s.turn!==d.turn)return {match:await status(id)};
    if(!s||now()<turnOpensAt(s))throw Error('プレイヤー紹介が終わるまでお待ちください');
    // Writes are immutable. A retry after a lost acknowledgement must use the
