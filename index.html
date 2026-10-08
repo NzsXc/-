@@ -2019,6 +2019,7 @@ button{min-height:44px;}
 <link rel="stylesheet" href="player-intro.css?v=2">
 <link rel="stylesheet" href="titles.css?v=2">
 <link rel="stylesheet" href="titles-design.css?v=4">
+<link rel="stylesheet" href="player-profile.css?v=profile-3">
 <link rel="stylesheet" href="tournament-preview.css?v=1">
 <link rel="stylesheet" href="battle-action-art.css?v=confirmed-1">
 </head>
@@ -2148,16 +2149,14 @@ button{min-height:44px;}
     <div class="playerCardContent">
       <div class="playerCardEyebrow">PLAYER DATA / RATE ARCHIVE</div>
       <div class="playerCardProfile">
-        <div class="playerCardIdentity"><span class="playerCardNameLabel">PLAYER NAME</span><h1 id="playerCardName">プレイヤー</h1><span class="playerCardRateLabel">RATE</span><div class="playerCardRateRow"><div id="playerCardRate" class="playerCardRate">1000</div><button id="playerCardHistoryButton" type="button" class="historyButton">対戦履歴を見る</button></div></div>
+        <div class="playerCardIdentity"><span class="playerCardNameLabel">PLAYER NAME</span><h1 id="playerCardName">プレイヤー</h1><div class="playerCardRatings"><div><span class="playerCardRateLabel">RATE</span><div id="playerCardRate" class="playerCardRate">1000</div></div><div class="playerCardPeak" title="保存済みの対戦履歴と現在レートの最大値"><span class="playerCardPeakLabel">最高レート</span><strong id="playerCardPeakRate" class="playerCardPeakValue">—</strong></div></div><button id="playerCardHistoryButton" type="button" class="historyButton">対戦履歴を見る</button></div>
         <div id="playerCardTitles" class="playerCardTitles" aria-label="装備中の称号"></div>
       </div>
-      <section class="playerCardRecord"><h2 class="playerCardRecordTitle">BATTLE RECORD / 対戦記録</h2><div class="playerCardStats">
-        <div class="playerCardStat total"><span class="playerCardStatLabel">総勝利数</span><strong id="playerCardTotalWins" class="playerCardStatValue">—</strong></div>
-        <div class="playerCardStat online"><span class="playerCardStatLabel">オンライン対戦勝利数</span><strong id="playerCardRankedWins" class="playerCardStatValue">—</strong></div>
-        <div class="playerCardStat friend"><span class="playerCardStatLabel">友達対戦勝利数</span><strong id="playerCardFriendWins" class="playerCardStatValue">—</strong></div>
-        <div class="playerCardStat games"><span class="playerCardStatLabel">総対戦数</span><strong id="playerCardGames" class="playerCardStatValue">—</strong></div>
-      </div></section>
-      <div class="playerCardFooter"><p id="playerCardStatus" class="playerCardNote">公開されている対戦記録から集計します。</p><button class="onlineMainButton playerCardBack" onclick="showScreen('rankingScreen')">ランキングへ戻る</button></div>
+      <section class="playerCardRecord playerCardRecordColumns">
+        <div class="playerCardRecordColumn"><h2 class="playerCardRecordTitle">勝利数</h2><div class="playerCardWins" aria-label="勝利数" title="サーバーに確定保存された勝利数"><div><span>総勝利</span><strong id="playerCardTotalWins">—</strong></div><div><span>オンライン</span><strong id="playerCardRankedWins">—</strong></div><div><span>友達</span><strong id="playerCardFriendWins">—</strong></div></div></div>
+        <div class="playerCardRecordColumn"><h2 class="playerCardRecordTitle">よく使う技 / TOP 3</h2><div id="playerCardTechniques" class="playerCardTechniques" aria-label="使用回数の多い技、上位3つ"></div></div>
+      </section>
+      <div class="playerCardFooter"><p id="playerCardStatus" class="playerCardNote" role="status">保存済みの対戦履歴から集計します。</p><button class="onlineMainButton playerCardBack" onclick="showScreen('rankingScreen')">ランキングへ戻る</button></div>
     </div>
   </div>
 </div>
@@ -2677,7 +2676,8 @@ button{min-height:44px;}
   import {createTitleService} from "./title-service.js?v=history-1";
   import {createProtectedRooms} from "./protected-rooms.js?v=history-1";
   import {createFreeTransport} from "./free-transport.js?v=history-1";
-  import {createBattleHistory} from "./battle-history.js?v=history-1";
+  import {createBattleHistory} from "./battle-history.js?v=profile-2";
+  import {createPlayerProfile} from "./player-profile.js?v=profile-2";
   import {createHistoryScreen} from "./battle-history-client.js?v=history-2";
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
   import {
@@ -2718,6 +2718,11 @@ button{min-height:44px;}
   window.rankedTransport=createFreeTransport(db,auth,window.battleHistory);
   window.protectedRooms=createProtectedRooms(db,auth,window.rankedTransport,window.battleHistory);
   const historyScreen=createHistoryScreen(window.battleHistory);
+  const playerProfile=createPlayerProfile({
+    history:{profileStats:(uid,rating)=>window.battleHistory.profileStats(uid,rating),open:player=>historyScreen.open(player)},
+    loadTitles:uid=>window.titleService.loadoutFor(uid),
+    showScreen:id=>showScreen(id),playSound:()=>playUISound("uiMenuOpenSE")
+  });
 
   let loggedInPlayerData = null;
 
@@ -2889,58 +2894,7 @@ button{min-height:44px;}
     }
   };
 
-  let playerCardRequestId=0;
-  window.openRankingPlayerCard=async function(player){
-    if(!player?.uid)return;
-    const requestId=++playerCardRequestId;
-    document.getElementById("playerCardHistoryButton").onclick=()=>historyScreen.open(player);
-    const name=document.getElementById("playerCardName");
-    const rate=document.getElementById("playerCardRate");
-    const titles=document.getElementById("playerCardTitles");
-    const totalWins=document.getElementById("playerCardTotalWins");
-    const rankedWins=document.getElementById("playerCardRankedWins");
-    const friendWins=document.getElementById("playerCardFriendWins");
-    const games=document.getElementById("playerCardGames");
-    const status=document.getElementById("playerCardStatus");
-    name.textContent=player.name;
-    rate.textContent=String(Math.max(1000,Number(player.rating)||1000));
-    const rankedCount=player.onlineWins===null?0:Math.max(0,Number(player.onlineWins)||0);
-    const friendCount=player.friendWins===null?0:Math.max(0,Number(player.friendWins)||0);
-    totalWins.textContent=String(rankedCount+friendCount);
-    rankedWins.textContent=String(rankedCount);
-    friendWins.textContent=String(friendCount);
-    games.textContent=String(Math.max(0,Number(player.games)||0));
-    status.textContent=player.onlineWins===null || player.friendWins===null
-      ? "勝利数の記録開始前に作成されたプレイヤーです。今後の確定結果から記録されます。"
-      : "サーバーに確定保存された集計値を表示しています。";
-    const titlePlaceholders=Array.from({length:3},()=>{
-      const placeholder=document.createElement("span");
-      placeholder.className="playerCardTitlePlaceholder";
-      placeholder.setAttribute("aria-hidden","true");
-      placeholder.textContent="称号を読み込み中";
-      return placeholder;
-    });
-    titles.replaceChildren(...titlePlaceholders);
-    showScreen("playerCardScreen");
-    playUISound("uiMenuOpenSE");
-   try{
-  const loadoutSnapshot=await get(ref(db,`titleLoadouts/${player.uid}`));
-  if(requestId!==playerCardRequestId)return;
-  const loadout=loadoutSnapshot.val() || {};
-  const ids=[0,1,2].map(index=>loadout[index] || loadout[String(index)] || "");
-  titles.replaceChildren(...ids.map(id=>{
-    const badge=window.TitleCatalog?.badge?.(id);
-    if(badge)return badge;
-    const empty=document.createElement("span");empty.textContent="—";return empty;
-  }));
-}catch(error){
-  if(requestId!==playerCardRequestId)return;
-  console.error("称号を取得できませんでした",error);
-  titles.replaceChildren(...["取得できませんでした","—","—"].map(text=>{const item=document.createElement("span");item.textContent=text;return item;}));
-}
-
-// freeGames全体はFirebaseルールで非公開。ランキングで取得済みの公開集計値だけを使う。
-};
+  window.openRankingPlayerCard=player=>playerProfile.open(player);
 
   let roomCode = null;
   let localPlayer = null;

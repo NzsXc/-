@@ -1,0 +1,33 @@
+#playerCardScreen.active{height:100dvh;min-height:0;overflow-y:auto;overscroll-behavior:contain;justify-content:flex-start;padding:28px 14px}
+.playerCardPanel{width:min(900px,100%)}
+.playerCardProfile{grid-template-columns:minmax(0,1fr) minmax(0,342px);gap:24px}
+.playerCardRatings{display:flex;align-items:flex-end;gap:24px;margin-top:20px}
+.playerCardRatings .playerCardRateLabel{margin-top:0}
+.playerCardPeak{padding-left:24px;border-left:1px solid rgba(106,214,242,.27)}
+.playerCardPeakLabel{display:block;margin-bottom:9px;color:#fff;font-size:11px;white-space:nowrap}
+.playerCardPeakValue{display:block;font:850 clamp(23px,3vw,30px)/.9 Inter,"Arial Narrow","Yu Gothic UI",sans-serif;letter-spacing:-.04em;color:#fff;font-variant-numeric:tabular-nums}
+.playerCardIdentity>.historyButton{margin-top:16px}
+.playerCardTitles{gap:8px;padding-left:16px}
+.playerCardTitles>.badge-item{width:min(100%,270px);max-width:270px}
+.playerCardTitles>.badge-item.kind-tournament{width:min(100%,342px);max-width:342px}
+.playerCardTitles>.badge-item .title-badge{font-size:min(16.2px,6cqi)}
+.playerCardTitles>.badge-item.kind-tournament .title-badge{font-size:min(14.4px,4.2cqi)}
+.playerCardTitles>.playerCardTitlePlaceholder,.playerCardTitles>.playerCardEmptyTitle,.playerCardTitles>.title-empty{width:min(100%,270px);height:32.4px;justify-self:center}
+.playerCardRecordColumns{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,3fr);gap:14px}
+.playerCardRecordColumn{min-width:0}
+.playerCardTechniques{display:grid;grid-template-columns:1fr;gap:8px}
+.playerCardTechnique{position:relative;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:9px;min-width:0;min-height:60px;box-sizing:border-box;padding:12px;border:1px solid rgba(118,153,189,.3);background:linear-gradient(145deg,#10243c,#0a172b)}
+.playerCardTechniqueRank{color:#789eb1;font:700 11px/1 Arial,sans-serif}
+.playerCardTechniqueName{min-width:0;color:#edfaff;font-size:13px;font-weight:700;overflow-wrap:anywhere}
+.playerCardTechniqueCount{color:#8eeaff;font:800 26px/1 Inter,"Arial Narrow","Yu Gothic UI",sans-serif;font-variant-numeric:tabular-nums;white-space:nowrap}
+.playerCardTechniqueUnit{margin-left:4px;color:#9fbccc;font-size:10px;font-weight:500}
+.playerCardTechnique.empty .playerCardTechniqueName{color:#7896a7;font-size:11px;font-weight:500}
+.playerCardTechnique.empty .playerCardTechniqueCount{color:#7896a7}
+.playerCardRecordTitle{margin:0 0 10px;font-size:11px;line-height:1.5;letter-spacing:.04em}
+.playerCardWins{display:grid;gap:8px;color:#9fbccc;font-size:11px;line-height:1.5}
+.playerCardWins>div{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:60px;min-width:0;box-sizing:border-box;padding:12px;border-bottom:1px solid rgba(118,153,189,.24);background:rgba(16,36,60,.35)}
+.playerCardWins strong{color:#d5f7ff;font:700 18px/1.5 Inter,"Arial Narrow","Yu Gothic UI",sans-serif;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.playerCardFooter{align-items:center}.playerCardNote{max-width:none;line-height:1.6}
+@media(max-width:760px){.playerCardProfile{grid-template-columns:1fr;gap:16px;padding:16px}.playerCardTitles{padding:12px 0 0}.playerCardFooter{align-items:flex-start;flex-direction:column;gap:12px}.playerCardBack{align-self:flex-end}.playerCardPanel{padding:24px 14px}}
+@media(max-width:520px){.playerCardRecordColumns{gap:8px;padding:10px}.playerCardRecordTitle{font-size:10px;letter-spacing:0}.playerCardWins{font-size:10px}.playerCardWins>div{padding:8px;gap:4px}.playerCardWins strong{font-size:16px}.playerCardTechnique{padding:8px;gap:4px}.playerCardTechniqueRank{font-size:9px}.playerCardTechniqueName{font-size:11px}.playerCardTechniqueCount{font-size:20px}.playerCardTechniqueUnit{margin-left:2px;font-size:9px}}
+@media(max-width:360px){.playerCardProfile{padding:12px}.playerCardRatings{gap:18px}.playerCardPeak{padding-left:18px}}

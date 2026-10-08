@@ -1,5 +1,6 @@
-import {ref,get,update,query,orderByValue,limitToLast} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js';
+import {ref,get,update,query,orderByValue,limitToLast,endBefore} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js';
 import {buildHistory,HISTORY_LIMIT,historySide} from './battle-history-core.js?v=history-1';
+import {summarizePlayerHistories} from './player-profile.js?v=profile-2';
 
 export function createBattleHistory(db,auth){
  const flights=new Map(),markedClients=new Set();
@@ -69,5 +70,21 @@ export function createBattleHistory(db,auth){
   const histories=await Promise.all(ids.map(find));
   return histories.filter(h=>h&&historySide(h,uid));
  }
- return {find,list,archiveFinished,markClient};
+ async function profileStats(uid,currentRating){
+  // The list view shows ten matches; the profile counts every archived match.
+  // Award counters stop at 30 and cannot represent actual usage totals.
+  const histories=[];let cursor=null;
+  while(true){
+   const constraints=[orderByValue(),limitToLast(HISTORY_LIMIT)];if(cursor)constraints.push(endBefore(cursor[1],cursor[0]));
+   const snapshot=await timed(get(query(ref(db,'playerHistory/'+uid),...constraints)));
+   const entries=Object.entries(snapshot.val()||{}).sort((a,b)=>a[1]-b[1]||(a[0]<b[0]?-1:a[0]>b[0]?1:0));
+   for(let start=0;start<entries.length;start+=4){
+    const batch=await Promise.all(entries.slice(start,start+4).map(([id])=>find(id)));
+    if(batch.some(h=>!h))throw Error('保存済み対戦履歴が不足しています');histories.push(...batch);
+   }
+   if(entries.length<HISTORY_LIMIT)break;cursor=entries[0];
+  }
+  return summarizePlayerHistories(histories,uid,currentRating);
+ }
+ return {find,list,profileStats,archiveFinished,markClient};
 }
