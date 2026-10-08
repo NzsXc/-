@@ -1,0 +1,27 @@
+{
+  "titleProgress": {
+    "$uid": {
+      ".read": "auth!=null&&auth.token.firebase.sign_in_provider!=='anonymous'&&auth.uid===$uid",
+      "tracking": {
+        ".write": "auth!=null&&auth.token.firebase.sign_in_provider!=='anonymous'&&auth.uid===$uid&&!data.exists()&&newData.exists()&&root.child('freeAccounts').child($uid).exists()",
+        ".validate": "newData.hasChildren(['version','startedAt','activeGame','resolvedThrough'])&&newData.child('version').val()===1&&newData.child('startedAt').val()===now&&newData.child('activeGame').isString()&&newData.child('activeGame').val()===root.child('freeAccounts').child($uid).child('active').val()&&newData.child('resolvedThrough').isNumber()&&newData.child('resolvedThrough').val()%1===0&&newData.child('resolvedThrough').val()>=0&&newData.child('resolvedThrough').val()<=300&&newData.child('resolvedThrough').val()===(newData.child('activeGame').val()!==''&&root.child('freeGames').child(newData.child('activeGame').val()).child('state').exists()?root.child('freeGames').child(newData.child('activeGame').val()).child('state/turn').val()-1:0)",
+        "version": { ".validate": true },
+        "startedAt": { ".validate": true },
+        "activeGame": { ".validate": true },
+        "resolvedThrough": { ".validate": true },
+        "$other": { ".validate": false }
+      },
+      "uses": {
+        ".read": "auth!=null",
+        "$skill": {
+          ".write": "auth!=null&&auth.token.firebase.sign_in_provider!=='anonymous'&&auth.uid===$uid&&newData.exists()",
+          ".validate": "$skill.matches(/^([1-9]|1[0-2])$/)&&newData.hasChildren(['count','game','turn'])&&newData.child('count').isNumber()&&newData.child('count').val()%1===0&&newData.child('count').val()===(data.child('count').exists()?data.child('count').val():0)+1&&newData.child('count').val()>(data.child('count').exists()?data.child('count').val():0)&&newData.child('game').isString()&&newData.child('turn').isNumber()&&newData.child('turn').val()%1===0&&newData.child('turn').val()>0&&!root.child('titleReceipts').child($uid).child(newData.child('game').val()).child(''+newData.child('turn').val()).exists()&&''+newData.parent().parent().parent().parent().child('titleReceipts').child($uid).child(newData.child('game').val()).child(''+newData.child('turn').val()).val()===$skill&&root.child('titleProgress').child($uid).child('tracking/version').val()===1&&((newData.child('game').val()===root.child('titleProgress').child($uid).child('tracking/activeGame').val()&&newData.child('turn').val()>root.child('titleProgress').child($uid).child('tracking/resolvedThrough').val())||(root.child('freeGames').child(newData.child('game').val()).exists()?root.child('freeGames').child(newData.child('game').val()).child('createdAt').val()>=root.child('titleProgress').child($uid).child('tracking/startedAt').val():root.child('battleHistory').child(newData.child('game').val()).child('createdAt').val()>=root.child('titleProgress').child($uid).child('tracking/startedAt').val()))",
+          "count": { ".validate": true },
+          "game": { ".validate": true },
+          "turn": { ".validate": true },
+          "$other": { ".validate": false }
+        }
+      }
+    }
+  }
+}

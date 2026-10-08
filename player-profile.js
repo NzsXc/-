@@ -1,5 +1,15 @@
 import {ACTION_NAMES,historySide} from './battle-history-core.js?v=history-1';
 
+export function techniquesFromUsage(uses){
+ const techniques=[];
+ for(let skill=1;skill<=12;skill++){
+  const entry=uses?.[skill];if(entry==null)continue;
+  const count=entry.count;if(!Number.isSafeInteger(count)||count<0)throw Error('技使用回数の記録が不正です');
+  if(count)techniques.push({action:skill+2,name:ACTION_NAMES[skill+2],count});
+ }
+ return techniques.sort((a,b)=>b.count-a.count||a.action-b.action).slice(0,3);
+}
+
 export function summarizePlayerHistories(histories,uid,currentRating){
  const counts=Array(12).fill(0);let peakRating=Math.max(1000,Number(currentRating)||1000),matches=0;
  const seen=new Set();
@@ -40,7 +50,7 @@ export function createPlayerProfile({history,loadTitles,showScreen,playSound=()=
   byId('playerCardRankedWins').textContent=displayWins(onlineWins);
   byId('playerCardFriendWins').textContent=displayWins(friendWins);
   byId('playerCardPeakRate').textContent='—';renderTechniques([],'loading');
-  const status=byId('playerCardStatus');status.textContent='保存済みの対戦履歴を集計しています…';
+  const status=byId('playerCardStatus');status.textContent='技使用回数と最高レートを取得しています…';
   byId('playerCardHistoryButton').onclick=()=>history.open(player);
   byId('playerCardTitles').replaceChildren(...Array.from({length:3},()=>node('span','playerCardTitlePlaceholder','称号を読み込み中')));
   showScreen('playerCardScreen');playSound();
@@ -49,7 +59,7 @@ export function createPlayerProfile({history,loadTitles,showScreen,playSound=()=
     try{
      const stats=await history.profileStats(player.uid,player.rating);if(current!==request)return;
      renderTechniques(stats.techniques);byId('playerCardPeakRate').textContent=stats.peakRating.toLocaleString('ja-JP');
-     status.textContent=stats.matches?'保存済みのオンライン・友達対戦から集計（履歴保存開始以降）。':'対戦履歴はまだありません。最高レートは現在のレートです。';
+     status.textContent='技は既存の使用記録を引き継ぎ、上限解除後から加算（旧上限到達時の記録は30回）。最高レートは保存済み履歴から集計。';
     }catch(error){
      if(current!==request)return;renderTechniques([],'error');status.textContent='対戦履歴の集計を取得できませんでした。';console.warn('プロフィールの集計を取得できませんでした',error);
     }

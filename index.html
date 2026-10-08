@@ -2673,11 +2673,11 @@ button{min-height:44px;}
 <script src="battle-action-art.js?v=confirmed-1"></script>
 <script src="battle-effects.js?v=confirmed-1"></script>
 <script type="module">
-  import {createTitleService} from "./title-service.js?v=history-1";
+  import {createTitleService} from "./title-service.js?v=usage-1";
   import {createProtectedRooms} from "./protected-rooms.js?v=history-1";
   import {createFreeTransport} from "./free-transport.js?v=history-1";
-  import {createBattleHistory} from "./battle-history.js?v=profile-2";
-  import {createPlayerProfile} from "./player-profile.js?v=profile-2";
+  import {createBattleHistory} from "./battle-history.js?v=usage-1";
+  import {createPlayerProfile} from "./player-profile.js?v=usage-1";
   import {createHistoryScreen} from "./battle-history-client.js?v=history-2";
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
   import {
@@ -2765,6 +2765,7 @@ button{min-height:44px;}
     window.loggedInPlayerData=loggedInPlayerData;
     const protectedProfile=await window.rankedTransport({op:"profile"});
     loggedInPlayerData.rankRate=protectedProfile.rating;
+    await window.titleService.enableUnlimited().catch(error=>console.warn("技使用回数の上限解除を開始できません",error));
     if(protectedProfile.lastSettled)window.battleHistory.archiveFinished(protectedProfile.lastSettled).catch(error=>console.warn("終了済み対戦の整理を再試行します",error));
     window.titleService.claimRatings().catch(console.warn);
     if(protectedProfile.active)setTimeout(()=>{if(!rankedActive)startRanked(true);},0);

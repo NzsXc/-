@@ -1,6 +1,6 @@
 import {ref,get,update,query,orderByValue,limitToLast,endBefore} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js';
 import {buildHistory,HISTORY_LIMIT,historySide} from './battle-history-core.js?v=history-1';
-import {summarizePlayerHistories} from './player-profile.js?v=profile-2';
+import {summarizePlayerHistories,techniquesFromUsage} from './player-profile.js?v=usage-1';
 
 export function createBattleHistory(db,auth){
  const flights=new Map(),markedClients=new Set();
@@ -71,8 +71,9 @@ export function createBattleHistory(db,auth){
   return histories.filter(h=>h&&historySide(h,uid));
  }
  async function profileStats(uid,currentRating){
-  // The list view shows ten matches; the profile counts every archived match.
-  // Award counters stop at 30 and cannot represent actual usage totals.
+  // Usage is the authoritative persistent counter, including pre-archive records.
+  // History is read only for peak rating. Never add the two usage sources together.
+  const techniques=techniquesFromUsage(await read('titleProgress/'+uid+'/uses'));
   const histories=[];let cursor=null;
   while(true){
    const constraints=[orderByValue(),limitToLast(HISTORY_LIMIT)];if(cursor)constraints.push(endBefore(cursor[1],cursor[0]));
@@ -84,7 +85,7 @@ export function createBattleHistory(db,auth){
    }
    if(entries.length<HISTORY_LIMIT)break;cursor=entries[0];
   }
-  return summarizePlayerHistories(histories,uid,currentRating);
+  return {...summarizePlayerHistories(histories,uid,currentRating),techniques};
  }
  return {find,list,profileStats,archiveFinished,markClient};
 }

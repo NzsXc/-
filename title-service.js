@@ -1,4 +1,4 @@
-import {ref,get,set,update} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js';
+import {ref,get,set,update,serverTimestamp} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js';
 export function createTitleService(db,auth,history){
  const uid=()=>auth.currentUser&&!auth.currentUser.isAnonymous?auth.currentUser.uid:null;
  const read=async p=>{try{return (await get(ref(db,p))).val();}catch(error){throw new Error(p+'：'+error.message,{cause:error});}};
@@ -9,6 +9,34 @@ export function createTitleService(db,auth,history){
   const h=await history?.find(id);if(h){archivedProofs.set(id,h);if(archivedProofs.size>20)archivedProofs.delete(archivedProofs.keys().next().value);}return h;
  }
  const cache=new Map(),pending=new Map();
+ const trackingJobs=new Map();
+ function validTracking(value){
+  return value?.version===1&&Number.isFinite(value.startedAt)&&typeof value.activeGame==='string'&&Number.isInteger(value.resolvedThrough)&&value.resolvedThrough>=0&&value.resolvedThrough<=300;
+ }
+ async function enableUnlimited(){
+  const who=uid();if(!who)return null;
+  if(trackingJobs.has(who))return trackingJobs.get(who);
+  const job=(async()=>{
+   const path='titleProgress/'+who+'/tracking';let saved=await read(path);
+   if(saved){if(!validTracking(saved))throw Error('技使用回数の開始記録が不正です');return saved;}
+   for(let attempt=0;attempt<4;attempt++){
+    const account=await read('freeAccounts/'+who);if(!account)throw Error('プレイヤーデータがありません');
+    const activeGame=account.active||'',state=activeGame?await read('freeGames/'+activeGame+'/state'):null;
+    const marker={version:1,startedAt:serverTimestamp(),activeGame,resolvedThrough:state?state.turn-1:0};
+    if(uid()!==who)return null;
+    try{await set(ref(db,path),marker);}
+    catch(error){
+     saved=await read(path);if(saved&&validTracking(saved))return saved;
+     if(attempt===3)throw new Error('技使用回数の上限解除ルールをFirebaseに反映してください',{cause:error});
+     continue;
+    }
+    saved=await read(path);if(!validTracking(saved))throw Error('技使用回数の開始記録を取得できません');return saved;
+   }
+  })();
+  trackingJobs.set(who,job);
+  const clear=()=>{if(trackingJobs.get(who)===job)trackingJobs.delete(who);};
+  job.then(marker=>{if(!marker)clear();},clear);return job;
+ }
  async function loadoutFor(who){
   if(!who)return ['','',''];
   const key=(auth.currentUser?.uid||'')+':'+who,cached=cache.get(key);
@@ -40,15 +68,27 @@ export function createTitleService(db,auth,history){
   const skill=action-2,proof='titleReceipts/'+who+'/'+game+'/'+turn,total='titleProgress/'+who+'/uses/'+skill;
   for(let attempt=0;attempt<4;attempt++){
    if(uid()!==who)return;
-   const [done,previous]=await Promise.all([read(proof),read(total)]);if(done!==null||Number(previous?.count||0)>=30)return;
-   try{await update(ref(db),{[proof]:skill,[total]:{count:Number(previous?.count||0)+1,game,turn}});return;}
+   const [done,previous]=await Promise.all([read(proof),read(total)]);if(done!==null)return;
+   const count=previous?.count??0;if(!Number.isSafeInteger(count)||count<0||!Number.isSafeInteger(count+1))throw Error('技使用回数の記録が不正です');
+   if(uid()!==who)return;
+   try{await update(ref(db),{[proof]:skill,[total]:{count:count+1,game,turn}});return;}
    catch(e){if(await read(proof)!==null)return;if(attempt===3)throw e;}
   }
  }
  function recordMatch({id,side,resolvedThrough}){
   const who=uid();if(!who||!id||![1,2].includes(side)||resolvedThrough<1)return Promise.resolve();
   const key=who+':'+id;
-  jobs=jobs.catch(()=>{}).then(async()=>{for(let turn=(cursors.get(key)||0)+1;turn<=Math.min(300,resolvedThrough);turn++){if(uid()!==who)return;await claimTurn(who,id,turn,side);cursors.set(key,turn);}});return jobs;
+  jobs=jobs.catch(()=>{}).then(async()=>{
+   if(uid()!==who)return;const tracking=await enableUnlimited();if(!tracking||uid()!==who)return;
+   let first=1;
+   if(id===tracking.activeGame)first=tracking.resolvedThrough+1;
+   else{
+    const cached=archivedProofs.get(id),createdAt=cached?.createdAt??await read('freeGames/'+id+'/createdAt')??(await archivedProof(id))?.createdAt;
+    if(!Number.isFinite(createdAt))throw Error('対戦の開始日時を取得できません');
+    if(createdAt<tracking.startedAt)return;
+   }
+   for(let turn=Math.max(first,(cursors.get(key)||0)+1);turn<=Math.min(300,resolvedThrough);turn++){if(uid()!==who)return;await claimTurn(who,id,turn,side);if(uid()!==who)return;cursors.set(key,turn);}
+  });return jobs;
  }
  async function syncLastMatch(){const who=uid();if(!who)return;const a=await read('freeAccounts/'+who);for(const id of new Set([a?.lastSettled,a?.active].filter(Boolean))){
   const [players,state]=await Promise.all([read('freeGames/'+id+'/players'),read('freeGames/'+id+'/state')]);
@@ -60,11 +100,11 @@ export function createTitleService(db,auth,history){
   const warnings=[];
   // Collection reads must remain usable when a newly added award is rejected
   // by an older rules deployment. Report the failed synchronization separately.
-  for(const task of [syncLastMatch,claimRatings])try{await task();}catch(error){warnings.push(error.message);console.warn(error);}
+  for(const task of [enableUnlimited,syncLastMatch,claimRatings])try{await task();}catch(error){warnings.push(error.message);console.warn(error);}
   const [uses,milestones,grants,loadout]=await Promise.all([read('titleProgress/'+who+'/uses'),read('ratingMilestones/'+who),read('tournamentGrants/'+who),loadoutFor(who)]);
   if(uid()!==who)throw Error('ログイン状態が変わりました');
   return {uses:uses||{},milestones:milestones||{},grants:grants||{},loadout,warnings};
  }
  async function saveLoadout(ids){const who=uid();if(!who)throw Error('ログインしてください');if(ids.length!==3)throw Error('称号は3枠です');await set(ref(db,'titleLoadouts/'+who),{0:ids[0]||'',1:ids[1]||'',2:ids[2]||''});cache.set(who+':'+who,{at:Date.now(),ids:ids.slice()});}
- return {uid,readOwn,saveLoadout,loadoutFor,claimRatings,recordMatch,peek:who=>cache.get((auth.currentUser?.uid||'')+':'+who)?.ids.slice()||['','','']};
+ return {uid,readOwn,saveLoadout,loadoutFor,claimRatings,recordMatch,enableUnlimited,peek:who=>cache.get((auth.currentUser?.uid||'')+':'+who)?.ids.slice()||['','','']};
 }
