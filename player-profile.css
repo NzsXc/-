@@ -1,5 +1,4 @@
 #playerCardScreen.active{height:100dvh;min-height:0;overflow-y:auto;overscroll-behavior:contain;justify-content:flex-start;padding:28px 14px}
-.playerCardNavigation{position:sticky;top:0;z-index:2;flex-shrink:0;display:flex;justify-content:flex-end;width:min(900px,100%);margin-bottom:12px;padding:8px;background:#111}
 .playerCardPanel{width:min(900px,100%);flex-shrink:0}
 .playerCardProfile{grid-template-columns:minmax(0,1fr) minmax(0,342px);gap:24px}
 .playerCardRatings{display:flex;align-items:flex-end;gap:24px;margin-top:20px}
@@ -28,7 +27,8 @@
 .playerCardWins{display:grid;gap:8px;color:#9fbccc;font-size:11px;line-height:1.5}
 .playerCardWins>div{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:60px;min-width:0;box-sizing:border-box;padding:12px;border-bottom:1px solid rgba(118,153,189,.24);background:rgba(16,36,60,.35)}
 .playerCardWins strong{color:#d5f7ff;font:700 18px/1.5 Inter,"Arial Narrow","Yu Gothic UI",sans-serif;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
-.playerCardFooter{align-items:center}.playerCardNote{max-width:none;line-height:1.6}
+.playerCardFooter{align-items:center}.playerCardNote{flex:1;min-width:0;max-width:none;line-height:1.6}
+.playerCardBack{flex:0 0 auto;width:auto;white-space:nowrap}
 @media(max-width:760px){.playerCardProfile{grid-template-columns:1fr;gap:16px;padding:16px}.playerCardTitles{padding:12px 0 0}.playerCardFooter{align-items:flex-start;flex-direction:column;gap:12px}.playerCardBack{align-self:flex-end}.playerCardPanel{padding:24px 14px}}
 @media(max-width:520px){.playerCardRecordColumns{gap:8px;padding:10px}.playerCardRecordTitle{font-size:10px;letter-spacing:0}.playerCardWins{font-size:10px}.playerCardWins>div{padding:8px;gap:4px}.playerCardWins strong{font-size:16px}.playerCardTechnique{padding:8px;gap:4px}.playerCardTechniqueRank{font-size:9px}.playerCardTechniqueName{font-size:11px}.playerCardTechniqueCount{font-size:20px}.playerCardTechniqueUnit{margin-left:2px;font-size:9px}}
 @media(max-width:360px){.playerCardProfile{padding:12px}.playerCardRatings{gap:18px}.playerCardPeak{padding-left:18px}}
