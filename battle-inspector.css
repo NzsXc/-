@@ -1,0 +1,20 @@
+#battleScreen .battle-inspector-toggle{position:absolute;z-index:90;display:grid;place-items:center;width:44px;height:44px;min-height:44px;margin:0;padding:0;border:1px solid #9ce5ff88;border-radius:50%;background:linear-gradient(140deg,#193d59,#111b30);color:#ddfaff;box-shadow:0 0 10px #6fcfff33;cursor:pointer;touch-action:manipulation}
+#battleScreen .battle-inspector-toggle[hidden],#battleInspectorPanel[hidden]{display:none!important}
+.battle-inspector-lens{position:relative;display:block;width:17px;height:17px;border:2px solid currentColor;border-radius:50%;transform:translate(-3px,-3px)}
+.battle-inspector-lens::after{content:'';position:absolute;left:12px;top:12px;width:10px;height:3px;border-radius:2px;background:currentColor;transform:rotate(45deg);transform-origin:left center}
+.battle-inspector-toggle[aria-expanded=true]{border-color:#e7faff;background:#214966;box-shadow:0 0 14px #99deff66}
+.battle-inspector-toggle:focus-visible,.battle-inspector-close:focus-visible{outline:2px solid #fff;outline-offset:3px}
+#battleInspectorPanel{position:absolute;z-index:80;left:50%;top:50%;transform:translate(-50%,-50%);width:min(720px,calc(100% - 24px));max-height:calc(100dvh - 120px);overflow-y:auto;overscroll-behavior:contain;padding:16px;border:1px solid #a0dfff;border-radius:4px;background:#0c1e32f7;color:#e9f8ff;box-shadow:0 16px 60px #000b;text-align:left}
+.battle-inspector-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+.battle-inspector-heading h2{font-size:17px;margin:0}
+.battle-inspector-close{min-height:44px;padding:8px 12px;border:1px solid #8abed777;background:#17374f;color:#e9f8ff;cursor:pointer}
+.battle-inspector-columns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.battle-inspector-player{min-width:0}.battle-inspector-player h3{font-size:14px;margin:0 0 10px;overflow-wrap:anywhere;color:#98e7ff}
+.battle-inspector-techniques{list-style:none;display:grid;gap:8px;margin:0;padding:0}
+.battle-inspector-techniques li{padding:10px;border:1px solid #7599b455;background:#152d43}
+.battle-inspector-techniques strong{font-size:14px}.battle-inspector-techniques p{margin:5px 0 0;font-size:12px;line-height:1.6;overflow-wrap:anywhere}
+@media(max-width:560px){.battle-inspector-columns{grid-template-columns:1fr;gap:14px}#battleInspectorPanel{padding:12px}.battle-inspector-techniques li{padding:8px}}
+/* Long title text must stay inside the mobile battle profile ribbons. */
+.intro-title-value{min-width:0;flex:1;width:0}
+.intro-title-value .badge-item .title-badge,.playerCardTitles>.badge-item .title-badge{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.intro-title-value .title-empty{max-width:100%;overflow:hidden}

@@ -102,6 +102,7 @@ function rankedAutoSelect(){
 }
 function rankedTick(){
  rankedFrame=0;const m=rankedMatch;if(!rankedActive||!m)return;
+ syncBattleInspector();
  const now=rankedClockServer+performance.now()-rankedClockAt;
  const localNow=performance.now();
  const turnOpen=!!m.state&&rankedTurnClockKey===m.id+':'+m.state.turn&&localNow>=rankedTurnOpensAt;
@@ -134,7 +135,11 @@ function rankedTick(){
 function rankedReveal(m){
  rankedSeenReveal=m.reveal.turn;rankedAnimating=true;const token=++rankedVisualToken;
  const transitionAt=Number(m.reveal.startedAt??(m.opensAt-7500));
- const revealAt=performance.now()+transitionAt-m.serverNow+3500;
+ const localNow=performance.now();
+ const fullCountdownEnd=localNow+transitionAt-m.serverNow+3000;
+ const previousDeadline=rankedTurnClockKey===m.id+':'+m.reveal.turn?rankedTurnDeadline:Infinity;
+ // Retain the old turn's monotonic deadline before syncing the next turn.
+ const revealAt=Math.min(fullCountdownEnd,previousDeadline)+500;
  rankedVisualCountdownEnd=revealAt-500;
  const valid=()=>rankedActive&&token===rankedVisualToken;
  const action=p=>m.reveal.actions[p]<3?basicActions[['charge','attack','block'][m.reveal.actions[p]]]:techniquePool[m.reveal.actions[p]-3];
@@ -252,6 +257,7 @@ async function rankedChoose(player,action){
 }
 async function rankedSubmitAction(m,id,automatic=false){
  if(rankedSending)return;
+ if(!automatic)playBattleSE('seDecision38');
  const epoch=rankedEpoch;
  rankedSending=true;locked[m.you]=true;
  try{
