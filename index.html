@@ -2023,6 +2023,7 @@ button{min-height:44px;}
 <link rel="stylesheet" href="tournament-preview.css?v=diamond-frame-3">
 <link rel="stylesheet" href="titles-champion-crown.css?v=ribbon-size-2">
 <link rel="stylesheet" href="titles-prestige.css?v=ribbon-size-2">
+<link rel="stylesheet" href="battle-inspector.css?v=battle-controls-1">
 <link rel="stylesheet" href="battle-action-art.css?v=confirmed-1">
 </head>
 
@@ -2671,7 +2672,8 @@ button{min-height:44px;}
 <script src="player-lightning.js?v=2"></script>
 <script src="bot-engine.js?v=tech12-fix-1"></script>
 <script src="bot-client.js?v=tech12-fix-1"></script>
-<script src="ranked-client.js?v=sync-timeout-3"></script>
+<script src="ranked-client.js?v=battle-controls-1"></script>
+<script src="battle-inspector.js?v=battle-controls-1"></script>
 <script src="lobby-client.js?v=protected-titles-1"></script>
 <script src="battle-action-art.js?v=confirmed-1"></script>
 <script src="battle-effects.js?v=confirmed-1"></script>
@@ -3330,6 +3332,7 @@ function showTipPage(page){
 ========================= */
 
 function showScreen(id){
+  if(id!=="battleScreen")window.BattleInspector?.close();
   if(id!=="battleScreen")window.BattleEffects?.cancel();
   if(id!=="battleScreen")PlayerIntro.cancel();
 
@@ -3352,6 +3355,7 @@ function showScreen(id){
   battleScreen.dataset.localPlayer=rankedActive ? String(rankedMatch?.you||"") : botMatch ? "1" : gameMode==="online" ? String(window.onlineBattle?.localPlayer||"") : "";
   syncBattleBGM(id);
   updateRoomCodeButton(id);
+  syncBattleInspector();
 
 }
 
@@ -3962,8 +3966,9 @@ function beginOnlineBattleCountdown(startAt){
   if(!Number.isFinite(Number(startAt))) return;
   if(onlineTurnPhase === "resolving") return;
 
-  const target = Number(startAt);
-  const countdownKey=`${onlineTurnNumber}:${target}`;
+  const inputDeadline=onlineInputDeadline;
+  const target = Math.min(Number(startAt),inputDeadline ? onlineNow()+Math.max(0,inputDeadline-performance.now()) : Number(startAt));
+  const countdownKey=`${onlineTurnNumber}:${Number(startAt)}`;
   // onValueは行動の書き込み・削除でも同じbattle状態を再通知する。
   // 同一ターンの3秒カウントを作り直さない。
   if(window._onlineCountdownKey===countdownKey) return;
@@ -3990,14 +3995,15 @@ function beginOnlineBattleCountdown(startAt){
 
     if(remainingMs > 0){
       // 10秒入力がすでに終了した端末では、遅れて届いた3秒状態で表示を戻さない。
-      if(onlineInputDeadline && performance.now() >= onlineInputDeadline){
+      if(inputDeadline && performance.now() >= inputDeadline){
         countdown=0;
         onlineTurnPhase="resolving";
         if(el){el.className="battleCall";el.textContent="BATTLE!";}
         if(window.onlineBattle.localPlayer===1 && selectedAction[1] && selectedAction[2])finishTurn();
         return;
       }
-      show(Math.min(3, Math.ceil(remainingMs / 1000)));
+      countdown=Math.min(3,Math.ceil(remainingMs/1000));
+      show(countdown);
       countdownTimer = setTimeout(tick, Math.max(50, remainingMs % 1000 || 50));
       return;
     }
@@ -4039,7 +4045,7 @@ function startOnlineBattleCountdownIfReady(){
     finishTurn();
     return;
   }
-  if(countdown <= 3) return;
+  if(countdown <= 3 || (onlineInputDeadline && onlineInputDeadline-performance.now()<=3000)) return;
 
   stopCountdownRing();
   stopTurnCountdownSE();
@@ -4631,6 +4637,21 @@ function stopCountdownRing(){
 function startTurnCountdownSE(){
   const audio=document.getElementById("turnCountdownSE");
   if(!audio)return;
+  if(battleSEContext){
+    if(countdownSESource || countdownSEPending)return;
+    countdownSEPending=true;
+    const generation=++countdownSEGeneration,context=battleSEContext;
+    Promise.resolve(battleSEResume).then(()=>loadBattleSEBuffer(audio)).then(buffer=>{
+      if(generation!==countdownSEGeneration)return;
+      if(context.state!=="running")throw Error("カウント音声が停止中です");
+      const source=context.createBufferSource(),gain=context.createGain();
+      source.buffer=buffer;source.loop=true;gain.gain.value=.28;
+      source.connect(gain);gain.connect(context.destination);
+      source.onended=()=>{source.disconnect();gain.disconnect();if(countdownSESource===source)countdownSESource=null;};
+      countdownSESource=source;source.start(0);
+    }).catch(error=>{if(generation===countdownSEGeneration)console.warn("カウント音声の再生失敗",error);}).finally(()=>{if(generation===countdownSEGeneration)countdownSEPending=false;});
+    return;
+  }
   audio.loop=true;
   audio.volume=0.28;
   if(!audio.paused)return;
@@ -4639,6 +4660,8 @@ function startTurnCountdownSE(){
 }
 
 function stopTurnCountdownSE(){
+  countdownSEGeneration++;countdownSEPending=false;
+  if(countdownSESource){const source=countdownSESource;countdownSESource=null;try{source.stop();}catch(_){}}
   const audio=document.getElementById("turnCountdownSE");
   if(!audio)return;
   audio.pause();
@@ -4750,6 +4773,7 @@ function startTurnCore(){
   };
   // 10を最初の丸1秒間表示してから、一定間隔で9へ進める。
   countdownTimer=setTimeout(tickInputCountdown,1000);
+  syncBattleInspector();
 }
 
 /* =========================
@@ -4759,6 +4783,7 @@ function startTurnCore(){
 document.addEventListener(
   "keydown",
   event => {
+    if(window.BattleInspector?.isOpen())return;
 
     const key =
       event.key.toLowerCase();
@@ -4854,8 +4879,6 @@ function handleActionPointer(event){
   lastActionPointerTarget = actionElement;
   lastActionPointerTime = Date.now();
 
-  // 技選択中に行動ボタンが押されたら決定ボタン38を鳴らす。
-  playBattleSE("seDecision38");
   chooseAction(player, action);
 }
 
@@ -4933,6 +4956,7 @@ function updateOnlineTechniqueDescription(){
 }
 
 function showTechniqueReveal(a1,a2){
+  window.BattleInspector?.update({enabled:false});
   window.confirmedRevealedActions=[a1,a2];
   // カウントダウン終了後、技名を表示する瞬間にデータ解析SEを鳴らす。
   playBattleSE("seDataAnalysis");
@@ -5048,6 +5072,7 @@ function chooseAction(player,action){
   onlineTechniquePreviewId=null;
 
   selectedAction[player]={id:action,data:data};
+  if(!receivingOnlineAction)playBattleSE("seDecision38");
   locked[player]=true;
   document.getElementById("player"+player+"Area").classList.add("locked");
   syncConfirmedActionArt();
@@ -5074,6 +5099,8 @@ function chooseAction(player,action){
 
   // 両者が決定したら、残り時間を待たず3秒カウントへ移行
   if(selectedAction[1] && selectedAction[2]){
+    // The current deadline keeps advancing when fewer than three seconds remain.
+    if(countdown<=3 || (onlineInputDeadline && onlineInputDeadline-performance.now()<=3000))return;
     // 10秒カウント側にすでに作られたfinishTurn予約も必ず消す。
     clearInterval(countdownTimer);
     countdownTimer = null;
@@ -5451,6 +5478,7 @@ if(e2.skill === "tech6"){
 let battleSEUnlocked=false;
 let battleSEContext=null;
 let battleSEResume=null;
+let countdownSEGeneration=0,countdownSESource=null,countdownSEPending=false;
 const battleSEBuffers=new Map();
 
 function loadBattleSEBuffer(el){
@@ -5498,7 +5526,7 @@ function unlockBattleSE(){
     }else{
       battleSEUnlocked=true;
     }
-    document.querySelectorAll("#battleSEAudio audio:not([loop])").forEach(el=>{
+    document.querySelectorAll("#battleSEAudio audio").forEach(el=>{
       loadBattleSEBuffer(el).catch(error=>console.warn("SE読み込み失敗:",el.id,error));
     });
   }catch(error){
@@ -5557,18 +5585,26 @@ document.addEventListener("click",event=>{
 if(window.PlayerIntro?.start){
   const originalPlayerIntroStart=window.PlayerIntro.start.bind(window.PlayerIntro);
   let lastIntroSoundKey="";
+  let introSoundTimer=0;
   window.PlayerIntro.start=options=>{
     const key=String(options?.key||"");
-    if((gameMode==="online" || rankedActive) && key!==lastIntroSoundKey){
+    const result=originalPlayerIntroStart(options);
+    if((gameMode==="online" || rankedActive) && key!==lastIntroSoundKey && PlayerIntro.isActive()){
+      clearTimeout(introSoundTimer);
       lastIntroSoundKey=key;
-      playUISound("uiBattleCardSE");
+      introSoundTimer=setTimeout(()=>{
+        if(PlayerIntro.isActive() && document.getElementById("battleScreen")?.classList.contains("active"))playUISound("uiBattleCardSE");
+      },Math.max(0,Number(options.startAt)-options.now()));
     }
-    return originalPlayerIntroStart(options);
+    return result;
   };
 }
 
 // バトルSEの発生条件。攻撃演出そのものとは分離しておく。
 function playBattleSituationSE(a1,a2,damageTo1=0,damageTo2=0){
+  const raw1=a1,raw2=a2;
+  if(raw1?.skill==="tech12")a1=raw2?.skill==="tech12"?null:raw2;
+  if(raw2?.skill==="tech12")a2=raw1?.skill==="tech12"?null:raw1;
   const attack1=a1?.type==="attack";
   const attack2=a2?.type==="attack";
   const normalAttack1=attack1 && !a1?.skill;
@@ -5597,6 +5633,7 @@ function playBattleSituationSE(a1,a2,damageTo1=0,damageTo2=0){
   const siphon2=a2?.skill==="tech10";
   const ruin1=a1?.skill==="tech11";
   const ruin2=a2?.skill==="tech11";
+  const heal1=a1?.skill==="tech4",heal2=a2?.skill==="tech4";
 
   // 攻撃技同士は共通の「打撃3」。
   if(attack1 && attack2){
@@ -5643,6 +5680,8 @@ function playBattleSituationSE(a1,a2,damageTo1=0,damageTo2=0){
   if(siphon2) playBattleSE("seSiphon");
   if(ruin1) playBattleSE("seRuin");
   if(ruin2) playBattleSE("seRuin");
+  if(heal1) playBattleSE("seHeal");
+  if(heal2) playBattleSE("seHeal");
 
   // パニッシュ命中。チャージ中なら必殺技ヒット、それ以外は打撃6。
   if(punish1 && Number(damageTo2)>0){
@@ -6353,6 +6392,7 @@ function flashHitPlayer(player,isSpectator=false){
 ========================= */
 
 function showBattleResult(text){
+  window.BattleInspector?.update({enabled:false});
   PlayerIntro.cancel();
   stopBattleBGM();
   clearInterval(countdownTimer);
@@ -6536,6 +6576,13 @@ function syncConfirmedActionArt(){
     window.BattleActionArt.update({loadouts:{1:player1Techs,2:player2Techs},selected,localPlayer,spectator:gameMode==="spectator"});
   }catch(error){console.warn("技ボタンの表示更新に失敗しました",error);}
 }
+function syncBattleInspector(){
+  if(!window.BattleInspector)return;
+  const side=rankedActive?Number(rankedMatch?.you):gameMode==="online"?Number(window.onlineBattle?.localPlayer):0;
+  const enabled=document.getElementById("battleScreen")?.classList.contains("active") && !PlayerIntro.isActive() &&
+    (rankedActive ? !!rankedMatch?.state && !rankedMatch.closed && !rankedAnimating : gameMode==="online" && onlineInputOpen && onlineTurnPhase==="input");
+  window.BattleInspector.update({enabled,side,loadouts:{1:player1Techs,2:player2Techs},names:{1:getBattlePlayerName(1),2:getBattlePlayerName(2)}});
+}
 document.addEventListener("DOMContentLoaded",()=>syncConfirmedActionArt());
 
 function updateDisabledActions(){
@@ -6581,6 +6628,7 @@ function updateDisabledActions(){
     }
   });
   syncConfirmedActionArt();
+  syncBattleInspector();
 }
 
 
@@ -6760,6 +6808,7 @@ updateTechniqueDisplay();
   <audio id="seEnhance" preload="auto" src="sounds/enhance.mp3"></audio>
   <audio id="seSiphon" preload="auto" src="sounds/siphon.mp3"></audio>
   <audio id="seRuin" preload="auto" src="sounds/ruin.mp3"></audio>
+  <audio id="seHeal" preload="auto" src="sounds/heal.mp3"></audio>
   <audio id="turnCountdownSE" preload="auto" loop src="sounds/pendulum.mp3"></audio>
   <audio id="uiDecisionSE" preload="auto" src="sounds/decision-38.mp3"></audio>
   <audio id="uiMenuOpenSE" preload="auto" src="sounds/menu-open-4.mp3"></audio>
