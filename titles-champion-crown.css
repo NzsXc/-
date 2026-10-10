@@ -1,7 +1,7 @@
 /* Approved crown: golden frame, crown medallion and rainbow lettering. */
 .badge-item.badge-champion.kind-tournament{--crown-size:clamp(17px,7cqi,34px)}
 .badge-item.badge-champion.kind-tournament::before,.badge-item.badge-champion.kind-tournament::after{clip-path:polygon(12px 0,100% 0,calc(100% - 12px) 100%,0 100%)}
-.badge-item.badge-champion.kind-tournament::before{height:80%;background:linear-gradient(110deg,#b68027,#fff0b6,#c49a47,#fff5d3,#947022);filter:drop-shadow(0 0 5px #c5dcff44)}
+.badge-item.badge-champion.kind-tournament::before{height:42px;background:linear-gradient(110deg,#b68027,#fff0b6,#c49a47,#fff5d3,#947022);filter:drop-shadow(0 0 5px #c5dcff44)}
 .badge-item.badge-champion.kind-tournament::after{left:3px;right:3px;height:72%;background:conic-gradient(from 22deg at 8% -9%,transparent 0 18%,#fff2 19% 28%,#84dbfa18 29% 36%,transparent 37%),conic-gradient(from 148deg at 23% 116%,transparent 0 19%,#b88af628 20% 31%,#fff1 32% 37%,transparent 38%),conic-gradient(from 54deg at 43% -5%,transparent 0 20%,#fff2 21% 32%,#54def224 33% 39%,transparent 40%),conic-gradient(from 209deg at 63% 113%,transparent 0 17%,#ee6ebc23 18% 30%,#fff2 31% 36%,transparent 37%),conic-gradient(from 16deg at 83% -11%,transparent 0 17%,#77e9ce28 18% 29%,#fff1 30% 37%,transparent 38%),linear-gradient(100deg,#101929,#1e2340,#182738,#251a35);box-shadow:inset 0 0 16px #080b14aa;filter:brightness(1.05);background-blend-mode:normal}
 .badge-item.badge-champion.kind-tournament .title-badge{z-index:4;max-width:calc(100% - 52px);font-size:clamp(11px,4.45cqi,27px);line-height:1.05;letter-spacing:.02em;transform:translateX(8px);-webkit-text-stroke:.6px #ffffffda!important;filter:drop-shadow(0 2px 0 #000b)!important;background-image:repeating-linear-gradient(100deg,#eb527e 0%,#efc864 10%,#80d482 20%,#64d9ef 30%,#b896ed 40%,#eb527e 50%);background-size:200% 100%;animation:crownTitleGloss 7s linear infinite}
 .badge-champion .crown-medal{position:absolute;z-index:3;width:var(--crown-size);height:var(--crown-size);left:clamp(8px,3cqi,14px);top:50%;transform:translateY(-50%);background:linear-gradient(120deg,#806324,#fff4b3 40%,#b58d34 78%,#f2d081);clip-path:polygon(50% 0,100% 28%,87% 79%,50% 100%,13% 79%,0 28%);pointer-events:none}
@@ -13,5 +13,18 @@
 .badge-champion .crown-edge-line{position:absolute;z-index:2;top:15%;height:1px;left:18px;right:14px;background:linear-gradient(90deg,transparent,#ffedb380,#fff8,transparent);pointer-events:none}
 .badge-champion .crown-edge-line.bottom{top:auto;bottom:15%}
 @keyframes crownTitleGloss{from{background-position:0 0}to{background-position:-100% 0}}
+/* Match the other rainbow tournament titles in each game surface. */
+.badge-item.badge-champion.kind-tournament::after{height:39px}
+.badge-item.badge-champion.kind-tournament .title-badge{max-width:calc(100% - 6px);font-size:clamp(21px,5.5cqi,30px);line-height:1;letter-spacing:.015em;transform:none}
+.title-entry .badge-item.badge-champion.kind-tournament .title-badge,.title-slot .badge-item.badge-champion.kind-tournament .title-badge{font-size:clamp(12px,5.5cqi,30px)}
+.playerCardTitles>.badge-item.badge-champion.kind-tournament::before{height:88%}
+.playerCardTitles>.badge-item.badge-champion.kind-tournament::after{height:76%}
+.playerCardTitles>.badge-item.badge-champion.kind-tournament .title-badge{max-width:calc(100% - 18px);font-size:min(14.4px,4.2cqi);line-height:1.05}
+.intro-title-value .badge-item.badge-champion.kind-tournament .title-badge{font-size:clamp(15px,7.5cqi,22px)}
+/* Keep crown ornaments clear of the larger lettering on narrow ribbons. */
+@container (max-width:360px){
+ .intro-title-value .badge-champion .crown-medal{top:12%;width:14px;height:14px;left:7px;transform:translateY(-50%)}
+ .intro-title-value .badge-champion .crown-right-gem{top:12%;width:6px;height:12px;right:8px;transform:translateY(-50%)}
+}
 @keyframes crownSweep{0%,15%{background-position:130% 0}75%,100%{background-position:-130% 0}}
 @media(prefers-reduced-motion:reduce){.badge-item.badge-champion .title-badge,.badge-champion .crown-shine{animation:none!important}}
