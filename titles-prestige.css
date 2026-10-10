@@ -87,7 +87,7 @@
   50% { opacity: 1; }
 }
 @media (prefers-reduced-motion: reduce){.badge-item.tier-prestige.kind-skill-name.tier-prestige::before, .badge-item.tier-prestige.kind-skill-name.tier-prestige .prestige-flare{animation: auto ease 0s 1 normal none running none !important;}}
-.badge-item.tier-prestige.kind-skill-name.tier-prestige.compact-prestige{width: min(100%, 270px); max-width: 270px; height: auto; aspect-ratio: 25 / 3; min-height: 0px;}
+.badge-item.tier-prestige.kind-skill-name.tier-prestige.compact-prestige{width: min(100%, 310px); max-width: 310px; height: 44px; aspect-ratio: auto; min-height: 0px;}
 .badge-item.tier-prestige.kind-skill-name.tier-prestige.compact-prestige::before{height: 90%; clip-path: polygon(12px 0px, calc(100% - 12px) 0px, 100% 50%, calc(100% - 12px) 100%, 12px 100%, 0px 50%); filter: drop-shadow(0 0 2px color-mix(in srgb,var(--tech-color) 26%,transparent));}
 .badge-item.tier-prestige.kind-skill-name.tier-prestige.compact-prestige::after{left: 2px; right: 2px; height: 78%; clip-path: polygon(10px 0px, calc(100% - 10px) 0px, 100% 50%, calc(100% - 10px) 100%, 10px 100%, 0px 50%); box-shadow: rgba(0, 0, 0, 0.467) 0px 0px 7px inset;}
 .badge-item.tier-prestige.kind-skill-name.tier-prestige.compact-prestige .title-badge{max-width: calc(100% - 66px); font-size: clamp(11px, 5.3cqi, 15px); line-height: 1.05; letter-spacing: 0.035em; transform: translate(5px, 1px); -webkit-text-stroke: .3px color-mix(in srgb,var(--tech-light) 60%,#fff); filter: drop-shadow(rgb(7, 16, 28) 0px 1px 0px);}
@@ -182,3 +182,14 @@
   100% { background-position: -100% 0px; }
 }
 @media (prefers-reduced-motion: reduce){.badge-item.tier-prestige.gloss-charge-title .title-badge{animation: auto ease 0s 1 normal none running none !important;}}
+/* Keep profile size; enlarge only the surfaces where prestige was smaller. */
+.badge-item.tier-prestige.kind-skill-name.tier-prestige.compact-prestige::before{height:38px}
+.badge-item.tier-prestige.kind-skill-name.tier-prestige.compact-prestige::after,.badge-item.tier-prestige.kind-skill-name.tier-prestige.compact-prestige .english-motif{height:33px}
+.badge-item.tier-prestige.kind-skill-name.tier-prestige.compact-prestige .title-badge{font-size:clamp(11px,5.3cqi,17.5px)}
+.intro-title-value .badge-item.tier-prestige.kind-skill-name.tier-prestige.compact-prestige{height:38px}
+.intro-title-value .badge-item.tier-prestige.kind-skill-name.tier-prestige.compact-prestige::before{height:34px}
+.intro-title-value .badge-item.tier-prestige.kind-skill-name.tier-prestige.compact-prestige::after,.intro-title-value .badge-item.tier-prestige.kind-skill-name.tier-prestige.compact-prestige .english-motif{height:29px}
+.playerCardTitles>.badge-item.tier-prestige.kind-skill-name.tier-prestige.compact-prestige{width:min(100%,270px);max-width:270px;height:auto;aspect-ratio:25/3}
+.playerCardTitles>.badge-item.tier-prestige.kind-skill-name.tier-prestige.compact-prestige::before{height:90%}
+.playerCardTitles>.badge-item.tier-prestige.kind-skill-name.tier-prestige.compact-prestige::after,.playerCardTitles>.badge-item.tier-prestige.kind-skill-name.tier-prestige.compact-prestige .english-motif{height:78%}
+.playerCardTitles>.badge-item.tier-prestige.kind-skill-name.tier-prestige.compact-prestige .title-badge{font-size:clamp(11px,5.3cqi,15px)}
