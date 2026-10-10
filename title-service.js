@@ -43,7 +43,7 @@ export function createTitleService(db,auth,history){
   if(cached&&Date.now()-cached.at<15000)return cached.ids.slice();
   if(pending.has(key))return pending.get(key);
   const job=read('titleLoadouts/'+who).then(slots=>{
-   const ids=[0,1,2].map(i=>window.TitleCatalog.byId[slots?.[i]]?slots[i]:'');
+   const ids=window.TitleCatalog.normalizeLoadout(slots);
    cache.set(key,{at:Date.now(),ids});return ids.slice();
   }).finally(()=>pending.delete(key));
   pending.set(key,job);return job;
@@ -105,6 +105,6 @@ export function createTitleService(db,auth,history){
   if(uid()!==who)throw Error('ログイン状態が変わりました');
   return {uses:uses||{},milestones:milestones||{},grants:grants||{},loadout,warnings};
  }
- async function saveLoadout(ids){const who=uid();if(!who)throw Error('ログインしてください');if(ids.length!==3)throw Error('称号は3枠です');await set(ref(db,'titleLoadouts/'+who),{0:ids[0]||'',1:ids[1]||'',2:ids[2]||''});cache.set(who+':'+who,{at:Date.now(),ids:ids.slice()});}
+ async function saveLoadout(ids){const who=uid();if(!who)throw Error('ログインしてください');if(ids.length!==3)throw Error('称号は3枠です');const normalized=window.TitleCatalog.normalizeLoadout(ids);await set(ref(db,'titleLoadouts/'+who),{0:normalized[0],1:normalized[1],2:normalized[2]});cache.set(who+':'+who,{at:Date.now(),ids:normalized.slice()});}
  return {uid,readOwn,saveLoadout,loadoutFor,claimRatings,recordMatch,enableUnlimited,peek:who=>cache.get((auth.currentUser?.uid||'')+':'+who)?.ids.slice()||['','','']};
 }
