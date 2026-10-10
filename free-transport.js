@@ -61,9 +61,10 @@ const initialAccount = {
   try{return await job;}
   finally{if(profileFlight===job){profileFlight=null;profileFlightUid='';}}
  }
- // 次ターンのstateは前ターン演出より先に作られる。演出（3秒カウント＋公開＋効果）が
- // 終わる前に入力期限を進めないよう、2ターン目以降にも十分な同期猶予を設ける。
- const turnOpensAt=s=>s.startedAt+(s.turn>1?7500:5600);
+ // 3 s countdown + 0.5 s call + 1.3 s reveal + 1.2 s effect + 0.1 s margin.
+ // The next input window follows the effect, rather than a separate 7.5 s wait.
+ const transitionMs=6100;
+ const turnOpensAt=s=>s.startedAt+(s.turn>1?transitionMs:5600);
  const initial=()=>Object.fromEntries(stateFields.map(k=>[k,k==='turn'?1:k==='startedAt'?serverTimestamp():k.startsWith('hp')?10:k.startsWith('gauge')?8:k.startsWith('seal')||k.startsWith('momentum')?false:k.startsWith('last')?'':0]));
  const matchMetadata=new Map(),titleRecorded=new Map(),ratingClaimed=new Set();
  const historyWarnings=new Set();
@@ -239,5 +240,6 @@ const initialAccount = {
   const stops=['state','ready','resigned','settled'].map(key=>onValue(ref(db,'freeGames/'+id+'/'+key),onChange,onError));
   return ()=>stops.forEach(stop=>stop());
  };
+ request.transitionMs=transitionMs;
  return request;
 }
