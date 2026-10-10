@@ -69,7 +69,7 @@ function rankedRefresh(epoch){
  });
  rankedStatusFlight=job;return job;
 }
-let rankedFrame=0,rankedClockAt=0,rankedClockServer=0,rankedAnimating=false,rankedEffectTimer=0,rankedVisualToken=0,rankedVisualCountdownEnd=0;
+let rankedFrame=0,rankedClockAt=0,rankedClockServer=0,rankedAnimating=false,rankedEffectTimer=0,rankedVisualToken=0,rankedVisualCountdownEnd=0,rankedVisualRevealAt=0;
 let rankedTurnClockKey='',rankedTurnOpensAt=0,rankedTurnDeadline=0;
 function rankedVisualStop(){window.BattleEffects?.cancel();PlayerIntro.reset();cancelAnimationFrame(rankedFrame);rankedFrame=0;clearTimeout(rankedEffectTimer);clearTimeout(rankedAutoTimer);rankedAutoTimer=0;rankedVisualToken++;rankedAnimating=false;rankedVisualCountdownEnd=0;rankedTurnClockKey='';rankedTurnOpensAt=0;rankedTurnDeadline=0;stopCountdownRing();stopTurnCountdownSE();clearTimeout(window._techniqueRevealCleanupTimeout);document.getElementById('battleEffectLayer')?.replaceChildren();}
 function rankedClockStart(m){
@@ -116,7 +116,7 @@ function rankedTick(){
   if(!m.closed&&m.phase==='select')put('techTitle',rankedSending?'技を送信中…':grace?'復帰猶予：あと'+remaining+'秒（未確定側は期限後に敗北）':m.ready[m.you]?'技を確定しました。相手を待っています…':(m.kind==='friend'?'ルーム対戦':'ランダム対戦')+'：技選択（残り'+remaining+'秒）');
   else if(rankedAnimating){
    const left=rankedVisualCountdownEnd-performance.now();
-   const text=left>0?String(Math.min(3,Math.ceil(left/1000))):left>-500?'BATTLE!':'';
+   const text=left>0?String(Math.min(3,Math.ceil(left/1000))):performance.now()<rankedVisualRevealAt?'BATTLE!':'';
    const el=document.getElementById('countdown');
    if(el&&el.textContent!==text){el.className='';void el.offsetWidth;el.className=left>0?'countPulse':text?'battleCall':'';el.textContent=text;}
   }else if(!m.closed)put('countdown','');
@@ -134,13 +134,15 @@ function rankedTick(){
 }
 function rankedReveal(m){
  rankedSeenReveal=m.reveal.turn;rankedAnimating=true;const token=++rankedVisualToken;
- const transitionAt=Number(m.reveal.startedAt??(m.opensAt-7500));
+ const transitionAt=Number(m.reveal.startedAt??(m.opensAt-(window.rankedTransport?.transitionMs||6100)));
  const localNow=performance.now();
  const fullCountdownEnd=localNow+transitionAt-m.serverNow+3000;
  const previousDeadline=rankedTurnClockKey===m.id+':'+m.reveal.turn?rankedTurnDeadline:Infinity;
- // Retain the old turn's monotonic deadline before syncing the next turn.
- const revealAt=Math.min(fullCountdownEnd,previousDeadline)+500;
- rankedVisualCountdownEnd=revealAt-500;
+ // Keep the display monotonic, but use the shared transition clock for the
+ // reveal/effect and the next input window on both clients.
+ const revealAt=fullCountdownEnd+500;
+ rankedVisualCountdownEnd=Math.min(fullCountdownEnd,previousDeadline);
+ rankedVisualRevealAt=revealAt;
  const valid=()=>rankedActive&&token===rankedVisualToken;
  const action=p=>m.reveal.actions[p]<3?basicActions[['charge','attack','block'][m.reveal.actions[p]]]:techniquePool[m.reveal.actions[p]-3];
  const a1=action(1),a2=action(2);
@@ -160,7 +162,7 @@ function rankedReveal(m){
    playBattleEffect(a1,a2,()=>{
     if(!valid())return;
     const latest=rankedMatch;
-    rankedAnimating=false;rankedVisualCountdownEnd=0;
+    rankedAnimating=false;rankedVisualCountdownEnd=0;rankedVisualRevealAt=0;
     // Commit this turn only after the effect's completion callback.
     rankedApply(m,true);
     if(latest!==m)rankedApply(latest);
