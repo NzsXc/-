@@ -1,6 +1,6 @@
 import {ref,get,set,update,push,serverTimestamp,onValue,runTransaction} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js';
-import {calculate,stateFields} from './free-calculator.js?v=all-fixes-1';
-import {historyMatch} from './battle-history-core.js?v=history-1';
+import {calculate,stateFields} from './free-calculator.js?v=punish-2';
+import {historyMatch} from './battle-history-core.js?v=punish-2';
 export function createFreeTransport(db,auth,history){
  let offset=0;onValue(ref(db,'.info/serverTimeOffset'),s=>{offset=s.val()||0;});
  const now=()=>Date.now()+offset;
@@ -68,11 +68,16 @@ const initialAccount = {
  const turnOpensAt=s=>Number.isFinite(s.previousDeadline)?countdownEndsAt(s)+3100:s.startedAt+(s.turn>1?7500:5600);
  const protocolFlights=new Map(),advanceFlights=new Map();
  const permissionDenied=e=>/permission.?denied/i.test(String(e.code||'')+' '+e.message);
+ let punishProtocol=null;
+ function supportsPunish(){
+  if(!punishProtocol)punishProtocol=read('freeGames/_protocol/rulesVersion').then(()=>true).catch(e=>{if(permissionDenied(e))return false;punishProtocol=null;throw e;});
+  return punishProtocol;
+ }
  function supportsAdvance(id){
   if(!protocolFlights.has(id))protocolFlights.set(id,read('freeGames/'+id+'/advance').then(()=>true).catch(e=>{if(permissionDenied(e))return false;protocolFlights.delete(id);throw e;}));
   return protocolFlights.get(id);
  }
- async function advanceTurn(id,s,moves,u){
+ async function advanceTurn(id,s,moves,u,rulesVersion){
   const key=id+':'+s.turn;
   if(advanceFlights.has(key))return advanceFlights.get(key);
   const job=(async()=>{
@@ -93,7 +98,7 @@ const initialAccount = {
    }
    const fresh=await read(path+'/state');
    if(!fresh||fresh.turn!==s.turn)return true;
-   const c=calculate(fresh,moves,id),state=Object.fromEntries(stateFields.map(k=>[k,k==='startedAt'?serverTimestamp():c[k]]));
+   const c=calculate(fresh,moves,rulesVersion),state=Object.fromEntries(stateFields.map(k=>[k,k==='startedAt'?serverTimestamp():c[k]]));
    if(modern)state.previousDeadline=turnOpensAt(fresh)+10000;
    try{await writeUpdate(path,{transition:c,state});}
    catch(e){
@@ -126,8 +131,9 @@ const initialAccount = {
  }
  async function status(id){
   const u=auth.currentUser.uid,path='freeGames/'+id;let g;
+  const punishEnabled=await supportsPunish();
   for(let attempt=0;attempt<4;attempt++){
-   const keys=['players','createdAt','state','ready','resigned','settled','transition','kind','room'];g=Object.fromEntries(await Promise.all(keys.map(async k=>[k,await read(path+'/'+k)])));g.ready||={};
+   const keys=['players','createdAt','state','ready','resigned','settled','transition','kind','room',...(punishEnabled?['rulesVersion']:[])];g=Object.fromEntries(await Promise.all(keys.map(async k=>[k,await read(path+'/'+k)])));g.ready||={};
    const me=g.players?.[1]===u?1:g.players?.[2]===u?2:0;
    if(!me){const saved=await archivedStatus(id,u);if(saved)return saved.match;throw Error('参加者ではありません');}g.me=me;
    try{await history?.markClient(id,g.players);}catch(error){console.warn('履歴対応状態の保存を再試行します',error);}
@@ -159,7 +165,7 @@ const initialAccount = {
    if(s&&!terminal&&now()>=turnOpensAt(s)){
     g.own=await read(path+'/moves/'+s.turn+'/'+me);let moves=null;
     try{moves=await read(path+'/moves/'+s.turn);}catch(e){if(!String(e.code||e.message).toLowerCase().includes('permission'))throw e;}
-    if(moves?.[1]!=null&&moves?.[2]!=null){if(await advanceTurn(id,s,moves,u))continue;}
+    if(moves?.[1]!=null&&moves?.[2]!=null){if(await advanceTurn(id,s,moves,u,g.rulesVersion===2?2:1))continue;}
    }
    break;
   }
@@ -212,8 +218,8 @@ const initialAccount = {
   if(d.op==='friendJoin'){
    const lobby=await read('friendRooms/'+d.roomId);
    if(!lobby||lobby.host===u||lobby.game||lobby.heartbeat<=now()-15000)throw Error('この部屋には参加できません');
-   const id=push(ref(db,'freeGames')).key;
-   try{await update(ref(db),{['freeGames/'+id+'/players']:{1:u,2:lobby.host},['freeGames/'+id+'/createdAt']:serverTimestamp(),['freeGames/'+id+'/kind']:'friend',['freeGames/'+id+'/room']:d.roomId,['freeAccounts/'+u+'/active']:id,['freeAccounts/'+lobby.host+'/active']:id,['friendRooms/'+d.roomId+'/game']:id});}
+   const id=push(ref(db,'freeGames')).key,versionPatch=await supportsPunish()?{['freeGames/'+id+'/rulesVersion']:2}:{};
+   try{await update(ref(db),{...versionPatch,['freeGames/'+id+'/players']:{1:u,2:lobby.host},['freeGames/'+id+'/createdAt']:serverTimestamp(),['freeGames/'+id+'/kind']:'friend',['freeGames/'+id+'/room']:d.roomId,['freeAccounts/'+u+'/active']:id,['freeAccounts/'+lobby.host+'/active']:id,['friendRooms/'+d.roomId+'/game']:id});}
    catch(e){
     const fresh=await profile();if(fresh.active)return {match:await status(fresh.active)};
     const current=await read('friendRooms/'+d.roomId);
@@ -235,7 +241,7 @@ const initialAccount = {
    let q=await read(qp);try{await set(ref(db,qp),{joinedAt:q?.joinedAt??serverTimestamp(),heartbeat:serverTimestamp()});}catch(e){const fresh=await profile();if(fresh.active)return {match:await status(fresh.active)};throw e;}
    q=await read(qp);const all=await read('freeQueue')||{};
    for(const [other]of Object.entries(all).filter(([k,v])=>k!==u&&v.heartbeat>now()-15000).sort((a,b)=>a[1].joinedAt-b[1].joinedAt)){
-    const id=push(ref(db,'freeGames')).key;try{await update(ref(db),{['freeGames/'+id+'/players']:{1:u,2:other},['freeGames/'+id+'/createdAt']:serverTimestamp(),['freeGames/'+id+'/kind']:'random',['freeAccounts/'+u+'/active']:id,['freeAccounts/'+other+'/active']:id,[qp]:null,['freeQueue/'+other]:null});return {match:await status(id)};}catch(e){const fresh=await profile();if(fresh.active)return {match:await status(fresh.active)};}
+    const id=push(ref(db,'freeGames')).key,versionPatch=await supportsPunish()?{['freeGames/'+id+'/rulesVersion']:2}:{};try{await update(ref(db),{...versionPatch,['freeGames/'+id+'/players']:{1:u,2:other},['freeGames/'+id+'/createdAt']:serverTimestamp(),['freeGames/'+id+'/kind']:'random',['freeAccounts/'+u+'/active']:id,['freeAccounts/'+other+'/active']:id,[qp]:null,['freeQueue/'+other]:null});return {match:await status(id)};}catch(e){const fresh=await profile();if(fresh.active)return {match:await status(fresh.active)};}
    }
    // Keep refreshing the queue heartbeat until another human joins or the user cancels.
    const waitedMs=Math.max(0,now()-(q?.joinedAt??now()));

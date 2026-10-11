@@ -2670,7 +2670,7 @@ button{min-height:44px;}
 <script src="player-intro.js?v=1"></script>
 <script src="titles-client.js?v=crown-prestige-1"></script>
 <script src="player-lightning.js?v=2"></script>
-<script src="bot-engine.js?v=tech12-fix-1"></script>
+<script src="bot-engine.js?v=punish-2"></script>
 <script src="bot-client.js?v=tech12-fix-1"></script>
 <script src="ranked-client.js?v=turn-sync-3"></script>
 <script src="battle-inspector.js?v=battle-controls-1"></script>
@@ -2680,10 +2680,10 @@ button{min-height:44px;}
 <script type="module">
   import {createTitleService} from "./title-service.js?v=crown-prestige-1";
   import {createProtectedRooms} from "./protected-rooms.js?v=history-1";
-  import {createFreeTransport} from "./free-transport.js?v=turn-sync-3";
-  import {createBattleHistory} from "./battle-history.js?v=usage-1";
+  import {createFreeTransport} from "./free-transport.js?v=punish-2";
+  import {createBattleHistory} from "./battle-history.js?v=punish-2";
   import {createPlayerProfile} from "./player-profile.js?v=usage-1";
-  import {createHistoryScreen} from "./battle-history-client.js?v=history-2";
+  import {createHistoryScreen} from "./battle-history-client.js?v=punish-2";
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
   import {
     getAuth,
@@ -3283,7 +3283,7 @@ const techniquePool = [
     type:"attack",
     skill:"tech3",
     description:
-      "ゲージ5消費 / 2ダメージ / 相手がチャージ中なら追加2ダメージ"
+      "ゲージ5消費 / 2ダメージ、相手のゲージ-1 / 相手がチャージ中なら追加1ダメージ"
   },
 
   {
@@ -5319,9 +5319,9 @@ function resolveBattle(){
     if(attack2 && !reflect1 && (!block1 || e2.pierce)) damageTo1 += power2;
   }
 
-  // 技3：チャージ中の相手には追加2ダメージ。
-  if(e1.skill === "tech3" && e2.type === "charge" && !block2 && !reflect2) damageTo2 += 2;
-  if(e2.skill === "tech3" && e1.type === "charge" && !block1 && !reflect1) damageTo1 += 2;
+  // 技3：チャージ中の相手には追加1ダメージ。
+  if(e1.skill === "tech3" && e2.type === "charge" && !block2 && !reflect2) damageTo2 += 1;
+  if(e2.skill === "tech3" && e1.type === "charge" && !block1 && !reflect1) damageTo1 += 1;
 
   // 技7：ゲージ+8、HP-2
   if(e1.skill === "tech7"){
@@ -5338,6 +5338,10 @@ function resolveBattle(){
   const stolenBy2 = e2.skill === "tech10" ? Math.min(2,siphonGauge[1]) : 0;
   gauge[1] = Math.min(10,Math.max(0,siphonGauge[1] + stolenBy1 - stolenBy2));
   gauge[2] = Math.min(10,Math.max(0,siphonGauge[2] + stolenBy2 - stolenBy1));
+
+  // パニッシュは使用時に相手のゲージを1削る。獲得・奪取の後、0未満にはしない。
+  if(e1.skill === "tech3") gauge[2] = Math.max(0,gauge[2] - 1);
+  if(e2.skill === "tech3") gauge[1] = Math.max(0,gauge[1] - 1);
 
   // 既存の強化は毎ターン消費する。新規使用・再使用では次の2ターンへ更新する。
   enhanceTurns[1] = e1.skill === "tech9" ? 2 : Math.max(0,enhanceTurns[1] - 1);

@@ -10,6 +10,18 @@
 未公開の間は旧ルールに合わせた動作になります。待ち時間短縮・更新担当の排他制御・
 50回称号の保存をすべて有効にするには、この公開が必要です。
 
+## パニッシュ変更（戦闘ルール2）
+
+このファイルにはパニッシュの更新も含みます。通常2ダメージ・消費ゲージ5は維持し、
+チャージ中への追加ダメージを1、使用時の相手ゲージ減少を1にします。
+ゲージ減少は獲得・奪取の処理後に適用し、0未満にはなりません。
+ブロック・カウンター・攻撃の相殺でもゲージ減少は発生します。
+
+公開後に新しく作る対戦に `rulesVersion: 2` を保存します。
+既存の進行中対戦・以前の履歴は旧ルールのまま保存・再生します。
+ルールを公開する前も対戦は継続できますが、オンラインの効果は旧ルールです。
+両端末を再読み込みしてから、新しい対戦を開始してください。
+
 Publish `firebase-database.rules.json` in Firebase Console → psy-5d3d1 →
 Realtime Database → Rules. This file upgrades the supplied published rules;
 it is not a permissive replacement. Do not delete battle/account data.

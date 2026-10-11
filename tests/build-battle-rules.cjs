@@ -40,7 +40,7 @@ function upgrade(input){
  const prestige=Array.from({length:12},(_,i)=>`(newData.val()==='skill_prestige_${i+1}'&&root.child('titleProgress').child($uid).child('uses/${i+1}/count').val()>=50)`).join('||');
  assert(slot['.validate'].endsWith('))'));
  slot['.validate']=slot['.validate'].slice(0,-1)+'||'+prestige+')';
- return output;
+ return require('./upgrade-punish-rules.cjs').upgradePunish(output);
 }
 module.exports={upgrade,opening};
 if(require.main===module){
