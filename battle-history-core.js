@@ -1,4 +1,5 @@
-import {calculate,stateFields} from './history-calculator-v1.js';
+import {calculate as calculateV1,stateFields} from './history-calculator-v1.js';
+import {calculate as calculateV2} from './free-calculator.js?v=punish-2';
 
 export const HISTORY_LIMIT=10;
 export const HISTORY_REASONS={battle:'決着',resigned:'降参','reconnect-timeout':'切断・復帰猶予切れ','selection-timeout':'技選択の時間切れ','idle-forfeit':'連続無入力','turn-limit':'ターン上限'};
@@ -21,6 +22,7 @@ export function buildHistory(id,g,accounts){
  const turnCount=g.state?g.state.turn-1:0;
  if(!Number.isInteger(turnCount)||turnCount<0||turnCount>300)throw Error('ターン数が不正です');
  const h={version:1,createdAt:g.createdAt,endedAt:g.settled.at,kind:g.kind||'random',room:g.room||'',turnCount,reason:finishReason(g),players:{},settled:{...g.settled}};
+ if(g.rulesVersion===2)h.rulesVersion=2;
  for(const p of [1,2]){
   const snapshot=g.profiles?.[p],account=accounts?.[p];
   const player={uid:g.players[p],name:snapshot?.name||account?.name||'プレイヤー',rating:g.settled['before'+p],snapshot:!!snapshot,titles:Object.fromEntries([0,1,2].map(i=>[i,snapshot?.titles?.[i]||'']))};
@@ -40,6 +42,8 @@ export function buildHistory(id,g,accounts){
 }
 export function replayHistory(h){
  if(h?.version!==1)throw Error('この対戦のバトルデータには対応していません');
+ if(h.rulesVersion!=null&&h.rulesVersion!==2)throw Error('この戦闘ルールの履歴には対応していません');
+ const calculate=h.rulesVersion===2?calculateV2:calculateV1;
  let state=initialReplayState();const turns=[];
  for(let turn=1;turn<=h.turnCount;turn++){
   const moves=h.moves?.[turn];

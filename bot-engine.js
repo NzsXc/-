@@ -1,6 +1,6 @@
 (()=>{
 // Generated from the supplied game's resolver. Do not edit rule logic here independently.
-// Source SHA256: 6d6753c1bafd8af8417f3bfee046115210911e18fd60714c96befef914051818
+// Punish v2: keep this resolver aligned with the game's offline resolver.
 const basicActions = {
 
   charge:{
@@ -70,7 +70,7 @@ const techniquePool = [
     type:"attack",
     skill:"tech3",
     description:
-      "ゲージ5消費 / 2ダメージ / 相手がチャージ中なら追加2ダメージ"
+      "ゲージ5消費 / 2ダメージ、相手のゲージ-1 / 相手がチャージ中なら追加1ダメージ"
   },
 
   {
@@ -159,9 +159,9 @@ function resolve(s,a1,a2){
     if(attack2 && !reflect1 && (!block1 || a2.pierce)) damageTo1 += power2;
   }
 
-  // 技3：チャージ中の相手には追加2ダメージ。
-  if(a1.skill === "tech3" && a2.type === "charge" && !block2 && !reflect2) damageTo2 += 2;
-  if(a2.skill === "tech3" && a1.type === "charge" && !block1 && !reflect1) damageTo1 += 2;
+  // 技3：チャージ中の相手には追加1ダメージ。
+  if(a1.skill === "tech3" && a2.type === "charge" && !block2 && !reflect2) damageTo2 += 1;
+  if(a2.skill === "tech3" && a1.type === "charge" && !block1 && !reflect1) damageTo1 += 1;
 
   // 技7：ゲージ+8、HP-2
   if(a1.skill === "tech7"){
@@ -178,6 +178,10 @@ function resolve(s,a1,a2){
   const stolenBy2 = a2.skill === "tech10" ? Math.min(2,siphonGauge[1]) : 0;
   gauge[1] = Math.min(10,Math.max(0,siphonGauge[1] + stolenBy1 - stolenBy2));
   gauge[2] = Math.min(10,Math.max(0,siphonGauge[2] + stolenBy2 - stolenBy1));
+
+  // パニッシュは使用時に相手のゲージを1削る。獲得・奪取の後、0未満にはしない。
+  if(a1.skill === "tech3") gauge[2] = Math.max(0,gauge[2] - 1);
+  if(a2.skill === "tech3") gauge[1] = Math.max(0,gauge[1] - 1);
 
   // 既存の強化は毎ターン消費する。新規使用・再使用では次の2ターンへ更新する。
   enhanceTurns[1] = a1.skill === "tech9" ? 2 : Math.max(0,enhanceTurns[1] - 1);

@@ -18,7 +18,7 @@ const ACTIONS=[
 ];
 const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
 const chosen=(s,moves,p)=>Number.isInteger(moves?.[p])?moves[p]:(s['gauge'+p]>=10?1:0);
-export function calculate(s,moves){
+export function calculate(s,moves,rulesVersion=2){
  const out={};
  out.action1=chosen(s,moves,1);out.misses1=Number.isInteger(moves?.[1])?0:s.misses1+1;
  out.action2=chosen(s,moves,2);out.misses2=Number.isInteger(moves?.[2])?0:s.misses2+1;
@@ -44,14 +44,15 @@ export function calculate(s,moves){
  if(out.reflect1&&out.attack2)d2++;if(out.reflect2&&out.attack1)d1++;
  if(out.attack1&&out.attack2){d1+=Math.max(0,out.power2-out.power1);d2+=Math.max(0,out.power1-out.power2);}
  else{if(out.attack2&&!out.reflect1&&(!out.blocking1||out.pierce2))d1+=out.power2;if(out.attack1&&!out.reflect2&&(!out.blocking2||out.pierce1))d2+=out.power1;}
- if(e2.skill==='tech3'&&e1.type==='charge'&&!out.blocking1&&!out.reflect1)d1+=2;
- if(e1.skill==='tech3'&&e2.type==='charge'&&!out.blocking2&&!out.reflect2)d2+=2;
+ if(e2.skill==='tech3'&&e1.type==='charge'&&!out.blocking1&&!out.reflect1)d1+=rulesVersion>=2?1:2;
+ if(e1.skill==='tech3'&&e2.type==='charge'&&!out.blocking2&&!out.reflect2)d2+=rulesVersion>=2?1:2;
  if(e1.skill==='tech7')d1+=2;if(e2.skill==='tech7')d2+=2;
  out.damage1=d1;out.damage2=d2;
  out.rampage1=e1.skill==='tech7'?clamp(out.foresight1+8,0,10):out.foresight1;
  out.rampage2=e2.skill==='tech7'?clamp(out.foresight2+8,0,10):out.foresight2;
  out.stolen1=e1.skill==='tech10'?Math.min(2,out.rampage2):0;out.stolen2=e2.skill==='tech10'?Math.min(2,out.rampage1):0;
  out.gauge1=clamp(out.rampage1+out.stolen1-out.stolen2,0,10);out.gauge2=clamp(out.rampage2+out.stolen2-out.stolen1,0,10);
+ if(rulesVersion>=2){out.gauge1=Math.max(0,out.gauge1-(e2.skill==='tech3'?1:0));out.gauge2=Math.max(0,out.gauge2-(e1.skill==='tech3'?1:0));}
  out.hp1=out.misses1>=2?0:clamp(out.healed1-d1,0,10);out.hp2=out.misses2>=2?0:clamp(out.healed2-d2,0,10);
  out.seal1=out.sealed1&&out.gauge1<7;out.seal2=out.sealed2&&out.gauge2<7;
  out.enhance1=e1.skill==='tech9'?2:Math.max(0,s.enhance1-1);out.enhance2=e2.skill==='tech9'?2:Math.max(0,s.enhance2-1);
