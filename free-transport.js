@@ -61,10 +61,51 @@ const initialAccount = {
   try{return await job;}
   finally{if(profileFlight===job){profileFlight=null;profileFlightUid='';}}
  }
- // 3 s countdown + 0.5 s call + 1.3 s reveal + 1.2 s effect + 0.1 s margin.
- // The next input window follows the effect, rather than a separate 7.5 s wait.
+ // A shared previous deadline caps the countdown without resetting it to 3.
+ // Call + reveal + effect + margin = 3100 ms after the countdown ends.
  const transitionMs=6100;
- const turnOpensAt=s=>s.startedAt+(s.turn>1?transitionMs:5600);
+ const countdownEndsAt=s=>Math.max(s.startedAt,Math.min(s.startedAt+3000,s.previousDeadline));
+ const turnOpensAt=s=>Number.isFinite(s.previousDeadline)?countdownEndsAt(s)+3100:s.startedAt+(s.turn>1?7500:5600);
+ const protocolFlights=new Map(),advanceFlights=new Map();
+ const permissionDenied=e=>/permission.?denied/i.test(String(e.code||'')+' '+e.message);
+ function supportsAdvance(id){
+  if(!protocolFlights.has(id))protocolFlights.set(id,read('freeGames/'+id+'/advance').then(()=>true).catch(e=>{if(permissionDenied(e))return false;protocolFlights.delete(id);throw e;}));
+  return protocolFlights.get(id);
+ }
+ async function advanceTurn(id,s,moves,u){
+  const key=id+':'+s.turn;
+  if(advanceFlights.has(key))return advanceFlights.get(key);
+  const job=(async()=>{
+   const path='freeGames/'+id,modern=await supportsAdvance(id);
+   if(modern){
+    // Only one participant wins this per-turn transaction. If its connection
+    // disappears, the other participant can take over after the 15 s lease.
+    const claim=await withTimeout(runTransaction(ref(db,path+'/advance/'+s.turn),current=>{
+     if(current&&Number(current.at)>=now()-15000)return;
+     return {owner:u,at:serverTimestamp()};
+    },{applyLocally:false}),8000,'ターン確定');
+    if(!claim.committed)return false;
+   }else{
+    // Old rules do not support claims. Prefer player 1; player 2 only takes
+    // over after a short stagger and a fresh state read, without an early move.
+    const players=await read(path+'/players');
+    if(players?.[2]===u)await new Promise(resolve=>setTimeout(resolve,500));
+   }
+   const fresh=await read(path+'/state');
+   if(!fresh||fresh.turn!==s.turn)return true;
+   const c=calculate(fresh,moves,id),state=Object.fromEntries(stateFields.map(k=>[k,k==='startedAt'?serverTimestamp():c[k]]));
+   if(modern)state.previousDeadline=turnOpensAt(fresh)+10000;
+   try{await writeUpdate(path,{transition:c,state});}
+   catch(e){
+    const accepted=await read(path+'/state');
+    if(!accepted){const saved=await archivedStatus(id,u);if(saved)return true;throw e;}
+    if(accepted.turn===s.turn&&!await read(path+'/resigned'))throw e;
+   }
+   return true;
+  })();
+  advanceFlights.set(key,job);
+  try{return await job;}finally{if(advanceFlights.get(key)===job)advanceFlights.delete(key);}
+ }
  const initial=()=>Object.fromEntries(stateFields.map(k=>[k,k==='turn'?1:k==='startedAt'?serverTimestamp():k.startsWith('hp')?10:k.startsWith('gauge')?8:k.startsWith('seal')||k.startsWith('momentum')?false:k.startsWith('last')?'':0]));
  const matchMetadata=new Map(),titleRecorded=new Map(),ratingClaimed=new Set();
  const historyWarnings=new Set();
@@ -118,7 +159,7 @@ const initialAccount = {
    if(s&&!terminal&&now()>=turnOpensAt(s)){
     g.own=await read(path+'/moves/'+s.turn+'/'+me);let moves=null;
     try{moves=await read(path+'/moves/'+s.turn);}catch(e){if(!String(e.code||e.message).toLowerCase().includes('permission'))throw e;}
-    if(moves?.[1]!=null&&moves?.[2]!=null){const c=calculate(s,moves||{},id),state=Object.fromEntries(stateFields.map(k=>[k,k==='startedAt'?serverTimestamp():c[k]]));try{await update(ref(db,path),{transition:c,state});}catch(e){const fresh=await read(path+'/state');if(!fresh){const saved=await archivedStatus(id,u);if(saved)return saved.match;throw e;}if(fresh.turn===s.turn&&!await read(path+'/resigned'))throw e;}continue;}
+    if(moves?.[1]!=null&&moves?.[2]!=null){if(await advanceTurn(id,s,moves,u))continue;}
    }
    break;
   }
@@ -138,7 +179,7 @@ const initialAccount = {
   }
   // A match that expires before either loadout still needs player names for results.
   if(closed&&!s)for(const p of [1,2]){const account=await read('freeAccounts/'+g.players[p]);players[p]={name:account?.name||'プレイヤー'};}
-  return {id,kind:g.kind||'random',roomId:g.room||null,you:me,players,ready:g.ready,loadouts,state,closed,phase:closed?'finished':s?'turn':'select',revision:now(),serverNow:now(),opensAt,deadline:s?opensAt+10000:g.createdAt+60000,graceDeadline:s?opensAt+40000:g.createdAt+90000,ownAction:g.own??null,reveal:g.transition?{turn:g.transition.turn-1,startedAt:s?.startedAt,actions:{1:g.transition.action1,2:g.transition.action2},damage:{1:g.transition.damage1,2:g.transition.damage2}}:null,result:closed?{winner:g.settled.winner,rated:g.kind!=='friend',reason:g.resigned?'resigned':g.abandoned&&s?.hp1>0&&s?.hp2>0?'reconnect-timeout':!s?'selection-timeout':s.misses1>=2||s.misses2>=2?'idle-forfeit':s.turn>300?'turn-limit':'battle'}:null,rating:closed?{before:g.settled['before'+me],after:g.settled['after'+me],delta:g.settled['delta'+me]}:null};
+  return {id,kind:g.kind||'random',roomId:g.room||null,you:me,players,ready:g.ready,loadouts,state,closed,phase:closed?'finished':s?'turn':'select',revision:now(),serverNow:now(),opensAt,deadline:s?opensAt+10000:g.createdAt+60000,graceDeadline:s?opensAt+40000:g.createdAt+90000,ownAction:g.own??null,reveal:g.transition?{turn:g.transition.turn-1,startedAt:s?.startedAt,countdownEndsAt:Number.isFinite(s?.previousDeadline)?countdownEndsAt(s):null,actions:{1:g.transition.action1,2:g.transition.action2},damage:{1:g.transition.damage1,2:g.transition.damage2}}:null,result:closed?{winner:g.settled.winner,rated:g.kind!=='friend',reason:g.resigned?'resigned':g.abandoned&&s?.hp1>0&&s?.hp2>0?'reconnect-timeout':!s?'selection-timeout':s.misses1>=2||s.misses2>=2?'idle-forfeit':s.turn>300?'turn-limit':'battle'}:null,rating:closed?{before:g.settled['before'+me],after:g.settled['after'+me],delta:g.settled['delta'+me]}:null};
  }
  async function resumeActive(account){
   const u=auth.currentUser.uid,id=String(account?.active||'');

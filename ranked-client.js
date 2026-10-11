@@ -138,10 +138,12 @@ function rankedReveal(m){
  const localNow=performance.now();
  const fullCountdownEnd=localNow+transitionAt-m.serverNow+3000;
  const previousDeadline=rankedTurnClockKey===m.id+':'+m.reveal.turn?rankedTurnDeadline:Infinity;
- // Keep the display monotonic, but use the shared transition clock for the
- // reveal/effect and the next input window on both clients.
- const revealAt=fullCountdownEnd+500;
- rankedVisualCountdownEnd=Math.min(fullCountdownEnd,previousDeadline);
+ // Modern rules persist the capped deadline for both clients. Legacy games
+ // still cap locally, but never add another 3 s after the digits have ended.
+ const sharedEnd=Number(m.reveal.countdownEndsAt);
+ const countdownEnd=m.reveal.countdownEndsAt!=null&&Number.isFinite(sharedEnd)?localNow+sharedEnd-m.serverNow:Math.min(fullCountdownEnd,previousDeadline);
+ const revealAt=countdownEnd+500;
+ rankedVisualCountdownEnd=countdownEnd;
  rankedVisualRevealAt=revealAt;
  const valid=()=>rankedActive&&token===rankedVisualToken;
  const action=p=>m.reveal.actions[p]<3?basicActions[['charge','attack','block'][m.reveal.actions[p]]]:techniquePool[m.reveal.actions[p]-3];

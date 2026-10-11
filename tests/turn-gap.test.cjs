@@ -1,16 +1,6 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
 const root=path.resolve(__dirname,'..');let clock=5600;
-const storage={
- freeAccounts:{p1:{name:'A',rating:1000,active:'match'},p2:{name:'B',rating:1000,active:'match'}},
- freeGames:{match:{players:{1:'p1',2:'p2'},createdAt:0,ready:{1:true,2:true},loadouts:{1:[0,1,2],2:[0,1,2]},kind:'random',profiles:{1:{name:'A',rating:1000,titles:{0:'',1:'',2:''}},2:{name:'B',rating:1000,titles:{0:'',1:'',2:''}}}}}
-};
-const read=p=>p.split('/').reduce((v,k)=>v?.[k],storage)??null;
-function write(p,value){const keys=p.split('/'),last=keys.pop();let node=storage;for(const key of keys)node=node[key]??=( {} );node[last]=structuredClone(value);}
-const transportContext=vm.createContext({window:{},console,Date:{now:()=>clock},setTimeout,clearTimeout,Promise,ref:(_db,p)=>p,get:async p=>({val:()=>structuredClone(read(p))}),set:async(p,v)=>write(p,v),update:async(p,v)=>{for(const [k,value]of Object.entries(v))write((p?p+'/':'')+k,value);},serverTimestamp:()=>clock,onValue:()=>()=>{},runTransaction:async(p,fn)=>{const value=fn(read(p));if(value!==undefined)write(p,value);},historyMatch:()=>null,push:()=>({key:'unused'})});
-vm.runInContext(fs.readFileSync(path.join(root,'free-calculator.js'),'utf8').replaceAll('export ',''),transportContext);
-vm.runInContext(fs.readFileSync(path.join(root,'free-transport.js'),'utf8').replace(/^import[^\n]*\n/gm,'').replace('export function','function'),transportContext);
-storage.freeGames.match.state=Object.fromEntries(vm.runInContext('stateFields',transportContext).map(k=>[k,k==='turn'?1:k==='startedAt'?0:k.startsWith('hp')?10:k.startsWith('gauge')?8:k.startsWith('seal')||k.startsWith('momentum')?false:k.startsWith('last')?'':0]));
-const transports=[1,2].map(side=>vm.runInContext('createFreeTransport({}, {currentUser:{uid:"p'+side+'"}})',transportContext));
+const backend=require('./rules-harness.cjs').harness(),transports=backend.transports;
 function client(){
  let next=1;const jobs=new Map(),events=[],elements=new Map();
  const element=id=>{if(!elements.has(id))elements.set(id,{textContent:'',className:'',hidden:true,classList:{add(){},remove(){},toggle(){}},appendChild(){},replaceChildren(){},style:{}});return elements.get(id);};
@@ -23,25 +13,29 @@ function client(){
  const clients=[client(),client()];
  for(let side=0;side<2;side++)clients[side].apply((await transports[side]({op:'status',matchId:'match'})).match);
  const results=[];
- for(const remaining of [7000,2200,200]){
+ for(const remaining of [7000,2200,1200,200,0,-500]){
   const initial=(await transports[0]({op:'status',matchId:'match'})).match,at=initial.deadline-remaining;
   for(const c of clients)c.advance(at);
+  backend.setClock(at);
   const currentTurn=initial.state.turn;
   await transports[0]({op:'action',matchId:'match',turn:currentTurn,action:1});
   await transports[1]({op:'action',matchId:'match',turn:currentTurn,action:1});
   const snapshots=await Promise.all(transports.map(t=>t({op:'status',matchId:'match'}).then(r=>r.match)));
-  assert.equal(snapshots[0].opensAt,snapshots[1].opensAt);assert.equal(snapshots[0].opensAt,at+6100);
+  const countdownMs=Math.max(0,Math.min(3000,remaining));
+  assert.equal(snapshots[0].opensAt,snapshots[1].opensAt);assert.equal(snapshots[0].opensAt,at+countdownMs+3100);
   clients.forEach((c,i)=>c.apply(snapshots[i]));
   for(const c of clients)c.advance(at+17);
-  const numeric=clients.map(c=>Number(c.state().display));assert(numeric.every(n=>!Number.isFinite(n)||n<=Math.ceil(remaining/1000)));
+  const numeric=clients.map(c=>Number(c.state().display));assert(numeric.every(n=>!Number.isFinite(n)||n<=Math.ceil(Math.max(0,remaining)/1000)));
   const opensAt=snapshots[0].opensAt;
   for(const c of clients)c.advance(opensAt+17);
-  for(const c of clients){const ended=c.events.filter(e=>e.event==='effect-end').at(-1);assert.equal(ended.at,at+6000);assert.equal(opensAt-ended.at,100);assert.equal(c.state().animating,false);assert.equal(c.state().display,'10');assert.equal(c.state().deadline-opensAt,10000);}
+  for(const c of clients){const reveal=c.events.filter(e=>e.event==='reveal').at(-1),ended=c.events.filter(e=>e.event==='effect-end').at(-1);assert.equal(reveal.at,at+countdownMs+500);assert.equal(ended.at,at+countdownMs+3000);assert.equal(opensAt-ended.at,100);assert.equal(c.state().animating,false);assert.equal(c.state().display,'10');assert.equal(c.state().deadline-opensAt,10000);}
   // Both sides can immediately submit the next legal move at the exposed opening.
   const available=(await transports[0]({op:'status',matchId:'match'})).match;assert.equal(available.state.turn,currentTurn+1);
-  results.push({remaining,turn:currentTurn,transitionAt:at,effectEnd:at+6000,nextInput:opensAt,idleMs:100,nextInputMs:10000});
+  results.push({remaining,turn:currentTurn,countdownMs,countdownToReveal:500,effectEnd:at+countdownMs+3000,nextInput:opensAt,idleMs:100,nextInputMs:10000});
+  backend.setClock(opensAt);
   const accepted=await transports[0]({op:'action',matchId:'match',turn:currentTurn+1,action:1});
   assert.equal(accepted.match.ownAction,1);assert.equal(accepted.match.state.turn,currentTurn+1);
  }
- console.log(JSON.stringify(results));console.log('PASS: actual transport and two clients over three turns, early/late commits, 100 ms post-effect gap, full 10-second input, no countdown increase');
+ assert.equal(backend.updates.length,6);assert.equal(backend.claims.length,6);assert.equal(backend.denials.length,0);
+ console.log(JSON.stringify(results));console.log('PASS: actual rules + two clients, six turns including late/expired commits, 500 ms call, 100 ms post-effect gap, 10-second input, one update per turn, no denials');
 })().catch(e=>{console.error(e);process.exitCode=1});
