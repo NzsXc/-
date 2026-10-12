@@ -2682,7 +2682,7 @@ button{min-height:44px;}
 <script src="battle-effects.js?v=confirmed-1"></script>
 <script type="module">
   import {createTitleService} from "./title-service.js?v=crown-prestige-1";
-  import {createProtectedRooms} from "./protected-rooms.js?v=history-1";
+  import {createProtectedRooms} from "./protected-rooms.js?v=random-spectator-2";
   import {createFreeTransport} from "./free-transport.js?v=punish-2";
   import {createBattleHistory} from "./battle-history.js?v=punish-2";
   import {createPlayerProfile} from "./player-profile.js?v=usage-1";
@@ -3159,7 +3159,7 @@ button{min-height:44px;}
     });
   }
 
-  // Protected friend games feed the existing spectator presentation.
+  // Protected friend and random games feed the existing read-only spectator presentation.
   window.onlineBattle.watchAllRooms=window.protectedRooms.watchAllRooms;
   window.onlineBattle.watchRoom=window.protectedRooms.watchRoom;
   console.log("心理バトル Firebase接続成功");
@@ -3565,6 +3565,7 @@ function receiveSpectatorBattleState(state,roomData){
     if(effectTurn<=Number(window._lastSpectatorEffectTurn||0))return;
     window._lastSpectatorEffectTurn=effectTurn;
     clearSpectatorTimers();
+    if(Number(state.countdownEndsAt)>onlineNow())beginSpectatorCountdown(state.countdownEndsAt);
     const a1=state.actions?.[1]?.data,a2=state.actions?.[2]?.data;
     if(!a1 || !a2){applySpectatorState(state);return;}
     selectedAction={1:{id:state.actions[1].id,data:a1},2:{id:state.actions[2].id,data:a2}};
