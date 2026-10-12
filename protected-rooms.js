@@ -20,17 +20,49 @@ export function createProtectedRooms(db,auth,transport,history){
   for(const p of [1,2])people[p]={name:h.players[p].name,joined:true,online:false,techniques:h.players[p].loadout?[0,1,2].map(i=>h.players[p].loadout[i]):[]};
   return {players:people,battle:{phase:'finished',turn:s.turn,updatedAt:now(),result:h.settled.winner?h.settled.winner+'P WIN':'DRAW',hp:{1:s.hp1,2:s.hp2},gauge:{1:s.gauge1,2:s.gauge2},enhanceTurns:{1:s.enhance1,2:s.enhance2},blockSeal:{1:s.seal1,2:s.seal2}}};
  }
- async function snapshot(roomId){
-  const room=await read('friendRooms/'+roomId),id=room?.game||observedGames.get(roomId);if(!id)return null;
+ const validId=id=>typeof id==='string'&&/^[A-Za-z0-9_-]+$/.test(id);
+ async function snapshot(roomId,accounts){
+  const random=roomId.startsWith('random:'),room=random?null:await read('friendRooms/'+roomId);
+  const id=random?roomId.slice(7):room?.game||observedGames.get(roomId);if(!validId(id))return null;
   observedGames.set(roomId,id);if(observedGames.size>100)observedGames.delete(observedGames.keys().next().value);
-  if(!room?.game)return archivedSnapshot(await history?.find(id));const path='freeGames/'+id;
-  const [players,s,ready,settled,reveal]=await Promise.all(['players','state','ready','settled','transition'].map(k=>read(path+'/'+k)));if(!players||!s)return archivedSnapshot(await history?.find(id));
-  const people={};for(const p of [1,2]){const a=await read('freeAccounts/'+players[p]);people[p]={name:a?.name||'プレイヤー',joined:true,online:!settled,techniques:ready?.[1]&&ready?.[2]?await read(path+'/loadouts/'+p):[]};}
-  const battle={phase:settled?'finished':'battle',turn:s.turn,updatedAt:now(),result:settled?(settled.winner?settled.winner+'P WIN':'DRAW'):'',hp:{1:s.hp1,2:s.hp2},gauge:{1:s.gauge1,2:s.gauge2},enhanceTurns:{1:s.enhance1,2:s.enhance2},blockSeal:{1:s.seal1,2:s.seal2}};
-  if(!settled&&reveal&&now()<s.startedAt+2500){const action=id=>id<3?window.BattleAI.ACTIONS[id]:window.BattleAI.techniques[id-3];battle.phase='effect';battle.resolvedTurn=reveal.turn-1;battle.revealAt=s.startedAt;battle.effectStartAt=s.startedAt+1300;battle.damageTo1=reveal.damage1;battle.damageTo2=reveal.damage2;battle.actions={1:{id:reveal.action1,data:action(reveal.action1)},2:{id:reveal.action2,data:action(reveal.action2)}};}
+  const archived=async()=>{const h=await history?.find(id);return random&&h?.kind!=='random'?null:archivedSnapshot(h);};
+  if(!random&&!room?.game)return archived();const path='freeGames/'+id;
+  // Read public children separately: a live game root includes private moves.
+  const [players,s,ready,settled,reveal,kind]=await Promise.all(['players','state','ready','settled','transition','kind'].map(k=>read(path+'/'+k)));
+  if(!players||!s)return archived();if(random&&kind!=='random')return null;
+  const people={};try{for(const p of [1,2]){const a=accounts?.[players[p]]||await read('freeAccounts/'+players[p]);people[p]={name:a?.name||'プレイヤー',joined:true,online:!settled,techniques:ready?.[1]===true&&ready?.[2]===true?await read(path+'/loadouts/'+p):[]};}}
+  catch(error){if(!await read(path+'/players'))return archived();throw error;}
+  // Settlement can archive/delete the live node between these reads.
+  if(!await read(path+'/players'))return archived();
+  const battle={phase:settled?'finished':'battle',turn:s.turn,updatedAt:now(),result:settled?(settled.winner?settled.winner+'P WIN':'DRAW'):'',hp:{1:s.hp1,2:s.hp2},gauge:{1:s.gauge1,2:s.gauge2},enhanceTurns:{1:s.enhance1,2:s.enhance2},blockSeal:{1:s.seal1,2:s.seal2},ruinTurns:{1:s.ruin1||0,2:s.ruin2||0},lastAction:{1:s.last1||null,2:s.last2||null}};
+  const countdownEnd=Number.isFinite(s.previousDeadline)?Math.max(s.startedAt,Math.min(s.startedAt+3000,s.previousDeadline)):s.startedAt+3000;
+  if(!settled&&reveal?.turn===s.turn&&s.turn>1&&now()<countdownEnd+3000){const action=id=>window.BattleAI.ACTIONS[id];battle.phase='effect';battle.resolvedTurn=reveal.turn-1;battle.countdownEndsAt=countdownEnd;battle.revealAt=countdownEnd+500;battle.effectStartAt=countdownEnd+1800;battle.damageTo1=reveal.damage1;battle.damageTo2=reveal.damage2;battle.actions={1:{id:reveal.action1,data:action(reveal.action1)},2:{id:reveal.action2,data:action(reveal.action2)}};}
   return {players:people,battle};
  }
  function poll(task,callback,onError){let cancelled=false,timer=null;const loop=async()=>{try{await ensure();const result=await task();if(!cancelled)callback(result);}catch(e){if(!cancelled)onError?.(e);}finally{if(!cancelled)timer=setTimeout(loop,1200);}};loop();return ()=>{cancelled=true;clearTimeout(timer);};}
- function watchAllRooms(callback,onError){return poll(async()=>{const all=await read('friendRooms')||{},out={};await Promise.all(Object.entries(all).filter(([,r])=>r.game).slice(-100).map(async([id])=>{const value=await snapshot(id);if(value&&!value.battle.result)out[id]=value;}));return out;},callback,onError);}
+ function watchAllRooms(callback,onError){
+  let cancelled=false,stopPoll=null,accounts=null,rooms=null;const stops=[];
+  const reportError=error=>{if(!cancelled)onError?.(error);};
+  function start(){
+   if(cancelled||stopPoll||accounts===null||rooms===null)return;
+   stopPoll=poll(async()=>{
+    const targets=new Map(),out={},currentAccounts=accounts;
+    for(const [code,room]of Object.entries(rooms))if(validId(code)&&validId(room?.game))targets.set(room.game,code);
+    // Both participants reference the same game. Deduplicate; do not read freeGames wholesale.
+    for(const account of Object.values(currentAccounts))if(validId(account?.active)&&!targets.has(account.active))targets.set(account.active,'random:'+account.active);
+    const results=await Promise.allSettled([...targets.values()].slice(-100).map(async code=>{
+     const value=await snapshot(code,currentAccounts);if(value&&!value.battle.result)out[code]=value;
+    }));
+    if(results.length&&results.every(result=>result.status==='rejected'))throw results[0].reason;
+    return out;
+   },callback,reportError);
+  }
+  ensure().then(()=>{
+   if(cancelled)return;
+   stops.push(onValue(ref(db,'freeAccounts'),s=>{accounts=s.val()||{};start();},reportError));
+   stops.push(onValue(ref(db,'friendRooms'),s=>{rooms=s.val()||{};start();},reportError));
+  }).catch(reportError);
+  return ()=>{cancelled=true;stopPoll?.();stops.forEach(stop=>stop());};
+ }
  return {resume:async()=>{await ensure();return transport({op:'resume'});},ensure,create,join,leave,now,watchList,watchHost,watchAllRooms,watchRoom:(id,callback,onError)=>poll(()=>snapshot(id),callback,onError)};
 }
