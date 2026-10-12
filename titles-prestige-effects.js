@@ -4,9 +4,12 @@
  const noise=x=>{const v=Math.sin(x*12.9898+78.233)*43758.5453;return v-Math.floor(v);};
  function resize(fx){
   const r=fx.badge.getBoundingClientRect(),t=fx.text.getBoundingClientRect();if(!r.width||!r.height)return;
-  fx.width=r.width;fx.height=r.height;fx.canvas.width=Math.ceil(r.width*2);fx.canvas.height=Math.ceil(r.height*2);fx.flameCanvas.width=fx.canvas.width;fx.flameCanvas.height=fx.canvas.height;fx.frontCanvas.width=fx.canvas.width;fx.frontCanvas.height=fx.canvas.height;
-  fx.left=Math.max(34,t.left-r.left-8);fx.right=Math.min(r.width-30,t.right-r.left+8);
-  fx.textTop=t.top-r.top;fx.textHeight=t.height;fx.textBottom=t.bottom-r.top;fx.textLeft=t.left-r.left;fx.textRight=t.right-r.left;fx.centerY=(t.top+t.bottom)/2-r.top;
+  // Canvas pixels use layout coordinates, even while an ancestor is scaling open.
+  const scaleX=r.width/fx.badge.offsetWidth,scaleY=r.height/fx.badge.offsetHeight;
+  fx.width=fx.badge.clientWidth;fx.height=fx.badge.clientHeight;if(!fx.width||!fx.height)return;
+  fx.canvas.width=Math.ceil(fx.width*2);fx.canvas.height=Math.ceil(fx.height*2);fx.flameCanvas.width=fx.canvas.width;fx.flameCanvas.height=fx.canvas.height;fx.frontCanvas.width=fx.canvas.width;fx.frontCanvas.height=fx.canvas.height;
+  fx.textTop=(t.top-r.top)/scaleY-fx.badge.clientTop;fx.textHeight=t.height/scaleY;fx.textBottom=(t.bottom-r.top)/scaleY-fx.badge.clientTop;fx.textLeft=(t.left-r.left)/scaleX-fx.badge.clientLeft;fx.textRight=(t.right-r.left)/scaleX-fx.badge.clientLeft;fx.centerY=(fx.textTop+fx.textBottom)/2;
+  fx.left=Math.max(34,fx.textLeft-8);fx.right=Math.min(fx.width-30,fx.textRight+8);
   const style=getComputedStyle(fx.badge);
   fx.color=fx.options.mode==='skill'?style.getPropertyValue('--tech-color').trim()||'#176bdd':'#9224df';
   fx.light=fx.options.mode==='skill'?style.getPropertyValue('--tech-light').trim()||'#4d9aff':'#d363f0';
