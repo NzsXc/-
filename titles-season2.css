@@ -1,0 +1,52 @@
+/* Season 2: approved glass ribbons, isolated from every Season 1/skill badge. */
+.badge-item.season2-ribbon{--s2-accent:#f3d27e;--s2-light:#fffbed;--s2-deep:#b59758;--s2-shape:polygon(0 0,100% 0,100% 18%,96% 18%,96% 82%,100% 82%,100% 100%,0 100%,0 82%,4% 82%,4% 18%,0 18%);position:relative;isolation:isolate;container-type:inline-size;box-sizing:border-box;width:min(100%,520px);max-width:520px;height:64px;display:inline-flex;align-items:center;justify-content:center;min-width:0;padding:0;margin:0;border:0;border-radius:0;background:none;overflow:visible;filter:drop-shadow(0 5px 7px #0008)}
+.badge-item.season2-ribbon::before{content:"";position:absolute;z-index:0;inset:0;top:0;left:0;right:0;bottom:0;transform:none;width:auto;height:auto;clip-path:var(--s2-shape);background:linear-gradient(180deg,#fff9dfdd,#e5c078b3 6%,#ead59d77 11% 89%,#d3ae669c 94%,#fff4c8d9);padding:0;mask:none;-webkit-mask:none;filter:none;box-shadow:none}
+.badge-item.season2-ribbon::after{display:none}
+.badge-item.season2-ribbon .s2-surface{position:absolute;z-index:1;inset:3px 9px;clip-path:var(--s2-shape);overflow:hidden;background:linear-gradient(110deg,#ecd98a1a,#fff5d436,#ecd98a1a);pointer-events:none}
+.badge-item.season2-ribbon .s2-canvas{display:block;width:100%;height:100%}
+.badge-item.season2-ribbon .s2-rule{position:absolute;z-index:2;left:7%;right:7%;height:1px;background:linear-gradient(90deg,transparent,var(--s2-light),var(--s2-accent),var(--s2-light),transparent);opacity:.6;pointer-events:none}
+.badge-item.season2-ribbon .s2-top{top:13%}.badge-item.season2-ribbon .s2-bottom{bottom:13%}
+.badge-item.season2-ribbon .s2-ornament{position:absolute;z-index:2;top:15%;bottom:15%;width:20px;left:2.7%;background:repeating-linear-gradient(90deg,var(--s2-light) 0 2px,var(--s2-deep) 3px 5px,var(--s2-accent) 6px 7px);pointer-events:none}
+.badge-item.season2-ribbon .s2-right{left:auto;right:2.7%;transform:scaleX(-1)}
+.badge-item.season2-ribbon .title-badge{position:relative;z-index:3;display:block;box-sizing:border-box;max-width:calc(100% - 62px);padding:0;margin:0;border:0;border-radius:0;white-space:nowrap;overflow:visible;overflow-wrap:normal;text-align:center;font:900 clamp(8px,6.1cqi,32px)/1.1 "Arial Black","Yu Gothic UI",sans-serif;letter-spacing:.01em;background:linear-gradient(110deg,var(--s2-accent),var(--s2-light) 25%,#fff 43%,var(--s2-accent) 63%,var(--s2-light) 85%,var(--s2-accent));background-size:220% 100%;background-clip:text;-webkit-background-clip:text;color:var(--s2-light);-webkit-text-fill-color:transparent;-webkit-text-stroke:.4px var(--s2-light);paint-order:stroke;text-shadow:none;filter:drop-shadow(0 1px 1px #000c) drop-shadow(0 0 2px #0008);animation:s2-gloss 7s linear infinite;transform:none}
+.badge-item.season2-ribbon .title-badge::before,.badge-item.season2-ribbon .title-badge::after{display:none}
+.badge-item.season2-ribbon.s2-rainbow{--s2-accent:#c2eaff;--s2-light:#fff5ff;--s2-deep:#a391be}
+.badge-item.season2-ribbon.s2-rainbow::before{background:linear-gradient(110deg,#ffabcaa6,#ffdaa49c 16%,#dcf2ad99 32%,#acebd5a3 48%,#b4dcff9c 64%,#cbbaff99 80%,#f0c3ffa6 94%,#ffabcaa6);background-size:220% 100%;animation:s2-gloss 10s linear infinite;box-shadow:inset 0 2px 0 #fff4fccc,inset 0 -2px 0 #fff4fccc}
+.badge-item.season2-ribbon.s2-rainbow .s2-surface{background:linear-gradient(110deg,#e8c9fa26,#e9f8ff26,#f5cde51c)}
+.badge-item.season2-ribbon.s2-rainbow .title-badge{background-image:linear-gradient(110deg,#ffb6cb,#ffdaa0 15%,#e7f7b9 30%,#b4f5d7 45%,#b5eaff 60%,#ccbeff 75%,#f2c1ff 90%,#ffb6cb);animation-duration:10s}
+.badge-item.season2-ribbon.s2-rainbow .s2-rule{background:linear-gradient(90deg,transparent,#ffbacd,#ffe6ad,#c8f8ce,#b4e9ff,#e2baff,transparent)}
+.badge-item.season2-ribbon.s2-crowned{--s2-shape:polygon(0 0,100% 0,100% 18%,98% 18%,98% 82%,100% 82%,100% 100%,0 100%,0 82%,2% 82%,2% 18%,0 18%)}
+.badge-item.season2-ribbon.s2-crowned .s2-surface{inset:3px .5px}
+.badge-item.season2-ribbon.s2-crowned .s2-left{visibility:hidden}
+.badge-item.season2-ribbon.s2-crowned .title-badge{transform:translateX(8px)}
+.badge-item.season2-ribbon .s2-crown-medal{position:absolute;z-index:4;width:40px;height:40px;left:2.2%;top:50%;transform:translateY(-50%);clip-path:polygon(50% 0,100% 28%,87% 79%,50% 100%,13% 79%,0 28%);background:linear-gradient(120deg,#ffc7d6b8,#fff9eff2 25%,#c4f6d7bd 45%,#bbe5ffdf 65%,#e6c3ffce 85%,#ffe5e6d9);pointer-events:none}
+.badge-item.season2-ribbon .s2-crown-medal::before{content:"";position:absolute;inset:2px;clip-path:inherit;background:linear-gradient(135deg,#62557c66,#fff5ff36,#52647d55)}
+.badge-item.season2-ribbon .s2-crown-mark{position:absolute;inset:23% 17% 30%;clip-path:polygon(0 0,26% 32%,50% 0,74% 32%,100% 0,85% 82%,15% 82%);background:linear-gradient(110deg,#ff739b,#ffd26c 17%,#c3f291 33%,#74e1f4 50%,#9bb6ff 66%,#d89fff 83%,#ff739b);background-size:220% 100%;animation:s2-gloss 7s linear infinite;filter:drop-shadow(0 0 2px #f9edff88)}
+.badge-item.season2-ribbon .s2-crown-mark::after{content:"";position:absolute;bottom:0;left:13%;right:13%;height:2px;background:linear-gradient(90deg,#ffb5c8,#ffe4a5,#baf4d0,#b5eaff,#e1bdff)}
+.badge-item.season2-ribbon .s2-crown-gem{position:absolute;bottom:16%;left:45%;width:10%;height:10%;transform:rotate(45deg);background:linear-gradient(135deg,#ff86a6,#ffe294,#b8f2c0,#82e7fa,#a8b7ff,#e0afff);background-size:220% 100%;animation:s2-gloss 7s linear infinite;box-shadow:0 0 3px #fff4bd88}
+.badge-item.season2-ribbon .s2-crown-medal::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 35%,#fffcdb66 49%,transparent 62%);background-size:220% 100%;animation:s2-gloss 7s linear infinite}
+.badge-item.season2-ribbon.s2-crowned .s2-right{top:28%;bottom:28%;width:12px;right:3%;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);background:linear-gradient(135deg,#ff86a6,#ffe294 17%,#b8f2c0 33%,#82e7fa 50%,#a8b7ff 66%,#e0afff 83%,#ff86a6);background-size:220% 100%;animation:s2-gloss 7s linear infinite}
+.badge-item.season2-ribbon.s2-ice{--s2-accent:#94ddff;--s2-light:#f3fdff;--s2-deep:#699bbb}
+.badge-item.season2-ribbon.s2-ice::before{background:linear-gradient(115deg,var(--s2-deep),var(--s2-light) 20%,var(--s2-accent) 38%,var(--s2-light) 55%,var(--s2-deep) 80%,var(--s2-light));opacity:.8}
+.badge-item.season2-ribbon.s2-ice .s2-surface{background:linear-gradient(110deg,#84c9e92a,#ffffff16,#84c9e92a)}
+.badge-item.season2-ribbon.s2-spacetime{--s2-accent:#88cfff;--s2-light:#edf9ff;--s2-deep:#467da7}
+.badge-item.season2-ribbon.s2-spacetime::before{background:linear-gradient(180deg,var(--s2-light),var(--s2-deep) 10%,var(--s2-accent) 20% 80%,var(--s2-deep) 91%,var(--s2-light))}
+.badge-item.season2-ribbon.s2-spacetime .s2-surface{background:#102445}
+.title-entry .badge-item.season2-ribbon,.title-slot .badge-item.season2-ribbon{width:min(100%,520px)}
+.playerCardTitles>.badge-item.season2-ribbon{width:min(100%,270px);max-width:270px;height:40px}
+.playerCardTitles>.badge-item.season2-ribbon .title-badge{font-size:clamp(8px,5.7cqi,18px);-webkit-text-stroke:.3px var(--s2-light)}
+.playerCardTitles>.badge-item.season2-ribbon.s2-crowned .title-badge{transform:translateX(6px)}
+.playerCardTitles>.badge-item.season2-ribbon .s2-crown-medal{width:27px;height:27px;left:2.5%}
+.playerCardTitles>.badge-item.season2-ribbon .s2-ornament{width:13px}
+.playerCardTitles>.badge-item.season2-ribbon .s2-surface{inset:4px 8px}
+.playerCardTitles>.badge-item.season2-ribbon.s2-crowned .s2-surface{inset:4px .5px}
+.intro-title-value .badge-item.season2-ribbon{width:100%;height:32px}
+.intro-title-value .badge-item.season2-ribbon .title-badge{font-size:min(15px,5.7cqi);max-width:calc(100% - 30px);-webkit-text-stroke:.25px var(--s2-light)}
+.intro-title-value .badge-item.season2-ribbon.s2-crowned .title-badge{transform:translateX(4px)}
+.intro-title-value .badge-item.season2-ribbon .s2-crown-medal{width:clamp(10px,8cqi,23px);height:clamp(10px,8cqi,23px);left:2.5%}
+.intro-title-value .badge-item.season2-ribbon .s2-ornament{width:clamp(6px,5cqi,13px)}
+.intro-title-value .badge-item.season2-ribbon .s2-surface{inset:3px 5px}
+.intro-title-value .badge-item.season2-ribbon.s2-crowned .s2-surface{inset:3px .5px}
+@keyframes s2-gloss{from{background-position:0 0}to{background-position:-220% 0}}
+@media(max-width:550px){.title-entry .badge-item.season2-ribbon,.title-slot .badge-item.season2-ribbon{height:54px}.title-entry .badge-item.season2-ribbon .title-badge,.title-slot .badge-item.season2-ribbon .title-badge{font-size:clamp(8px,5.7cqi,28px)}.title-entry .badge-item.season2-ribbon .s2-crown-medal,.title-slot .badge-item.season2-ribbon .s2-crown-medal{width:32px;height:32px}.title-entry .badge-item.season2-ribbon .s2-ornament,.title-slot .badge-item.season2-ribbon .s2-ornament{width:15px}}
+@media(prefers-reduced-motion:reduce){.badge-item.season2-ribbon::before,.badge-item.season2-ribbon .title-badge,.badge-item.season2-ribbon .s2-crown-medal::after,.badge-item.season2-ribbon .s2-crown-mark,.badge-item.season2-ribbon .s2-crown-gem,.badge-item.season2-ribbon .s2-right{animation:none!important}}
