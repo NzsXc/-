@@ -12,6 +12,8 @@ The catalog renders these in the collection, equipped slots, battle intros and r
 
 Existing Season 1 awards, equipment and skill progress remain unchanged.
 
+Season 2 labels are measured in unscaled layout coordinates and shrink only when their complete text would overlap the crown/side ornaments or exceed the ribbon height. Wider frames restore the preferred CSS font size. Font loading and viewport changes trigger remeasurement. Ornaments stay proportional in narrow slots; neither names nor ribbon shapes are clipped to hide overflow.
+
 ## Firebase rollout
 
 GitHub publication does not publish Firebase rules or assign player awards.
@@ -27,3 +29,5 @@ Players cannot write `tournamentGrants`. An absent grant, `false`, or the string
 `node tests/titles-season2.test.cjs` checks catalog designs, crown exclusivity, exact grants, ownership, duplicate loadouts, protected grants and artwork at multiple sizes.
 
 `node tests/titles-season2-effects.test.cjs` checks unscaled canvas resolution, visibility, reduced motion and observer cleanup.
+
+`node tests/titles-season2-layout.test.cjs` uses Playwright/Chromium to check full text ranges (not just constrained element boxes), ornament clearance, collection/slot/profile/intro contexts, narrow widths, scaled profiles, resize recovery and fallback fonts. Install Playwright first; optionally set `PLAYWRIGHT_MODULE` and `PLAYWRIGHT_CHROMIUM_EXECUTABLE` for an existing local runtime/browser.
