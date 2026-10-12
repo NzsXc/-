@@ -48,5 +48,16 @@
 .intro-title-value .badge-item.season2-ribbon .s2-surface{inset:3px 5px}
 .intro-title-value .badge-item.season2-ribbon.s2-crowned .s2-surface{inset:3px .5px}
 @keyframes s2-gloss{from{background-position:0 0}to{background-position:-220% 0}}
+/* Keep the approved large type when it fits; JS measures the full label, never clips it. */
+.badge-item.season2-ribbon .title-badge{flex-shrink:0;width:max-content}
 @media(max-width:550px){.title-entry .badge-item.season2-ribbon,.title-slot .badge-item.season2-ribbon{height:54px}.title-entry .badge-item.season2-ribbon .title-badge,.title-slot .badge-item.season2-ribbon .title-badge{font-size:clamp(8px,5.7cqi,28px)}.title-entry .badge-item.season2-ribbon .s2-crown-medal,.title-slot .badge-item.season2-ribbon .s2-crown-medal{width:32px;height:32px}.title-entry .badge-item.season2-ribbon .s2-ornament,.title-slot .badge-item.season2-ribbon .s2-ornament{width:15px}}
 @media(prefers-reduced-motion:reduce){.badge-item.season2-ribbon::before,.badge-item.season2-ribbon .title-badge,.badge-item.season2-ribbon .s2-crown-medal::after,.badge-item.season2-ribbon .s2-crown-mark,.badge-item.season2-ribbon .s2-crown-gem,.badge-item.season2-ribbon .s2-right{animation:none!important}}
+/* Ornaments also stay proportional in narrow slots. */
+.badge-item.season2-ribbon .s2-ornament{width:min(20px,5%)}
+.badge-item.season2-ribbon .s2-crown-medal{width:min(40px,12%);height:auto;aspect-ratio:1}
+.badge-item.season2-ribbon.s2-crowned .s2-right{width:min(12px,5%)}
+.playerCardTitles>.badge-item.season2-ribbon .s2-ornament{width:min(13px,5%)}
+.playerCardTitles>.badge-item.season2-ribbon .s2-crown-medal{width:min(27px,12%);height:auto}
+.intro-title-value .badge-item.season2-ribbon .s2-ornament{width:min(13px,5%)}
+.intro-title-value .badge-item.season2-ribbon .s2-crown-medal{width:min(23px,8%);height:auto}
+@media(max-width:550px){.title-entry .badge-item.season2-ribbon .s2-crown-medal,.title-slot .badge-item.season2-ribbon .s2-crown-medal{width:min(32px,12%);height:auto}.title-entry .badge-item.season2-ribbon .s2-ornament,.title-slot .badge-item.season2-ribbon .s2-ornament{width:min(15px,5%)}}
