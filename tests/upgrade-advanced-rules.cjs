@@ -57,7 +57,7 @@ function upgradeAdvanced(input){
   game.advanced.current[p]={'.write':`${participant(p)}&&(${adv})&&${alive}&&${within}&&${previousTurn}&&newData.exists()`,
    '.validate':`newData.hasChildren(['id','turn','at','used'])&&newData.child('id').val()===${selected(p)}&&newData.child('turn').val()===${s}.child('turn').val()&&newData.child('at').val()===now&&newData.child('used').isNumber()&&newData.child('used').val()===${beforeUsed}+1&&newData.child('used').val()<=${capacity(p)}&&${same('newData',next,['id','turn','at'])}`,
    ...fields(['id','turn','at','used']),$other:{'.validate':false}};
-  game.advanced.uses[p]={$other:{'.validate':false}};
+  game.advanced.uses[p]={};
   const nextCurrent=`newData.parent().parent().parent().child('current/${p}')`;
   game.advanced.uses[p].$slot={'.write':`${participant(p)}&&(${adv})&&${alive}&&${within}&&!data.exists()&&newData.exists()&&$slot===''+(${beforeUsed}+1)&&${beforeUsed}+1<=${capacity(p)}&&(!${current(p)}.exists()||${current(p)}.child('turn').val()<${s}.child('turn').val())`,
    '.validate':`newData.hasChildren(['id','turn','at','used'])&&newData.child('id').val()===${selected(p)}&&newData.child('turn').val()===${s}.child('turn').val()&&newData.child('at').val()===now&&newData.child('used').val()===${beforeUsed}+1&&${same('newData',nextCurrent,['id','turn','at','used'])}`,
@@ -70,7 +70,7 @@ function upgradeAdvanced(input){
   for(const k of ['selected','current','uses'])history.advanced['.validate']+=`&&newData.child('${k}/${p}').exists()===${live}.child('${k}/${p}').exists()`;
   history.advanced.selected[p]={'.validate':`newData.val()===${live}.child('selected/${p}').val()`};
   history.advanced.current[p]={'.validate':`newData.hasChildren(['id','turn','at','used'])&&${same('newData',`${live}.child('current/${p}')`,['id','turn','at','used'])}`,...fields(['id','turn','at','used']),$other:{'.validate':false}};
-  history.advanced.uses[p]={'.validate':Array.from({length:5},(_,i)=>`newData.child('${i+1}').exists()===${live}.child('uses/${p}/${i+1}').exists()`).join('&&'),$other:{'.validate':false}};
+  history.advanced.uses[p]={'.validate':Array.from({length:5},(_,i)=>`newData.child('${i+1}').exists()===${live}.child('uses/${p}/${i+1}').exists()`).join('&&')};
   history.advanced.uses[p].$slot={'.validate':`newData.hasChildren(['id','turn','at','used'])&&newData.child('used').isNumber()&&newData.child('used').val()>=1&&newData.child('used').val()<=5&&$slot===''+newData.child('used').val()&&${same('newData',`${live}.child('uses/${p}').child($slot)`,['id','turn','at','used'])}`,...fields(['id','turn','at','used']),$other:{'.validate':false}};
  }
  function compactTree(node){for(const key of Object.keys(node)){if(typeof node[key]==='string')node[key]=compact(node[key]);else if(node[key]&&typeof node[key]==='object')compactTree(node[key]);}}
