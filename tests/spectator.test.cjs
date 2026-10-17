@@ -10,7 +10,7 @@ function setup(){
   if(!h.allowed('.read',r.path,'viewer'))throw Error('permission_denied: '+r.path);
   const value=structuredClone(h.get(r.path));return {val:()=>value};
  };
- const ctx=vm.createContext({window:{BattleAI:require('../bot-engine.js')},console:{...console,error:(...args)=>renderErrors.push(args)},Date:{now:h.now},
+ const ctx=vm.createContext({window:{BattleAI:require('../bot-engine.js'),RoomRules:require('../room-rules.js')},console:{...console,error:(...args)=>renderErrors.push(args)},Date:{now:h.now},
   ref:(db,path)=>({path}),get,
   set(){assert.fail('Spectators must not write');},update(){assert.fail('Spectators must not write');},remove(){assert.fail('Spectators must not write');},
   onValue(r,callback,onError){const sub={path:r.path,callback,onError,active:true};subscriptions.push(sub);queueMicrotask(()=>{

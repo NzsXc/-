@@ -17,25 +17,26 @@ const ACTIONS=[
  {cost:2,type:'mirror',skill:'tech12',power:0,pierce:false}
 ];
 const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
-const chosen=(s,moves,p)=>Number.isInteger(moves?.[p])?moves[p]:(s['gauge'+p]>=10?1:0);
-export function calculate(s,moves,rulesVersion=2){
+const chosen=(s,moves,p,maxGauge)=>Number.isInteger(moves?.[p])?moves[p]:(s['gauge'+p]>=maxGauge?1:0);
+export function calculate(s,moves,rulesVersion=2,roomRules={}){
+ const maxHp=roomRules.hp??10,maxGauge=roomRules.maxGauge??10;
  const out={};
- out.action1=chosen(s,moves,1);out.misses1=Number.isInteger(moves?.[1])?0:s.misses1+1;
- out.action2=chosen(s,moves,2);out.misses2=Number.isInteger(moves?.[2])?0:s.misses2+1;
+ out.action1=chosen(s,moves,1,maxGauge);out.misses1=Number.isInteger(moves?.[1])?0:s.misses1+1;
+ out.action2=chosen(s,moves,2,maxGauge);out.misses2=Number.isInteger(moves?.[2])?0:s.misses2+1;
  const raw1=ACTIONS[out.action1]||ACTIONS[0],raw2=ACTIONS[out.action2]||ACTIONS[0];
  const none={cost:0,type:'',skill:'',power:0,pierce:false};
  const e1=raw1.skill==='tech12'?(raw2.skill==='tech12'?none:raw2):raw1;
  const e2=raw2.skill==='tech12'?(raw1.skill==='tech12'?none:raw1):raw2;
  out.cost1=raw1.cost;out.cost2=raw2.cost;out.type1=e1.type;out.type2=e2.type;out.skill1=e1.skill;out.skill2=e2.skill;
  out.attack1=e1.type==='attack';out.attack2=e2.type==='attack';out.reflect1=e1.type==='reflect';out.reflect2=e2.type==='reflect';
- out.paid1=clamp(s.gauge1-raw1.cost,0,10);out.paid2=clamp(s.gauge2-raw2.cost,0,10);
+ out.paid1=clamp(s.gauge1-raw1.cost,0,maxGauge);out.paid2=clamp(s.gauge2-raw2.cost,0,maxGauge);
  out.sealed1=s.seal1===true||(e2.skill==='tech8'&&s.gauge1<7);out.sealed2=s.seal2===true||(e1.skill==='tech8'&&s.gauge2<7);
  out.reflect1=out.reflect1&&!out.sealed1;out.reflect2=out.reflect2&&!out.sealed2;
  out.blocking1=e1.type==='block'&&!out.sealed1;out.blocking2=e2.type==='block'&&!out.sealed2;
- out.charged1=e1.type==='charge'?clamp(out.paid1+2,0,10):out.paid1;out.charged2=e2.type==='charge'?clamp(out.paid2+2,0,10):out.paid2;
- out.foresight1=e1.skill==='tech5'&&e2.type==='charge'?clamp(out.charged1+3,0,10):out.charged1;
- out.foresight2=e2.skill==='tech5'&&e1.type==='charge'?clamp(out.charged2+3,0,10):out.charged2;
- out.healed1=e1.skill==='tech4'?clamp(s.hp1+1,0,10):s.hp1;out.healed2=e2.skill==='tech4'?clamp(s.hp2+1,0,10):s.hp2;
+ out.charged1=e1.type==='charge'?clamp(out.paid1+2,0,maxGauge):out.paid1;out.charged2=e2.type==='charge'?clamp(out.paid2+2,0,maxGauge):out.paid2;
+ out.foresight1=e1.skill==='tech5'&&e2.type==='charge'?clamp(out.charged1+3,0,maxGauge):out.charged1;
+ out.foresight2=e2.skill==='tech5'&&e1.type==='charge'?clamp(out.charged2+3,0,maxGauge):out.charged2;
+ out.healed1=e1.skill==='tech4'?clamp(s.hp1+1,0,maxHp):s.hp1;out.healed2=e2.skill==='tech4'?clamp(s.hp2+1,0,maxHp):s.hp2;
  out.basePower1=e1.power;out.basePower2=e2.power;
  out.power1=out.attack1?((e1.skill==='tech6'?(s.momentum1?2:1):e1.power)+(s.enhance1>0?1:0)):0;
  out.power2=out.attack2?((e2.skill==='tech6'?(s.momentum2?2:1):e2.power)+(s.enhance2>0?1:0)):0;
@@ -48,12 +49,12 @@ export function calculate(s,moves,rulesVersion=2){
  if(e1.skill==='tech3'&&e2.type==='charge'&&!out.blocking2&&!out.reflect2)d2+=rulesVersion>=2?1:2;
  if(e1.skill==='tech7')d1+=2;if(e2.skill==='tech7')d2+=2;
  out.damage1=d1;out.damage2=d2;
- out.rampage1=e1.skill==='tech7'?clamp(out.foresight1+8,0,10):out.foresight1;
- out.rampage2=e2.skill==='tech7'?clamp(out.foresight2+8,0,10):out.foresight2;
+ out.rampage1=e1.skill==='tech7'?clamp(out.foresight1+8,0,maxGauge):out.foresight1;
+ out.rampage2=e2.skill==='tech7'?clamp(out.foresight2+8,0,maxGauge):out.foresight2;
  out.stolen1=e1.skill==='tech10'?Math.min(2,out.rampage2):0;out.stolen2=e2.skill==='tech10'?Math.min(2,out.rampage1):0;
- out.gauge1=clamp(out.rampage1+out.stolen1-out.stolen2,0,10);out.gauge2=clamp(out.rampage2+out.stolen2-out.stolen1,0,10);
+ out.gauge1=clamp(out.rampage1+out.stolen1-out.stolen2,0,maxGauge);out.gauge2=clamp(out.rampage2+out.stolen2-out.stolen1,0,maxGauge);
  if(rulesVersion>=2){out.gauge1=Math.max(0,out.gauge1-(e2.skill==='tech3'?1:0));out.gauge2=Math.max(0,out.gauge2-(e1.skill==='tech3'?1:0));}
- out.hp1=out.misses1>=2?0:clamp(out.healed1-d1,0,10);out.hp2=out.misses2>=2?0:clamp(out.healed2-d2,0,10);
+ out.hp1=out.misses1>=2?0:clamp(out.healed1-d1,0,maxHp);out.hp2=out.misses2>=2?0:clamp(out.healed2-d2,0,maxHp);
  out.seal1=out.sealed1&&out.gauge1<7;out.seal2=out.sealed2&&out.gauge2<7;
  out.enhance1=e1.skill==='tech9'?2:Math.max(0,s.enhance1-1);out.enhance2=e2.skill==='tech9'?2:Math.max(0,s.enhance2-1);
  out.momentum1=e1.skill==='tech6'?!s.momentum1:false;out.momentum2=e2.skill==='tech6'?!s.momentum2:false;

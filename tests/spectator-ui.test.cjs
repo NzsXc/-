@@ -27,7 +27,8 @@ const basicActions={attack:window.BattleAI.ACTIONS[1]};
 ${battleUI}
 function onlineNow(){return window.protectedRooms.now();}
 ${protectedSource}
-window.protectedRooms=createProtectedRooms(db,auth,async data=>{if(data.op!=='profile')throw Error('spectator mutation');}, {find:async id=>(await get(ref(db,'battleHistory/'+id))).val()});
+const spectatorTransport=async data=>{if(data.op!=='profile')throw Error('spectator mutation');};spectatorTransport.supportsRoomRules=async()=>true;
+window.protectedRooms=createProtectedRooms(db,auth,spectatorTransport, {find:async id=>(await get(ref(db,'battleHistory/'+id))).val()});
 ${filter}
 window.onlineBattle={watchAllRooms:protectedRooms.watchAllRooms,watchRoom:protectedRooms.watchRoom,filterActiveBattles:activeBattles,now:protectedRooms.now};
 ${spectator}
@@ -75,6 +76,16 @@ ${result}
   await page.waitForFunction(()=>document.getElementById('spectatorConnectionStatus').hidden===false,{},{timeout:5000});
   assert.equal(await page.locator('#resultMessage').textContent(),'B WIN','a failed retry must preserve the final result');
   await page.click('#spectatorBadge button');assert.equal(await page.locator('#onlineScreen').evaluate(node=>node.hidden),false);
+  failReads=false;
+  h.put('freeGames/customMatch',{...base,kind:'friend',room:'customRoom',roomRules:{mode:'custom',hp:20,initialGauge:14,maxGauge:20},state:{...base.state,turn:2,startedAt:Date.now()-10000,hp1:20,hp2:20,gauge1:14,gauge2:14,last1:'block',last2:'reflect'}});
+  h.put('friendRooms/customRoom',{game:'customMatch'});h.put('freeAccounts/p1/active','customMatch');h.put('freeAccounts/p2/active','customMatch');
+  await page.evaluate(()=>openSpectatorList());await page.waitForFunction(()=>document.querySelectorAll('.spectatorRow').length===1);
+  await page.click('.spectatorRow');await page.waitForFunction(()=>document.getElementById('hp1Text').textContent==='20/20');
+  assert.equal(await page.locator('#gauge1Text').textContent(),'14/20');
+  h.put('freeGames/customMatch/state',{...base.state,turn:3,startedAt:Date.now()-10000,hp1:15,hp2:20,gauge1:20,gauge2:14,last1:'attack',last2:'charge'});
+  await page.waitForFunction(()=>document.getElementById('hp1Text').textContent==='15/20'&&document.getElementById('gauge1Text').textContent==='20/20');
+  assert.equal(await page.locator('#hp1Fill').evaluate(n=>n.style.width),'75%');assert.equal(await page.locator('#gauge1Fill').evaluate(n=>n.style.width),'100%');
+  await page.click('#spectatorBadge button');
   const count=requests.length;await page.waitForTimeout(1400);assert.equal(requests.length,count,'leaving releases all polling/list subscriptions');
   assert(!requests.some(p=>/^freeGames(?:\/[^/]+)?$/.test(p)||/\/(moves|advance)(?:\/|$)/.test(p)));assert.deepEqual(errors,[]);
   console.log('PASS: real battle UI: mid-match entry, previous-action indicators, HP updates, transient read failure/recovery, archived result preserved and exit; actual Firebase rules enforced');
