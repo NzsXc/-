@@ -35,7 +35,9 @@
   }
   return out;
  }
- const api={SKILLS,byId,isAdvanced,active,forTurn,preview,resolve,WINDOW_MS:2000};
+ const CUTIN_MS=1900,EFFECT_MS=1200;
+ const presentationMs=(advanced,turn)=>Object.keys(forTurn(advanced,turn)).length?CUTIN_MS+EFFECT_MS:0;
+ const api={SKILLS,byId,isAdvanced,active,forTurn,preview,resolve,presentationMs,WINDOW_MS:3000,CUTIN_MS,EFFECT_MS};
  if(typeof window!=='undefined')window.AdvancedRules=api;
  if(typeof module!=='undefined')module.exports=api;
 })();

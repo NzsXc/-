@@ -2,7 +2,7 @@
 export function createAdvancedProtocol({read,writeUpdate,now,serverTimestamp}){
  let supported=null;
  function supports(){
-  if(!supported)supported=read('freeGames/_protocol/advanced/protocol').then(()=>true).catch(error=>{
+  if(!supported)supported=read('freeGames/_protocol/advanced/skillCutin').then(()=>true).catch(error=>{
    if(/permission.?denied/i.test(String(error.code||'')+' '+error.message))return false;
    supported=null;throw error;
   });return supported;
@@ -22,7 +22,7 @@ export function createAdvancedProtocol({read,writeUpdate,now,serverTimestamp}){
   const skill=a?.selected?.[me],definition=window.AdvancedRules.byId[skill];
   if(!s||s.turn!==turn)throw Error('ターンが切り替わりました。');
   if(a?.current?.[me]?.turn===turn)return;
-  if(now()<opensAt-2000||now()>=opensAt)throw Error('スキルは開始時の2秒間だけ使用できます。');
+  if(now()<opensAt-window.AdvancedRules.WINDOW_MS||now()>=opensAt)throw Error('スキルは開始時の3秒間だけ使用できます。');
   const count=Number(a?.current?.[me]?.used||0);
   if(!definition||count>=definition.limit)throw Error('スキルの残り回数がありません。');
   const receipt={id:skill,turn,at:serverTimestamp(),used:count+1},current={...receipt};
