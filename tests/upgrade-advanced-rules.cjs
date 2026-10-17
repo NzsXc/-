@@ -14,13 +14,15 @@ function upgradeAdvanced(input){
  const out=structuredClone(input),game=out.rules.freeGames.$game,history=out.rules.battleHistory.$game;
  assert(!game.advanced,'Apply the Advanced upgrade once');
  const g="root.child('freeGames').child($game)",s=g+".child('state')",adv=`${g}.child('roomRules/mode').val()==='advanced'`;
- const baseOpening=opening(s),opens=`(${baseOpening}+2000)`;
+ const windowMs=3000,baseOpening=opening(s),opens=`(${baseOpening}+${windowMs})`;
+ const presentation=node=>`((root.child('freeGames/'+$game+'/advanced/current/1/turn').val()===${node}.child('turn').val()||root.child('freeGames/'+$game+'/advanced/current/2/turn').val()===${node}.child('turn').val())?3100:0)`;
+ const extra=node=>`(${adv}?${windowMs}+${presentation(node)}:0)`;
  let timings=0;
  function timing(node){for(const k of Object.keys(node)){
-  if(typeof node[k]==='string'){timings+=node[k].split(baseOpening).length-1;node[k]=node[k].replaceAll(baseOpening,`(${baseOpening}+(${adv}?2000:0))`);}
+  if(typeof node[k]==='string'){timings+=node[k].split(baseOpening).length-1;node[k]=node[k].replaceAll(baseOpening,`(${baseOpening}+${extra(s)})`);}
   else if(node[k]&&typeof node[k]==='object')timing(node[k]);
  }}timing(game);assert(timings>10);
- game.state['.validate']=game.state['.validate'].replaceAll(opening('data'),`(${opening('data')}+(${adv}?2000:0))`);
+ game.state['.validate']=game.state['.validate'].replaceAll(opening('data'),`(${opening('data')}+${extra('data')})`);
  const selected=p=>`${g}.child('advanced/selected/${p}').val()`,current=p=>`${g}.child('advanced/current/${p}')`;
  const active=(p,id)=>`(${current(p)}.child('turn').val()===${s}.child('turn').val()&&${current(p)}.child('id').val()==='${id}')`;
  const state=(p,k)=>`${g}.child('state/${k}${p}').val()`;
@@ -42,12 +44,12 @@ function upgradeAdvanced(input){
  for(const config of [game.roomRules,out.rules.friendRooms.$room.roomRules,history.roomRules]){assert(config['.validate'].includes(custom));config['.validate']=config['.validate'].replace(custom,`(${custom}||${advanced})`);}
  const participant=p=>`auth!=null&&auth.uid===${g}.child('players/${p}').val()`;
  const alive=`${s}.exists()&&${s}.child('hp1').val()>0&&${s}.child('hp2').val()>0&&${s}.child('turn').val()<=300&&!${g}.child('settled').exists()&&!${g}.child('resigned').exists()`;
- const within=`now>=${opens}-2000&&now<${opens}`;
+ const within=`now>=${opens}-${windowMs}&&now<${opens}`;
  const capacity=p=>`(${selected(p)}==='chain'?5:${selected(p)}==='boost'?3:${selected(p)}==='cleanse'?1:(${selected(p)}==='heal'||${selected(p)}==='invincible')?2:0)`;
  const same=(a,b,fields)=>fields.map(k=>`${a}.child('${k}').val()===${b}.child('${k}').val()`).join('&&');
  const fields=keys=>Object.fromEntries(keys.map(k=>[k,{'.validate':true}]));
  game.advanced={'.read':`auth!=null&&(${adv})&&${g}.child('ready/1').val()===true&&${g}.child('ready/2').val()===true`,
-  protocol:{'.read':'auth!=null','.validate':false},selected:{$other:{'.validate':false}},current:{'.read':`auth!=null&&(${adv})`,$other:{'.validate':false}},uses:{'.read':`auth!=null&&(${adv})`,$other:{'.validate':false}},$other:{'.validate':false}};
+  protocol:{'.read':'auth!=null','.validate':false},skillCutin:{'.read':'auth!=null','.validate':false},selected:{$other:{'.validate':false}},current:{'.read':`auth!=null&&(${adv})`,$other:{'.validate':false}},uses:{'.read':`auth!=null&&(${adv})`,$other:{'.validate':false}},$other:{'.validate':false}};
  for(const p of [1,2]){
   const next="newData.parent().parent().child('uses').child('"+p+"').child(''+newData.child('used').val())";
   const beforeUsed=`(${current(p)}.exists()?${current(p)}.child('used').val():0)`,previousTurn=`(!data.exists()||data.child('turn').val()<${s}.child('turn').val())`;
@@ -78,4 +80,4 @@ function upgradeAdvanced(input){
  return out;
 }
 module.exports={upgradeAdvanced};
-if(require.main===module){const p=path.join(__dirname,'..','firebase-database.rules.json');fs.writeFileSync(p,JSON.stringify(upgradeAdvanced(JSON.parse(fs.readFileSync(p,'utf8'))),null,2)+'\n');}
+if(require.main===module){const p=path.join(__dirname,'..','firebase-database.rules.json');fs.writeFileSync(p,JSON.stringify(upgradeAdvanced(JSON.parse(fs.readFileSync(p,'utf8'))),null,1)+'\n');}

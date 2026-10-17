@@ -9,13 +9,6 @@
  const panel=document.createElement('section');panel.id='battleInspectorPanel';panel.hidden=true;
  panel.className='battle-inspector-panel';panel.setAttribute('aria-label','両者の装備技と効果');panel.setAttribute('role','region');
  screen.append(panel,button);
- function place(){
-  if(!area||button.hidden)return;
-  const r=area.getBoundingClientRect(),s=screen.getBoundingClientRect();
-  button.style.left=(r.left-s.left)+'px';button.style.top=(r.top-s.top-49)+'px';
- }
- const resize=new ResizeObserver(place);resize.observe(screen);
- window.addEventListener('resize',place);window.addEventListener('scroll',place,{passive:true});
  function node(tag,cls,text){const n=document.createElement(tag);n.className=cls;if(text!=null)n.textContent=text;return n;}
  function close(){open=false;panel.hidden=true;button.setAttribute('aria-expanded','false');}
  function render(){
@@ -39,11 +32,12 @@
   const enabled=!!next.enabled&&[1,2].includes(next.side)&&[1,2].every(p=>next.loadouts?.[p]?.length===3);
   state={...next,enabled};
   const nextArea=enabled?document.getElementById('player'+next.side+'Area'):null;
-  if(nextArea!==area){if(area){area.classList.remove('has-battle-inspector');resize.unobserve(area);}area=nextArea;if(area)resize.observe(area);}
+  if(nextArea!==area){if(area)area.classList.remove('has-battle-inspector');area=nextArea;}
   button.hidden=!enabled;
+  document.body.classList.toggle('battle-inspector-visible',enabled);
   if(!enabled){close();return;}
   area.classList.add('has-battle-inspector');
-  button.dataset.player=String(next.side);place();
+  button.dataset.player=String(next.side);
   const nextKey=JSON.stringify([next.side,next.loadouts,next.names]);if(open&&nextKey!==key)render();key=nextKey;
  }
  window.BattleInspector={update,close,isOpen:()=>open};

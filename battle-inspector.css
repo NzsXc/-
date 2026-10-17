@@ -1,4 +1,4 @@
-#battleScreen .battle-inspector-toggle{position:absolute;z-index:90;display:grid;place-items:center;width:44px;height:44px;min-height:44px;margin:0;padding:0;border:1px solid #9ce5ff88;border-radius:50%;background:linear-gradient(140deg,#193d59,#111b30);color:#ddfaff;box-shadow:0 0 10px #6fcfff33;cursor:pointer;touch-action:manipulation}
+#battleScreen .battle-inspector-toggle{position:fixed;right:calc(12px + var(--safe-right,0px));top:calc(8px + var(--safe-top,0px));z-index:90;display:grid;place-items:center;width:44px;height:44px;min-height:44px;margin:0;padding:0;border:1px solid #9ce5ff88;border-radius:50%;background:linear-gradient(140deg,#193d59,#111b30);color:#ddfaff;box-shadow:0 0 10px #6fcfff33;cursor:pointer;touch-action:manipulation}
 #battleScreen .battle-inspector-toggle[hidden],#battleInspectorPanel[hidden]{display:none!important}
 .battle-inspector-lens{position:relative;display:block;width:17px;height:17px;border:2px solid currentColor;border-radius:50%;transform:translate(-3px,-3px)}
 .battle-inspector-lens::after{content:'';position:absolute;left:12px;top:12px;width:10px;height:3px;border-radius:2px;background:currentColor;transform:rotate(45deg);transform-origin:left center}
@@ -18,3 +18,6 @@
 .intro-title-value{min-width:0;flex:1;width:0}
 .intro-title-value .badge-item .title-badge,.playerCardTitles>.badge-item .title-badge{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .intro-title-value .title-empty{max-width:100%;overflow:hidden}
+
+/* Keep the legacy room-code control clear of the screen-corner inspector. */
+body.battle-inspector-visible #roomCodeButton{right:calc(68px + var(--safe-right));max-width:calc(100vw - 80px - var(--safe-left) - var(--safe-right));}

@@ -71,7 +71,7 @@ function rankedRefresh(epoch){
 }
 let rankedFrame=0,rankedClockAt=0,rankedClockServer=0,rankedAnimating=false,rankedEffectTimer=0,rankedVisualToken=0,rankedVisualCountdownEnd=0,rankedVisualRevealAt=0;
 let rankedTurnClockKey='',rankedTurnOpensAt=0,rankedTurnDeadline=0;
-function rankedVisualStop(){window.BattleEffects?.cancel();PlayerIntro.reset();cancelAnimationFrame(rankedFrame);rankedFrame=0;clearTimeout(rankedEffectTimer);clearTimeout(rankedAutoTimer);rankedAutoTimer=0;rankedVisualToken++;rankedAnimating=false;rankedVisualCountdownEnd=0;rankedTurnClockKey='';rankedTurnOpensAt=0;rankedTurnDeadline=0;stopCountdownRing();stopTurnCountdownSE();clearTimeout(window._techniqueRevealCleanupTimeout);document.getElementById('battleEffectLayer')?.replaceChildren();}
+function rankedVisualStop(){window.AdvancedCutin?.cancel();window.BattleEffects?.cancel();PlayerIntro.reset();cancelAnimationFrame(rankedFrame);rankedFrame=0;clearTimeout(rankedEffectTimer);clearTimeout(rankedAutoTimer);rankedAutoTimer=0;rankedVisualToken++;rankedAnimating=false;rankedVisualCountdownEnd=0;rankedTurnClockKey='';rankedTurnOpensAt=0;rankedTurnDeadline=0;stopCountdownRing();stopTurnCountdownSE();clearTimeout(window._techniqueRevealCleanupTimeout);document.getElementById('battleEffectLayer')?.replaceChildren();}
 function rankedClockStart(m){
  rankedClockAt=performance.now();rankedClockServer=m.serverNow;
  if(!rankedFrame){rankedTick();}
@@ -79,7 +79,13 @@ function rankedClockStart(m){
 function rankedSyncTurnClock(m){
  if(!m?.state)return;
  const key=m.id+':'+m.state.turn;
- if(rankedTurnClockKey===key)return;
+ if(rankedTurnClockKey===key){
+  // Only an Advanced receipt may extend this same turn by the shared presentation.
+  if(m.roomRules?.mode==='advanced'&&Number(m.opensAt)>Number(rankedSyncTurnClock.lastOpening||0)){
+   const delta=Number(m.opensAt)-rankedSyncTurnClock.lastOpening;rankedTurnOpensAt+=delta;rankedTurnDeadline+=delta;rankedSyncTurnClock.lastOpening=Number(m.opensAt);rankedScheduleAuto(Math.max(0,rankedTurnDeadline-performance.now()));
+  }return;
+ }
+ rankedSyncTurnClock.lastOpening=Number(m.opensAt);
  rankedTurnClockKey=key;
  // サーバーの開始時刻は一度だけ端末の単調増加時計へ写す。
  // 以後のpoll応答では締切を再計算しないため、数字が飛んだり加速したりしない。
@@ -96,6 +102,7 @@ function rankedScheduleAuto(delay){
 function rankedAutoSelect(){
  const m=rankedMatch,localNow=performance.now();
  if(!rankedActive||!m?.state||m.closed||m.ownAction!=null||rankedTurnClockKey!==m.id+':'+m.state.turn||localNow<rankedTurnDeadline)return;
+ if(m.roomRules?.mode==='advanced'&&m.skillWindow&&m.serverNow<m.skillWindow.endAt){rankedScheduleAuto(1000);return;}
  if(rankedAnimating||rankedSending||localNow<rankedAutoRetryAt){rankedScheduleAuto(1000);return;}
  rankedAutoRetryAt=localNow+1000;
  rankedSubmitAction(m,m.state.gauge[m.you]>=(m.roomRules?.maxGauge??10)?1:0,true);
@@ -105,7 +112,9 @@ function rankedTick(){
  syncBattleInspector();
  const now=rankedClockServer+performance.now()-rankedClockAt;
  const localNow=performance.now();
- const turnOpen=!!m.state&&rankedTurnClockKey===m.id+':'+m.state.turn&&localNow>=rankedTurnOpensAt;
+ const skillConfirmed=m.roomRules?.mode!=='advanced'||!m.skillWindow||m.serverNow>=m.skillWindow.endAt;
+ if(!skillConfirmed&&now>=m.skillWindow.endAt&&!rankedSending&&rankedTick.skillBoundary!==m.id+':'+m.state.turn){rankedTick.skillBoundary=m.id+':'+m.state.turn;rankedRefresh(rankedEpoch);}
+ const turnOpen=skillConfirmed&&!!m.state&&rankedTurnClockKey===m.id+':'+m.state.turn&&localNow>=rankedTurnOpensAt;
  const inputExpired=turnOpen&&localNow>=rankedTurnDeadline;
  if(inputExpired&&!m.closed&&!rankedAnimating&&m.ownAction==null&&!rankedSending&&localNow>=rankedAutoRetryAt)rankedAutoSelect();
  const turnRemaining=turnOpen?Math.max(0,Math.ceil((rankedTurnDeadline-localNow)/1000)):10;
@@ -212,9 +221,9 @@ function rankedApply(m,visualCommit=false){
  setPlayerNames(m.players[1].name,m.players[2].bot?botDisplayName():m.players[2].name);
  updateBattleUI();
  if(!m.closed&&m.state.turn===1){
-  PlayerIntro.start({key:'ranked:'+m.id,startAt:(m.roomRules?.mode==='advanced'?m.opensAt-2000:m.opensAt)-PlayerIntro.DURATION_MS,now:()=>rankedClockServer+performance.now()-rankedClockAt,players:m.players});
+  PlayerIntro.start({key:'ranked:'+m.id,startAt:(m.roomRules?.mode==='advanced'?m.skillWindow.startAt:m.opensAt)-PlayerIntro.DURATION_MS,now:()=>rankedClockServer+performance.now()-rankedClockAt,players:m.players});
  }else PlayerIntro.cancel();
- const localTurnOpen=rankedTurnClockKey===m.id+':'+m.state.turn&&performance.now()>=rankedTurnOpensAt;
+ const localTurnOpen=(m.roomRules?.mode!=='advanced'||!m.skillWindow||m.serverNow>=m.skillWindow.endAt)&&rankedTurnClockKey===m.id+':'+m.state.turn&&performance.now()>=rankedTurnOpensAt;
  locked[me]=m.ownAction!==null||rankedSending||m.closed||!localTurnOpen||performance.now()>=rankedTurnDeadline;locked[3-me]=true;
  for(const p of [1,2])document.getElementById('player'+p+'Area').classList.toggle('locked',locked[p]);
  document.getElementById('battleHomeButton').hidden=false;document.getElementById('battleHomeButton').textContent=m.closed?'ホームへ':'降参して戻る';
