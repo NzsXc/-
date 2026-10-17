@@ -30,6 +30,6 @@ DBルールでも、選択したスキル、受付時間、所有者、1ター�
 
 - `tests/advanced-skills.test.cjs`: 2,025組の効果・行動と実際のDBルール式の一致、5種類の効果と上限、締切・二重押し・改ざんの拒否、履歴・再生。
 - `tests/advanced-ui.test.cjs`: 実際の選択画面と確認処理、ルール式に基づく発動、PC・スマホ・横画面、パネルとの重なり、残り回数、2秒バーの消去、Standardへの復帰。
-- 既存のStandard・Custom・観戦・ランキング・称号テストを含む15スイートを通過。
+- 既存のStandard・Custom・観戦・ランキング・称号とルール構造テストを含む16スイートを通過。
 
-検証はローカルのルール式評価とChromiumで実施しています。本番Firebaseでの2端末接続とFirebase Emulatorでは未検証です。
+ローカルのルール式評価とChromiumに加え、Firebase公式Realtime Databaseエミュレーター4.11.2でルール全文のコンパイル成功を確認しました。`node tests/compile-database-rules.cjs` は127.0.0.1:19000で起動済みのエミュレーターを使い、修正前の重複ワイルドカードエラーを再現して修正後のHTTP 200を検証します。本番Firebaseでの2端末接続と、エミュレーター上の対戦操作は未検証です。
