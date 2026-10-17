@@ -11,26 +11,18 @@
 #techScreen.advancedSelection .techSelect{padding-bottom:18px;grid-template-rows:auto auto auto auto;}
 #techScreen.advancedSelection .advancedSkillSelection{grid-row:3;}
 #techScreen.advancedSelection #techConfirmButton{grid-column:1 / -1;grid-row:4;min-height:54px;padding:12px;}
-.advancedSkillDock{position:absolute;right:calc(20px + var(--safe-right,0px));bottom:calc(20px + var(--safe-bottom,0px));z-index:35;width:min(340px,42vw);display:grid;gap:6px;}
-.advancedSkillButton{display:grid;gap:7px;min-height:100px;padding:15px;border:2px solid #a4ffe2;color:#effff9;background:#16403c;box-shadow:0 0 24px #65e7b733;cursor:pointer;text-align:left;font:inherit;}
-.advancedSkillButton:disabled{opacity:.55;cursor:default;box-shadow:none;}
-.advancedSkillName{font-size:18px;}.advancedSkillUses{font-weight:900;color:#a4ffe2;}
-.advancedSkillDescription,.advancedOpponentSkill{font-size:12px;line-height:1.6;overflow-wrap:anywhere;}
-.advancedOpponentSkill{color:#bad6d3;text-align:center;}
+.advancedSkillDock{position:absolute;z-index:35;width:56px;height:56px;}
+.advancedSkillName,.advancedSkillDescription,.advancedOpponentSkill{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;}
 .advancedSkillWindow{width:min(340px,100%);margin:8px auto;padding:12px;border:1px solid #a4ffe2;background:#102c32;box-shadow:0 0 24px #65e7b733;color:#e7fff5;}
 .advancedSkillWindowHeading{display:flex;justify-content:space-between;gap:12px;margin-bottom:8px;font-size:15px;}
 .advancedSkillSeconds{font-variant-numeric:tabular-nums;}
 .advancedSkillTrack{height:12px;overflow:hidden;background:#071b22;border:1px solid #83d9c666;}
 .advancedSkillFill{height:100%;background:linear-gradient(90deg,#4dcfa7,#c5ffe2);transform-origin:left center;will-change:transform;}
 @media(max-width:1100px),(max-height:680px){
- #battleScreen.advancedMode.active{grid-template-rows:auto minmax(108px,1fr) auto auto;}
- #battleScreen.advancedMode .advancedSkillDock{position:relative;inset:auto;grid-column:1;grid-row:4;justify-self:center;width:min(100%,520px);}
- .advancedSkillButton{min-height:78px;padding:10px;grid-template-columns:1fr auto;}
- .advancedSkillDescription{grid-column:1 / -1;}
+ #battleScreen.advancedMode #battleCenter{padding-bottom:66px;}
 }
 @media(min-width:640px) and (max-height:680px){
- #battleScreen.advancedMode.active{grid-template-rows:minmax(270px,1fr) auto;}
- #battleScreen.advancedMode .advancedSkillDock{grid-column:1 / -1;grid-row:2;width:min(520px,100%);}
+ #battleScreen.advancedMode #battleCenter{padding-bottom:6px;}
  #battleScreen.advancedMode .advancedSkillWindow{padding:8px;}
  #battleScreen.advancedMode .advancedSkillWindowHeading{flex-direction:column;align-items:center;gap:4px;font-size:12px;}
 }

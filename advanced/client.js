@@ -26,7 +26,7 @@
   if(!dock){
    dock=node('section','advancedSkillDock');dock.id='advancedSkillDock';dock.setAttribute('aria-label','Advancedスキル');
    const button=node('button','advancedSkillButton');button.type='button';button.id='advancedSkillButton';button.addEventListener('click',activate);
-   button.append(node('strong','advancedSkillName'),node('span','advancedSkillUses'),node('small','advancedSkillDescription'));
+   button.append(node('span','advancedSkillArt'),node('strong','advancedSkillName'),node('span','advancedSkillUses'),node('small','advancedSkillDescription'));
    const other=node('span','advancedOpponentSkill');other.id='advancedOpponentSkill';dock.append(button,other);document.getElementById('battleScreen').append(dock);
   }
   if(!windowPanel){
@@ -36,6 +36,19 @@
    windowPanel.append(heading,track);document.getElementById('battleCenter').append(windowPanel);
   }
  }
+ const artParts={boost:['energy-halo','battery','bolt','spark s1','spark s2'],heal:['heal-pulse','medical-cross','mote m1','mote m2','mote m3'],chain:['chain-link link-a','chain-link link-b','break-flash','break-ray ray-a','break-ray ray-b'],cleanse:['cleanse-orbit orbit-a','cleanse-orbit orbit-b','cleanse-core','cleanse-star','debris'],invincible:['star-glow','invincible-star','star-gleam','star-spark']};
+ function paint(button,id){
+  if(button.dataset.skill===id)return;button.dataset.skill=id||'';
+  const art=button.querySelector('.advancedSkillArt');art.setAttribute('aria-hidden','true');art.replaceChildren(...(artParts[id]||[]).map(cls=>node('span',cls)));
+ }
+ function place(){
+  if(!dock||dock.hidden||!current)return;
+  const area=document.getElementById('player'+current.you+'Area'),screen=document.getElementById('battleScreen');if(!area)return;
+  const r=area.getBoundingClientRect(),s=screen.getBoundingClientRect(),size=dock.offsetWidth;
+  const left=Math.max(0,r.right-s.left-size)+'px',top=Math.max(0,r.top-s.top-size-5)+'px';
+  if(dock.style.left!==left)dock.style.left=left;if(dock.style.top!==top)dock.style.top=top;
+ }
+ window.addEventListener('resize',place);window.addEventListener('scroll',place,{passive:true});
  function sync(m,now){
   const enabled=advanced(m)&&!!m.state,screen=document.getElementById('battleScreen');
   screen?.classList.toggle('advancedMode',enabled);
@@ -46,10 +59,13 @@
   if(open)PlayerIntro.cancel();windowPanel.hidden=!open;
   if(open){const left=Math.max(0,Math.min(2,(m.opensAt-now)/1000));windowPanel.querySelector('.advancedSkillSeconds').textContent=left.toFixed(1)+'秒';windowPanel.querySelector('.advancedSkillFill').style.transform='scaleX('+(left/2)+')';windowPanel.querySelector('[role="progressbar"]').setAttribute('aria-valuenow',left.toFixed(2));}
   const button=dock.querySelector('button');button.disabled=!open||sending||!skill||used>=skill.limit||!!window.AdvancedRules.forTurn(m.advanced,m.state.turn)[you];
+  paint(button,skill?.id);button.classList.toggle('exhausted',!!skill&&used>=skill.limit);button.setAttribute('aria-busy',String(sending));
   button.querySelector('.advancedSkillName').textContent=skill?.name||'スキル未選択';
-  button.querySelector('.advancedSkillUses').textContent=skill?Math.max(0,skill.limit-used)+'/'+skill.limit+'回':'';
+  button.querySelector('.advancedSkillUses').textContent=skill?Math.max(0,skill.limit-used)+'/'+skill.limit:'';
   button.querySelector('.advancedSkillDescription').textContent=sending?'発動中…':skill?.description||'';
   dock.querySelector('#advancedOpponentSkill').textContent=other?'相手：'+other.name+' · '+Math.max(0,other.limit-(m.advanced?.current?.[3-you]?.used||0))+'/'+other.limit+'回':'';
+  const label=skill?skill.name+'、残り'+Math.max(0,skill.limit-used)+'/'+skill.limit+'回。'+(sending?'発動中…':skill.description)+'。'+(open?'スキル選択猶予':'ターン開始時の2秒間に使用'):'';
+  button.setAttribute('aria-label',label);button.title=label+'\n'+dock.querySelector('#advancedOpponentSkill').textContent;place();
  }
  async function activate(){
   const m=current;if(!m||sending||!advanced(m)||document.getElementById('advancedSkillButton').disabled)return;
