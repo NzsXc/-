@@ -2682,7 +2682,7 @@ button{min-height:44px;}
 <script src="battle-effects.js?v=confirmed-1"></script>
 <script type="module">
   import {createTitleService} from "./title-service.js?v=crown-prestige-1";
-  import {createProtectedRooms} from "./protected-rooms.js?v=random-spectator-2";
+  import {createProtectedRooms} from "./protected-rooms.js?v=spectator-recovery-3";
   import {createFreeTransport} from "./free-transport.js?v=punish-2";
   import {createBattleHistory} from "./battle-history.js?v=punish-2";
   import {createPlayerProfile} from "./player-profile.js?v=usage-1";
@@ -3507,16 +3507,19 @@ async function enterSpectator(code,p1,p2){
     badge=document.createElement("div");
     badge.id="spectatorBadge";
     badge.className="spectatorBadge";
-    badge.innerHTML='<span>観戦モード</span><button type="button" onclick="leaveSpectator()">観戦を終了</button>';
+    badge.innerHTML='<span>観戦モード</span><span id="spectatorConnectionStatus" role="status" aria-live="polite" hidden>再接続中…</span><button type="button" onclick="leaveSpectator()">観戦を終了</button>';
     battleScreen.appendChild(badge);
   }
   badge.querySelector("span").textContent=`観戦：${p1} VS ${p2}`;
   badge.style.display="flex";
+  const connectionStatus=document.getElementById("spectatorConnectionStatus");
+  connectionStatus.hidden=true;
   const panel=document.getElementById("spectatorLoadouts");
   if(panel)panel.hidden=false;
   let loadoutKey="";
   spectatorListener=window.onlineBattle.watchRoom(code,data=>{
     if(session!==spectatorSession || !spectatorActive)return;
+    connectionStatus.hidden=true;
     if(!data){showBattleResult("この対戦は終了しました");return;}
     const name1=data.players?.[1]?.name || "プレイヤー1";
     const name2=data.players?.[2]?.name || "プレイヤー2";
@@ -3525,8 +3528,10 @@ async function enterSpectator(code,p1,p2){
     const nextKey=JSON.stringify(data.players || {});
     if(loadoutKey!==nextKey){renderSpectatorLoadouts(data);loadoutKey=nextKey;}
     if(data.battle)receiveSpectatorBattleState(data.battle,data);
-  },()=>{
-    if(session===spectatorSession)showBattleResult("接続を確認してください");
+  },error=>{
+    if(session!==spectatorSession || !spectatorActive)return;
+    console.warn("観戦データの取得に失敗しました。再試行します",error);
+    connectionStatus.hidden=false;
   });
 }
 
