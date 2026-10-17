@@ -12,7 +12,7 @@
  function place(){
   if(!area||button.hidden)return;
   const r=area.getBoundingClientRect(),s=screen.getBoundingClientRect();
-  button.style.left=(r.right-s.left-44)+'px';button.style.top=(r.top-s.top-49)+'px';
+  button.style.left=(r.left-s.left)+'px';button.style.top=(r.top-s.top-49)+'px';
  }
  const resize=new ResizeObserver(place);resize.observe(screen);
  window.addEventListener('resize',place);window.addEventListener('scroll',place,{passive:true});
