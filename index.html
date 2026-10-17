@@ -2693,6 +2693,7 @@ button{min-height:44px;}
     setPersistence,
     browserLocalPersistence,
     signInWithEmailAndPassword,
+    signInAnonymously,
     signOut,
     onAuthStateChanged
   } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
@@ -2846,6 +2847,9 @@ button{min-height:44px;}
     if(!list)return;
     list.innerHTML='<div class="rankingStatus">ランキングを読み込んでいます…</div>';
     try{
+      // 保存済みログインの復元を待ち、未ログイン端末でも認証済みの読み取りにする。
+      await auth.authStateReady();
+      if(!auth.currentUser)await signInAnonymously(auth);
       // ランク対戦が実際に更新している freeAccounts を正として表示する。
       // 旧データ構成の配信先でも使えるよう、読み取り不可の場合だけ users へフォールバックする。
       let values={};
