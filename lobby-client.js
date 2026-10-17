@@ -12,14 +12,64 @@ async function openFriendLobby(){
 function renderProtectedRooms(){
  if(!protectedLobbyActive)return;const list=document.getElementById('friendRoomList');list.replaceChildren();if(protectedLobbyBusy)return;
  const now=window.protectedRooms.now();const rows=Object.entries(protectedLobbyRooms).filter(([,r])=>!r.game&&r.heartbeat>now-15000);
- for(const [id,room]of rows){const b=document.createElement('button');b.className='spectatorRow friendRoomButton';b.textContent=room.name+' の部屋　1/2 · 参加';b.onclick=()=>joinFriendRoom(id);list.append(b);}
+ for(const [id,room]of rows){
+  const b=document.createElement('button');b.type='button';b.className='spectatorRow friendRoomButton';
+  const identity=document.createElement('span');identity.className='friendRoomIdentity';
+  const title=document.createElement('strong');title.textContent=room.name+' の部屋';
+  const mode=document.createElement('span');mode.className='friendRoomMode';mode.textContent=window.RoomRules.label(room.roomRules);
+  identity.append(title,mode);
+  if(room.roomRules){const summary=document.createElement('span');summary.className='friendRoomSummary';summary.textContent=window.RoomRules.summary(room.roomRules);identity.append(summary);}
+  const join=document.createElement('span');join.className='friendRoomJoin';join.textContent='1/2 · 参加';
+  b.append(identity,join);b.onclick=()=>joinFriendRoom(id);list.append(b);
+ }
  if(!rows.length){const e=document.createElement('div');e.className='spectatorEmpty';e.textContent='参加できる部屋はありません。';list.append(e);}
 }
-async function createFriendRoom(){
- if(protectedLobbyBusy)return;protectedLobbyBusy=true;document.getElementById('friendCreateButton').disabled=true;document.getElementById('friendLobbyBack').disabled=true;renderProtectedRooms();
- try{const id=await window.protectedRooms.create();protectedStatus('1/2 · 友達の参加を待っています…');document.getElementById('friendCreateButton').hidden=true;protectedHostStop=window.protectedRooms.watchHost(id,enterProtectedMatch,e=>protectedStatus(e.message));}
- catch(e){protectedLobbyBusy=false;protectedStatus('部屋を作れません：'+e.message);document.getElementById('friendCreateButton').disabled=false;renderProtectedRooms();}
- finally{document.getElementById('friendLobbyBack').disabled=false;}
+function createFriendRoom(){
+ if(!protectedLobbyActive||protectedLobbyBusy)return;
+ document.getElementById('friendRuleForm').reset();
+ document.getElementById('friendRuleStatus').textContent='';
+ updateFriendRuleSettings();showScreen('friendRuleScreen');
+}
+function validateFriendRuleGauge(){
+ const initial=document.getElementById('friendRuleInitialGauge'),max=document.getElementById('friendRuleMaxGauge');
+ initial.max=max.value;
+ initial.setCustomValidity(Number(initial.value)>Number(max.value)?'初期ゲージは最大ゲージ以下にしてください。':'');
+}
+function updateFriendRuleSettings(){
+ const custom=document.querySelector('input[name="friendRuleMode"]:checked')?.value==='custom';
+ const fields=document.getElementById('friendCustomRules');fields.hidden=!custom;fields.disabled=!custom;
+ document.getElementById('friendStandardRules').hidden=custom;
+ validateFriendRuleGauge();
+}
+function cancelFriendRoomSettings(){
+ if(protectedLobbyBusy)return;
+ showScreen('friendLobbyScreen');renderProtectedRooms();
+}
+async function submitFriendRoom(event){
+ event?.preventDefault();if(!protectedLobbyActive||protectedLobbyBusy)return;
+ const form=document.getElementById('friendRuleForm'),status=document.getElementById('friendRuleStatus');
+ validateFriendRuleGauge();if(!form.reportValidity())return;
+ let rules;
+ try{
+  const mode=document.querySelector('input[name="friendRuleMode"]:checked')?.value;
+  rules=window.RoomRules.normalize({mode,hp:Number(document.getElementById('friendRuleHp').value),initialGauge:Number(document.getElementById('friendRuleInitialGauge').value),maxGauge:Number(document.getElementById('friendRuleMaxGauge').value)});
+ }catch(error){status.textContent=error.message;return;}
+ protectedLobbyBusy=true;status.textContent='部屋を作成しています…';
+ document.getElementById('friendCreateButton').disabled=true;document.getElementById('friendLobbyBack').disabled=true;
+ form.querySelectorAll('input,button').forEach(el=>{el.disabled=true;});renderProtectedRooms();
+ try{
+  const id=await window.protectedRooms.create(rules);
+  showScreen('friendLobbyScreen');protectedStatus(window.RoomRules.label(rules)+' · '+window.RoomRules.summary(rules)+' · 1/2 · 友達の参加を待っています…');
+  document.getElementById('friendCreateButton').hidden=true;
+  protectedHostStop=window.protectedRooms.watchHost(id,enterProtectedMatch,e=>protectedStatus(e.message));
+ }catch(error){
+  protectedLobbyBusy=false;status.textContent='部屋を作れません：'+error.message;
+  document.getElementById('friendCreateButton').disabled=false;renderProtectedRooms();
+ }finally{
+  document.getElementById('friendLobbyBack').disabled=false;
+  form.querySelectorAll('input,button').forEach(el=>{el.disabled=false;});
+  form.querySelector('input[value="advanced"]').disabled=true;updateFriendRuleSettings();
+ }
 }
 async function joinFriendRoom(id){
  if(protectedLobbyBusy)return;protectedLobbyBusy=true;document.getElementById('friendCreateButton').disabled=true;document.getElementById('friendLobbyBack').disabled=true;renderProtectedRooms();protectedStatus('参加しています…');

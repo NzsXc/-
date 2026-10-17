@@ -98,7 +98,7 @@ function rankedAutoSelect(){
  if(!rankedActive||!m?.state||m.closed||m.ownAction!=null||rankedTurnClockKey!==m.id+':'+m.state.turn||localNow<rankedTurnDeadline)return;
  if(rankedAnimating||rankedSending||localNow<rankedAutoRetryAt){rankedScheduleAuto(1000);return;}
  rankedAutoRetryAt=localNow+1000;
- rankedSubmitAction(m,m.state.gauge[m.you]>=10?1:0,true);
+ rankedSubmitAction(m,m.state.gauge[m.you]>=(m.roomRules?.maxGauge??10)?1:0,true);
 }
 function rankedTick(){
  rankedFrame=0;const m=rankedMatch;if(!rankedActive||!m)return;
@@ -113,7 +113,7 @@ function rankedTick(){
  if(m.state?.turn===1&&turnOpen)PlayerIntro.cancel();
  const grace=now>=m.deadline,remaining=Math.max(0,Math.ceil(((grace?m.graceDeadline:m.deadline)-now)/1000));
  if(m.closed||rankedAnimating||!m.state||!turnOpen){stopCountdownRing();stopTurnCountdownSE();
-  if(!m.closed&&m.phase==='select')put('techTitle',rankedSending?'技を送信中…':grace?'復帰猶予：あと'+remaining+'秒（未確定側は期限後に敗北）':m.ready[m.you]?'技を確定しました。相手を待っています…':(m.kind==='friend'?'ルーム対戦':'ランダム対戦')+'：技選択（残り'+remaining+'秒）');
+  if(!m.closed&&m.phase==='select')put('techTitle',rankedSending?'技を送信中…':grace?'復帰猶予：あと'+remaining+'秒（未確定側は期限後に敗北）':m.ready[m.you]?'技を確定しました。相手を待っています…':(m.kind==='friend'?window.RoomRules.label(m.roomRules)+' ルーム対戦':'ランダム対戦')+'：技選択（残り'+remaining+'秒）');
   else if(rankedAnimating){
    const left=rankedVisualCountdownEnd-performance.now();
    const text=left>0?String(Math.min(3,Math.ceil(left/1000))):performance.now()<rankedVisualRevealAt?'BATTLE!':'';
@@ -192,7 +192,7 @@ function rankedApply(m,visualCommit=false){
  const inGrace=!m.closed&&m.serverNow>=m.deadline+(m.state?5000:0),remaining=Math.max(0,Math.ceil(((m.graceDeadline??m.deadline)-m.serverNow)/1000));
  if(m.phase==='select'){
   if(entering){showScreen('techScreen');updateTechniqueDisplay();}
-  document.getElementById('techTitle').textContent=m.ready[me]?'技を確定しました。相手を待っています…':(m.kind==='friend'?'ルーム対戦':'ランダム対戦')+'：技選択（残り'+Math.max(0,Math.ceil((m.deadline-m.serverNow)/1000))+'秒）';
+  document.getElementById('techTitle').textContent=m.ready[me]?'技を確定しました。相手を待っています…':(m.kind==='friend'?window.RoomRules.label(m.roomRules)+' ルーム対戦':'ランダム対戦')+'：技選択（残り'+Math.max(0,Math.ceil((m.deadline-m.serverNow)/1000))+'秒）';
   if(inGrace)document.getElementById('techTitle').textContent='復帰猶予：あと'+remaining+'秒（未確定側は期限後に敗北）';
   document.querySelectorAll('#techScreen .techArrow').forEach(b=>{b.disabled=m.ready[me]||rankedSending;b.style.pointerEvents=(m.ready[me]||rankedSending)?'none':'auto';});
   const button=document.getElementById('techConfirmButton');button.disabled=m.ready[me]||rankedSending;button.textContent=m.ready[me]?'確定済み':rankedSending?'送信中…':'決定';return;

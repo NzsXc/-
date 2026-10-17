@@ -1,13 +1,13 @@
 import {calculate as calculateV1,stateFields} from './history-calculator-v1.js';
-import {calculate as calculateV2} from './free-calculator.js?v=punish-2';
+import {calculate as calculateV2} from './free-calculator.js?v=room-rules-1';
 
 export const HISTORY_LIMIT=10;
 export const HISTORY_REASONS={battle:'決着',resigned:'降参','reconnect-timeout':'切断・復帰猶予切れ','selection-timeout':'技選択の時間切れ','idle-forfeit':'連続無入力','turn-limit':'ターン上限'};
 export const ACTION_NAMES=['チャージ','アタック','ブロック','ブリーチ','カウンター','パニッシュ','ヒール','フォーサイト','モーメンタム','ランページ','アンチガード','エンハンス','サイフォン','ルイン','ミラー'];
 export const historySide=(h,uid)=>h?.players?.[1]?.uid===uid?1:h?.players?.[2]?.uid===uid?2:0;
 export const slots=value=>[0,1,2].map(i=>value?.[i]??'');
-export function initialReplayState(){
- return Object.fromEntries(stateFields.map(k=>[k,k==='turn'?1:k==='startedAt'?0:k.startsWith('hp')?10:k.startsWith('gauge')?8:k.startsWith('seal')||k.startsWith('momentum')?false:k.startsWith('last')?'':0]));
+export function initialReplayState(roomRules={}){
+ return Object.fromEntries(stateFields.map(k=>[k,k==='turn'?1:k==='startedAt'?0:k.startsWith('hp')?(roomRules.hp??10):k.startsWith('gauge')?(roomRules.initialGauge??8):k.startsWith('seal')||k.startsWith('momentum')?false:k.startsWith('last')?'':0]));
 }
 export function finishReason(g){
  if(g.resigned)return 'resigned';
@@ -23,6 +23,7 @@ export function buildHistory(id,g,accounts){
  if(!Number.isInteger(turnCount)||turnCount<0||turnCount>300)throw Error('ターン数が不正です');
  const h={version:1,createdAt:g.createdAt,endedAt:g.settled.at,kind:g.kind||'random',room:g.room||'',turnCount,reason:finishReason(g),players:{},settled:{...g.settled}};
  if(g.rulesVersion===2)h.rulesVersion=2;
+ if(g.roomRules)h.roomRules={...g.roomRules};
  for(const p of [1,2]){
   const snapshot=g.profiles?.[p],account=accounts?.[p];
   const player={uid:g.players[p],name:snapshot?.name||account?.name||'プレイヤー',rating:g.settled['before'+p],snapshot:!!snapshot,titles:Object.fromEntries([0,1,2].map(i=>[i,snapshot?.titles?.[i]||'']))};
@@ -44,11 +45,11 @@ export function replayHistory(h){
  if(h?.version!==1)throw Error('この対戦のバトルデータには対応していません');
  if(h.rulesVersion!=null&&h.rulesVersion!==2)throw Error('この戦闘ルールの履歴には対応していません');
  const calculate=h.rulesVersion===2?calculateV2:calculateV1;
- let state=initialReplayState();const turns=[];
+ let state=initialReplayState(h.roomRules);const turns=[];
  for(let turn=1;turn<=h.turnCount;turn++){
   const moves=h.moves?.[turn];
   if(![1,2].every(p=>Number.isInteger(moves?.[p])&&moves[p]>=0&&moves[p]<=14))throw Error('バトルデータが不足しています');
-  const result=calculate(state,moves);
+  const result=h.rulesVersion===2?calculate(state,moves,2,h.roomRules):calculate(state,moves);
   turns.push({turn,actions:{1:moves[1],2:moves[2]},before:{hp:{1:state.hp1,2:state.hp2},gauge:{1:state.gauge1,2:state.gauge2}},after:{hp:{1:result.hp1,2:result.hp2},gauge:{1:result.gauge1,2:result.gauge2}},damage:{1:result.damage1,2:result.damage2}});
   state={...result,startedAt:0};
  }
@@ -62,5 +63,5 @@ export function historyMatch(h,uid,serverNow){
  const state=s?{turn:s.turn,...Object.fromEntries(['hp','gauge','seal','enhance','momentum','ruin','last'].map(k=>[k,[null,s[k+'1'],s[k+'2']]]))}:null;
  let reveal=null;
  try{const turns=replayHistory(h),last=turns.at(-1);if(last)reveal={turn:last.turn,startedAt:s.startedAt,actions:last.actions,damage:last.damage};}catch(error){/* Historical results remain readable even when a legacy replay differs. */}
- return {id:h.id,kind:h.kind,roomId:h.room||null,you,players,loadouts,ready,state,closed:true,phase:'finished',revision:serverNow,serverNow,opensAt:s?.startedAt||0,deadline:serverNow,graceDeadline:serverNow,ownAction:null,reveal,result:{winner:h.settled.winner,rated:h.kind!=='friend',reason:h.reason},rating:{before:h.settled['before'+you],after:h.settled['after'+you],delta:h.settled['delta'+you]}};
+ return {id:h.id,kind:h.kind,roomId:h.room||null,roomRules:h.roomRules||null,you,players,loadouts,ready,state,closed:true,phase:'finished',revision:serverNow,serverNow,opensAt:s?.startedAt||0,deadline:serverNow,graceDeadline:serverNow,ownAction:null,reveal,result:{winner:h.settled.winner,rated:h.kind!=='friend',reason:h.reason},rating:{before:h.settled['before'+you],after:h.settled['after'+you],delta:h.settled['delta'+you]}};
 }

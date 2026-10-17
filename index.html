@@ -1660,7 +1660,28 @@ body{
 .lobbyStatus{text-align:center;white-space:pre-line;line-height:1.7;min-height:28px;}
 #soloScreen,#friendLobbyScreen{position:relative;overflow:auto;}
 #friendCreateButton{width:min(720px,88vw);min-height:54px;}
-.friendRoomButton{grid-template-columns:1fr auto;text-align:left;}
+.friendRoomButton{grid-template-columns:minmax(0,1fr) auto;text-align:left;}
+.friendRulePanel{max-height:calc(100dvh - 120px);overflow:auto;}
+.friendRuleModes,.friendCustomFields{border:0;padding:0;margin:0;min-width:0;}
+.friendRuleModes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}
+.friendRuleModes legend,.friendCustomFields legend{padding:0 0 10px;font-weight:800;}
+.friendRulePanel .friendRuleChoice{display:flex;align-items:flex-start;gap:8px;padding:12px 8px;border:1px solid #7794b477;background:#223047;cursor:pointer;}
+.friendRuleChoice:has(input:checked){border-color:#aee8ff;box-shadow:inset 0 0 0 1px #aee8ff;}
+.friendRuleChoice input{margin:3px 0 0;accent-color:#83dfff;flex:none;}
+.friendRuleChoice strong,.friendRuleChoice small{display:block;overflow-wrap:anywhere;}
+.friendRuleChoice small{margin-top:6px;font-size:11px;line-height:1.5;color:#bdcddd;}
+.friendRuleChoice.unavailable{opacity:.5;cursor:default;}
+.friendCustomFields:not([hidden]){display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;}
+.friendCustomFields p{grid-column:1 / -1;}
+.friendCustomFields input{box-sizing:border-box;min-width:0;width:100%;min-height:44px;background:#223047;color:#fff;border:1px solid #7794b4;padding:8px;font:inherit;}
+.friendRuleCancel{min-height:44px;background:#223047;color:#fff;border:1px solid #7794b4;padding:8px;font:inherit;cursor:pointer;}
+.friendRulePanel .lobbyStatus:empty{display:none;}
+.friendRoomIdentity{min-width:0;display:grid;gap:5px;overflow-wrap:anywhere;}
+.friendRoomMode{font-size:12px;color:#b9eaff;}
+.friendRoomSummary{font-size:11px;line-height:1.5;color:#bdcddd;}
+.friendRoomJoin{font-size:13px;white-space:nowrap;}
+@media(max-width:420px){.friendRulePanel .friendRuleChoice{padding:10px 5px;gap:5px;font-size:12px;}.friendCustomFields:not([hidden]){grid-template-columns:1fr;}.friendRulePanel{max-height:calc(100dvh - 100px);}}
+
 @media(max-width:600px){
  #modeScreen .modeChoiceBox{width:92vw;min-height:100px;grid-template-columns:1fr 24px 1fr;grid-template-rows:1fr;}
  .localModeButton{width:92vw;min-height:60px;}
@@ -2191,6 +2212,29 @@ button{min-height:44px;}
   <button id="friendLobbyBack" class="onlineBackButton" onclick="closeFriendLobby()">戻る</button>
 </div>
 
+<div id="friendRuleScreen" class="screen">
+  <div class="screenTitle">部屋のルール</div>
+  <form id="friendRuleForm" class="settingsPanel friendRulePanel" onsubmit="submitFriendRoom(event)">
+    <fieldset class="friendRuleModes">
+      <legend>対戦ルールを選択</legend>
+      <label class="friendRuleChoice"><input type="radio" name="friendRuleMode" value="standard" checked onchange="updateFriendRuleSettings()"><span><strong>Standard</strong><small>いつものルールで対戦</small></span></label>
+      <label class="friendRuleChoice unavailable"><input type="radio" name="friendRuleMode" value="advanced" disabled><span><strong>Advanced</strong><small>準備中</small></span></label>
+      <label class="friendRuleChoice"><input type="radio" name="friendRuleMode" value="custom" onchange="updateFriendRuleSettings()"><span><strong>Custom</strong><small>HPとゲージを自由に設定</small></span></label>
+    </fieldset>
+    <p id="friendStandardRules" class="settingsNote">HP 10 / 初期ゲージ 8 / 最大ゲージ 10<br>基礎技3種 ＋ 選択技3種</p>
+    <fieldset id="friendCustomRules" class="friendCustomFields" hidden disabled>
+      <legend>Customの設定</legend>
+      <label>HP<input id="friendRuleHp" type="number" min="1" max="100" step="1" value="10" required inputmode="numeric"></label>
+      <label>初期ゲージ<input id="friendRuleInitialGauge" type="number" min="0" max="100" step="1" value="8" required inputmode="numeric" oninput="validateFriendRuleGauge()"></label>
+      <label>最大ゲージ<input id="friendRuleMaxGauge" type="number" min="1" max="100" step="1" value="10" required inputmode="numeric" oninput="validateFriendRuleGauge()"></label>
+      <p class="settingsNote">HP・最大ゲージは1〜100、初期ゲージは0〜最大ゲージ。基礎技3種 ＋ 選択技3種。</p>
+    </fieldset>
+    <p id="friendRuleStatus" class="lobbyStatus" role="status" aria-live="polite"></p>
+    <button id="friendRuleSubmit" type="submit" class="onlineMainButton">このルールで部屋を作成</button>
+    <button id="friendRuleCancel" type="button" class="friendRuleCancel" onclick="cancelFriendRoomSettings()">部屋一覧に戻る</button>
+  </form>
+</div>
+
 <div id="spectatorListScreen" class="screen">
   <div class="screenTitle">観戦</div>
   <div id="spectatorList" class="spectatorList">
@@ -2675,18 +2719,19 @@ button{min-height:44px;}
 <script src="player-lightning.js?v=2"></script>
 <script src="bot-engine.js?v=punish-2"></script>
 <script src="bot-client.js?v=tech12-fix-1"></script>
-<script src="ranked-client.js?v=turn-sync-3"></script>
+<script src="room-rules.js?v=1"></script>
+<script src="ranked-client.js?v=room-rules-1"></script>
 <script src="battle-inspector.js?v=battle-controls-1"></script>
-<script src="lobby-client.js?v=protected-titles-1"></script>
+<script src="lobby-client.js?v=room-rules-1"></script>
 <script src="battle-action-art.js?v=confirmed-1"></script>
 <script src="battle-effects.js?v=confirmed-1"></script>
 <script type="module">
   import {createTitleService} from "./title-service.js?v=crown-prestige-1";
-  import {createProtectedRooms} from "./protected-rooms.js?v=spectator-recovery-3";
-  import {createFreeTransport} from "./free-transport.js?v=punish-2";
-  import {createBattleHistory} from "./battle-history.js?v=punish-2";
+  import {createProtectedRooms} from "./protected-rooms.js?v=room-rules-1";
+  import {createFreeTransport} from "./free-transport.js?v=room-rules-1";
+  import {createBattleHistory} from "./battle-history.js?v=room-rules-1";
   import {createPlayerProfile} from "./player-profile.js?v=usage-1";
-  import {createHistoryScreen} from "./battle-history-client.js?v=punish-2";
+  import {createHistoryScreen} from "./battle-history-client.js?v=room-rules-1";
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
   import {
     getAuth,
@@ -3540,6 +3585,7 @@ async function enterSpectator(code,p1,p2){
 }
 
 function applySpectatorState(state){
+  window._spectatorRoomRules=state.roomRules||null;
   for(const side of [1,2]){
     if(state.hp?.[side]!=null)hp[side]=Number(state.hp[side]);
     if(state.gauge?.[side]!=null)gauge[side]=Number(state.gauge[side]);
@@ -5031,7 +5077,7 @@ function isBattleActionAvailable(player,action,data){
   if(data.type==="block"&&lastAction[player]?.data?.type==="block")return false;
   if(data.skill==="tech2"&&lastAction[player]?.data?.type==="reflect")return false;
   if(data.skill==="tech8"&&gauge[player===1?2:1]>=7)return false;
-  if(data.type==="charge"&&gauge[player]>=10)return false;
+  if(data.type==="charge"&&gauge[player]>=battleLimits().maxGauge)return false;
   return true;
 }
 
@@ -6533,7 +6579,13 @@ function updateActionChainIndicators(){
   });
 }
 
+function battleLimits(){
+  const rules=rankedActive?rankedMatch?.roomRules:gameMode==="spectator"?window._spectatorRoomRules:null;
+  return {hp:rules?.hp??10,maxGauge:rules?.maxGauge??10};
+}
+
 function updateBattleUI(){
+  const limits=battleLimits();
   updateBlockSealIndicators();
   updateRuinIndicators();
   updateEnhanceIndicators();
@@ -6544,8 +6596,8 @@ function updateBattleUI(){
     const gaugeText=document.getElementById("gauge"+player+"Text");
     const gaugeFill=document.getElementById("gauge"+player+"Fill");
 
-    hpText.textContent=hp[player]+"/10";
-    hpFill.style.width=(hp[player]*10)+"%";
+    hpText.textContent=hp[player]+"/"+limits.hp;
+    hpFill.style.width=(Math.max(0,Math.min(1,hp[player]/limits.hp))*100)+"%";
 
     if(hp[player] < displayedHp[player]){
       hpFill.classList.remove("hpDamage");
@@ -6556,10 +6608,10 @@ function updateBattleUI(){
       hpText.classList.add("hpDamage");
     }
 
-    gaugeText.textContent=gauge[player]+"/10";
-    gaugeFill.style.width=(gauge[player]*10)+"%";
+    gaugeText.textContent=gauge[player]+"/"+limits.maxGauge;
+    gaugeFill.style.width=(Math.max(0,Math.min(1,gauge[player]/limits.maxGauge))*100)+"%";
     gaugeFill.classList.toggle("gaugeReady",gauge[player]>=7);
-    gaugeFill.classList.toggle("gaugeMax",gauge[player]>=10);
+    gaugeFill.classList.toggle("gaugeMax",gauge[player]>=limits.maxGauge);
 
     if(gauge[player] > displayedGauge[player]){
       gaugeFill.animate([
@@ -6627,7 +6679,7 @@ function updateDisabledActions(){
     );
 
     if(chargeEl){
-      chargeEl.classList.toggle("disabled", gauge[player] >= 10);
+      chargeEl.classList.toggle("disabled", gauge[player] >= battleLimits().maxGauge);
     }
 
     // 通常ブロックの連続使用を禁止

@@ -1,6 +1,6 @@
 import {ref,get,set,update,push,serverTimestamp,onValue,runTransaction} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js';
-import {calculate,stateFields} from './free-calculator.js?v=punish-2';
-import {historyMatch} from './battle-history-core.js?v=punish-2';
+import {calculate,stateFields} from './free-calculator.js?v=room-rules-1';
+import {historyMatch} from './battle-history-core.js?v=room-rules-1';
 export function createFreeTransport(db,auth,history){
  let offset=0;onValue(ref(db,'.info/serverTimeOffset'),s=>{offset=s.val()||0;});
  const now=()=>Date.now()+offset;
@@ -68,6 +68,11 @@ const initialAccount = {
  const turnOpensAt=s=>Number.isFinite(s.previousDeadline)?countdownEndsAt(s)+3100:s.startedAt+(s.turn>1?7500:5600);
  const protocolFlights=new Map(),advanceFlights=new Map();
  const permissionDenied=e=>/permission.?denied/i.test(String(e.code||'')+' '+e.message);
+ let roomRulesProtocol=null;
+ function supportsRoomRules(){
+  if(!roomRulesProtocol)roomRulesProtocol=read('freeGames/_protocol/roomRules').then(()=>true).catch(e=>{if(permissionDenied(e))return false;roomRulesProtocol=null;throw e;});
+  return roomRulesProtocol;
+ }
  let punishProtocol=null;
  function supportsPunish(){
   if(!punishProtocol)punishProtocol=read('freeGames/_protocol/rulesVersion').then(()=>true).catch(e=>{if(permissionDenied(e))return false;punishProtocol=null;throw e;});
@@ -77,7 +82,7 @@ const initialAccount = {
   if(!protocolFlights.has(id))protocolFlights.set(id,read('freeGames/'+id+'/advance').then(()=>true).catch(e=>{if(permissionDenied(e))return false;protocolFlights.delete(id);throw e;}));
   return protocolFlights.get(id);
  }
- async function advanceTurn(id,s,moves,u,rulesVersion){
+ async function advanceTurn(id,s,moves,u,rulesVersion,roomRules){
   const key=id+':'+s.turn;
   if(advanceFlights.has(key))return advanceFlights.get(key);
   const job=(async()=>{
@@ -98,7 +103,7 @@ const initialAccount = {
    }
    const fresh=await read(path+'/state');
    if(!fresh||fresh.turn!==s.turn)return true;
-   const c=calculate(fresh,moves,rulesVersion),state=Object.fromEntries(stateFields.map(k=>[k,k==='startedAt'?serverTimestamp():c[k]]));
+   const c=calculate(fresh,moves,rulesVersion,roomRules),state=Object.fromEntries(stateFields.map(k=>[k,k==='startedAt'?serverTimestamp():c[k]]));
    if(modern)state.previousDeadline=turnOpensAt(fresh)+10000;
    try{await writeUpdate(path,{transition:c,state});}
    catch(e){
@@ -111,7 +116,7 @@ const initialAccount = {
   advanceFlights.set(key,job);
   try{return await job;}finally{if(advanceFlights.get(key)===job)advanceFlights.delete(key);}
  }
- const initial=()=>Object.fromEntries(stateFields.map(k=>[k,k==='turn'?1:k==='startedAt'?serverTimestamp():k.startsWith('hp')?10:k.startsWith('gauge')?8:k.startsWith('seal')||k.startsWith('momentum')?false:k.startsWith('last')?'':0]));
+ const initial=(rules)=>Object.fromEntries(stateFields.map(k=>[k,k==='turn'?1:k==='startedAt'?serverTimestamp():k.startsWith('hp')?rules.hp:k.startsWith('gauge')?rules.initialGauge:k.startsWith('seal')||k.startsWith('momentum')?false:k.startsWith('last')?'':0]));
  const matchMetadata=new Map(),titleRecorded=new Map(),ratingClaimed=new Set();
  const historyWarnings=new Set();
  async function archivedStatus(id,u){
@@ -131,9 +136,9 @@ const initialAccount = {
  }
  async function status(id){
   const u=auth.currentUser.uid,path='freeGames/'+id;let g;
-  const punishEnabled=await supportsPunish();
+  const punishEnabled=await supportsPunish(),roomRulesEnabled=await supportsRoomRules();
   for(let attempt=0;attempt<4;attempt++){
-   const keys=['players','createdAt','state','ready','resigned','settled','transition','kind','room',...(punishEnabled?['rulesVersion']:[])];g=Object.fromEntries(await Promise.all(keys.map(async k=>[k,await read(path+'/'+k)])));g.ready||={};
+   const keys=['players','createdAt','state','ready','resigned','settled','transition','kind','room',...(punishEnabled?['rulesVersion']:[]),...(roomRulesEnabled?['roomRules']:[])];g=Object.fromEntries(await Promise.all(keys.map(async k=>[k,await read(path+'/'+k)])));g.ready||={};const roomRules=window.RoomRules.normalize(g.roomRules);
    const me=g.players?.[1]===u?1:g.players?.[2]===u?2:0;
    if(!me){const saved=await archivedStatus(id,u);if(saved)return saved.match;throw Error('参加者ではありません');}g.me=me;
    try{await history?.markClient(id,g.players);}catch(error){console.warn('履歴対応状態の保存を再試行します',error);}
@@ -158,14 +163,14 @@ const initialAccount = {
    }
    if(!s&&!terminal&&g.ready[1]&&g.ready[2]){
     try{
-     await withTimeout(runTransaction(ref(db,path+'/state'),current=>current===null?initial():undefined,{applyLocally:false}),8000,'対戦開始');
+     await withTimeout(runTransaction(ref(db,path+'/state'),current=>current===null?initial(roomRules):undefined,{applyLocally:false}),8000,'対戦開始');
     }catch(e){if(!await read(path+'/state'))throw e;}
     continue;
    }
    if(s&&!terminal&&now()>=turnOpensAt(s)){
     g.own=await read(path+'/moves/'+s.turn+'/'+me);let moves=null;
     try{moves=await read(path+'/moves/'+s.turn);}catch(e){if(!String(e.code||e.message).toLowerCase().includes('permission'))throw e;}
-    if(moves?.[1]!=null&&moves?.[2]!=null){if(await advanceTurn(id,s,moves,u,g.rulesVersion===2?2:1))continue;}
+    if(moves?.[1]!=null&&moves?.[2]!=null){if(await advanceTurn(id,s,moves,u,g.rulesVersion===2?2:1,roomRules))continue;}
    }
    break;
   }
@@ -185,7 +190,7 @@ const initialAccount = {
   }
   // A match that expires before either loadout still needs player names for results.
   if(closed&&!s)for(const p of [1,2]){const account=await read('freeAccounts/'+g.players[p]);players[p]={name:account?.name||'プレイヤー'};}
-  return {id,kind:g.kind||'random',roomId:g.room||null,you:me,players,ready:g.ready,loadouts,state,closed,phase:closed?'finished':s?'turn':'select',revision:now(),serverNow:now(),opensAt,deadline:s?opensAt+10000:g.createdAt+60000,graceDeadline:s?opensAt+40000:g.createdAt+90000,ownAction:g.own??null,reveal:g.transition?{turn:g.transition.turn-1,startedAt:s?.startedAt,countdownEndsAt:Number.isFinite(s?.previousDeadline)?countdownEndsAt(s):null,actions:{1:g.transition.action1,2:g.transition.action2},damage:{1:g.transition.damage1,2:g.transition.damage2}}:null,result:closed?{winner:g.settled.winner,rated:g.kind!=='friend',reason:g.resigned?'resigned':g.abandoned&&s?.hp1>0&&s?.hp2>0?'reconnect-timeout':!s?'selection-timeout':s.misses1>=2||s.misses2>=2?'idle-forfeit':s.turn>300?'turn-limit':'battle'}:null,rating:closed?{before:g.settled['before'+me],after:g.settled['after'+me],delta:g.settled['delta'+me]}:null};
+  return {id,kind:g.kind||'random',roomId:g.room||null,roomRules:window.RoomRules.normalize(g.roomRules),you:me,players,ready:g.ready,loadouts,state,closed,phase:closed?'finished':s?'turn':'select',revision:now(),serverNow:now(),opensAt,deadline:s?opensAt+10000:g.createdAt+60000,graceDeadline:s?opensAt+40000:g.createdAt+90000,ownAction:g.own??null,reveal:g.transition?{turn:g.transition.turn-1,startedAt:s?.startedAt,countdownEndsAt:Number.isFinite(s?.previousDeadline)?countdownEndsAt(s):null,actions:{1:g.transition.action1,2:g.transition.action2},damage:{1:g.transition.damage1,2:g.transition.damage2}}:null,result:closed?{winner:g.settled.winner,rated:g.kind!=='friend',reason:g.resigned?'resigned':g.abandoned&&s?.hp1>0&&s?.hp2>0?'reconnect-timeout':!s?'selection-timeout':s.misses1>=2||s.misses2>=2?'idle-forfeit':s.turn>300?'turn-limit':'battle'}:null,rating:closed?{before:g.settled['before'+me],after:g.settled['after'+me],delta:g.settled['delta'+me]}:null};
  }
  async function resumeActive(account){
   const u=auth.currentUser.uid,id=String(account?.active||'');
@@ -218,8 +223,10 @@ const initialAccount = {
   if(d.op==='friendJoin'){
    const lobby=await read('friendRooms/'+d.roomId);
    if(!lobby||lobby.host===u||lobby.game||lobby.heartbeat<=now()-15000)throw Error('この部屋には参加できません');
-   const id=push(ref(db,'freeGames')).key,versionPatch=await supportsPunish()?{['freeGames/'+id+'/rulesVersion']:2}:{};
-   try{await update(ref(db),{...versionPatch,['freeGames/'+id+'/players']:{1:u,2:lobby.host},['freeGames/'+id+'/createdAt']:serverTimestamp(),['freeGames/'+id+'/kind']:'friend',['freeGames/'+id+'/room']:d.roomId,['freeAccounts/'+u+'/active']:id,['freeAccounts/'+lobby.host+'/active']:id,['friendRooms/'+d.roomId+'/game']:id});}
+   const roomRules=window.RoomRules.normalize(lobby.roomRules);
+   if(roomRules.mode==='custom'&&!await supportsRoomRules())throw Error('カスタム対戦はまだ利用できません。更新後にお試しください。');
+   const id=push(ref(db,'freeGames')).key,versionPatch=await supportsPunish()?{['freeGames/'+id+'/rulesVersion']:2}:{},roomPatch=roomRules.mode==='custom'?{['freeGames/'+id+'/roomRules']:roomRules}:{};
+   try{await update(ref(db),{...versionPatch,...roomPatch,['freeGames/'+id+'/players']:{1:u,2:lobby.host},['freeGames/'+id+'/createdAt']:serverTimestamp(),['freeGames/'+id+'/kind']:'friend',['freeGames/'+id+'/room']:d.roomId,['freeAccounts/'+u+'/active']:id,['freeAccounts/'+lobby.host+'/active']:id,['friendRooms/'+d.roomId+'/game']:id});}
    catch(e){
     const fresh=await profile();if(fresh.active)return {match:await status(fresh.active)};
     const current=await read('friendRooms/'+d.roomId);
@@ -287,6 +294,7 @@ const initialAccount = {
   const stops=['state','ready','resigned','settled'].map(key=>onValue(ref(db,'freeGames/'+id+'/'+key),onChange,onError));
   return ()=>stops.forEach(stop=>stop());
  };
+ request.supportsRoomRules=supportsRoomRules;
  request.transitionMs=transitionMs;
  return request;
 }
