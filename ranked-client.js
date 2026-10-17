@@ -130,6 +130,7 @@ function rankedTick(){
   else{ring?.classList.add('active','step');setCountdownRingStep(10-turnRemaining);startTurnCountdownSE();}
  }
  if(m.state){locked[m.you]=rankedAnimating||m.closed||rankedSending||m.ownAction!==null||!turnOpen||inputExpired;document.getElementById('player'+m.you+'Area').classList.toggle('locked',locked[m.you]);}
+ window.AdvancedSkills?.sync(m,now);
  if(!m.closed||rankedAnimating)rankedFrame=requestAnimationFrame(rankedTick);
 }
 function rankedReveal(m){
@@ -191,11 +192,12 @@ function rankedApply(m,visualCommit=false){
  const me=m.you;selectingPlayer=me;
  const inGrace=!m.closed&&m.serverNow>=m.deadline+(m.state?5000:0),remaining=Math.max(0,Math.ceil(((m.graceDeadline??m.deadline)-m.serverNow)/1000));
  if(m.phase==='select'){
+  window.AdvancedSkills?.select(m);
   if(entering){showScreen('techScreen');updateTechniqueDisplay();}
   document.getElementById('techTitle').textContent=m.ready[me]?'技を確定しました。相手を待っています…':(m.kind==='friend'?window.RoomRules.label(m.roomRules)+' ルーム対戦':'ランダム対戦')+'：技選択（残り'+Math.max(0,Math.ceil((m.deadline-m.serverNow)/1000))+'秒）';
   if(inGrace)document.getElementById('techTitle').textContent='復帰猶予：あと'+remaining+'秒（未確定側は期限後に敗北）';
   document.querySelectorAll('#techScreen .techArrow').forEach(b=>{b.disabled=m.ready[me]||rankedSending;b.style.pointerEvents=(m.ready[me]||rankedSending)?'none':'auto';});
-  const button=document.getElementById('techConfirmButton');button.disabled=m.ready[me]||rankedSending;button.textContent=m.ready[me]?'確定済み':rankedSending?'送信中…':'決定';return;
+  const button=document.getElementById('techConfirmButton');button.disabled=m.ready[me]||rankedSending||window.AdvancedSkills?.ready(m)===false;button.textContent=m.ready[me]?'確定済み':rankedSending?'送信中…':'決定';return;
  }
  if(!m.state){
   showScreen('battleScreen');setPlayerNames(m.players[1].name,m.players[2].name);showBattleResult(m.result.winner===0?'DRAW':m.result.winner+'P WIN');rankedResult(m);return;
@@ -210,7 +212,7 @@ function rankedApply(m,visualCommit=false){
  setPlayerNames(m.players[1].name,m.players[2].bot?botDisplayName():m.players[2].name);
  updateBattleUI();
  if(!m.closed&&m.state.turn===1){
-  PlayerIntro.start({key:'ranked:'+m.id,startAt:m.opensAt-PlayerIntro.DURATION_MS,now:()=>rankedClockServer+performance.now()-rankedClockAt,players:m.players});
+  PlayerIntro.start({key:'ranked:'+m.id,startAt:(m.roomRules?.mode==='advanced'?m.opensAt-2000:m.opensAt)-PlayerIntro.DURATION_MS,now:()=>rankedClockServer+performance.now()-rankedClockAt,players:m.players});
  }else PlayerIntro.cancel();
  const localTurnOpen=rankedTurnClockKey===m.id+':'+m.state.turn&&performance.now()>=rankedTurnOpensAt;
  locked[me]=m.ownAction!==null||rankedSending||m.closed||!localTurnOpen||performance.now()>=rankedTurnDeadline;locked[3-me]=true;
@@ -237,7 +239,7 @@ async function rankedConfirm(){
  document.getElementById('techTitle').textContent='技を送信中…';
  document.querySelectorAll('#techScreen .techArrow').forEach(b=>{b.disabled=true;b.style.pointerEvents='none';});
  try{
-  const r=await rankedCommandRpc({op:'loadout',matchId,loadout:selectedTechniques[you].slice()});
+  const r=await rankedCommandRpc({op:'loadout',matchId,loadout:selectedTechniques[you].slice(),...(window.AdvancedSkills?.loadout(rankedMatch)||{})});
   rankedSending=false;
   if(rankedActive&&rankedMatch?.id===matchId)rankedApply(r.match);
  }catch(e){
@@ -279,7 +281,7 @@ async function rankedSubmitAction(m,id,automatic=false){
   rankedMessage((automatic?'自動選択を送信できませんでした：':'')+e.message);
  }
 }
-function rankedStop(){rankedWatchStop?.();rankedWatchStop=null;rankedStatusFlight=null;rankedStatusDirty=false;rankedVisualStop();rankedEpoch++;rankedActive=false;rankedMatch=null;rankedSending=false;rankedButtons(false);}
+function rankedStop(){window.AdvancedSkills?.reset();rankedWatchStop?.();rankedWatchStop=null;rankedStatusFlight=null;rankedStatusDirty=false;rankedVisualStop();rankedEpoch++;rankedActive=false;rankedMatch=null;rankedSending=false;rankedButtons(false);}
 async function rankedLeave(){
  if(rankedMatch&&!rankedMatch.closed){
   if(!confirm(rankedMatch.kind==='friend'?'降参してホームに戻りますか？':'降参してホームに戻りますか？ レートに反映されます。'))return;

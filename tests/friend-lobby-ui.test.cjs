@@ -26,7 +26,7 @@ ${fs.readFileSync(path.join(root,'lobby-client.js'),'utf8')}
    assert.match(await page.locator('.friendRoomSummary').textContent(),/HP 20.*初期ゲージ 4.*最大ゲージ 15/);
    await page.click('#friendCreateButton');assert.equal(await page.locator('#friendRuleScreen').evaluate(n=>n.classList.contains('active')),true);
    assert.deepEqual(await page.evaluate(()=>window.creations),[],'opening settings must not create a room');
-   assert.equal(await page.locator('input[value="advanced"]').isDisabled(),true);
+   assert.equal(await page.locator('input[value="advanced"]').isEnabled(),true);
    assert.equal(await page.locator('#friendCustomRules').isVisible(),false);
    if(process.env.FRIEND_ROOM_SCREENSHOTS&&width===1365)await page.screenshot({path:path.join(process.env.FRIEND_ROOM_SCREENSHOTS,'friend-room-standard-desktop.png')});
    await page.click('#friendRuleCancel');assert.deepEqual(await page.evaluate(()=>window.creations),[],'cancel must not create a room');
@@ -42,7 +42,7 @@ ${fs.readFileSync(path.join(root,'lobby-client.js'),'utf8')}
    assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'settings must fit the viewport');
    await page.evaluate(()=>window.failCreate=true);await page.click('#friendRuleSubmit');
    await page.waitForFunction(()=>document.getElementById('friendRuleStatus').textContent.includes('通信失敗'));
-   assert.equal(await page.locator('#friendRuleSubmit').isEnabled(),true);assert.equal(await page.locator('input[value="advanced"]').isDisabled(),true);
+   assert.equal(await page.locator('#friendRuleSubmit').isEnabled(),true);assert.equal(await page.locator('input[value="advanced"]').isEnabled(),true);
    await page.evaluate(()=>window.failCreate=false);await page.dblclick('#friendRuleSubmit');
    await page.waitForFunction(()=>document.getElementById('friendLobbyScreen').classList.contains('active'));
    assert.equal(await page.evaluate(()=>window.creations.length),3,'double-click must issue one create');
@@ -51,6 +51,6 @@ ${fs.readFileSync(path.join(root,'lobby-client.js'),'utf8')}
    assert.deepEqual(await page.evaluate(()=>window.joined),['custom']);assert.equal(await page.evaluate(()=>window.enteredMatch.roomRules.maxGauge),15);
    assert.deepEqual(errors,[]);await page.close();
   }
-  console.log('PASS: actual lobby/settings UI at desktop and mobile widths; no early creation, Standard, Advanced disabled, Custom validation, cancel/retry, single creation, room badges/details and join');
+  console.log('PASS: actual lobby/settings UI at desktop and mobile widths; no early creation, Standard, Advanced available, Custom validation, cancel/retry, single creation, room badges/details and join');
  }finally{await browser.close();}
 })().catch(error=>{console.error(error);process.exitCode=1;});

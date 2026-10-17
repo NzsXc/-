@@ -24,6 +24,7 @@ export function buildHistory(id,g,accounts){
  const h={version:1,createdAt:g.createdAt,endedAt:g.settled.at,kind:g.kind||'random',room:g.room||'',turnCount,reason:finishReason(g),players:{},settled:{...g.settled}};
  if(g.rulesVersion===2)h.rulesVersion=2;
  if(g.roomRules)h.roomRules={...g.roomRules};
+ if(g.roomRules?.mode==='advanced'&&g.advanced)h.advanced=JSON.parse(JSON.stringify(g.advanced));
  for(const p of [1,2]){
   const snapshot=g.profiles?.[p],account=accounts?.[p];
   const player={uid:g.players[p],name:snapshot?.name||account?.name||'プレイヤー',rating:g.settled['before'+p],snapshot:!!snapshot,titles:Object.fromEntries([0,1,2].map(i=>[i,snapshot?.titles?.[i]||'']))};
@@ -49,7 +50,7 @@ export function replayHistory(h){
  for(let turn=1;turn<=h.turnCount;turn++){
   const moves=h.moves?.[turn];
   if(![1,2].every(p=>Number.isInteger(moves?.[p])&&moves[p]>=0&&moves[p]<=14))throw Error('バトルデータが不足しています');
-  const result=h.rulesVersion===2?calculate(state,moves,2,h.roomRules):calculate(state,moves);
+  const result=h.roomRules?.mode==='advanced'?window.AdvancedRules.resolve(state,moves,h.advanced?.selected,window.AdvancedRules.forTurn(h.advanced,turn),calculateV2,h.roomRules):h.rulesVersion===2?calculate(state,moves,2,h.roomRules):calculate(state,moves);
   turns.push({turn,actions:{1:moves[1],2:moves[2]},before:{hp:{1:state.hp1,2:state.hp2},gauge:{1:state.gauge1,2:state.gauge2}},after:{hp:{1:result.hp1,2:result.hp2},gauge:{1:result.gauge1,2:result.gauge2}},damage:{1:result.damage1,2:result.damage2}});
   state={...result,startedAt:0};
  }
@@ -58,10 +59,10 @@ export function replayHistory(h){
 }
 export function historyMatch(h,uid,serverNow){
  const you=historySide(h,uid);if(!you)throw Error('参加者ではありません');
- const s=h.finalState,players={},loadouts={},ready={};
+ const rawState=h.finalState,s=h.roomRules?.mode==='advanced'?window.AdvancedRules.preview(rawState,h.advanced?.selected,window.AdvancedRules.forTurn(h.advanced,rawState?.turn),h.roomRules):rawState,players={},loadouts={},ready={};
  for(const p of [1,2]){players[p]={name:h.players[p].name,rating:h.players[p].rating,bot:false,titles:slots(h.players[p].titles)};if(h.players[p].loadout){loadouts[p]=slots(h.players[p].loadout);ready[p]=true;}}
  const state=s?{turn:s.turn,...Object.fromEntries(['hp','gauge','seal','enhance','momentum','ruin','last'].map(k=>[k,[null,s[k+'1'],s[k+'2']]]))}:null;
  let reveal=null;
  try{const turns=replayHistory(h),last=turns.at(-1);if(last)reveal={turn:last.turn,startedAt:s.startedAt,actions:last.actions,damage:last.damage};}catch(error){/* Historical results remain readable even when a legacy replay differs. */}
- return {id:h.id,kind:h.kind,roomId:h.room||null,roomRules:h.roomRules||null,you,players,loadouts,ready,state,closed:true,phase:'finished',revision:serverNow,serverNow,opensAt:s?.startedAt||0,deadline:serverNow,graceDeadline:serverNow,ownAction:null,reveal,result:{winner:h.settled.winner,rated:h.kind!=='friend',reason:h.reason},rating:{before:h.settled['before'+you],after:h.settled['after'+you],delta:h.settled['delta'+you]}};
+ return {id:h.id,kind:h.kind,roomId:h.room||null,roomRules:h.roomRules||null,you,...(h.roomRules?.mode==='advanced'?{advanced:h.advanced||{}}:{}),players,loadouts,ready,state,closed:true,phase:'finished',revision:serverNow,serverNow,opensAt:s?.startedAt||0,deadline:serverNow,graceDeadline:serverNow,ownAction:null,reveal,result:{winner:h.settled.winner,rated:h.kind!=='friend',reason:h.reason},rating:{before:h.settled['before'+you],after:h.settled['after'+you],delta:h.settled['delta'+you]}};
 }
