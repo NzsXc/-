@@ -6,7 +6,8 @@ export function createProtectedRooms(db,auth,transport,history){
  async function ensure(){await auth.authStateReady();if(!auth.currentUser)await signInAnonymously(auth);await transport({op:'profile'});}
  async function create(options){const rules=window.RoomRules.normalize(options);await ensure();const who=auth.currentUser.uid;const account=await read('freeAccounts/'+who);if(account.active)throw Error('進行中の対戦を終了してください');
   if(rules.mode==='custom'&&!await transport.supportsRoomRules?.())throw Error('カスタム対戦はまだ利用できません。更新後にお試しください。');
-  const roomPatch=rules.mode==='custom'?{roomRules:rules}:{};
+  if(rules.mode==='advanced'&&!await transport.supportsAdvanced?.())throw Error('Advancedはまだ利用できません。更新後にお試しください。');
+  const roomPatch=rules.mode!=='standard'?{roomRules:rules}:{};
   const id=push(ref(db,'friendRooms')).key;await set(ref(db,'friendRooms/'+id),{host:who,name:account.name,createdAt:serverTimestamp(),heartbeat:serverTimestamp(),game:'',...roomPatch});hostRoom=id;
   disconnect=onDisconnect(ref(db,'friendRooms/'+id));await disconnect.remove();
   heartbeat=setInterval(()=>update(ref(db,'friendRooms/'+id),{heartbeat:serverTimestamp()}).catch(()=>{}),5000);return id;
@@ -18,7 +19,7 @@ export function createProtectedRooms(db,auth,transport,history){
  function watchHost(id,onMatch,onError){let busy=false;return onValue(ref(db,'friendRooms/'+id),async s=>{const room=s.val();if(room?.game&&!busy){busy=true;try{await releaseHost();onMatch((await transport({op:'status',matchId:room.game})).match);}catch(e){busy=false;onError(e);}}},onError);}
  const observedGames=new Map();
  function archivedSnapshot(h){
-  const s=h?.finalState;if(!s)return null;const people={};
+  const raw=h?.finalState;if(!raw)return null;const s=h.roomRules?.mode==='advanced'?window.AdvancedRules.preview(raw,h.advanced?.selected,window.AdvancedRules.forTurn(h.advanced,raw.turn),h.roomRules):raw,people={};
   for(const p of [1,2])people[p]={name:h.players[p].name,joined:true,online:false,techniques:h.players[p].loadout?[0,1,2].map(i=>h.players[p].loadout[i]):[]};
   return {players:people,battle:{roomRules:h.roomRules||null,phase:'finished',turn:s.turn,updatedAt:now(),result:h.settled.winner?h.settled.winner+'P WIN':'DRAW',hp:{1:s.hp1,2:s.hp2},gauge:{1:s.gauge1,2:s.gauge2},enhanceTurns:{1:s.enhance1,2:s.enhance2},blockSeal:{1:s.seal1,2:s.seal2}}};
  }
@@ -30,9 +31,11 @@ export function createProtectedRooms(db,auth,transport,history){
   const archived=async()=>{const h=await history?.find(id);return random&&h?.kind!=='random'?null:archivedSnapshot(h);};
   if(!random&&!room?.game)return archived();const path='freeGames/'+id;
   // Read public children separately: a live game root includes private moves.
-  const [players,s,ready,settled,reveal,kind]=await Promise.all(['players','state','ready','settled','transition','kind'].map(k=>read(path+'/'+k)));
-  if(!players||!s)return archived();if(random&&kind!=='random')return null;
+  const [players,rawState,ready,settled,reveal,kind]=await Promise.all(['players','state','ready','settled','transition','kind'].map(k=>read(path+'/'+k)));
+  if(!players||!rawState)return archived();if(random&&kind!=='random')return null;
   const roomRules=await transport.supportsRoomRules?.()?await read(path+'/roomRules'):null;
+  const advanced=roomRules?.mode==='advanced'?await read(path+'/advanced'):null;
+  const s=advanced?window.AdvancedRules.preview(rawState,advanced.selected,window.AdvancedRules.forTurn(advanced,rawState.turn),roomRules):rawState;
   const people={};try{for(const p of [1,2]){const a=accounts?.[players[p]]||await read('freeAccounts/'+players[p]);people[p]={name:a?.name||'プレイヤー',joined:true,online:!settled,techniques:ready?.[1]===true&&ready?.[2]===true?await read(path+'/loadouts/'+p):[]};}}
   catch(error){if(!await read(path+'/players'))return archived();throw error;}
   // Settlement can archive/delete the live node between these reads.

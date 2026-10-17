@@ -32,7 +32,7 @@ function historyApi(){
 }
 (async()=>{
  assert.deepEqual(RoomRules.normalize(),{mode:'standard',hp:10,initialGauge:8,maxGauge:10});
- for(const bad of [{mode:'advanced'},{...custom,hp:0},{...custom,hp:101},{...custom,hp:1.5},{...custom,maxGauge:0},{...custom,maxGauge:101},{...custom,initialGauge:-1},{...custom,initialGauge:21}])assert.throws(()=>RoomRules.normalize(bad));
+ for(const bad of [{mode:'unknown'},{...custom,hp:0},{...custom,hp:101},{...custom,hp:1.5},{...custom,maxGauge:0},{...custom,maxGauge:101},{...custom,initialGauge:-1},{...custom,initialGauge:21}])assert.throws(()=>RoomRules.normalize(bad));
  const std=fresh(),standard=protectedApi(std,{supported:false});await standard.api.create();
  assert.equal(std.get('friendRooms/testRoom/roomRules'),null,'Standard keeps the existing room format');
  const old=fresh(),oldApi=protectedApi(old,{supported:false});await assert.rejects(()=>oldApi.api.create(custom),/まだ利用できません/);assert.deepEqual(oldApi.writes,[]);

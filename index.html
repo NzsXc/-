@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>心理バトル</title>
 <link rel="stylesheet" href="battle-history.css?v=history-2">
+<link rel="stylesheet" href="advanced/advanced.css?v=1">
 
 <style>
 
@@ -2218,10 +2219,11 @@ button{min-height:44px;}
     <fieldset class="friendRuleModes">
       <legend>対戦ルールを選択</legend>
       <label class="friendRuleChoice"><input type="radio" name="friendRuleMode" value="standard" checked onchange="updateFriendRuleSettings()"><span><strong>Standard</strong><small>いつものルールで対戦</small></span></label>
-      <label class="friendRuleChoice unavailable"><input type="radio" name="friendRuleMode" value="advanced" disabled><span><strong>Advanced</strong><small>準備中</small></span></label>
+      <label class="friendRuleChoice"><input type="radio" name="friendRuleMode" value="advanced" onchange="updateFriendRuleSettings()"><span><strong>Advanced</strong><small>スキルで戦術を広げる</small></span></label>
       <label class="friendRuleChoice"><input type="radio" name="friendRuleMode" value="custom" onchange="updateFriendRuleSettings()"><span><strong>Custom</strong><small>HPとゲージを自由に設定</small></span></label>
     </fieldset>
     <p id="friendStandardRules" class="settingsNote">HP 10 / 初期ゲージ 8 / 最大ゲージ 10<br>基礎技3種 ＋ 選択技3種</p>
+    <p id="friendAdvancedRules" class="settingsNote" hidden>HP 10 / 初期ゲージ 8 / 最大ゲージ 10<br>基礎技3種 ＋ 選択技3種 ＋ スキル1種。各ターン開始時の2秒間にスキルを発動できます。</p>
     <fieldset id="friendCustomRules" class="friendCustomFields" hidden disabled>
       <legend>Customの設定</legend>
       <label>HP<input id="friendRuleHp" type="number" min="1" max="100" step="1" value="10" required inputmode="numeric"></label>
@@ -2719,19 +2721,21 @@ button{min-height:44px;}
 <script src="player-lightning.js?v=2"></script>
 <script src="bot-engine.js?v=punish-2"></script>
 <script src="bot-client.js?v=tech12-fix-1"></script>
-<script src="room-rules.js?v=1"></script>
-<script src="ranked-client.js?v=room-rules-1"></script>
+<script src="advanced/rules.js?v=1"></script>
+<script src="room-rules.js?v=advanced-1"></script>
+<script src="ranked-client.js?v=advanced-1"></script>
+<script src="advanced/client.js?v=1"></script>
 <script src="battle-inspector.js?v=battle-controls-1"></script>
-<script src="lobby-client.js?v=room-rules-1"></script>
+<script src="lobby-client.js?v=advanced-1"></script>
 <script src="battle-action-art.js?v=confirmed-1"></script>
 <script src="battle-effects.js?v=confirmed-1"></script>
 <script type="module">
   import {createTitleService} from "./title-service.js?v=crown-prestige-1";
-  import {createProtectedRooms} from "./protected-rooms.js?v=room-rules-1";
-  import {createFreeTransport} from "./free-transport.js?v=room-rules-1";
-  import {createBattleHistory} from "./battle-history.js?v=room-rules-1";
+  import {createProtectedRooms} from "./protected-rooms.js?v=advanced-1";
+  import {createFreeTransport} from "./free-transport.js?v=advanced-1";
+  import {createBattleHistory} from "./battle-history.js?v=advanced-1";
   import {createPlayerProfile} from "./player-profile.js?v=usage-1";
-  import {createHistoryScreen} from "./battle-history-client.js?v=room-rules-1";
+  import {createHistoryScreen} from "./battle-history-client.js?v=advanced-1";
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
   import {
     getAuth,

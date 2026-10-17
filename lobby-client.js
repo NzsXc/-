@@ -38,7 +38,8 @@ function validateFriendRuleGauge(){
 function updateFriendRuleSettings(){
  const custom=document.querySelector('input[name="friendRuleMode"]:checked')?.value==='custom';
  const fields=document.getElementById('friendCustomRules');fields.hidden=!custom;fields.disabled=!custom;
- document.getElementById('friendStandardRules').hidden=custom;
+ const advanced=document.querySelector('input[name="friendRuleMode"]:checked')?.value==='advanced';
+ document.getElementById('friendStandardRules').hidden=custom||advanced;document.getElementById('friendAdvancedRules').hidden=!advanced;
  validateFriendRuleGauge();
 }
 function cancelFriendRoomSettings(){
@@ -68,7 +69,7 @@ async function submitFriendRoom(event){
  }finally{
   document.getElementById('friendLobbyBack').disabled=false;
   form.querySelectorAll('input,button').forEach(el=>{el.disabled=false;});
-  form.querySelector('input[value="advanced"]').disabled=true;updateFriendRuleSettings();
+  form.querySelector('input[value="advanced"]').disabled=false;updateFriendRuleSettings();
  }
 }
 async function joinFriendRoom(id){
