@@ -44,7 +44,7 @@
  }
  function sync(m,now,{blocked=false}={}){
   if(m?.roomRules?.mode!=='advanced'||!m.state||m.closed||blocked||!m.skillWindow){if(key)cancel();return;}
-  const used=window.AdvancedSkills.usedForTurn(m),start=m.skillWindow.endAt,end=start+window.AdvancedRules.presentationMs(m.advanced,m.state.turn);
+  const used=window.AdvancedSkills.usedForTurn(m),start=m.skillWindow.confirmAt??m.skillWindow.endAt,end=start+window.AdvancedRules.presentationMs(m.advanced,m.state.turn);
   // Wait for a server snapshot at/after the deadline: it includes last-moment uses.
   if(!used.length||now<start||now>=end||m.serverNow<start){if(key)cancel();return;}
   ensure();const nextKey=m.id+':'+m.state.turn,nextPhase=now<start+window.AdvancedRules.CUTIN_MS?'cutin':'effects',nextSignature=JSON.stringify([m.you,used.map(s=>[s.player,s.id,playerName(m,s.player)])]);

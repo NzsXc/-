@@ -59,7 +59,7 @@ export function replayHistory(h){
 }
 export function historyMatch(h,uid,serverNow){
  const you=historySide(h,uid);if(!you)throw Error('参加者ではありません');
- const rawState=h.finalState,s=h.roomRules?.mode==='advanced'?window.AdvancedRules.preview(rawState,h.advanced?.selected,window.AdvancedRules.forTurn(h.advanced,rawState?.turn),h.roomRules):rawState,players={},loadouts={},ready={};
+ const rawState=h.finalState,s=rawState&&h.roomRules?.mode==='advanced'?window.AdvancedRules.preview(rawState,h.advanced?.selected,window.AdvancedRules.forTurn(h.advanced,rawState.turn),h.roomRules):rawState,players={},loadouts={},ready={};
  for(const p of [1,2]){players[p]={name:h.players[p].name,rating:h.players[p].rating,bot:false,titles:slots(h.players[p].titles)};if(h.players[p].loadout){loadouts[p]=slots(h.players[p].loadout);ready[p]=true;}}
  const state=s?{turn:s.turn,...Object.fromEntries(['hp','gauge','seal','enhance','momentum','ruin','last'].map(k=>[k,[null,s[k+'1'],s[k+'2']]]))}:null;
  let reveal=null;

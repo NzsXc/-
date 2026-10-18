@@ -13,10 +13,11 @@
  const windowMs=state=>state?.skillsExhausted===true?0:3000;
  const active=(selected,turn,p,id)=>selected?.[p]===id&&turn?.[p]?.id===id;
  function forTurn(advanced,turn){
+  if(!Number.isInteger(turn)||turn<1)return {};
   const out={};for(const p of [1,2]){
    const latest=advanced?.current?.[p];
    if(latest?.turn===turn)out[p]=latest;
-   else for(const receipt of Object.values(advanced?.uses?.[p]||{}))if(receipt.turn===turn)out[p]=receipt;
+   else for(const receipt of Object.values(advanced?.uses?.[p]||{}))if(receipt?.turn===turn)out[p]=receipt;
   }return out;
  }
  function preview(state,selected,turn,rules={}){
@@ -39,7 +40,7 @@
  }
  const CUTIN_MS=1900,EFFECT_MS=1200;
  const presentationMs=(advanced,turn)=>Object.keys(forTurn(advanced,turn)).length?CUTIN_MS+EFFECT_MS:0;
- const api={SKILLS,byId,isAdvanced,active,forTurn,preview,resolve,presentationMs,exhausted,windowMs,WINDOW_MS:3000,CUTIN_MS,EFFECT_MS};
+ const api={SKILLS,byId,isAdvanced,active,forTurn,preview,resolve,presentationMs,exhausted,windowMs,WINDOW_MS:3000,GRACE_MS:500,CUTIN_MS,EFFECT_MS};
  if(typeof window!=='undefined')window.AdvancedRules=api;
  if(typeof module!=='undefined')module.exports=api;
 })();

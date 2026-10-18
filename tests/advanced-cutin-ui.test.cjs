@@ -55,6 +55,11 @@ const m={id:'cutin-test',you:1,players:{1:{name:'青空'},2:{name:'夜空'}},roo
   await page.evaluate(()=>{window.m.advanced.current={1:{id:'invincible',turn:1,used:1}};window.m.advanced.selected[1]='invincible';window.AdvancedSkills.sync(window.m,10600);});assert.equal(await page.locator('.post-skill-mark .star-shape').count(),1);
   await page.evaluate(()=>{window.m.roomRules.mode='standard';window.AdvancedSkills.sync(window.m,10600);});assert.equal(await page.locator('#advancedSkillPresentation').isVisible(),false);assert.equal(await page.locator('.confirmedEffectCanvas').count(),0);
   await page.evaluate(()=>{window.AdvancedCutin.reset();window.m.roomRules.mode='advanced';window.m.serverNow=8599;window.AdvancedSkills.sync(window.m,8700);});assert.equal(await page.locator('#advancedSkillPresentation').isVisible(),false,'wait for the final server receipt snapshot');
+  await page.evaluate(()=>{window.m.skillWindow.confirmAt=window.m.skillWindow.endAt+window.AdvancedRules.GRACE_MS;window.m.opensAt=window.m.skillWindow.confirmAt+3100;window.m.serverNow=window.m.skillWindow.endAt;window.AdvancedSkills.sync(window.m,window.m.skillWindow.confirmAt-1);});
+  assert.equal(await page.locator('#advancedSkillPresentation').isVisible(),false,'wait for in-flight last-millisecond uses before starting the cut-in');
+  await page.evaluate(()=>{window.m.serverNow=window.m.skillWindow.confirmAt;window.AdvancedSkills.sync(window.m,window.m.serverNow);});
+  assert.equal(await page.locator('#advancedSkillPresentation').isVisible(),true,'start from the shared confirmation boundary');
+  await page.evaluate(()=>window.AdvancedSkills.sync(window.m,window.m.opensAt));assert.equal(await page.locator('#advancedSkillPresentation').isVisible(),false);
   assert.deepEqual(errors,[]);await page.close();console.log('PASS: local player below/opponent above for both perspectives and single activation; real/long player names; live cut-in/effects, cancel/rejoin, no double SE, all skills and mode isolation at '+width+'x'+height);
  }
 }finally{await browser.close();}})().catch(error=>{console.error(error);process.exitCode=1;});

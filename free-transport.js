@@ -1,7 +1,7 @@
 import {ref,get,set,update,push,serverTimestamp,onValue,runTransaction} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js';
 import {calculate,stateFields} from './free-calculator.js?v=room-rules-1';
-import {historyMatch} from './battle-history-core.js?v=advanced-1';
-import {createAdvancedProtocol} from './advanced/protocol.js?v=skill-flow-1';
+import {historyMatch} from './battle-history-core.js?v=history-nulls-1';
+import {createAdvancedProtocol} from './advanced/protocol.js?v=late-skill-1';
 export function createFreeTransport(db,auth,history){
  let offset=0;onValue(ref(db,'.info/serverTimeOffset'),s=>{offset=s.val()||0;});
  const now=()=>Date.now()+offset;
@@ -68,7 +68,8 @@ const initialAccount = {
  const transitionMs=6100;
  const countdownEndsAt=s=>Math.max(s.startedAt,Math.min(s.startedAt+3000,s.previousDeadline));
  const skillEndsAt=s=>(Number.isFinite(s.previousDeadline)?countdownEndsAt(s)+3100:s.startedAt+(s.turn>1?7500:5600))+window.AdvancedRules.windowMs(s);
- const turnOpensAt=(s,roomRules,advanced)=>(Number.isFinite(s.previousDeadline)?countdownEndsAt(s)+3100:s.startedAt+(s.turn>1?7500:5600))+(roomRules?.mode==='advanced'?window.AdvancedRules.windowMs(s)+window.AdvancedRules.presentationMs(advanced,s.turn):0);
+ const confirmAt=s=>skillEndsAt(s)+(window.AdvancedRules.windowMs(s)?window.AdvancedRules.GRACE_MS:0);
+ const turnOpensAt=(s,roomRules,advanced)=>(Number.isFinite(s.previousDeadline)?countdownEndsAt(s)+3100:s.startedAt+(s.turn>1?7500:5600))+(roomRules?.mode==='advanced'?(window.AdvancedRules.windowMs(s)?window.AdvancedRules.windowMs(s)+window.AdvancedRules.GRACE_MS:0)+window.AdvancedRules.presentationMs(advanced,s.turn):0);
  const protocolFlights=new Map(),advanceFlights=new Map();
  const permissionDenied=e=>/permission.?denied/i.test(String(e.code||'')+' '+e.message);
  let roomRulesProtocol=null;
@@ -121,7 +122,7 @@ const initialAccount = {
   try{return await job;}finally{if(advanceFlights.get(key)===job)advanceFlights.delete(key);}
  }
  const initial=(rules)=>Object.fromEntries(stateFields.map(k=>[k,k==='turn'?1:k==='startedAt'?serverTimestamp():k.startsWith('hp')?rules.hp:k.startsWith('gauge')?rules.initialGauge:k.startsWith('seal')||k.startsWith('momentum')?false:k.startsWith('last')?'':0]));
- const matchMetadata=new Map(),titleRecorded=new Map(),ratingClaimed=new Set();
+ const matchMetadata=new Map(),titleRecorded=new Map(),ratingClaimed=new Set(),skillSnapshots=new Map();
  const historyWarnings=new Set();
  async function archivedStatus(id,u){
   const h=await history?.find(id);
@@ -198,7 +199,9 @@ const initialAccount = {
   }
   // A match that expires before either loadout still needs player names for results.
   if(closed&&!s)for(const p of [1,2]){const account=await read('freeAccounts/'+g.players[p]);players[p]={name:account?.name||'プレイヤー'};}
-  return {id,kind:g.kind||'random',roomId:g.room||null,roomRules:window.RoomRules.normalize(g.roomRules),you:me,...(advanced?{advanced:g.advanced,skillResult:board(skillResult),skillWindow:s?{startAt:skillEndsAt(s)-window.AdvancedRules.windowMs(s),endAt:skillEndsAt(s)}:null}:{}),players,ready:g.ready,loadouts,state,closed,phase:closed?'finished':s?'turn':'select',revision:now(),serverNow:now(),opensAt,deadline:s?opensAt+10000:g.createdAt+60000,graceDeadline:s?opensAt+40000:g.createdAt+90000,ownAction:g.own??null,reveal:g.transition?{turn:g.transition.turn-1,startedAt:s?.startedAt,countdownEndsAt:Number.isFinite(s?.previousDeadline)?countdownEndsAt(s):null,actions:{1:g.transition.action1,2:g.transition.action2},damage:{1:g.transition.damage1,2:g.transition.damage2}}:null,result:closed?{winner:g.settled.winner,rated:g.kind!=='friend',reason:g.resigned?'resigned':g.abandoned&&s?.hp1>0&&s?.hp2>0?'reconnect-timeout':!s?'selection-timeout':s.misses1>=2||s.misses2>=2?'idle-forfeit':s.turn>300?'turn-limit':'battle'}:null,rating:closed?{before:g.settled['before'+me],after:g.settled['after'+me],delta:g.settled['delta'+me]}:null};
+  const match={id,kind:g.kind||'random',roomId:g.room||null,roomRules:window.RoomRules.normalize(g.roomRules),you:me,...(advanced?{advanced:g.advanced,skillResult:board(skillResult),skillWindow:s?{startAt:skillEndsAt(s)-window.AdvancedRules.windowMs(s),endAt:skillEndsAt(s),confirmAt:confirmAt(s)}:null}:{}),players,ready:g.ready,loadouts,state,closed,phase:closed?'finished':s?'turn':'select',revision:now(),serverNow:now(),opensAt,deadline:s?opensAt+10000:g.createdAt+60000,graceDeadline:s?opensAt+40000:g.createdAt+90000,ownAction:g.own??null,reveal:g.transition?{turn:g.transition.turn-1,startedAt:s?.startedAt,countdownEndsAt:Number.isFinite(s?.previousDeadline)?countdownEndsAt(s):null,actions:{1:g.transition.action1,2:g.transition.action2},damage:{1:g.transition.damage1,2:g.transition.damage2}}:null,result:closed?{winner:g.settled.winner,rated:g.kind!=='friend',reason:g.resigned?'resigned':g.abandoned&&s?.hp1>0&&s?.hp2>0?'reconnect-timeout':!s?'selection-timeout':s.misses1>=2||s.misses2>=2?'idle-forfeit':s.turn>300?'turn-limit':'battle'}:null,rating:closed?{before:g.settled['before'+me],after:g.settled['after'+me],delta:g.settled['delta'+me]}:null};
+  if(advanced&&state&&!closed)skillSnapshots.set(u+':'+id,match);else skillSnapshots.delete(u+':'+id);
+  return match;
  }
  async function resumeActive(account){
   const u=auth.currentUser.uid,id=String(account?.active||'');
@@ -220,6 +223,14 @@ const initialAccount = {
   return {match};
  }
  async function request(d){
+  // The displayed match already contains the participant, skill, count and
+  // window. Send its receipt before any profile/status round trips; RTDB still
+  // validates ownership, the turn, timestamp, remaining uses and atomic proof.
+  const pressedAt=now(),cached=skillSnapshots.get(auth.currentUser?.uid+':'+d.matchId);
+  if(d.op==='advancedSkill'&&cached){
+   await advancedProtocol.activate(d.matchId,cached.you,d.turn,cached.skillWindow.endAt,{advanced:cached.advanced,state:cached.state,pressedAt});
+   const match=await status(d.matchId);if(match.state&&match.state.turn!==d.turn)throw Error('ターンが切り替わりました。');return {match};
+  }
   const a=await profile(),u=auth.currentUser.uid;
   if(d.op==='profile')return a;
   if(d.op==='history'){if(!history)throw Error('対戦履歴の接続を準備中です');return {histories:await history.list(d.uid||u)};}
@@ -270,7 +281,7 @@ const initialAccount = {
   if(d.op==='advancedSkill'){
    if(roomRules?.mode!=='advanced')throw Error('このモードではスキルを使用できません。');
    const state=await read(path+'/state');if(!state)throw Error('対戦はまだ開始していません。');
-   await advancedProtocol.activate(id,me,d.turn,skillEndsAt(state));return {match:await status(id)};
+   await advancedProtocol.activate(id,me,d.turn,skillEndsAt(state),{pressedAt});return {match:await status(id)};
   }
   if(d.op==='loadout'){
    const savedSkill=roomRules?.mode==='advanced'?await read(path+'/advanced/selected/'+me):null;
