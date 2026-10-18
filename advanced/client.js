@@ -1,24 +1,33 @@
 // UI lifecycle for Advanced. Hooks return immediately for all other room modes.
 (()=>{
- const choices=new Map();let current=null,sending=false,epoch=0,selection=null,dock=null,enemyDock=null,windowPanel=null;
+ const choices=new Map();let current=null,selecting=null,sending=false,epoch=0,selection=null,dock=null,enemyDock=null,windowPanel=null;
  const advanced=m=>m?.roomRules?.mode==='advanced';
  const node=(tag,cls,text)=>{const el=document.createElement(tag);if(cls)el.className=cls;if(text!=null)el.textContent=text;return el;};
  function select(m){
   const screen=document.getElementById('techScreen');if(!screen)return;
   screen.classList.toggle('advancedSelection',advanced(m)&&m.phase==='select');
   if(!advanced(m)||m.phase!=='select'){if(selection)selection.hidden=true;return;}
-  const saved=m.advanced?.selected?.[m.you],key=m.id;
-  if(saved)choices.set(key,saved);
-  if(!selection){selection=node('fieldset','advancedSkillSelection');selection.id='advancedSkillSelection';screen.querySelector('.techSelect').insertBefore(selection,document.getElementById('techConfirmButton'));}
-  selection.hidden=false;
-  const signature=JSON.stringify([key,saved,!!m.ready[m.you],choices.get(key)]);
-  if(selection.dataset.signature===signature)return;selection.dataset.signature=signature;
-  const legend=node('legend',null,'スキルを1つ選択');selection.replaceChildren(legend);
-  for(const skill of window.AdvancedRules.SKILLS){
-   const label=node('label','advancedSkillChoice'),radio=node('input');radio.type='radio';radio.name='advancedSkill';radio.value=skill.id;radio.checked=choices.get(key)===skill.id;radio.disabled=!!m.ready[m.you];
-   const text=node('span'),title=node('strong',null,skill.name+' · '+skill.limit+'/'+skill.limit+'回'),description=node('small',null,skill.description);text.append(title,description);label.append(radio,text);selection.append(label);
-   radio.addEventListener('change',()=>{choices.set(key,skill.id);selection.dataset.signature='';const button=document.getElementById('techConfirmButton');button.disabled=!!m.ready[m.you]||rankedSending;});
+  selecting=m;const saved=m.advanced?.selected?.[m.you],key=m.id;
+  choices.set(key,saved||choices.get(key)||window.AdvancedRules.SKILLS[0].id);
+  if(!selection){
+   selection=node('div','techCard advancedSkillSelection');selection.id='advancedSkillSelection';selection.setAttribute('role','group');selection.setAttribute('aria-label','スキル選択');
+   const prev=node('button','techArrow','＜'),next=node('button','techArrow','＞'),body=node('div','techCardBody');
+   prev.type=next.type='button';prev.setAttribute('aria-label','前のスキル');next.setAttribute('aria-label','次のスキル');prev.onclick=()=>cycle(-1);next.onclick=()=>cycle(1);
+   const name=node('div','techIcon');name.id='advancedSkillTitle';name.setAttribute('aria-live','polite');const description=node('div','techCardDescription');description.id='advancedSkillChoiceDescription';body.append(name,description);selection.append(prev,body,next);
+   screen.querySelector('.techSelect').insertBefore(selection,document.getElementById('techConfirmButton'));
   }
+  selection.hidden=false;
+  const signature=JSON.stringify([key,saved,!!m.ready[m.you],choices.get(key),rankedSending]);
+  if(selection.dataset.signature===signature)return;selection.dataset.signature=signature;
+  const skill=window.AdvancedRules.byId[choices.get(key)];selection.dataset.skill=skill.id;
+  selection.querySelector('#advancedSkillTitle').textContent=skill.name;
+  selection.querySelector('#advancedSkillChoiceDescription').textContent=skill.description+' / '+skill.limit+'回まで使用可能';
+  selection.querySelectorAll('button').forEach(button=>button.disabled=!!m.ready[m.you]||rankedSending);
+ }
+ function cycle(delta){
+  const m=selecting;if(!m||m.ready[m.you]||rankedSending)return;
+  const skills=window.AdvancedRules.SKILLS,index=skills.findIndex(skill=>skill.id===choices.get(m.id));choices.set(m.id,skills[(index+delta+skills.length)%skills.length].id);select(m);
+  document.getElementById('techConfirmButton').disabled=!ready(m);
  }
  function ready(m){return !advanced(m)||!!(m.advanced?.selected?.[m.you]||choices.get(m.id));}
  function loadout(m){if(!advanced(m))return {};const id=m.advanced?.selected?.[m.you]||choices.get(m.id);if(!window.AdvancedRules.byId[id])throw Error('スキルを1つ選択してください。');return {advancedSkill:id};}
@@ -100,6 +109,6 @@
   const receipts=window.AdvancedRules.forTurn(m.advanced,turn);
   return [1,2].flatMap(player=>{const id=m.advanced?.selected?.[player],skill=window.AdvancedRules.byId[id];return skill&&receipts[player]?.id===id?[{player,id,name:skill.name,description:skill.description,turn,used:receipts[player].used}]:[];});
  }
- function reset(){window.AdvancedCutin?.reset();epoch++;sending=false;current=null;choices.clear();if(selection)selection.hidden=true;if(dock)dock.hidden=true;if(enemyDock)enemyDock.hidden=true;if(windowPanel)windowPanel.hidden=true;document.getElementById('battleScreen')?.classList.remove('advancedMode','advancedSkillChoosing');document.getElementById('techScreen')?.classList.remove('advancedSelection');}
+ function reset(){window.AdvancedCutin?.reset();epoch++;sending=false;current=selecting=null;choices.clear();if(selection)selection.hidden=true;if(dock)dock.hidden=true;if(enemyDock)enemyDock.hidden=true;if(windowPanel)windowPanel.hidden=true;document.getElementById('battleScreen')?.classList.remove('advancedMode','advancedSkillChoosing');document.getElementById('techScreen')?.classList.remove('advancedSelection');}
  window.AdvancedSkills={select,ready,loadout,sync,reset,usedForTurn};
 })();
