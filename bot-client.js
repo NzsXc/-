@@ -81,31 +81,65 @@ function startRandomMatch(){return startRanked();}
 
 const BOT_LEVELS={easy:'弱い',normal:'普通',hard:'強い'};
 const botSettings={difficulty:'normal',loadout:'random',techniques:[0,1,2]};
-let soloLoading=false,soloSession=0;
+let soloLoading=false,soloSession=0,botTechniqueDraft=[];
 function openSoloSettings(){
  stopBot();resetOnlineMatchState();gameMode='offline';soloSession++;
- const difficulty=document.getElementById('botDifficulty');difficulty.value=botSettings.difficulty;
- difficulty.onchange=()=>{botSettings.difficulty=difficulty.value;updateSoloSettings();};
- const loadout=document.getElementById('botLoadout');loadout.value=botSettings.loadout;
- loadout.onchange=()=>{botSettings.loadout=loadout.value;updateSoloSettings();};
  document.getElementById('soloStatus').textContent='';updateSoloSettings();showScreen('soloScreen');
+}
+function setBotDifficulty(difficulty){
+ if(soloLoading||!Object.hasOwn(BOT_LEVELS,difficulty))return;
+ botSettings.difficulty=difficulty;updateSoloSettings();
 }
 function updateSoloSettings(){
  document.getElementById('botDifficultyNote').textContent={easy:'使える行動からランダムに選びます。',normal:'1手先を考えて行動します。',hard:'2手先まで読み、より慎重に行動します。'}[botSettings.difficulty];
- const area=document.getElementById('botTechniqueSettings');area.hidden=botSettings.loadout!=='custom';area.replaceChildren();
- botSettings.techniques.forEach((index,slot)=>{
-  const label=document.createElement('label');label.textContent='BOTの技 '+(slot+1);
-  const select=document.createElement('select');select.disabled=soloLoading;
-  techniquePool.forEach((tech,i)=>{const option=document.createElement('option');option.value=i;option.textContent=tech.name;option.disabled=botSettings.techniques.some((n,s)=>s!==slot&&n===i);select.append(option);});
-  select.value=index;select.onchange=()=>{botSettings.techniques[slot]=Number(select.value);updateSoloSettings();};
-  label.append(select);area.append(label);
+ document.querySelectorAll('[data-bot-difficulty]').forEach(button=>{
+  button.setAttribute('aria-pressed',String(button.dataset.botDifficulty===botSettings.difficulty));button.disabled=soloLoading;
  });
+ document.getElementById('botLoadoutButton').disabled=soloLoading;
+ document.getElementById('botLoadoutLabel').textContent=botSettings.loadout==='random'?'お任せ':'3つの技を指定';
+ const summary=document.getElementById('botLoadoutSummary');summary.hidden=botSettings.loadout!=='custom';
+ summary.textContent=botSettings.loadout==='custom'?botSettings.techniques.map(index=>techniquePool[index].name).join(' / '):'';
 }
-function closeSoloSettings(){soloSession++;showScreen('modeScreen');}
+function openBotTechniquePicker(){
+ const dialog=document.getElementById('botTechniqueDialog');
+ if(soloLoading||dialog.open)return;
+ botTechniqueDraft=botSettings.loadout==='custom'?botSettings.techniques.slice():[];
+ const area=document.getElementById('botTechniqueSettings');area.replaceChildren();
+ techniquePool.forEach((tech,index)=>{
+  const label=document.createElement('label');label.className='botTechniqueChoice';
+  const checkbox=document.createElement('input');checkbox.type='checkbox';checkbox.value=String(index);
+  checkbox.checked=botTechniqueDraft.includes(index);
+  checkbox.onchange=()=>{
+   if(checkbox.checked){if(botTechniqueDraft.length<3)botTechniqueDraft.push(index);else checkbox.checked=false;}
+   else botTechniqueDraft=botTechniqueDraft.filter(value=>value!==index);
+   updateBotTechniquePicker();
+  };
+  const art=document.createElement('span');art.className='botTechniqueArt';art.setAttribute('aria-hidden','true');
+  const kind=window.BattleActionArt?.kindOf(tech);
+  if(kind){const image=document.createElement('img');image.src='assets/actions/'+kind+'.png';image.alt='';image.draggable=false;art.append(image);}
+  const name=document.createElement('span');name.className='botTechniqueName';name.textContent=tech.name;
+  label.append(checkbox,art,name);area.append(label);
+ });
+ updateBotTechniquePicker();dialog.showModal();
+}
+function updateBotTechniquePicker(){
+ const count=botTechniqueDraft.length;
+ document.getElementById('botTechniqueCount').textContent='3つの技を選択 · '+count+' / 3';
+ document.getElementById('botTechniqueApply').disabled=count!==3;
+ document.querySelectorAll('#botTechniqueSettings input').forEach(input=>{input.disabled=count===3&&!input.checked;});
+}
+function closeBotTechniquePicker(){document.getElementById('botTechniqueDialog').close();botTechniqueDraft=[];}
+function confirmBotTechniques(){
+ if(botTechniqueDraft.length!==3||new Set(botTechniqueDraft).size!==3||botTechniqueDraft.some(index=>!techniquePool[index]))return;
+ botSettings.loadout='custom';botSettings.techniques=botTechniqueDraft.slice();
+ closeBotTechniquePicker();updateSoloSettings();
+}
+function useRandomBotTechniques(){botSettings.loadout='random';closeBotTechniquePicker();updateSoloSettings();}
+function closeSoloSettings(){soloSession++;closeBotTechniquePicker();showScreen('modeScreen');}
 async function startSoloMatch(){
  if(soloLoading)return;const session=soloSession;soloLoading=true;
  const button=document.getElementById('soloStartButton'),status=document.getElementById('soloStatus');
- button.disabled=true;document.querySelectorAll('#soloScreen select').forEach(e=>e.disabled=true);
+ button.disabled=true;updateSoloSettings();
  try{
   if(typeof BattleAI==='undefined')throw Error('bot-engine.jsを読み込めません。');
   if(!botKnowledge && botSettings.difficulty!=='easy'){
@@ -121,5 +155,6 @@ async function startSoloMatch(){
   if(session!==soloSession)return;
   prepareBotMatch();
  }catch(error){status.textContent=error.message;}
- finally{soloLoading=false;button.disabled=false;document.querySelectorAll('#soloScreen select').forEach(e=>e.disabled=false);updateSoloSettings();}
+ finally{soloLoading=false;button.disabled=false;updateSoloSettings();}
 }
+

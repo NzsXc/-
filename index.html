@@ -2055,6 +2055,7 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
 <link rel="stylesheet" href="battle-inspector.css?v=battle-layout-1">
 <link rel="stylesheet" href="battle-action-art.css?v=orbit-selection-1">
 <link rel="stylesheet" href="neon-controls.css?v=neon-menu-1">
+<link rel="stylesheet" href="mode-menu.css?v=mode-cards-1">
 </head>
 
 
@@ -2109,22 +2110,28 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
 
 <div id="modeScreen" class="screen">
 
-  <div class="modeChoiceBox" aria-label="バトルモード選択">
-    <button class="modeChoiceButton" onclick="openSoloSettings()">
-      ひとりで
-    </button>
-
-    <div class="modeSlash" aria-hidden="true"></div>
-
-    <button class="modeChoiceButton" onclick="selectMode('online')">
-      だれかと
+  <div class="modeCards" aria-label="バトルモード選択">
+    <div class="modeCardsTop">
+      <button class="modeCard solo" onclick="openSoloSettings()">
+        <svg class="modeCardIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M12 3v3M8 3h8M5 10H3v7h2m14-7h2v7h-2"/><rect x="5" y="6" width="14" height="15" rx="3"/><path d="M8 16h8"/><circle cx="9" cy="11" r="1"/><circle cx="15" cy="11" r="1"/></svg>
+        <span class="modeCardCopy"><span class="modeCardCode">SOLO</span><span class="modeCardName">ひとりで</span><span class="modeCardNote">CPUとじっくり対戦</span></span>
+        <span class="modeCardArrow" aria-hidden="true">↗</span>
+      </button>
+      <button class="modeCard online" onclick="selectMode('online')">
+        <svg class="modeCardIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><path d="M3 12h18"/></svg>
+        <span class="modeCardCopy"><span class="modeCardCode">ONLINE</span><span class="modeCardName">だれかと</span><span class="modeCardNote">オンラインで腕試し</span></span>
+        <span class="modeCardArrow" aria-hidden="true">↗</span>
+      </button>
+    </div>
+    <button class="modeCard local" onclick="selectMode('offline')">
+      <svg class="modeCardIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 21v-3a6 6 0 0 1 12 0v3M16 5a3 3 0 0 1 0 6m2 3a5 5 0 0 1 3 4v3"/></svg>
+      <span class="modeCardCopy"><span class="modeCardName">2人で</span><span class="modeCardNote">同じ端末で対戦</span></span>
+      <span class="modeCardArrow" aria-hidden="true">→</span>
     </button>
   </div>
 
-  <button class="modeChoiceButton localModeButton" onclick="selectMode('offline')">2人で</button>
-
-  <button class="modeBottomButton" aria-label="TIPを開く" onclick="showScreen('tipScreen')">📣</button>
-  <button class="modeSquareButton" aria-label="称号の付け替え" onclick="openTitles()">□</button>
+  <button class="modeBottomButton modeUtility" aria-label="お知らせを開く" onclick="showScreen('tipScreen')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="m14 5 5-2v18l-5-2H5V5h9ZM5 9H2v6h3m3 4 1 3h4l-1-3M14 5v14"/></svg><span>お知らせ</span></button>
+  <button class="modeSquareButton modeUtility" aria-label="称号の付け替え" onclick="openTitles()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><circle cx="8" cy="10" r="2"/><path d="M4 17v-1a4 4 0 0 1 8 0v1m3-9h4m-4 4h4m-4 4h3"/></svg><span>称号</span></button>
 
 </div>
 
@@ -2207,16 +2214,23 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
 <div id="soloScreen" class="screen">
   <div class="screenTitle">ひとりで</div>
   <div class="settingsPanel">
-    <label>BOTの強さ<select id="botDifficulty"><option value="easy">弱い</option><option value="normal" selected>普通</option><option value="hard">強い</option></select></label>
+    <fieldset class="botDifficultyField"><legend>BOTの強さ</legend><div class="botDifficultyButtons" role="group" aria-label="BOTの強さ"><button type="button" data-bot-difficulty="easy" aria-pressed="false" onclick="setBotDifficulty('easy')">弱い</button><button type="button" data-bot-difficulty="normal" aria-pressed="true" onclick="setBotDifficulty('normal')">普通</button><button type="button" data-bot-difficulty="hard" aria-pressed="false" onclick="setBotDifficulty('hard')">強い</button></div></fieldset>
     <p id="botDifficultyNote" class="settingsNote">1手先を考えて行動します。</p>
-    <label>BOTの技<select id="botLoadout"><option value="random">おまかせ</option><option value="custom">自分で選ぶ</option></select></label>
-    <div id="botTechniqueSettings" hidden></div>
+    <div class="botLoadoutField"><span>BOTの技</span><button type="button" id="botLoadoutButton" aria-haspopup="dialog" aria-controls="botTechniqueDialog" onclick="openBotTechniquePicker()"><span id="botLoadoutLabel">お任せ</span><span aria-hidden="true">⌄</span></button><p id="botLoadoutSummary" class="settingsNote" hidden></p></div>
     <p class="settingsNote">あなたの技は、このあと選べます。</p>
     <div id="soloStatus" class="lobbyStatus" role="status"></div>
     <button id="soloStartButton" class="onlineMainButton" onclick="startSoloMatch()">技選択へ</button>
   </div>
   <button class="onlineBackButton" onclick="closeSoloSettings()">戻る</button>
 </div>
+<dialog id="botTechniqueDialog" aria-labelledby="botTechniqueTitle">
+  <form method="dialog" onsubmit="event.preventDefault();confirmBotTechniques()">
+    <div class="botPickerHeading"><h2 id="botTechniqueTitle">BOTの技</h2><button type="button" class="botPickerClose" aria-label="技選択を閉じる" onclick="closeBotTechniquePicker()">×</button></div>
+    <p id="botTechniqueCount" role="status" aria-live="polite">3つの技を選択 · 0 / 3</p>
+    <div id="botTechniqueSettings" class="botTechniqueGrid" role="group" aria-label="BOTの技を3つ選択"></div>
+    <div class="botPickerActions"><button type="button" onclick="useRandomBotTechniques()">お任せに戻す</button><button type="submit" id="botTechniqueApply" disabled>この3つに決定</button></div>
+  </form>
+</dialog>
 <div id="friendLobbyScreen" class="screen">
   <div class="screenTitle">友達対戦</div>
   <div id="friendLobbyStatus" class="lobbyStatus" role="status">部屋を選ぶか、新しく作ってください。</div>
@@ -2385,6 +2399,8 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
 
   <!-- 旧説明欄は互換用に残し、表示は技ボタン内へ統合 -->
   <div id="techDescription"></div>
+
+  <button id="techBackButton" class="onlineBackButton" onclick="backTechSelection()" hidden>戻る</button>
 
 </div>
 
@@ -2732,7 +2748,7 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
 <script src="titles-client.js?v=crown-prestige-1"></script>
 <script src="player-lightning.js?v=2"></script>
 <script src="bot-engine.js?v=punish-2"></script>
-<script src="bot-client.js?v=tech12-fix-1"></script>
+<script src="bot-client.js?v=mode-cards-1"></script>
 <script src="advanced/rules.js?v=late-skill-1"></script>
 <script src="room-rules.js?v=advanced-1"></script>
 <script src="ranked-client.js?v=neon-menu-1"></script>
@@ -3401,6 +3417,8 @@ function showTipPage(page){
 ========================= */
 
 function showScreen(id){
+  const techBack=document.getElementById('techBackButton');
+  if(techBack)techBack.hidden=id!=='techScreen'||gameMode!=='offline'||rankedActive;
   if(id!=="battleScreen")window.BattleInspector?.close();
   if(id!=="battleScreen"){window.AdvancedCutin?.cancel();window.BattleEffects?.cancel();}
   if(id!=="battleScreen")PlayerIntro.cancel();
@@ -3757,6 +3775,20 @@ function selectMode(mode){
   document.getElementById("techConfirmButton").textContent = "次へ";
   document.getElementById("techTitle").textContent = "1P：技選択";
   updateTechniqueDisplay();
+}
+
+function backTechSelection(){
+  if(rankedActive||gameMode!=="offline")return;
+  if(botMatch){openSoloSettings();return;}
+  if(selectingPlayer===2){
+    selectingPlayer=1;
+    document.getElementById("techTitle").textContent="1P：技選択";
+    document.getElementById("techConfirmButton").textContent="次へ";
+    updateTechniqueDisplay();
+    return;
+  }
+  gameMode=null;
+  showScreen("modeScreen");
 }
 
 
@@ -6921,3 +6953,4 @@ updateTechniqueDisplay();
 <script src="./pwa-register.js" defer></script>
 </body>
 </html>
+

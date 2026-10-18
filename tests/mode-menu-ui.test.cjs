@@ -1,0 +1,145 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
+const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
+const root=path.resolve(__dirname,'..');
+const html=fs.readFileSync(path.join(root,'index.html'),'utf8').replace(/<script\b[^>]*type="module"[^>]*>[\s\S]*?<\/script>/g,'').replace(/<script\b[^>]*src="\.\/pwa-register[^>]*><\/script>/g,'');
+const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.json':'application/json','.png':'image/png'};
+(async()=>{
+ const browser=await chromium.launch({headless:true,timeout:15000,...(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE?{executablePath:process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE}:{})});
+ try{
+  for(const [width,height] of [[1365,900],[390,844],[320,640],[844,390]]){
+   const page=await browser.newPage({viewport:{width,height}}),errors=[];
+   page.on('pageerror',error=>errors.push(error.message));
+   await page.route('**/*',async route=>{
+    const url=new URL(route.request().url());
+    if(url.hostname!=='psycho.test')return route.abort();
+    if(url.pathname==='/')return route.fulfill({contentType:'text/html',body:html});
+    const file=path.resolve(root,'.'+decodeURIComponent(url.pathname));
+    if(!file.startsWith(root+path.sep)||!fs.existsSync(file))return route.fulfill({status:404,body:''});
+    return route.fulfill({contentType:mime[path.extname(file)]||'application/octet-stream',body:fs.readFileSync(file)});
+   });
+   await page.goto('http://psycho.test/');
+   await page.evaluate(()=>{document.getElementById('openingTransition').remove();HTMLMediaElement.prototype.play=()=>Promise.resolve();showScreen('modeScreen');});
+   const fit=async selector=>{
+    const result=await page.locator(selector).evaluateAll(nodes=>nodes.map(node=>{const r=node.getBoundingClientRect();return {text:node.textContent.trim(),x:r.x,y:r.y,right:r.right,bottom:r.bottom,width:r.width,height:r.height};}));
+    assert(result.every(r=>r.x>=-1&&r.right<=width+1),JSON.stringify(result));
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'no horizontal overflow');
+    return result;
+   };
+   await fit('#modeScreen .modeCard,#modeScreen .modeUtility');
+   assert.equal(await page.locator('#modeScreen .modeCard').count(),3);
+   assert.doesNotMatch(await page.locator('#modeScreen').innerText(),/MODE SELECT|モードを選んでください|今日は、どの対戦/);
+   await page.getByRole('button',{name:'お知らせを開く',exact:true}).click();
+   assert.equal(await page.locator('#tipScreen').isVisible(),true);
+   await page.locator('#tipScreen .tipBackButton').click();
+   assert.equal(await page.locator('#modeScreen .modeSquareButton svg').count(),1);
+   await page.locator('#modeScreen .solo').click();
+   assert.equal(await page.locator('#soloScreen').isVisible(),true);
+   assert.equal(await page.locator('#botLoadoutLabel').textContent(),'お任せ');
+   assert.equal(await page.locator('[data-bot-difficulty]').count(),3);
+   for(const level of ['hard','normal','easy']){
+    await page.locator('[data-bot-difficulty="'+level+'"]').click();
+    assert.equal(await page.evaluate(()=>botSettings.difficulty),level);
+    assert.equal(await page.locator('[data-bot-difficulty][aria-pressed="true"]').count(),1);
+   }
+   await fit('#soloScreen .settingsPanel,[data-bot-difficulty]');
+   await page.locator('#botLoadoutButton').click();
+   assert.equal(await page.locator('#botTechniqueDialog').isVisible(),true);
+   assert.equal(await page.locator('#botTechniqueSettings input').count(),12);
+   assert.equal(await page.locator('#botTechniqueSettings input:checked').count(),0,'random does not imply a custom loadout');
+   assert.equal(await page.locator('#botTechniqueApply').isDisabled(),true);
+   assert.equal(await page.locator('#botTechniqueSettings img').count(),12);
+   await page.waitForFunction(()=>[...document.querySelectorAll('#botTechniqueSettings img')].every(img=>img.complete&&img.naturalWidth>0));
+   const names=await page.locator('.botTechniqueName').allTextContents();
+   assert.deepEqual(names,await page.evaluate(()=>techniquePool.map(tech=>tech.name)));
+   const boxes=await fit('#botTechniqueDialog,.botTechniqueChoice');
+   assert(boxes.slice(1).every(r=>r.width>=44&&r.height>=44),'touch targets');
+   const tiles=boxes.slice(1);
+   for(let index=0;index<tiles.length;index++)if(index%3!==2)assert(tiles[index].right<=tiles[index+1].x,'technique tiles must not overlap');
+   for(const index of [3,5,9])await page.locator('#botTechniqueSettings input[value="'+index+'"]').check();
+   assert.equal(await page.locator('#botTechniqueSettings input:disabled').count(),9,'only three techniques allowed');
+   assert.equal(await page.locator('#botTechniqueApply').isEnabled(),true);
+   await page.locator('#botTechniqueSettings input[value="5"]').uncheck();
+   assert.equal(await page.locator('#botTechniqueSettings input:disabled').count(),0);
+   assert.equal(await page.locator('#botTechniqueApply').isDisabled(),true);
+   await page.locator('#botTechniqueSettings input[value="5"]').check();
+   await page.locator('#botTechniqueApply').click();
+   assert.equal(await page.locator('#botTechniqueDialog').isVisible(),false);
+   assert.deepEqual(await page.evaluate(()=>botSettings.techniques),[3,9,5]);
+   assert.equal(await page.evaluate(()=>botSettings.loadout),'custom');
+   await page.locator('#botLoadoutButton').click();
+   await page.locator('#botTechniqueSettings input[value="3"]').uncheck();
+   await page.keyboard.press('Escape');
+   assert.deepEqual(await page.evaluate(()=>botSettings.techniques),[3,9,5],'Escape discards draft changes');
+   await page.locator('#botLoadoutButton').click();
+   assert.equal(await page.locator('#botTechniqueSettings input:checked').count(),3);
+   await page.getByRole('button',{name:'技選択を閉じる',exact:true}).click();
+   await page.locator('#soloStartButton').click();
+   assert.equal(await page.locator('#techScreen').isVisible(),true);
+   assert.deepEqual(await page.evaluate(()=>selectedTechniques[2]),[3,9,5],'chosen techniques reach the bot match');
+   await fit('#techScreen .techCard,#techConfirmButton,#techBackButton');
+   await page.locator('#techScreen .techArrow').first().click();
+   const own=await page.evaluate(()=>selectedTechniques[1].slice());
+   await page.locator('#techBackButton').click();
+   assert.equal(await page.locator('#soloScreen').isVisible(),true);
+   assert.equal(await page.evaluate(()=>botMatch),false,'returning stops the bot');
+   assert.equal(await page.evaluate(()=>botSettings.difficulty),'easy');
+   await page.locator('#botLoadoutButton').click();
+   await page.getByRole('button',{name:'お任せに戻す',exact:true}).click();
+   assert.equal(await page.locator('#botLoadoutLabel').textContent(),'お任せ');
+   await page.locator('#soloStartButton').click();
+   assert.deepEqual(await page.evaluate(()=>selectedTechniques[1]),own,'own selection survives settings round trip');
+   const random=await page.evaluate(()=>selectedTechniques[2]);
+   assert.equal(new Set(random).size,3);
+   assert(random.every(index=>index>=0&&index<12));
+   await page.locator('#techBackButton').click();
+   await page.locator('#soloScreen .onlineBackButton').click();
+   await page.locator('#modeScreen .local').click();
+   await page.locator('#techScreen .techArrow').first().click();
+   const first=await page.evaluate(()=>selectedTechniques[1].slice());
+   await page.locator('#techConfirmButton').click();
+   assert.equal(await page.evaluate(()=>selectingPlayer),2);
+   await page.locator('#techScreen .techArrow').first().click();
+   const second=await page.evaluate(()=>selectedTechniques[2].slice());
+   await page.locator('#techBackButton').click();
+   assert.equal(await page.evaluate(()=>selectingPlayer),1);
+   assert.deepEqual(await page.evaluate(()=>selectedTechniques[1]),first);
+   await page.locator('#techConfirmButton').click();
+   assert.deepEqual(await page.evaluate(()=>selectedTechniques[2]),second,'2P selection survives back and next');
+   await page.locator('#techBackButton').click();await page.locator('#techBackButton').click();
+   assert.equal(await page.locator('#modeScreen').isVisible(),true);
+   await page.evaluate(()=>{gameMode='online';showScreen('techScreen');});
+   assert.equal(await page.locator('#techBackButton').isVisible(),false,'no local back action in online matches');
+   await page.evaluate(()=>{gameMode='offline';rankedActive=true;showScreen('techScreen');});
+   assert.equal(await page.locator('#techBackButton').isVisible(),false,'no local back action in ranked matches');
+   await page.evaluate(()=>{rankedActive=false;gameMode=null;showScreen('modeScreen');});
+   if(width===390){
+    let requested,release;
+    const modelRequested=new Promise(resolve=>{requested=resolve;}),modelReleased=new Promise(resolve=>{release=resolve;});
+    await page.route('**/bot-model.json',async route=>{requested();await modelReleased;return route.fulfill({contentType:'application/json',body:fs.readFileSync(path.join(root,'bot-model.json'))});});
+    await page.evaluate(()=>{botKnowledge=null;openSoloSettings();setBotDifficulty('hard');});
+    await page.locator('#soloStartButton').click();await modelRequested;
+    assert.equal(await page.locator('[data-bot-difficulty]:disabled').count(),3);
+    assert.equal(await page.locator('#botLoadoutButton').isDisabled(),true,'loading freezes loadout changes');
+    await page.locator('#soloScreen .onlineBackButton').click();release();
+    await page.waitForFunction(()=>!soloLoading);
+    assert.equal(await page.locator('#modeScreen').isVisible(),true,'a late load must not reopen technique selection after Back');
+    assert.equal(await page.evaluate(()=>botMatch),false);
+    await page.evaluate(()=>{openSoloSettings();setBotDifficulty('normal');});
+    await page.locator('#soloStartButton').click();
+    assert.equal(await page.locator('#techScreen').isVisible(),true,'normal AI starts with the loaded model');
+    await page.locator('#techBackButton').click();await page.locator('#soloScreen .onlineBackButton').click();
+   }
+   if(process.env.MODE_SCREENSHOTS&&width===390){
+    fs.mkdirSync(process.env.MODE_SCREENSHOTS,{recursive:true});
+    await page.screenshot({path:path.join(process.env.MODE_SCREENSHOTS,'mode-cards-mobile.png'),fullPage:true});
+    await page.locator('#modeScreen .solo').click();
+    await page.screenshot({path:path.join(process.env.MODE_SCREENSHOTS,'solo-settings-mobile.png'),fullPage:true});
+    await page.locator('#botLoadoutButton').click();
+    await page.screenshot({path:path.join(process.env.MODE_SCREENSHOTS,'bot-techniques-mobile.png'),fullPage:true});
+   }
+   assert.deepEqual(errors,[]);
+   console.log('PASS '+width+'x'+height+': mode cards, labels, difficulty, all 12 icons, exact-three draft/confirm/cancel, random, retained settings and back navigation');
+   await page.close();
+  }
+ }finally{await browser.close();}
+})().catch(error=>{console.error(error);process.exitCode=1;});
