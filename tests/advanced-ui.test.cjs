@@ -4,6 +4,7 @@ const root=path.resolve(__dirname,'..'),read=p=>fs.readFileSync(path.join(root,p
 const confirm=ranked.slice(ranked.indexOf('async function rankedConfirm(){'),ranked.indexOf('async function rankedChoose('));
 const fixture=html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g,'').replace(/<link[^>]*>/g,'').replace('</head>','<style>'+read('advanced/advanced.css')+read('advanced/button-art.css')+read('battle-action-art.css')+read('battle-inspector.css')+'</style></head>');
 const layout=page=>page.evaluate(()=>({boxes:['battleScreen','battleCenter','player1Area','player2Area','countdown','battleInspectorToggle'].map(id=>{const r=document.getElementById(id).getBoundingClientRect();return [id,r.x,r.y,r.width,r.height];}),scroll:[scrollX,scrollY,document.documentElement.scrollWidth,document.documentElement.scrollHeight]}));
+const pageTop=(page,selector)=>page.locator(selector).evaluate(n=>n.getBoundingClientRect().top+scrollY);
 function assertStable(before,after,label){for(let i=0;i<before.boxes.length;i++){assert.equal(before.boxes[i][0],after.boxes[i][0]);for(let j=1;j<5;j++)assert(Math.abs(before.boxes[i][j]-after.boxes[i][j])<1,label+': '+before.boxes[i][0]+' moved or resized');}assert.deepEqual(after.scroll,before.scroll,label+': scroll position or document size changed');}
 (async()=>{
  const browser=await chromium.launch({headless:true,timeout:12000,...(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE?{executablePath:process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE}:{})});
@@ -46,6 +47,13 @@ function assertStable(before,after,label){for(let i=0;i<before.boxes.length;i++)
    assert.equal(h.get('freeGames/'+id+'/advanced/selected/1'),'boost');
    const start=(await h.transports[1]({op:'loadout',matchId:id,loadout:[0,1,2],advancedSkill:'heal'})).match;
    await page.evaluate(m=>rankedApply({...m,you:1}),start);
+   if(height>680||width<640){
+    const top=width>1100?16:12;
+    assert.equal(await pageTop(page,'#player2Area'),top,'no empty header space remains above the opponent');
+    await page.evaluate(()=>document.body.classList.add('hasRoomCode'));
+    assert.equal(await pageTop(page,'#player2Area'),width>1100?64:62,'legacy room-code header still has space');
+    await page.evaluate(()=>document.body.classList.remove('hasRoomCode'));
+   }
    assert.equal(await page.locator('#advancedSkillWindow').isVisible(),false);
    assert.equal(await page.locator('#advancedSkillButton').isDisabled(),true);
    assert.equal((await page.locator('#advancedSkillButton').boundingBox()).width,56,'normal size outside the skill window');
@@ -118,6 +126,7 @@ function assertStable(before,after,label){for(let i=0;i<before.boxes.length;i++)
    const second=await page.locator('#player2Area').boundingBox(),secondOrb=await page.locator('#advancedSkillButton').boundingBox(),secondLens=await page.locator('#battleInspectorToggle').boundingBox();
    assert(Math.abs(secondOrb.x+secondOrb.width-second.x-second.width)<2,'player 2 skill follows their own panel');
    const secondEnemy=await page.locator('#player1Area').boundingBox();
+   if(height>680||width<640)assert.equal(await pageTop(page,'#player1Area'),width>1100?16:12,'player 2 view also removes the empty header space');
    assert(Math.abs(secondLens.x+secondLens.width-secondEnemy.x-secondEnemy.width)<4,'player 2 inspector follows the opponent right');
    assert(Math.abs(secondLens.y-secondEnemy.y-secondEnemy.height-5)<2,'player 2 inspector stays below the opponent');
    await page.evaluate(()=>{document.getElementById('countdown').textContent='';window.AdvancedSkills.sync(rankedMatch,rankedMatch.skillWindow.startAt);});
@@ -140,6 +149,12 @@ function assertStable(before,after,label){for(let i=0;i<before.boxes.length;i++)
    const standardEnemy=await page.locator('#player1Area').boundingBox(),standardLens=await page.locator('#battleInspectorToggle').boundingBox();
    assert(Math.abs(standardLens.x+standardLens.width-standardEnemy.x-standardEnemy.width)<4,'Standard inspector anchors at the opponent right');
    assert(Math.abs(standardLens.y-standardEnemy.y-standardEnemy.height-5)<2,'Standard inspector stays below the opponent');
+   if(height>680||width<640){
+    assert.equal(await pageTop(page,'#player1Area'),width>1100?16:12,'Standard also removes the empty header space');
+    await page.evaluate(()=>{document.getElementById('battleScreen').classList.add('spectatorMode');document.getElementById('battleScreen').style.setProperty('--safe-top','20px');});
+    assert.equal(await pageTop(page,'#player1Area'),(width>1100?64:62)+20,'spectator header and safe-area inset are preserved');
+    await page.evaluate(()=>{document.getElementById('battleScreen').classList.remove('spectatorMode');document.getElementById('battleScreen').style.removeProperty('--safe-top');});
+   }
    await page.evaluate(()=>{window.AdvancedSkills.sync({...rankedMatch,roomRules:{mode:'advanced'}},rankedMatch.skillWindow.startAt);window.AdvancedSkills.reset();});
    assert.equal(await page.locator('#battleHomeButton').isVisible(),true,'reset restores the home button even during the skill window');
    assert.deepEqual(errors,[]);await page.close();
