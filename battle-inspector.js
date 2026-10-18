@@ -31,12 +31,13 @@
  function update(next){
   const enabled=!!next.enabled&&[1,2].includes(next.side)&&[1,2].every(p=>next.loadouts?.[p]?.length===3);
   state={...next,enabled};
-  const nextArea=enabled?document.getElementById('player'+next.side+'Area'):null;
+  const nextArea=enabled?document.getElementById('player'+(3-next.side)+'Area'):null;
   if(nextArea!==area){if(area)area.classList.remove('has-battle-inspector');area=nextArea;}
   button.hidden=!enabled;
   document.body.classList.toggle('battle-inspector-visible',enabled);
   if(!enabled){close();return;}
   area.classList.add('has-battle-inspector');
+  if(button.parentElement!==area)area.append(button);
   button.dataset.player=String(next.side);
   const nextKey=JSON.stringify([next.side,next.loadouts,next.names]);if(open&&nextKey!==key)render();key=nextKey;
  }

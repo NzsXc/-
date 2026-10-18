@@ -39,7 +39,8 @@
    windowPanel=node('section','advancedSkillWindow');windowPanel.id='advancedSkillWindow';windowPanel.setAttribute('aria-label','スキル選択猶予');
    const heading=node('div','advancedSkillWindowHeading');heading.append(node('strong',null,'スキル選択猶予'),node('span','advancedSkillSeconds'));
    const track=node('div','advancedSkillTrack'),fill=node('div','advancedSkillFill');track.setAttribute('role','progressbar');track.setAttribute('aria-label','スキル選択猶予の残り時間');track.setAttribute('aria-valuemin','0');track.setAttribute('aria-valuemax',String(window.AdvancedRules.WINDOW_MS/1000));track.append(fill);
-   windowPanel.append(heading,track);document.getElementById('battleCenter').append(windowPanel);
+   const controls=node('div','advancedBattleControls');
+   windowPanel.append(heading,track);controls.append(document.getElementById('battleHomeButton'),windowPanel);document.getElementById('battleCenter').append(controls);
   }
  }
  const artParts={boost:['energy-halo','battery','bolt','spark s1','spark s2'],heal:['heal-pulse','medical-cross','mote m1','mote m2','mote m3'],chain:['chain-link link-a','chain-link link-b','break-flash','break-ray ray-a','break-ray ray-b'],cleanse:['cleanse-orbit orbit-a','cleanse-orbit orbit-b','cleanse-core','cleanse-star','debris'],invincible:['star-glow','invincible-star','star-gleam','star-spark']};
@@ -61,11 +62,12 @@
  function sync(m,now){
   const enabled=advanced(m)&&!!m.state,screen=document.getElementById('battleScreen');
   screen?.classList.toggle('advancedMode',enabled);
-  if(!enabled){window.AdvancedCutin?.cancel();current=null;if(dock)dock.hidden=true;if(enemyDock)enemyDock.hidden=true;if(windowPanel)windowPanel.hidden=true;if(!advanced(m)&&selection){selection.hidden=true;document.getElementById('techScreen')?.classList.remove('advancedSelection');}return;}
+  if(!enabled){screen?.classList.remove('advancedSkillChoosing');window.AdvancedCutin?.cancel();current=null;if(dock)dock.hidden=true;if(enemyDock)enemyDock.hidden=true;if(windowPanel)windowPanel.hidden=true;if(!advanced(m)&&selection){selection.hidden=true;document.getElementById('techScreen')?.classList.remove('advancedSelection');}return;}
   current=m;ensureBattle();dock.hidden=false;enemyDock.hidden=false;
   const you=m.you,skill=window.AdvancedRules.byId[m.advanced?.selected?.[you]],other=window.AdvancedRules.byId[m.advanced?.selected?.[3-you]],used=m.advanced?.current?.[you]?.used||0;
   const duration=window.AdvancedRules.WINDOW_MS,ends=m.skillWindow?.endAt??m.opensAt,starts=m.skillWindow?.startAt??ends-duration,open=!m.closed&&!rankedAnimating&&now>=starts&&now<ends;
   if(open)PlayerIntro.cancel();windowPanel.hidden=!open;
+  screen.classList.toggle('advancedSkillChoosing',open);
   dock.classList.toggle('skillWindowOpen',open);enemyDock.classList.toggle('skillWindowOpen',open);
   if(open){const left=Math.max(0,Math.min(duration/1000,(ends-now)/1000));windowPanel.querySelector('.advancedSkillSeconds').textContent=left.toFixed(1)+'秒';windowPanel.querySelector('.advancedSkillFill').style.transform='scaleX('+(left*1000/duration)+')';windowPanel.querySelector('[role="progressbar"]').setAttribute('aria-valuenow',left.toFixed(2));}
   const button=dock.querySelector('button');button.disabled=!open||sending||!skill||used>=skill.limit||!!window.AdvancedRules.forTurn(m.advanced,m.state.turn)[you];
@@ -98,6 +100,6 @@
   const receipts=window.AdvancedRules.forTurn(m.advanced,turn);
   return [1,2].flatMap(player=>{const id=m.advanced?.selected?.[player],skill=window.AdvancedRules.byId[id];return skill&&receipts[player]?.id===id?[{player,id,name:skill.name,description:skill.description,turn,used:receipts[player].used}]:[];});
  }
- function reset(){window.AdvancedCutin?.reset();epoch++;sending=false;current=null;choices.clear();if(selection)selection.hidden=true;if(dock)dock.hidden=true;if(enemyDock)enemyDock.hidden=true;if(windowPanel)windowPanel.hidden=true;document.getElementById('battleScreen')?.classList.remove('advancedMode');document.getElementById('techScreen')?.classList.remove('advancedSelection');}
+ function reset(){window.AdvancedCutin?.reset();epoch++;sending=false;current=null;choices.clear();if(selection)selection.hidden=true;if(dock)dock.hidden=true;if(enemyDock)enemyDock.hidden=true;if(windowPanel)windowPanel.hidden=true;document.getElementById('battleScreen')?.classList.remove('advancedMode','advancedSkillChoosing');document.getElementById('techScreen')?.classList.remove('advancedSelection');}
  window.AdvancedSkills={select,ready,loadout,sync,reset,usedForTurn};
 })();
