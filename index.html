@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="battle-history.css?v=history-2">
 <link rel="stylesheet" href="advanced/advanced.css?v=battle-layout-1">
 <link rel="stylesheet" href="advanced/button-art.css?v=skill-cutin-1">
-<link rel="stylesheet" href="advanced/cutin.css?v=skill-cutin-1">
+<link rel="stylesheet" href="advanced/cutin.css?v=local-cutin-2">
 
 <style>
 
@@ -1773,6 +1773,7 @@ button{min-height:44px;}
 }
 #roomCodeButton:active{transform:translateY(1px);}
 #battleScreen{
+  --battle-top-gap:16px;
   display:none;
   min-height:max(720px,100vh);
   min-height:max(720px,100dvh);
@@ -1780,13 +1781,14 @@ button{min-height:44px;}
   overflow:hidden;
 }
 #battleScreen.active{display:block;}
+body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px;}
 .playerArea{width:320px;max-width:calc(100% - 24px);min-width:0;padding:12px;}
 #player1Area{left:calc(16px + var(--safe-left));bottom:calc(16px + var(--safe-bottom));}
-#player2Area{right:calc(16px + var(--safe-right));top:calc(64px + var(--safe-top));}
+#player2Area{right:calc(16px + var(--safe-right));top:calc(var(--battle-top-gap) + var(--safe-top));}
 #battleScreen[data-local-player="1"] #player2Area .actionList,
 #battleScreen[data-local-player="2"] #player1Area .actionList{display:none;}
 #battleScreen[data-local-player="2"] #player2Area{left:calc(16px + var(--safe-left));bottom:calc(16px + var(--safe-bottom));right:auto;top:auto;}
-#battleScreen[data-local-player="2"] #player1Area{right:calc(16px + var(--safe-right));top:calc(64px + var(--safe-top));left:auto;bottom:auto;}
+#battleScreen[data-local-player="2"] #player1Area{right:calc(16px + var(--safe-right));top:calc(var(--battle-top-gap) + var(--safe-top));left:auto;bottom:auto;}
 .playerHeader{min-width:0;min-height:27px;margin-bottom:7px;}
 .playerName{display:flex;align-items:center;gap:8px;min-width:0;max-width:100%;font-size:20px;letter-spacing:1px;}
 .playerNameText{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
@@ -1847,10 +1849,12 @@ button{min-height:44px;}
 /* Compact screens use document flow so controls can never be clipped by browser bars. */
 @media(max-width:1100px),(max-height:680px){
   #battleScreen{
+    --battle-top-gap:12px;
     min-height:100vh;
     min-height:100dvh;
-    padding:calc(62px + var(--safe-top)) calc(12px + var(--safe-right)) calc(12px + var(--safe-bottom)) calc(12px + var(--safe-left));
+    padding:calc(var(--battle-top-gap) + var(--safe-top)) calc(12px + var(--safe-right)) calc(12px + var(--safe-bottom)) calc(12px + var(--safe-left));
   }
+  body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:62px;}
   #battleScreen.active{
     display:grid;
     grid-template-columns:minmax(0,1fr);
@@ -2727,7 +2731,7 @@ button{min-height:44px;}
 <script src="room-rules.js?v=advanced-1"></script>
 <script src="ranked-client.js?v=skill-cutin-1"></script>
 <script src="advanced/client.js?v=battle-layout-1"></script>
-<script src="advanced/cutin.js?v=skill-cutin-1"></script>
+<script src="advanced/cutin.js?v=local-cutin-2"></script>
 <script src="battle-inspector.js?v=battle-layout-1"></script>
 <script src="lobby-client.js?v=advanced-1"></script>
 <script src="battle-action-art.js?v=confirmed-1"></script>
@@ -6716,7 +6720,7 @@ function startMenuBGM(){
   const audio=document.getElementById("menuBGM");
   if(!audio || document.getElementById("battleScreen")?.classList.contains("active"))return;
   audio.loop=true;
-  audio.volume=0.26;
+  audio.volume=0.208;
   if(!audio.paused)return;
   const promise=audio.play();
   if(promise && typeof promise.catch==="function")promise.catch(()=>{});
@@ -6733,7 +6737,7 @@ function startBattleBGM(){
   if(!audio)return;
 
   audio.loop=true;
-  audio.volume=0.30;
+  audio.volume=0.24;
 
   // すでに再生中なら頭出しせず、そのまま続ける
   if(!audio.paused)return;

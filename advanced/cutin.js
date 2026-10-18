@@ -7,6 +7,7 @@
  let root=null,key='',phase='',signature='',ownsEffect=false;
  const sounded=new Set();
  const node=(tag,cls,text)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(text!=null)n.textContent=text;return n;};
+ const playerName=(m,side)=>String(m.players?.[side]?.name||(side===m.you?'自分':'相手'));
  function ensure(){
   if(root)return;
   root=node('section');root.id='advancedSkillPresentation';root.hidden=true;root.setAttribute('role','status');root.setAttribute('aria-live','polite');root.setAttribute('aria-label','スキル公開');
@@ -18,11 +19,12 @@
  function reset(){cancel();sounded.clear();}
  function drawPanels(used,m,elapsed){
   const layer=root.querySelector('.cutin-layer');layer.classList.toggle('pair',used.length===2);layer.replaceChildren();
-  for(const [index,skill]of used.entries()){
-   const panel=node('section','comic-panel '+(index===0?'panel-self':'panel-enemy'));panel.dataset.player=skill.player;panel.style.setProperty('--accent',colors[skill.id]);panel.classList.toggle('long-title',skill.name.length>=5);
+  for(const skill of used){
+   const panel=node('section','comic-panel '+(skill.player===m.you?'panel-self':'panel-enemy'));panel.dataset.player=skill.player;panel.style.setProperty('--accent',colors[skill.id]);panel.classList.toggle('long-title',skill.name.length>=5);
    const frame=node('div','comic-frame'),paper=node('div','comic-paper'),inner=node('div','comic-inner'),drawing=node('div','panel-art'),copy=node('div','panel-copy');drawing.setAttribute('aria-hidden','true');
    for(const cls of art[skill.id]||[])drawing.append(node('i',cls));
-   copy.append(node('div','panel-owner',skill.player+'P · スキル発動'),node('h2',null,skill.name),node('div','panel-effect',effects[skill.id]));inner.append(node('div','speed-ink'),drawing,copy);paper.append(inner);panel.append(frame,paper);layer.append(panel);
+   const owner=node('div','panel-owner'),name=node('span','panel-player-name',playerName(m,skill.player));name.title=name.textContent;owner.append(name,node('span','panel-owner-label','スキル発動'));
+   copy.append(owner,node('h2',null,skill.name),node('div','panel-effect',effects[skill.id]));inner.append(node('div','speed-ink'),drawing,copy);paper.append(inner);panel.append(frame,paper);layer.append(panel);
   }
   layer.style.animationDelay=-elapsed+'ms';
  }
@@ -45,7 +47,7 @@
   const used=window.AdvancedSkills.usedForTurn(m),start=m.skillWindow.endAt,end=start+window.AdvancedRules.presentationMs(m.advanced,m.state.turn);
   // Wait for a server snapshot at/after the deadline: it includes last-moment uses.
   if(!used.length||now<start||now>=end||m.serverNow<start){if(key)cancel();return;}
-  ensure();const nextKey=m.id+':'+m.state.turn,nextPhase=now<start+window.AdvancedRules.CUTIN_MS?'cutin':'effects',nextSignature=used.map(s=>s.player+':'+s.id).join(',');
+  ensure();const nextKey=m.id+':'+m.state.turn,nextPhase=now<start+window.AdvancedRules.CUTIN_MS?'cutin':'effects',nextSignature=JSON.stringify([m.you,used.map(s=>[s.player,s.id,playerName(m,s.player)])]);
   if(key!==nextKey){cancel();key=nextKey;root.hidden=false;}
   const changed=phase!==nextPhase,updated=signature!==nextSignature;phase=nextPhase;signature=nextSignature;root.hidden=false;root.classList.toggle('effects-phase',phase==='effects');
   for(const selector of ['.scene-dim','.motion-streaks','.cutin-layer'])root.querySelector(selector).hidden=phase!=='cutin';root.querySelector('.post-effect-stage').hidden=phase!=='effects';
