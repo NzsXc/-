@@ -2751,7 +2751,7 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
 <script src="bot-client.js?v=mode-cards-1"></script>
 <script src="advanced/rules.js?v=attack-stance-1"></script>
 <script src="room-rules.js?v=advanced-1"></script>
-<script src="ranked-client.js?v=neon-menu-1"></script>
+<script src="ranked-client.js?v=reveal-audio-1"></script>
 <script src="advanced/client.js?v=attack-stance-1"></script>
 <script src="advanced/cutin.js?v=attack-stance-1"></script>
 <script src="battle-inspector.js?v=battle-layout-1"></script>
@@ -3462,11 +3462,14 @@ let spectatorRoomsListener = null;
 
 let spectatorSession=0;
 let spectatorCountdownKey="";
+let spectatorVisualTurn=0,spectatorPendingBattleState=null;
 
 function clearSpectatorTimers(){
   ["_spectatorStartTimer","_spectatorCountdownTimer","_spectatorTechniqueRevealTimer","_spectatorEffectStartTimer"]
     .forEach(key=>clearTimeout(window[key]));
   spectatorCountdownKey="";
+  spectatorVisualTurn=0;spectatorPendingBattleState=null;
+  stopTurnCountdownSE();
 }
 
 async function openSpectatorList(){
@@ -3635,6 +3638,10 @@ function applySpectatorState(state){
 function receiveSpectatorBattleState(state,roomData){
   if(!spectatorActive || !state)return;
   const turn=Number(state.turn||0);
+  if(spectatorVisualTurn && (turn>spectatorVisualTurn || turn===spectatorVisualTurn && state.phase==="finished")){
+    if(turn>=Number(spectatorPendingBattleState?.turn||0))spectatorPendingBattleState=state;
+    return;
+  }
   if(turn<Number(window._lastSpectatorStateTurn||0))return;
   window._lastSpectatorStateTurn=turn;
   if(turn)onlineTurnNumber=turn;
@@ -3664,13 +3671,12 @@ function receiveSpectatorBattleState(state,roomData){
     const effectStartAt=Number(state.effectStartAt||revealAt+ONLINE_REVEAL_MS);
     // 演出途中から入室した場合は現在の確定値を表示する。
     if(effectStartAt+1800<now){applySpectatorState(state);return;}
+    spectatorVisualTurn=turn;
     const scheduledReveal=effectStartAt<=now?now+30:revealAt;
-    const scheduledEffect=effectStartAt<=now?scheduledReveal+ONLINE_REVEAL_MS:effectStartAt;
     window._spectatorTechniqueRevealTimer=setTimeout(()=>{
       if(session!==spectatorSession || !spectatorActive || onlineTurnNumber!==turn)return;
       showTechniqueReveal(a1,a2);
-    },Math.max(0,scheduledReveal-onlineNow()));
-    window._spectatorEffectStartTimer=setTimeout(()=>{
+      window._spectatorEffectStartTimer=setTimeout(()=>{
       if(session!==spectatorSession || !spectatorActive || onlineTurnNumber!==turn)return;
       clearOnlineTechniqueDescription();
       const effectA1=state.resolvedActions?.[1] || a1;
@@ -3680,8 +3686,12 @@ function receiveSpectatorBattleState(state,roomData){
         if(session!==spectatorSession || !spectatorActive || onlineTurnNumber!==turn)return;
         applySpectatorState(state);
         if(state.result)showBattleResult(state.result);
+        spectatorVisualTurn=0;
+        const pending=spectatorPendingBattleState;spectatorPendingBattleState=null;
+        if(pending)receiveSpectatorBattleState(pending,roomData);
       },Number(state.damageTo1||0),Number(state.damageTo2||0),true);
-    },Math.max(0,scheduledEffect-onlineNow()));
+      },Math.max(ONLINE_REVEAL_MS,effectStartAt-onlineNow()));
+    },Math.max(0,scheduledReveal-onlineNow()));
     return;
   }
   if(state.phase==="finished"){
@@ -3703,6 +3713,7 @@ function beginSpectatorCountdown(startAt){
     const ms=Number(startAt)-onlineNow();
     el.textContent=ms>0?String(Math.min(3,Math.ceil(ms/1000))):"BATTLE!";
     el.className=ms>0?"countPulse":"battleCall";
+    if(ms>0)startTurnCountdownSE();else stopTurnCountdownSE();
     if(ms>0)window._spectatorCountdownTimer=setTimeout(tick,Math.min(1000,ms));
   };
   tick();
@@ -3901,6 +3912,7 @@ const ONLINE_NEXT_TURN_LEAD_MS = 1500;
 let onlineTechniquePreviewId = null;
 let onlineInputTurn = 0;
 let onlineInputOpen = false;
+let onlineVisualTurn=0,onlinePendingBattleState=null;
 let onlinePendingAction = null;
 let onlineActionAcknowledged = false;
 let onlineActionSendFailed = false;
@@ -3921,6 +3933,7 @@ function resetOnlineMatchState(){
   onlineMatchSession++;
   onlineInputTurn=0;
   onlineInputOpen=false;
+  onlineVisualTurn=0;onlinePendingBattleState=null;
   onlinePendingAction=null;
   onlineActionAcknowledged=false;
   onlineActionSendFailed=false;
@@ -4105,12 +4118,14 @@ function beginOnlineBattleCountdown(startAt){
       // 10秒入力がすでに終了した端末では、遅れて届いた3秒状態で表示を戻さない。
       if(inputDeadline && performance.now() >= inputDeadline){
         countdown=0;
+        stopTurnCountdownSE();
         onlineTurnPhase="resolving";
         if(el){el.className="battleCall";el.textContent="BATTLE!";}
         if(window.onlineBattle.localPlayer===1 && selectedAction[1] && selectedAction[2])finishTurn();
         return;
       }
       countdown=Math.min(3,Math.ceil(remainingMs/1000));
+      startTurnCountdownSE();
       show(countdown);
       countdownTimer = setTimeout(tick, Math.max(50, remainingMs % 1000 || 50));
       return;
@@ -4118,6 +4133,7 @@ function beginOnlineBattleCountdown(startAt){
 
     countdownTimer = null;
     countdown = 0;
+    stopTurnCountdownSE();
     onlineTurnPhase = "resolving";
 
     if(el){
@@ -4197,6 +4213,11 @@ function applyOnlineBlockSealState(nextSeal){
 function receiveOnlineBattleState(state){
   if(gameMode !== "online" || !state) return;
   const turn=Number(state.turn||0);
+  // A faster peer can publish the next turn while this client is still revealing.
+  if(onlineVisualTurn && (turn>onlineVisualTurn || turn===onlineVisualTurn && state.phase==="finished")){
+    if(turn>=Number(onlinePendingBattleState?.turn||0))onlinePendingBattleState=state;
+    return;
+  }
   if(!turn || turn<onlineTurnNumber) return;
   if(turn>onlineTurnNumber){
     onlineInputOpen=false;
@@ -4262,15 +4283,14 @@ function receiveOnlineBattleState(state){
 
     applyOnlineBlockSealState(state.blockSeal);
 
-    // 技公開も演出もFirebaseが配信した共通の絶対時刻で再生する。
-    // 1Pだけ先にローカル再生する経路をなくし、2Pの技公開抜け・遅延を防ぐ。
+    // Start from the shared clock, but retain the full reveal duration if late.
     const revealAt = Number(state.revealAt || (onlineNow()+ONLINE_EFFECT_LEAD_MS));
     const effectStartAt = Number(state.effectStartAt || (revealAt+ONLINE_REVEAL_MS));
     // 想定以上の遅延で開始時刻を過ぎていた場合も、公開と演出を同じ瞬間に
     // 潰さず、2P側では公開時間を確保してから再生する。
     const receivedAt=onlineNow();
     const scheduleRevealAt=effectStartAt<=receivedAt ? receivedAt+50 : revealAt;
-    const scheduleEffectAt=effectStartAt<=receivedAt ? scheduleRevealAt+ONLINE_REVEAL_MS : effectStartAt;
+    onlineVisualTurn=turn;
 
     clearTimeout(window._onlineTechniqueRevealTimeout);
     clearTimeout(window._onlineEffectStartTimeout);
@@ -4278,9 +4298,7 @@ function receiveOnlineBattleState(state){
     window._onlineTechniqueRevealTimeout=setTimeout(()=>{
       if(session!==onlineMatchSession || gameMode!=="online" || Number(onlineTurnNumber)!==Number(state.turn))return;
       showTechniqueReveal(a1.data,a2.data);
-    },Math.max(0,scheduleRevealAt-onlineNow()));
-
-    window._onlineEffectStartTimeout=setTimeout(()=>{
+      window._onlineEffectStartTimeout=setTimeout(()=>{
       if(session!==onlineMatchSession || gameMode!=="online" || Number(onlineTurnNumber)!==Number(state.turn))return;
       clearOnlineTechniqueDescription();
       const resolved1=state.resolvedActions?.[1] || a1.data;
@@ -4305,6 +4323,9 @@ function receiveOnlineBattleState(state){
           momentumBonus=state.momentumBonus||momentumBonus;
           applyOnlineBlockSealState(state.blockSeal);
           updateBattleUI();
+          onlineVisualTurn=0;
+          const pending=onlinePendingBattleState;onlinePendingBattleState=null;
+          if(pending){receiveOnlineBattleState(pending);return;}
 
           // 次ターンの開始はここでは行わない。
           // P1/P2ともFirebaseのbattle状態を受信し、同じstartAtでstartTurn()する。
@@ -4362,7 +4383,8 @@ if(resolved2.skill === "tech6"){
         Number(state.damageTo1||0),
         Number(state.damageTo2||0)
       );
-    },Math.max(0,scheduleEffectAt-onlineNow()));
+      },Math.max(ONLINE_REVEAL_MS,effectStartAt-onlineNow()));
+    },Math.max(0,scheduleRevealAt-onlineNow()));
     return;
   }
 
@@ -4744,31 +4766,33 @@ function stopCountdownRing(){
 
 function startTurnCountdownSE(){
   const audio=document.getElementById("turnCountdownSE");
-  if(!audio)return;
-  if(battleSEContext){
-    if(countdownSESource || countdownSEPending)return;
-    countdownSEPending=true;
-    const generation=++countdownSEGeneration,context=battleSEContext;
-    Promise.resolve(battleSEResume).then(()=>loadBattleSEBuffer(audio)).then(buffer=>{
-      if(generation!==countdownSEGeneration)return;
+  if(!audio || countdownSESource || countdownSEPending || !audio.paused || performance.now()<countdownSERetryAt)return;
+  countdownSEPending=true;
+  const generation=++countdownSEGeneration,context=battleSEContext;
+  const valid=()=>generation===countdownSEGeneration;
+  const fallback=()=>{
+    if(!valid())return;
+    return playBattleSEElement(audio,.28,true);
+  };
+  const job=context?Promise.all([loadBattleSEBuffer(audio),ensureBattleSEContext(context)]).then(([buffer])=>{
+      if(!valid())return;
       if(context.state!=="running")throw Error("カウント音声が停止中です");
       const source=context.createBufferSource(),gain=context.createGain();
       source.buffer=buffer;source.loop=true;gain.gain.value=.28;
       source.connect(gain);gain.connect(context.destination);
       source.onended=()=>{source.disconnect();gain.disconnect();if(countdownSESource===source)countdownSESource=null;};
-      countdownSESource=source;source.start(0);
-    }).catch(error=>{if(generation===countdownSEGeneration)console.warn("カウント音声の再生失敗",error);}).finally(()=>{if(generation===countdownSEGeneration)countdownSEPending=false;});
-    return;
-  }
-  audio.loop=true;
-  audio.volume=0.28;
-  if(!audio.paused)return;
-  const promise=audio.play();
-  if(promise && typeof promise.catch==="function") promise.catch(()=>{});
+      source.start(0);countdownSESource=source;
+    }).catch(fallback):Promise.resolve().then(fallback);
+  job.catch(error=>{
+    if(valid()){
+      countdownSERetryAt=performance.now()+1000;
+      console.warn("カウント音声の再生失敗",error);
+    }
+  }).finally(()=>{if(valid())countdownSEPending=false;});
 }
 
 function stopTurnCountdownSE(){
-  countdownSEGeneration++;countdownSEPending=false;
+  countdownSEGeneration++;countdownSEPending=false;countdownSERetryAt=0;
   if(countdownSESource){const source=countdownSESource;countdownSESource=null;try{source.stop();}catch(_){}}
   const audio=document.getElementById("turnCountdownSE");
   if(!audio)return;
@@ -5589,8 +5613,8 @@ if(e2.skill === "tech6"){
 // One AudioContext is unlocked by a tap; delayed battle effects share it.
 let battleSEUnlocked=false;
 let battleSEContext=null;
-let battleSEResume=null;
 let countdownSEGeneration=0,countdownSESource=null,countdownSEPending=false;
+let countdownSERetryAt=0;
 const battleSEBuffers=new Map();
 
 function loadBattleSEBuffer(el){
@@ -5609,6 +5633,29 @@ function loadBattleSEBuffer(el){
   return job;
 }
 
+// A browser may leave resume() pending while the page is interrupted. Bound the
+// wait so an existing AudioContext cannot disable the media-element fallback.
+function ensureBattleSEContext(context){
+  if(context.state==="running")return Promise.resolve();
+  if(context.state==="closed")return Promise.reject(Error("SE音声は終了しています"));
+  let timer;
+  const resumed=Promise.resolve().then(()=>{
+    if(context.state==="running")return;
+    return context.resume();
+  }).then(()=>{
+    if(context.state!=="running")throw Error("SE音声が停止中です");
+  });
+  const timeout=new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error("SE音声の再開待ち")),200);});
+  return Promise.race([resumed,timeout]).finally(()=>clearTimeout(timer));
+}
+
+function playBattleSEElement(el,volume,loop=false){
+  try{
+    el.muted=false;el.volume=volume;el.loop=loop;el.currentTime=0;
+    return Promise.resolve(el.play());
+  }catch(error){return Promise.reject(error);}
+}
+
 function unlockBattleSE(){
   const AudioContextClass=window.AudioContext || window.webkitAudioContext;
   if(!AudioContextClass)return;
@@ -5616,15 +5663,16 @@ function unlockBattleSE(){
     if(!battleSEContext || battleSEContext.state==="closed"){
       battleSEContext=new AudioContextClass();
       battleSEBuffers.clear();
-      battleSEContext.addEventListener("statechange",()=>{
-        battleSEUnlocked=battleSEContext.state==="running";
+      const created=battleSEContext;
+      created.addEventListener("statechange",()=>{
+        if(battleSEContext===created)battleSEUnlocked=created.state==="running";
       });
     }
     const context=battleSEContext;
     // Call resume and start a silent buffer synchronously during the gesture.
     // Setting a flag or calling play() on muted <audio> is not enough on mobile.
     if(context.state!=="running"){
-      battleSEResume=Promise.resolve(context.resume()).then(()=>{
+      Promise.resolve(context.resume()).then(()=>{
         battleSEUnlocked=context.state==="running";
       }).catch(error=>{
         battleSEUnlocked=false;
@@ -5652,14 +5700,22 @@ for(const type of ["pointerdown","pointerup","touchend","keydown"]){
   window.addEventListener(type,unlockBattleSE,{passive:true});
 }
 
+// Mobile browsers can interrupt Web Audio when switching tabs or locking the
+// screen. Resume the existing context on return and still allow tap retries.
+const recoverBattleSE=()=>{
+  if(battleSEContext && !document.hidden)unlockBattleSE();
+};
+document.addEventListener("visibilitychange",recoverBattleSE);
+window.addEventListener("pageshow",recoverBattleSE);
+window.addEventListener("focus",recoverBattleSE);
+
 function playBattleSE(id){
   const el=document.getElementById(id);
   if(!el)return;
   if(battleSEContext){
     const context=battleSEContext;
-    return Promise.resolve(battleSEResume)
-      .then(()=>loadBattleSEBuffer(el))
-      .then(buffer=>{
+    return Promise.all([loadBattleSEBuffer(el),ensureBattleSEContext(context)])
+      .then(([buffer])=>{
         if(context.state!=="running")throw new Error("音声が停止中です。画面をタップしてください");
         const source=context.createBufferSource();
         const gain=context.createGain();
@@ -5669,16 +5725,10 @@ function playBattleSE(id){
         gain.connect(context.destination);
         source.onended=()=>{source.disconnect();gain.disconnect();};
         source.start(0);
-      }).catch(error=>console.warn("SE再生失敗:",id,error));
+      }).catch(()=>playBattleSEElement(el,.75))
+      .catch(error=>console.warn("SE再生失敗:",id,error));
   }
-  // Compatibility fallback for browsers without Web Audio.
-  try{
-    el.muted=false;
-    el.volume=0.75;
-    el.currentTime=0;
-    const job=el.play();
-    if(job?.catch)job.catch(error=>console.warn("SE再生失敗:",id,error));
-  }catch(error){console.warn("SE再生エラー:",id,error);}
+  return playBattleSEElement(el,.75).catch(error=>console.warn("SE再生失敗:",id,error));
 }
 
 

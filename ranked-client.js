@@ -135,7 +135,8 @@ function rankedTick(){
  const put=(id,text)=>{const el=document.getElementById(id);if(el&&el.textContent!==text)el.textContent=text;};
  if(m.state?.turn===1&&turnOpen)PlayerIntro.cancel();
  const grace=now>=m.deadline,remaining=Math.max(0,Math.ceil(((grace?m.graceDeadline:m.deadline)-now)/1000));
- if(m.closed||rankedAnimating||!m.state||!turnOpen){stopCountdownRing();stopTurnCountdownSE();
+ if(m.closed||rankedAnimating||!m.state||!turnOpen){stopCountdownRing();
+  if(rankedAnimating&&rankedVisualCountdownEnd>localNow)startTurnCountdownSE();else stopTurnCountdownSE();
   if(!m.closed&&m.phase==='select')put('techTitle',rankedSending?'技を送信中…':grace?'復帰猶予：あと'+remaining+'秒（未確定側は期限後に敗北）':m.ready[m.you]?'技を確定しました。相手を待っています…':(m.kind==='friend'?window.RoomRules.label(m.roomRules)+' ルーム対戦':'ランダム対戦')+'：技選択（残り'+remaining+'秒）');
   else if(rankedAnimating){
    const left=rankedVisualCountdownEnd-performance.now();
@@ -193,7 +194,9 @@ function rankedReveal(m){
     rankedApply(m,true);
     if(latest!==m)rankedApply(latest);
    },d1,d2);
-  },Math.max(0,revealAt+(typeof ONLINE_REVEAL_MS==='number'?ONLINE_REVEAL_MS:1300)-performance.now()));
+  // A late snapshot or a busy event loop must still show the technique names.
+  // Only presentation waits here; the shared turn/input deadlines stay unchanged.
+  },typeof ONLINE_REVEAL_MS==='number'?ONLINE_REVEAL_MS:1300);
  },Math.max(0,revealAt-performance.now()));
 }
 function rankedPaintState(m,paint=true){
@@ -317,3 +320,4 @@ async function rankedLeave(){
  }
  rankedStop();returnBattleHomeCore();
 }
+
