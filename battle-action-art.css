@@ -5,8 +5,10 @@
 #battleScreen .actionName{position:relative;z-index:1;max-width:100%;margin:0;text-align:center;font-size:12px;font-weight:500;line-height:1.3;overflow-wrap:anywhere;text-shadow:0 1px 3px #000,0 0 6px #000}
 #battleScreen .playerArea{--action-selected:#ff8294}
 #battleScreen #player2Area{--action-selected:#87cfff}
-#battleScreen .action.confirmed-selected{border-color:var(--action-selected);box-shadow:inset 0 0 0 1px var(--action-selected),0 0 9px color-mix(in srgb,var(--action-selected) 27%,transparent)}
-#battleScreen .action.confirmed-selected::after{content:'✓';position:absolute;top:3px;right:3px;width:16px;height:16px;background:#10243ee6;color:var(--action-selected);font-size:12px;text-align:center;line-height:16px;border-radius:2px;pointer-events:none}
+@property --action-edge-angle{syntax:"<angle>";inherits:false;initial-value:0deg}
+@keyframes actionEdgeOrbit{to{--action-edge-angle:360deg}}
+#battleScreen .action.confirmed-selected{border-color:color-mix(in srgb,var(--action-selected) 45%,#fff);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--action-selected) 75%,#fff),inset 0 0 6px color-mix(in srgb,var(--action-selected) 35%,transparent),0 0 6px color-mix(in srgb,var(--action-selected) 85%,transparent),0 0 15px color-mix(in srgb,var(--action-selected) 48%,transparent)}
+#battleScreen .action.confirmed-selected::after{content:"";position:absolute;inset:0;z-index:3;border-radius:inherit;padding:2px;pointer-events:none;background:conic-gradient(from var(--action-edge-angle),transparent 0deg 245deg,color-mix(in srgb,var(--action-selected) 65%,transparent) 270deg,#fff0f4 295deg,#fff 308deg,transparent 330deg 360deg);-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);mask-composite:exclude;animation:actionEdgeOrbit 2.4s linear infinite}
 #battleScreen .playerArea.locked .action{filter:brightness(.72)}
 #battleScreen .playerArea.locked .action.confirmed-selected{filter:none}
 #battleScreen .action.disabled{opacity:.4}
@@ -15,6 +17,7 @@
 #battleScreen .hpBar,#battleScreen .gaugeBar{position:relative;box-sizing:border-box;background:#0b172a;border:1px solid #a8d2e8;border-radius:3px;box-shadow:0 0 0 1px #071426,inset 0 1px 0 #e1f5ff70}
 #battleScreen .hpBar::after,#battleScreen .gaugeBar::after{content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,transparent calc(100% - 2px),#071426 0);background-size:10% 100%}
 @media(prefers-reduced-motion:reduce){#battleScreen .hpFill,#battleScreen .gaugeFill{animation:none!important}}
+@media(prefers-reduced-motion:reduce){#battleScreen .action.confirmed-selected::after{animation:none;--action-edge-angle:45deg}}
 
 #battleScreen .battleActionArt{position:absolute;inset:0;z-index:-2;container-type:size;pointer-events:none;color:var(--mp-symbol);background:radial-gradient(ellipse at 50% 25%,color-mix(in srgb,var(--mp-symbol) 6%,transparent),transparent 72%)}
 #battleScreen .battleActionArt img{display:block;width:100%;height:100%;object-fit:contain}

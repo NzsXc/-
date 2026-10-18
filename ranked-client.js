@@ -17,29 +17,41 @@ function rankedCommandRpc(data){
  return window.rankedTransport(data);
 }
 function rankedMessage(text){
- const id=rankedMatch?.phase==='select'?'techTitle':rankedMatch?'resultMessage':'randomSearchStatus';
+ const id=rankedMatch?.phase==='select'?'techTitle':rankedMatch?'resultMessage':rankedActive?'randomSearchStatus':'randomSearchFeedback';
  document.getElementById(id).textContent=text;
 }
-function rankedButtons(searching){
+function rankedButtons(searching,phase='searching'){
  document.querySelectorAll('#onlineScreen button:not(#randomSearchCancel)').forEach(b=>b.disabled=searching);
- const cancel=document.getElementById('randomSearchCancel');cancel.hidden=!searching;cancel.disabled=false;cancel.onclick=()=>{rankedCancelled=true;cancel.disabled=true;};
+ document.getElementById('onlineScreen').dataset.searchPhase=searching?phase:'idle';
+ document.getElementById('randomMatchButton').hidden=searching;
+ document.getElementById('randomSearchPanel').hidden=!searching;
+ document.getElementById('randomSearchSpinner').hidden=!searching||phase==='matched';
+ const cancel=document.getElementById('randomSearchCancel');cancel.hidden=!searching||phase==='matched';cancel.disabled=false;cancel.onclick=()=>{rankedCancelled=true;cancel.disabled=true;document.getElementById('randomSearchStatus').textContent='キャンセルしています…';};
 }
 async function startRanked(resume=false){
  if(rankedActive)return;
  if(!window.loggedInPlayerData){alert('ログインしてからランク戦を開始してください');return;}
  stopBot();resetOnlineMatchState();rankedActive=true;rankedMatch=null;rankedCancelled=false;rankedSeenReveal=0;
- const epoch=++rankedEpoch;gameMode='ranked';rankedButtons(true);rankedMessage('対戦相手を探しています…');
+ const epoch=++rankedEpoch;gameMode='ranked';document.getElementById('randomSearchFeedback').textContent='';rankedButtons(true);rankedMessage('対戦相手を探しています…');
  try{
   let response=await rankedRpc({op:resume?'resume':'join'});
   if(resume&&!response.match){rankedStop();return;}
   while(rankedActive&&epoch===rankedEpoch&&!response.match){
    if(rankedCancelled){response=await rankedRpc({op:'cancel'});if(!response.match){rankedStop();rankedMessage('検索をキャンセルしました');return;}break;}
-   rankedMessage('1/2 · 対戦相手を待っています…（'+Math.floor((response.waitedMs||0)/1000)+'秒）');
+   rankedMessage('対戦相手を探しています…');
    await new Promise(r=>setTimeout(r,1000));response=await rankedRpc({op:'queue'});
   }
-  if(epoch!==rankedEpoch)return;
+  if(!rankedActive||epoch!==rankedEpoch)return;
+  if(!resume&&response.match?.phase==='select'){
+   const receivedAt=performance.now();
+   rankedButtons(true,'matched');rankedMessage('マッチングしました。');
+   await new Promise(resolve=>setTimeout(resolve,1000));
+   if(!rankedActive||epoch!==rankedEpoch)return;
+   // The confirmation is visual only: advance the local server clock, never the deadline.
+   response={...response,match:{...response.match,serverNow:response.match.serverNow+performance.now()-receivedAt}};
+  }
   rankedButtons(false);document.getElementById('randomSearchStatus').textContent='';rankedApply(response.match);rankedPoll(epoch);
- }catch(error){rankedStop();rankedMessage('ランク戦を開始できません：'+error.message);}
+ }catch(error){if(epoch!==rankedEpoch)return;rankedStop();rankedMessage('ランク戦を開始できません：'+error.message);}
 }
 async function rankedPoll(epoch){
  if(!rankedActive||epoch!==rankedEpoch||rankedMatch?.closed)return;
