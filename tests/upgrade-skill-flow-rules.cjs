@@ -20,7 +20,8 @@ function upgradeSkillFlow(input){
  const spent=p=>{
   const selected=`${g}.child('advanced/selected/${p}').val()`;
   const capacity=`(${selected}==='chain'?5:${selected}==='boost'?3:${selected}==='cleanse'?1:2)`;
-  return `${g}.child('advanced/current/${p}/used').val()>=${capacity}`;
+  const used=`${g}.child('advanced/current/${p}/used')`;
+  return `${used}.isNumber()&&${used}.val()>=${capacity}`;
  };
  game.state.skillsExhausted={'.validate':`newData.isBoolean()&&newData.val()===(${g}.child('roomRules/mode').val()==='advanced'&&${spent(1)}&&${spent(2)})`};
  game.advanced.skillFlow={'.read':'auth!=null','.validate':false};
