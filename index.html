@@ -2053,7 +2053,8 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
 <link rel="stylesheet" href="titles-prestige.css?v=ribbon-size-2">
 <link rel="stylesheet" href="titles-season2.css?v=season2-fit-2">
 <link rel="stylesheet" href="battle-inspector.css?v=battle-layout-1">
-<link rel="stylesheet" href="battle-action-art.css?v=confirmed-1">
+<link rel="stylesheet" href="battle-action-art.css?v=orbit-selection-1">
+<link rel="stylesheet" href="neon-controls.css?v=neon-menu-1">
 </head>
 
 
@@ -2147,17 +2148,22 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
   <div class="screenTitle">だれかと</div>
 
   <div class="onlineMenu">
-    <button class="onlineMainButton" onclick="startOnlineMatch('random')">ランダム対戦</button>
-    <div id="randomSearchStatus" role="status" style="text-align:center;font-size:14px;line-height:1.5"></div>
-    <button id="randomSearchCancel" hidden onclick="rankedCancelled=true;this.disabled=true">検索をキャンセル</button>
-    <button class="onlineMainButton" onclick="startOnlineMatch('friend')">友達対戦</button>
+    <div class="randomMatchSlot">
+      <button id="randomMatchButton" type="button" class="onlineMainButton" onclick="startOnlineMatch('random')"><span class="menuSymbol" aria-hidden="true">VS</span><span>ランダム対戦</span><span class="menuArrow" aria-hidden="true">↗</span></button>
+      <div id="randomSearchPanel" class="randomSearchPanel" hidden>
+        <span id="randomSearchSpinner" class="matchSpinner" aria-hidden="true"><span class="matchOrbit"><span class="matchDot"></span><span class="matchDot"></span><span class="matchDot"></span></span></span>
+        <div class="randomSearchBody"><div id="randomSearchStatus" role="status" aria-live="polite"></div><button id="randomSearchCancel" type="button" hidden>キャンセル</button></div>
+      </div>
+    </div>
+    <button id="friendMatchButton" type="button" class="onlineMainButton" onclick="startOnlineMatch('friend')"><span class="menuSymbol" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="3.5"/><path d="M2.5 20v-2.5A4.5 4.5 0 0 1 7 13h4a4.5 4.5 0 0 1 4.5 4.5V20M16 3.7a3.5 3.5 0 0 1 0 6.6M18 13.3a4.5 4.5 0 0 1 3.5 4.4V20"/></svg></span><span>友達対戦</span><span class="menuArrow" aria-hidden="true">↗</span></button>
 
     <div class="onlineSubRow">
-      <button class="onlineSubButton" aria-label="レートランキング" onclick="openRateRanking()">👑</button>
-      <button class="onlineSubButton" aria-label="観戦" onclick="openSpectatorList()">👁</button>
+      <button class="onlineSubButton" aria-label="レートランキング" onclick="openRateRanking()"><span class="menuSymbol" aria-hidden="true">RK</span><span>ランキング</span></button>
+      <button class="onlineSubButton" aria-label="観戦" onclick="openSpectatorList()"><span class="menuSymbol" aria-hidden="true">ON</span><span>観戦</span></button>
     </div>
   </div>
 
+  <p id="randomSearchFeedback" role="status" aria-live="polite"></p>
   <button class="onlineBackButton" onclick="showScreen('modeScreen')">戻る</button>
 
 </div>
@@ -2729,7 +2735,7 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
 <script src="bot-client.js?v=tech12-fix-1"></script>
 <script src="advanced/rules.js?v=late-skill-1"></script>
 <script src="room-rules.js?v=advanced-1"></script>
-<script src="ranked-client.js?v=late-skill-1"></script>
+<script src="ranked-client.js?v=neon-menu-1"></script>
 <script src="advanced/client.js?v=skill-flow-1"></script>
 <script src="advanced/cutin.js?v=late-skill-1"></script>
 <script src="battle-inspector.js?v=battle-layout-1"></script>
