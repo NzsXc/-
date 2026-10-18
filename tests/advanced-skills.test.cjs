@@ -17,7 +17,7 @@ async function join(a='boost',b='invincible'){
 }
 (async()=>{
  assert(Buffer.byteLength(source('firebase-database.rules.json'))<256*1024,'rules source must stay within the deployment size budget');
- assert.deepEqual(A.SKILLS.map(s=>s.limit),[3,2,5,1,2]);
+ assert.deepEqual(A.SKILLS.map(s=>s.limit),[3,2,7,1,3,3]);
  assert.equal(A.WINDOW_MS,3000);
  const legacy=JSON.parse(require('node:child_process').execFileSync('git',['show','7e6eef35b49cb3314fb6e3eaea75e4a84062483f:firebase-database.rules.json'],{cwd:root,encoding:'utf8'})).rules;
  assert.equal(await harness(legacy).transports[0].supportsAdvanced(),false,'3-second client rejects the old 2-second server protocol');
@@ -124,5 +124,6 @@ async function join(a='boost',b='invincible'){
  h.commit({['battleHistory/'+id]:saved,['playerHistory/p1/'+id]:saved.endedAt,['playerHistory/p2/'+id]:saved.endedAt},'p1');
  const after=h.copy();delete after.battleHistory[id].advanced.uses[1][1];
  assert(!h.evaluate(rules.battleHistory.$game.advanced.uses[1]['.validate'],h.copy(),after,'battleHistory/'+id+'/advanced/uses/1','p1',{$game:id}));
- console.log('PASS: '+cases+' Advanced skill/action pairings match actual rules; all five effects/caps, self-damage, chain/seal isolation, exact 3-second boundaries, retries, 10-second turns, Standard rejection and verified history/replay');
+ console.log('PASS: '+cases+' Advanced skill/action pairings match actual rules; all six effects/caps, self-damage, chain/seal isolation, exact 3-second boundaries, retries, 10-second turns, Standard rejection and verified history/replay');
 })().catch(error=>{console.error(error);process.exitCode=1;});
+

@@ -38,6 +38,11 @@
 #advancedSkillPresentation .post-skill-mark .chain-bottom{animation:advanced-chain-bottom 1.2s ease-out both;}
 #advancedSkillPresentation .post-skill-mark .cleanse-ring{animation:advanced-cleanse-wave 1.2s ease-out both;}
 #advancedSkillPresentation .post-skill-label{position:absolute;white-space:nowrap;transform:translate(-50%,-50%);font-size:17px;font-weight:700;color:var(--accent);text-shadow:0 1px 4px #03101b,0 0 9px #03101b;animation:advanced-buff-label 1.2s ease-out both;}
+#advancedSkillPresentation .sword-shape{width:30px;height:125px;top:0;left:calc(50% - 15px);background:linear-gradient(90deg,var(--accent),#ffe9dd 50%,var(--accent));clip-path:polygon(50% 0,92% 21%,74% 66%,100% 70%,100% 77%,64% 77%,64% 100%,36% 100%,36% 77%,0 77%,0 70%,26% 66%,8% 21%);}
+#advancedSkillPresentation .sword-left{transform:rotate(-38deg);}
+#advancedSkillPresentation .sword-right{transform:rotate(38deg);}
+#advancedSkillPresentation .post-skill-mark .sword-shape{height:108px;animation:advanced-stance-buff 1.2s ease-out both;}
+@keyframes advanced-stance-buff{0%{translate:0 20px;opacity:0;}20%{translate:0 0;opacity:1;}70%{opacity:1;}100%{translate:0 -18px;opacity:0;}}
 @keyframes advanced-star-buff{0%{transform:scale(.5) rotate(-25deg);opacity:0;}20%{transform:scale(1.1) rotate(-8deg);opacity:1;}65%{opacity:1;}100%{transform:scale(1.3) rotate(12deg);opacity:0;}}
 @keyframes advanced-chain-top{0%{transform:translate(8px,12px) rotate(-43deg);opacity:1;}100%{transform:translate(-25px,-35px) rotate(-70deg);opacity:0;}}
 @keyframes advanced-chain-bottom{0%{transform:translate(-8px,-12px) rotate(-43deg);opacity:1;}100%{transform:translate(25px,35px) rotate(-15deg);opacity:0;}}
@@ -60,3 +65,4 @@
 @media(max-width:460px){#advancedSkillPresentation .comic-panel{left:-9%;width:118%;height:172px;}#advancedSkillPresentation .comic-inner{padding-left:8%;padding-right:10%;}#advancedSkillPresentation .panel-art{flex-basis:32%;transform:scale(.6) translateX(-8px);}#advancedSkillPresentation .panel-copy{padding-left:6px;}#advancedSkillPresentation .panel-owner{font-size:11px;letter-spacing:.04em;}#advancedSkillPresentation .panel-effect{max-width:195px;}}
 @media(max-height:460px){#advancedSkillPresentation .comic-panel{height:132px;top:calc(50% - 66px + var(--offset));}#advancedSkillPresentation .panel-self{--offset:70px;}#advancedSkillPresentation .panel-enemy{--offset:-70px;}#advancedSkillPresentation .panel-art{height:116px;transform:scale(.75);}#advancedSkillPresentation .panel-copy h2{font-size:36px;}#advancedSkillPresentation .panel-effect{font-size:12px;}}
 @media(prefers-reduced-motion:reduce){#advancedSkillPresentation .comic-panel,#advancedSkillPresentation .comic-frame,#advancedSkillPresentation .comic-paper,#advancedSkillPresentation .comic-inner,#advancedSkillPresentation .cutin-layer,#advancedSkillPresentation .post-skill-mark *,#advancedSkillPresentation .post-skill-label{animation:none;}}
+

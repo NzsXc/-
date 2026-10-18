@@ -18,7 +18,7 @@ const ACTIONS=[
 ];
 const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
 const chosen=(s,moves,p,maxGauge)=>Number.isInteger(moves?.[p])?moves[p]:(s['gauge'+p]>=maxGauge?1:0);
-export function calculate(s,moves,rulesVersion=2,roomRules={}){
+export function calculate(s,moves,rulesVersion=2,roomRules={},powerBonus={}){
  const maxHp=roomRules.hp??10,maxGauge=roomRules.maxGauge??10;
  const out={};
  out.action1=chosen(s,moves,1,maxGauge);out.misses1=Number.isInteger(moves?.[1])?0:s.misses1+1;
@@ -38,8 +38,8 @@ export function calculate(s,moves,rulesVersion=2,roomRules={}){
  out.foresight2=e2.skill==='tech5'&&e1.type==='charge'?clamp(out.charged2+3,0,maxGauge):out.charged2;
  out.healed1=e1.skill==='tech4'?clamp(s.hp1+1,0,maxHp):s.hp1;out.healed2=e2.skill==='tech4'?clamp(s.hp2+1,0,maxHp):s.hp2;
  out.basePower1=e1.power;out.basePower2=e2.power;
- out.power1=out.attack1?((e1.skill==='tech6'?(s.momentum1?2:1):e1.power)+(s.enhance1>0?1:0)):0;
- out.power2=out.attack2?((e2.skill==='tech6'?(s.momentum2?2:1):e2.power)+(s.enhance2>0?1:0)):0;
+ out.power1=out.attack1?((e1.skill==='tech6'?(s.momentum1?2:1):e1.power)+(s.enhance1>0?1:0)+(powerBonus[1]===1?1:0)):0;
+ out.power2=out.attack2?((e2.skill==='tech6'?(s.momentum2?2:1):e2.power)+(s.enhance2>0?1:0)+(powerBonus[2]===1?1:0)):0;
  out.pierce1=!!e1.pierce;out.pierce2=!!e2.pierce;
  let d1=(s.ruin1>0&&e1.type==='charge'?1:0),d2=(s.ruin2>0&&e2.type==='charge'?1:0);
  if(out.reflect1&&out.attack2)d2++;if(out.reflect2&&out.attack1)d1++;
@@ -63,5 +63,6 @@ export function calculate(s,moves,rulesVersion=2,roomRules={}){
  return out;
 }
 export const stateFields=['turn','startedAt','hp1','hp2','gauge1','gauge2','seal1','seal2','enhance1','enhance2','momentum1','momentum2','ruin1','ruin2','last1','last2','misses1','misses2'];
+
 
 

@@ -1,7 +1,7 @@
 import {ref,get,set,update,push,serverTimestamp,onValue,runTransaction} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js';
-import {calculate,stateFields} from './free-calculator.js?v=room-rules-1';
-import {historyMatch} from './battle-history-core.js?v=history-nulls-1';
-import {createAdvancedProtocol} from './advanced/protocol.js?v=late-skill-1';
+import {calculate,stateFields} from './free-calculator.js?v=attack-stance-1';
+import {historyMatch} from './battle-history-core.js?v=attack-stance-1';
+import {createAdvancedProtocol} from './advanced/protocol.js?v=attack-stance-1';
 export function createFreeTransport(db,auth,history){
  let offset=0;onValue(ref(db,'.info/serverTimeOffset'),s=>{offset=s.val()||0;});
  const now=()=>Date.now()+offset;
@@ -329,3 +329,4 @@ const initialAccount = {
  request.transitionMs=transitionMs;
  return request;
 }
+

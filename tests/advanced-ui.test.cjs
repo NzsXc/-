@@ -42,9 +42,9 @@ function assertStable(before,after,label){for(let i=0;i<before.boxes.length;i++)
    assert.equal(await page.locator('#advancedSkillSelection').getAttribute('data-skill'),'boost','the first skill is selected by default, like ordinary techniques');
    assert.equal(await page.locator('#techConfirmButton').isEnabled(),true);
    await page.getByRole('button',{name:'前のスキル',exact:true}).click();
-   assert.equal(await page.locator('#advancedSkillSelection').getAttribute('data-skill'),'invincible','previous wraps to the last skill');
+   assert.equal(await page.locator('#advancedSkillSelection').getAttribute('data-skill'),'stance','previous wraps to the last skill');
    await page.getByRole('button',{name:'次のスキル',exact:true}).click();
-   for(const id of ['heal','chain','cleanse','invincible','boost']){await page.getByRole('button',{name:'次のスキル',exact:true}).click();assert.equal(await page.locator('#advancedSkillSelection').getAttribute('data-skill'),id);}
+   for(const id of ['heal','chain','cleanse','invincible','stance','boost']){await page.getByRole('button',{name:'次のスキル',exact:true}).click();assert.equal(await page.locator('#advancedSkillSelection').getAttribute('data-skill'),id);}
    const card=await page.locator('#advancedSkillSelection').boundingBox(),normal=await page.locator('.techCard').first().boundingBox();
    assert(Math.abs(card.width-normal.width)<1,'the skill picker occupies the same width as one ordinary technique');
    if(process.env.ADVANCED_SCREENSHOTS&&width===1365)await page.screenshot({path:path.join(process.env.ADVANCED_SCREENSHOTS,'advanced-skill-selection.png'),fullPage:true});
@@ -86,6 +86,14 @@ function assertStable(before,after,label){for(let i=0;i<before.boxes.length;i++)
     assert.equal(await page.locator('#advancedSkillButton img, #advancedSkillButton svg, #advancedSkillButton canvas').count(),0,'art must be CSS only');
    }
    assert.equal(await page.locator('#advancedSkillButton .invincible-star').count(),1,'invincibility uses the approved star');
+   await page.evaluate(()=>window.AdvancedSkills.sync({...rankedMatch,advanced:{selected:{...rankedMatch.advanced.selected,1:'stance'}}},rankedMatch.opensAt-1000));
+   assert.equal(await page.locator('#advancedSkillButton .stance-blade').count(),2,'attack stance uses crossed blades');
+   assert.equal(await page.locator('#advancedSkillButton .advancedSkillUses').textContent(),'3/3');
+   if(process.env.ADVANCED_SCREENSHOTS&&width===390)await page.screenshot({path:path.join(process.env.ADVANCED_SCREENSHOTS,'attack-stance-mobile.png'),fullPage:true});
+   await page.evaluate(()=>window.AdvancedSkills.sync({...rankedMatch,advanced:{selected:{...rankedMatch.advanced.selected,1:'chain'}}},rankedMatch.opensAt-1000));
+   assert.equal(await page.locator('#advancedSkillButton .advancedSkillUses').textContent(),'7/7');
+   await page.evaluate(()=>window.AdvancedSkills.sync({...rankedMatch,advanced:{selected:{...rankedMatch.advanced.selected,1:'invincible'}}},rankedMatch.opensAt-1000));
+   assert.equal(await page.locator('#advancedSkillButton .advancedSkillUses').textContent(),'3/3');
    if(process.env.ADVANCED_SCREENSHOTS&&width===390)await page.screenshot({path:path.join(process.env.ADVANCED_SCREENSHOTS,'advanced-css-star-mobile.png'),fullPage:true});
    await page.evaluate(now=>setSkillTime(now),from+1500);
    const own=await page.locator('#player1Area').boundingBox(),orb=await page.locator('#advancedSkillButton').boundingBox(),lens=await page.locator('#battleInspectorToggle').boundingBox();
@@ -173,3 +181,4 @@ function assertStable(before,after,label){for(let i=0;i<before.boxes.length;i++)
   console.log('PASS: actual skill selection/activation; mirrored opponent-card inspector, resize, stable panel/document/scroll geometry across 3-second selection and action countdown, surrender visibility, both player sides, Standard/closed/reset cleanup on desktop/mobile/landscape');
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});
+
