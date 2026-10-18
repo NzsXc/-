@@ -154,7 +154,7 @@
       ".validate": true
      },
      "skillsExhausted": {
-      ".validate": "newData.isBoolean()&&newData.val()===(root.child('freeGames/'+$game).child('roomRules/mode').val()==='advanced'&&root.child('freeGames/'+$game).child('advanced/current/1/used').val()>=(root.child('freeGames/'+$game).child('advanced/selected/1').val()==='chain'?5:root.child('freeGames/'+$game).child('advanced/selected/1').val()==='boost'?3:root.child('freeGames/'+$game).child('advanced/selected/1').val()==='cleanse'?1:2)&&root.child('freeGames/'+$game).child('advanced/current/2/used').val()>=(root.child('freeGames/'+$game).child('advanced/selected/2').val()==='chain'?5:root.child('freeGames/'+$game).child('advanced/selected/2').val()==='boost'?3:root.child('freeGames/'+$game).child('advanced/selected/2').val()==='cleanse'?1:2))"
+      ".validate": "newData.isBoolean()&&newData.val()===(root.child('freeGames/'+$game).child('roomRules/mode').val()==='advanced'&&root.child('freeGames/'+$game).child('advanced/current/1/used').isNumber()&&root.child('freeGames/'+$game).child('advanced/current/1/used').val()>=(root.child('freeGames/'+$game).child('advanced/selected/1').val()==='chain'?5:root.child('freeGames/'+$game).child('advanced/selected/1').val()==='boost'?3:root.child('freeGames/'+$game).child('advanced/selected/1').val()==='cleanse'?1:2)&&root.child('freeGames/'+$game).child('advanced/current/2/used').isNumber()&&root.child('freeGames/'+$game).child('advanced/current/2/used').val()>=(root.child('freeGames/'+$game).child('advanced/selected/2').val()==='chain'?5:root.child('freeGames/'+$game).child('advanced/selected/2').val()==='boost'?3:root.child('freeGames/'+$game).child('advanced/selected/2').val()==='cleanse'?1:2))"
      }
     },
     "transition": {
