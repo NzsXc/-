@@ -2,7 +2,7 @@
 export function createAdvancedProtocol({read,writeUpdate,now,serverTimestamp}){
  let supported=null;
  function supports(){
-  if(!supported)supported=read('freeGames/_protocol/advanced/skillFlow').then(()=>true).catch(error=>{
+  if(!supported)supported=read('freeGames/_protocol/advanced/lateSkill').then(()=>true).catch(error=>{
    if(/permission.?denied/i.test(String(error.code||'')+' '+error.message))return false;
    supported=null;throw error;
   });return supported;
@@ -17,15 +17,16 @@ export function createAdvancedProtocol({read,writeUpdate,now,serverTimestamp}){
   const saved=g?.selected?.[me];if(saved&&saved!==id)throw Error('確定したスキルは変更できません。');
   return saved?{}:{['advanced/selected/'+me]:id};
  }
- async function activate(id,me,turn,opensAt){
-  const path='freeGames/'+id,a=await read(path+'/advanced'),s=await read(path+'/state');
+ async function activate(id,me,turn,opensAt,known){
+  const pressedAt=known?.pressedAt??now(),path='freeGames/'+id;
+  const [a,s]=known?.state?[known.advanced,known.state]:await Promise.all([read(path+'/advanced'),read(path+'/state')]);
   const skill=a?.selected?.[me],definition=window.AdvancedRules.byId[skill];
   if(!s||s.turn!==turn)throw Error('ターンが切り替わりました。');
   if(a?.current?.[me]?.turn===turn)return;
-  if(now()<opensAt-window.AdvancedRules.WINDOW_MS||now()>=opensAt)throw Error('スキルは開始時の3秒間だけ使用できます。');
+  if(pressedAt<opensAt-window.AdvancedRules.WINDOW_MS||pressedAt>=opensAt)throw Error('スキルは開始時の3秒間だけ使用できます。');
   const count=Number(a?.current?.[me]?.used||0);
   if(!definition||count>=definition.limit)throw Error('スキルの残り回数がありません。');
-  const receipt={id:skill,turn,at:serverTimestamp(),used:count+1},current={...receipt};
+  const receipt={id:skill,turn,at:pressedAt,used:count+1},current={...receipt};
   try{await writeUpdate(path,{['advanced/uses/'+me+'/'+(count+1)]:receipt,['advanced/current/'+me]:current});}
   catch(error){const accepted=await read(path+'/advanced/current/'+me);if(accepted?.id!==skill||accepted.turn!==turn)throw error;}
  }

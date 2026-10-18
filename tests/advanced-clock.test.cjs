@@ -19,7 +19,7 @@ function client(){
  const start=(await h.transports[1]({op:'loadout',matchId:id,loadout:[0,1,2],advancedSkill:'heal'})).match;
  const c1=client(),c2=client();c1.apply({...start,you:1},0);c2.apply({...start,you:2},20000);
  h.put('freeGames/'+id+'/state/hp2',8);h.setClock(start.skillWindow.endAt-1);await h.transports[1]({op:'advancedSkill',matchId:id,turn:1});
- const end=start.skillWindow.endAt;
+ const end=start.skillWindow.confirmAt;
  // Hold the boundary snapshot in flight: neither side may expose the stale opening.
  for(const c of [c1,c2])vm.runInContext('rankedTick.skillBoundary=m.id+":"+m.state.turn',c.ctx);
  c1.tick(end-start.serverNow);c2.tick(20000+end-start.serverNow);assert(c1.state().locked);assert(c2.state().locked);

@@ -39,11 +39,11 @@ async function join(a='boost',b='invincible'){
  }
  // A chain release is limited to this turn; it never bypasses a seal.
  const moveHarness=harness();moveHarness.put('freeGames/match/roomRules',settings);moveHarness.put('freeGames/match/advanced',ledger('chain','heal'));
- moveHarness.put('freeGames/match/state',{...base,seal1:false});moveHarness.setClock(11700);
+ moveHarness.put('freeGames/match/state',{...base,seal1:false});moveHarness.setClock(12200);
  moveHarness.commit({'freeGames/match/moves/1/1':2},'p1');
- const sealed=harness();sealed.put('freeGames/match/roomRules',settings);sealed.put('freeGames/match/advanced',ledger('chain','heal'));sealed.put('freeGames/match/state',base);sealed.setClock(11700);
+ const sealed=harness();sealed.put('freeGames/match/roomRules',settings);sealed.put('freeGames/match/advanced',ledger('chain','heal'));sealed.put('freeGames/match/state',base);sealed.setClock(12200);
  assert.throws(()=>sealed.commit({'freeGames/match/moves/1/1':2},'p1'),/permission_denied/);
- const {h,id,start}=await join();assert.equal(start.opensAt-start.skillWindow.startAt,3000);assert.equal(start.deadline-start.opensAt,10000);
+ const {h,id,start}=await join();assert.equal(start.skillWindow.endAt-start.skillWindow.startAt,3000);assert.equal(start.opensAt,start.skillWindow.confirmAt);assert.equal(start.skillWindow.confirmAt-start.skillWindow.endAt,A.GRACE_MS);assert.equal(start.deadline-start.opensAt,10000);
  h.setClock(start.skillWindow.startAt-1);await assert.rejects(()=>h.transports[0]({op:'advancedSkill',matchId:id,turn:1}),/3秒間/);
  h.setClock(start.skillWindow.startAt);const boost=(await h.transports[0]({op:'advancedSkill',matchId:id,turn:1})).match;
  assert.equal(boost.opensAt,start.opensAt+3100,'a receipt reserves the shared 1900ms cut-in + 1200ms effect');
@@ -54,7 +54,7 @@ async function join(a='boost',b='invincible'){
  const forged={id:'boost',turn:1,used:2,at:h.now()};
  assert.throws(()=>h.commit({['freeGames/'+id+'/advanced/current/1']:forged,['freeGames/'+id+'/advanced/uses/1/2']:forged},'p1'),/permission_denied/,'DB rejects a second activation in the same turn');
  await assert.rejects(()=>h.transports[0]({op:'action',matchId:id,turn:1,action:1}),/紹介/);
- h.setClock(start.opensAt-1);await h.transports[1]({op:'advancedSkill',matchId:id,turn:1});
+ h.setClock(start.skillWindow.endAt-1);await h.transports[1]({op:'advancedSkill',matchId:id,turn:1});
  assert.throws(()=>h.commit({['freeGames/'+id+'/advanced/current/1']:{id:'heal',turn:1,used:2,at:h.now()}},'p2'),/permission_denied/);
  h.setClock(start.opensAt);await assert.rejects(()=>h.transports[0]({op:'action',matchId:id,turn:1,action:1}),/紹介/);
  assert.throws(()=>h.commit({['freeGames/'+id+'/moves/1/1']:1},'p1'),/permission_denied/,'server also blocks input during the cut-in');
@@ -64,7 +64,7 @@ async function join(a='boost',b='invincible'){
  h.setClock(boost.opensAt);await h.transports[0]({op:'action',matchId:id,turn:1,action:1});const next=(await h.transports[1]({op:'action',matchId:id,turn:1,action:0})).match;
  assert.equal(next.state.turn,2);assert.equal(next.state.hp[2],10);assert.equal(next.state.gauge[1],9);assert.equal(next.skillWindow.endAt-next.skillWindow.startAt,3000);
  assert.equal(h.get('freeGames/'+id+'/state/previousDeadline'),boost.deadline);
- assert.equal(next.opensAt,next.skillWindow.endAt,'previous-turn receipts do not delay an unused turn');
+ assert.equal(next.opensAt,next.skillWindow.confirmAt,'previous-turn receipts do not add a presentation to an unused turn');
  await assert.rejects(()=>h.transports[0]({op:'advancedSkill',matchId:id,turn:1}),/切り替わりました/);
  // Every skill has a strict match-wide cap; owner, timestamp and atomic receipt/current proofs are checked.
  for(const skill of A.SKILLS){
@@ -93,7 +93,7 @@ async function join(a='boost',b='invincible'){
  await spent.h.transports[0]({op:'advancedSkill',matchId:spent.id,turn:1});
  const both=(await spent.h.transports[1]({op:'advancedSkill',matchId:spent.id,turn:1})).match;
  assert.equal(both.skillWindow.endAt-both.skillWindow.startAt,3000,'final uses never cancel the current window');
- assert.equal(both.opensAt-both.skillWindow.endAt,3100,'final uses retain their presentation');
+ assert.equal(both.opensAt-both.skillWindow.confirmAt,3100,'final uses retain their presentation');
  spent.h.setClock(both.opensAt);await spent.h.transports[0]({op:'action',matchId:spent.id,turn:1,action:1});
  const exhausted=(await spent.h.transports[1]({op:'action',matchId:spent.id,turn:1,action:1})).match;
  assert.equal(exhausted.state.skillsExhausted,true);assert.equal(exhausted.skillWindow.startAt,exhausted.skillWindow.endAt,'both exhausted: zero-second window');
