@@ -2,7 +2,7 @@
 export function createAdvancedProtocol({read,writeUpdate,now,serverTimestamp}){
  let supported=null;
  function supports(){
-  if(!supported)supported=read('freeGames/_protocol/advanced/lateSkill').then(()=>true).catch(error=>{
+  if(!supported)supported=read('freeGames/_protocol/advanced/attackStance').then(()=>true).catch(error=>{
    if(/permission.?denied/i.test(String(error.code||'')+' '+error.message))return false;
    supported=null;throw error;
   });return supported;
@@ -32,3 +32,4 @@ export function createAdvancedProtocol({read,writeUpdate,now,serverTimestamp}){
  }
  return {supports,snapshot,loadoutPatch,activate};
 }
+

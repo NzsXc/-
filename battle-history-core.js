@@ -1,5 +1,5 @@
 import {calculate as calculateV1,stateFields} from './history-calculator-v1.js';
-import {calculate as calculateV2} from './free-calculator.js?v=room-rules-1';
+import {calculate as calculateV2} from './free-calculator.js?v=attack-stance-1';
 
 export const HISTORY_LIMIT=10;
 export const HISTORY_REASONS={battle:'決着',resigned:'降参','reconnect-timeout':'切断・復帰猶予切れ','selection-timeout':'技選択の時間切れ','idle-forfeit':'連続無入力','turn-limit':'ターン上限'};
@@ -66,3 +66,4 @@ export function historyMatch(h,uid,serverNow){
  try{const turns=replayHistory(h),last=turns.at(-1);if(last)reveal={turn:last.turn,startedAt:s.startedAt,actions:last.actions,damage:last.damage};}catch(error){/* Historical results remain readable even when a legacy replay differs. */}
  return {id:h.id,kind:h.kind,roomId:h.room||null,roomRules:h.roomRules||null,you,...(h.roomRules?.mode==='advanced'?{advanced:h.advanced||{}}:{}),players,loadouts,ready,state,closed:true,phase:'finished',revision:serverNow,serverNow,opensAt:s?.startedAt||0,deadline:serverNow,graceDeadline:serverNow,ownAction:null,reveal,result:{winner:h.settled.winner,rated:h.kind!=='friend',reason:h.reason},rating:{before:h.settled['before'+you],after:h.settled['after'+you],delta:h.settled['delta'+you]}};
 }
+

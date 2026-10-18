@@ -52,7 +52,7 @@
    windowPanel.append(heading,track);controls.append(document.getElementById('battleHomeButton'),windowPanel);document.getElementById('battleCenter').append(controls);
   }
  }
- const artParts={boost:['energy-halo','battery','bolt','spark s1','spark s2'],heal:['heal-pulse','medical-cross','mote m1','mote m2','mote m3'],chain:['chain-link link-a','chain-link link-b','break-flash','break-ray ray-a','break-ray ray-b'],cleanse:['cleanse-orbit orbit-a','cleanse-orbit orbit-b','cleanse-core','cleanse-star','debris'],invincible:['star-glow','invincible-star','star-gleam','star-spark']};
+ const artParts={boost:['energy-halo','battery','bolt','spark s1','spark s2'],heal:['heal-pulse','medical-cross','mote m1','mote m2','mote m3'],chain:['chain-link link-a','chain-link link-b','break-flash','break-ray ray-a','break-ray ray-b'],cleanse:['cleanse-orbit orbit-a','cleanse-orbit orbit-b','cleanse-core','cleanse-star','debris'],invincible:['star-glow','invincible-star','star-gleam','star-spark'],stance:['stance-aura','stance-blade blade-a','stance-blade blade-b','stance-spark']};
  function paint(button,id){
   if(button.dataset.skill===id)return;button.dataset.skill=id||'';
   const art=button.querySelector('.advancedSkillArt');art.setAttribute('aria-hidden','true');art.replaceChildren(...(artParts[id]||[]).map(cls=>node('span',cls)));
@@ -112,3 +112,4 @@
  function reset(){window.AdvancedCutin?.reset();epoch++;sending=false;current=selecting=null;choices.clear();if(selection)selection.hidden=true;if(dock)dock.hidden=true;if(enemyDock)enemyDock.hidden=true;if(windowPanel)windowPanel.hidden=true;document.getElementById('battleScreen')?.classList.remove('advancedMode','advancedSkillChoosing');document.getElementById('techScreen')?.classList.remove('advancedSelection');}
  window.AdvancedSkills={select,ready,loadout,sync,reset,usedForTurn};
 })();
+
