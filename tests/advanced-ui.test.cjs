@@ -37,13 +37,20 @@ function assertStable(before,after,label){for(let i=0;i<before.boxes.length;i++)
     ${read('advanced/client.js')}
     ${confirm}`});
    await page.evaluate(m=>rankedApply(m),match);
-   assert.equal(await page.locator('#advancedSkillSelection input').count(),5);
-   assert.equal(await page.locator('#techConfirmButton').isDisabled(),true,'one skill must be selected before confirming');
-   await page.check('input[name="advancedSkill"][value="heal"]');await page.check('input[name="advancedSkill"][value="boost"]');
-   assert.equal(await page.locator('input[name="advancedSkill"]:checked').count(),1);
+   assert.equal(await page.locator('#advancedSkillSelection input').count(),0,'the five-row radio list is replaced by one card');
+   assert.equal(await page.locator('#advancedSkillSelection .techArrow').count(),2);
+   assert.equal(await page.locator('#advancedSkillSelection').getAttribute('data-skill'),'boost','the first skill is selected by default, like ordinary techniques');
+   assert.equal(await page.locator('#techConfirmButton').isEnabled(),true);
+   await page.getByRole('button',{name:'前のスキル',exact:true}).click();
+   assert.equal(await page.locator('#advancedSkillSelection').getAttribute('data-skill'),'invincible','previous wraps to the last skill');
+   await page.getByRole('button',{name:'次のスキル',exact:true}).click();
+   for(const id of ['heal','chain','cleanse','invincible','boost']){await page.getByRole('button',{name:'次のスキル',exact:true}).click();assert.equal(await page.locator('#advancedSkillSelection').getAttribute('data-skill'),id);}
+   const card=await page.locator('#advancedSkillSelection').boundingBox(),normal=await page.locator('.techCard').first().boundingBox();
+   assert(Math.abs(card.width-normal.width)<1,'the skill picker occupies the same width as one ordinary technique');
    if(process.env.ADVANCED_SCREENSHOTS&&width===1365)await page.screenshot({path:path.join(process.env.ADVANCED_SCREENSHOTS,'advanced-skill-selection.png'),fullPage:true});
    await page.click('#techConfirmButton');await page.waitForFunction(()=>rankedMatch.ready[1]===true);
-   assert.equal(await page.locator('input[name="advancedSkill"][value="boost"]').isDisabled(),true);
+   assert.equal(await page.getByRole('button',{name:'次のスキル',exact:true}).isDisabled(),true);
+   assert.equal(await page.getByRole('button',{name:'前のスキル',exact:true}).isDisabled(),true);
    assert.equal(h.get('freeGames/'+id+'/advanced/selected/1'),'boost');
    const start=(await h.transports[1]({op:'loadout',matchId:id,loadout:[0,1,2],advancedSkill:'heal'})).match;
    await page.evaluate(m=>rankedApply({...m,you:1}),start);
@@ -104,7 +111,7 @@ function assertStable(before,after,label){for(let i=0;i<before.boxes.length;i++)
    await page.click('#advancedSkillButton');await page.waitForFunction(()=>document.querySelector('#advancedSkillButton .advancedSkillUses').textContent==='2/3');
    assert.deepEqual(await page.evaluate(()=>window.playedSkillSE),['seAdvancedSkill']);
    assert.deepEqual(await page.evaluate(()=>window.AdvancedSkills.usedForTurn(rankedMatch).map(s=>[s.player,s.id])),[[1,'boost']],'own-only activation is ready for the future cut-in');
-   assert.equal(await page.locator('#gauge1Text').textContent(),'10/10');assert.equal(await page.locator('#advancedSkillButton').isDisabled(),true);
+   assert.equal(await page.locator('#gauge1Text').textContent(),'8/10','the press acknowledgement does not apply resources before the effects');assert.equal(await page.locator('#advancedSkillButton').isDisabled(),true);
    await page.evaluate(()=>document.getElementById('advancedSkillButton').click());assert.equal(h.get('freeGames/'+id+'/advanced/current/1/used'),1);
    assert.deepEqual(await page.evaluate(()=>window.playedSkillSE),['seAdvancedSkill'],'disabled retries do not replay the sound');
    await h.transports[1]({op:'advancedSkill',matchId:id,turn:1});
@@ -157,6 +164,10 @@ function assertStable(before,after,label){for(let i=0;i<before.boxes.length;i++)
    }
    await page.evaluate(()=>{window.AdvancedSkills.sync({...rankedMatch,roomRules:{mode:'advanced'}},rankedMatch.skillWindow.startAt);window.AdvancedSkills.reset();});
    assert.equal(await page.locator('#battleHomeButton').isVisible(),true,'reset restores the home button even during the skill window');
+   await page.evaluate(()=>{const now=rankedMatch.opensAt;window.AdvancedSkills.sync({...rankedMatch,roomRules:{mode:'advanced'},state:{...rankedMatch.state,skillsExhausted:true},skillWindow:{startAt:now,endAt:now},advanced:{selected:{1:'boost',2:'heal'},current:{1:{used:3},2:{used:2}}}},now);});
+   assert.equal(await page.locator('#advancedSkillWindow').isVisible(),false,'both skills spent: no selection window');
+   assert.equal(await page.locator('#battleHomeButton').isVisible(),true,'both skills spent: keep surrender available');
+   assert.equal((await page.locator('#advancedSkillButton').boundingBox()).width,56,'both skills spent: no enlarged skill buttons');
    assert.deepEqual(errors,[]);await page.close();
   }
   console.log('PASS: actual skill selection/activation; mirrored opponent-card inspector, resize, stable panel/document/scroll geometry across 3-second selection and action countdown, surrender visibility, both player sides, Standard/closed/reset cleanup on desktop/mobile/landscape');

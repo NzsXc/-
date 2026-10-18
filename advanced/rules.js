@@ -9,6 +9,8 @@
  ].map(Object.freeze));
  const byId=Object.fromEntries(SKILLS.map(s=>[s.id,s]));
  const isAdvanced=rules=>rules?.mode==='advanced';
+ const exhausted=advanced=>[1,2].every(p=>{const skill=byId[advanced?.selected?.[p]];return !!skill&&(advanced?.current?.[p]?.used||0)>=skill.limit;});
+ const windowMs=state=>state?.skillsExhausted===true?0:3000;
  const active=(selected,turn,p,id)=>selected?.[p]===id&&turn?.[p]?.id===id;
  function forTurn(advanced,turn){
   const out={};for(const p of [1,2]){
@@ -37,7 +39,7 @@
  }
  const CUTIN_MS=1900,EFFECT_MS=1200;
  const presentationMs=(advanced,turn)=>Object.keys(forTurn(advanced,turn)).length?CUTIN_MS+EFFECT_MS:0;
- const api={SKILLS,byId,isAdvanced,active,forTurn,preview,resolve,presentationMs,WINDOW_MS:3000,CUTIN_MS,EFFECT_MS};
+ const api={SKILLS,byId,isAdvanced,active,forTurn,preview,resolve,presentationMs,exhausted,windowMs,WINDOW_MS:3000,CUTIN_MS,EFFECT_MS};
  if(typeof window!=='undefined')window.AdvancedRules=api;
  if(typeof module!=='undefined')module.exports=api;
 })();

@@ -21,6 +21,8 @@ async function join(a='boost',b='invincible'){
  assert.equal(A.WINDOW_MS,3000);
  const legacy=JSON.parse(require('node:child_process').execFileSync('git',['show','7e6eef35b49cb3314fb6e3eaea75e4a84062483f:firebase-database.rules.json'],{cwd:root,encoding:'utf8'})).rules;
  assert.equal(await harness(legacy).transports[0].supportsAdvanced(),false,'3-second client rejects the old 2-second server protocol');
+ const previousRules=JSON.parse(require('node:child_process').execFileSync('git',['show','4b1c8d309ba3ad998194b253f551d914832956aa:firebase-database.rules.json'],{cwd:root,encoding:'utf8'})).rules;
+ assert.equal(await harness(previousRules).transports[0].supportsAdvanced(),false,'new clients require the exhausted-window protocol before creating an Advanced room');
  const shield={1:'invincible',2:'boost'},active={1:record('invincible')};
  assert.equal(A.resolve(base,{1:0,2:5},shield,active,calc,settings).damage1,0,'opponent attack and ruin are blocked');
  assert.equal(A.resolve(base,{1:9,2:1},shield,active,calc,settings).damage1,2,'Rampage self-damage remains');
@@ -47,7 +49,7 @@ async function join(a='boost',b='invincible'){
  assert.equal(boost.opensAt,start.opensAt+3100,'a receipt reserves the shared 1900ms cut-in + 1200ms effect');
  assert.equal(boost.skillWindow.endAt,start.skillWindow.endAt,'using a skill must not extend the activation window');
  assert.equal(boost.deadline-boost.opensAt,10000);
- assert.equal(boost.state.gauge[1],10);assert.equal(h.get('freeGames/'+id+'/state/gauge1'),8,'base state is immutable until the turn resolves');
+ assert.equal(boost.state.gauge[1],8,'pressing a skill does not immediately change resources');assert.equal(boost.skillResult.gauge[1],10,'pending resources are available for the end of the presentation');assert.equal(h.get('freeGames/'+id+'/state/gauge1'),8,'base state is immutable until the turn resolves');
  await h.transports[0]({op:'advancedSkill',matchId:id,turn:1});assert.equal(h.get('freeGames/'+id+'/advanced/current/1/used'),1,'retry cannot spend twice');
  const forged={id:'boost',turn:1,used:2,at:h.now()};
  assert.throws(()=>h.commit({['freeGames/'+id+'/advanced/current/1']:forged,['freeGames/'+id+'/advanced/uses/1/2']:forged},'p1'),/permission_denied/,'DB rejects a second activation in the same turn');
@@ -57,6 +59,8 @@ async function join(a='boost',b='invincible'){
  h.setClock(start.opensAt);await assert.rejects(()=>h.transports[0]({op:'action',matchId:id,turn:1,action:1}),/紹介/);
  assert.throws(()=>h.commit({['freeGames/'+id+'/moves/1/1']:1},'p1'),/permission_denied/,'server also blocks input during the cut-in');
  h.setClock(boost.opensAt-1);await assert.rejects(()=>h.transports[0]({op:'action',matchId:id,turn:1,action:1}),/紹介/);
+ assert.equal((await h.transports[0]({op:'status',matchId:id})).match.state.gauge[1],8,'resources stay unchanged through the last effect millisecond');
+ h.setClock(boost.opensAt);assert.equal((await h.transports[0]({op:'status',matchId:id})).match.state.gauge[1],10,'resources commit exactly after the effect');
  h.setClock(boost.opensAt);await h.transports[0]({op:'action',matchId:id,turn:1,action:1});const next=(await h.transports[1]({op:'action',matchId:id,turn:1,action:0})).match;
  assert.equal(next.state.turn,2);assert.equal(next.state.hp[2],10);assert.equal(next.state.gauge[1],9);assert.equal(next.skillWindow.endAt-next.skillWindow.startAt,3000);
  assert.equal(h.get('freeGames/'+id+'/state/previousDeadline'),boost.deadline);
@@ -84,6 +88,32 @@ async function join(a='boost',b='invincible'){
  const unused=await join();unused.h.setClock(unused.start.opensAt);const accepted=(await unused.h.transports[0]({op:'action',matchId:unused.id,turn:1,action:1})).match;
  assert.equal(accepted.ownAction,1,'no skill means immediate action selection at the end of 3 seconds');
  assert.equal(A.presentationMs(ledger('boost','heal'),2),0);assert.equal(A.presentationMs(ledger('boost','heal'),1),3100);
+ // The final uses still get their full window/presentation. Only later turns skip it.
+ const spent=await join('cleanse','cleanse');spent.h.setClock(spent.start.skillWindow.startAt);
+ await spent.h.transports[0]({op:'advancedSkill',matchId:spent.id,turn:1});
+ const both=(await spent.h.transports[1]({op:'advancedSkill',matchId:spent.id,turn:1})).match;
+ assert.equal(both.skillWindow.endAt-both.skillWindow.startAt,3000,'final uses never cancel the current window');
+ assert.equal(both.opensAt-both.skillWindow.endAt,3100,'final uses retain their presentation');
+ spent.h.setClock(both.opensAt);await spent.h.transports[0]({op:'action',matchId:spent.id,turn:1,action:1});
+ const exhausted=(await spent.h.transports[1]({op:'action',matchId:spent.id,turn:1,action:1})).match;
+ assert.equal(exhausted.state.skillsExhausted,true);assert.equal(exhausted.skillWindow.startAt,exhausted.skillWindow.endAt,'both exhausted: zero-second window');
+ assert.equal(exhausted.opensAt,exhausted.skillWindow.startAt,'no hidden three-second wait remains');
+ assert.equal(exhausted.deadline-exhausted.opensAt,10000,'the full action input time is preserved');
+ spent.h.setClock(exhausted.opensAt-1);await assert.rejects(()=>spent.h.transports[0]({op:'action',matchId:spent.id,turn:2,action:1}),/紹介/);
+ spent.h.setClock(exhausted.opensAt);assert.equal((await spent.h.transports[0]({op:'action',matchId:spent.id,turn:2,action:1})).match.ownAction,1,'rules accept input immediately at the skipped window');
+ const one=await join('cleanse','boost');one.h.setClock(one.start.skillWindow.startAt);const oneUse=(await one.h.transports[0]({op:'advancedSkill',matchId:one.id,turn:1})).match;
+ one.h.setClock(oneUse.opensAt);await one.h.transports[0]({op:'action',matchId:one.id,turn:1,action:1});const remaining=(await one.h.transports[1]({op:'action',matchId:one.id,turn:1,action:0})).match;
+ assert.equal(remaining.state.skillsExhausted,false);assert.equal(remaining.skillWindow.endAt-remaining.skillWindow.startAt,3000,'one player still has uses: keep the window');
+ const flag=rules.freeGames.$game.state.skillsExhausted['.validate'],forgedFlag=one.h.copy();forgedFlag.freeGames[one.id].state.skillsExhausted=true;
+ assert.equal(one.h.evaluate(flag,one.h.copy(),forgedFlag,'freeGames/'+one.id+'/state/skillsExhausted','p1',{$game:one.id}),false,'rules reject a forged exhaustion flag');
+ for(const skill of A.SKILLS){
+  const f=await join(skill.id,'heal'),path='freeGames/'+f.id;
+  for(const [key,value]of Object.entries({hp1:7,gauge1:4,seal1:true,ruin1:2,last1:'block'}))f.h.put(path+'/state/'+key,value);
+  f.h.setClock(f.start.skillWindow.startAt);const pending=(await f.h.transports[0]({op:'advancedSkill',matchId:f.id,turn:1})).match;
+  assert.equal(pending.state.hp[1],7);assert.equal(pending.state.gauge[1],4);assert.equal(pending.state.seal[1],true);assert.equal(pending.state.last[1],'block');
+  f.h.setClock(pending.opensAt-1);assert.deepEqual(plain((await f.h.transports[0]({op:'status',matchId:f.id})).match.state),plain(pending.state),skill.id+' waits through the whole effect');
+  f.h.setClock(pending.opensAt);assert.deepEqual(plain((await f.h.transports[0]({op:'status',matchId:f.id})).match.state),plain(pending.skillResult),skill.id+' commits once at the effect deadline');
+ }
  // A finished Advanced game retains immutable skill receipts and replays using only its own engine.
  await h.transports[0]({op:'resign',matchId:id});
  const context=vm.createContext({window:{AdvancedRules:A},calculateV1:calc,calculateV2:calc,stateFields:Object.keys(base)});

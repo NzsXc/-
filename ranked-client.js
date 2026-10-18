@@ -113,6 +113,7 @@ function rankedTick(){
  const now=rankedClockServer+performance.now()-rankedClockAt;
  const localNow=performance.now();
  const skillConfirmed=m.roomRules?.mode!=='advanced'||!m.skillWindow||m.serverNow>=m.skillWindow.endAt;
+ if(skillConfirmed&&!rankedAnimating&&!m.closed&&m.skillResult&&now>=m.opensAt&&m.state!==m.skillResult){m.state=m.skillResult;rankedPaintState(m);}
  if(!skillConfirmed&&now>=m.skillWindow.endAt&&!rankedSending&&rankedTick.skillBoundary!==m.id+':'+m.state.turn){rankedTick.skillBoundary=m.id+':'+m.state.turn;rankedRefresh(rankedEpoch);}
  const turnOpen=skillConfirmed&&!!m.state&&rankedTurnClockKey===m.id+':'+m.state.turn&&localNow>=rankedTurnOpensAt;
  const inputExpired=turnOpen&&localNow>=rankedTurnDeadline;
@@ -182,6 +183,13 @@ function rankedReveal(m){
   },Math.max(0,revealAt+(typeof ONLINE_REVEAL_MS==='number'?ONLINE_REVEAL_MS:1300)-performance.now()));
  },Math.max(0,revealAt-performance.now()));
 }
+function rankedPaintState(m,paint=true){
+ for(const p of [1,2]){
+  hp[p]=m.state.hp[p];gauge[p]=m.state.gauge[p];blockSeal[p]=m.state.seal[p];enhanceTurns[p]=m.state.enhance[p];momentumBonus[p]=m.state.momentum[p];ruinTurns[p]=m.state.ruin?.[p]||0;
+  lastAction[p]=m.state.last[p]?{data:{type:m.state.last[p]}}:null;
+ }
+ if(paint)updateBattleUI();
+}
 function rankedApply(m,visualCommit=false){
  if(!rankedActive||!m)return;
  if(!visualCommit&&rankedMatch?.id===m.id){
@@ -213,10 +221,8 @@ function rankedApply(m,visualCommit=false){
  }
  selectedTechniques={1:m.loadouts[1].slice(),2:m.loadouts[2].slice()};
  player1Techs=m.loadouts[1].map(i=>techniquePool[i]);player2Techs=m.loadouts[2].map(i=>techniquePool[i]);
- for(const p of [1,2]){
-  hp[p]=m.state.hp[p];gauge[p]=m.state.gauge[p];blockSeal[p]=m.state.seal[p];enhanceTurns[p]=m.state.enhance[p];momentumBonus[p]=m.state.momentum[p];ruinTurns[p]=m.state.ruin?.[p]||0;
-  lastAction[p]=m.state.last[p]?{data:{type:m.state.last[p]}}:null;
- }
+ if(m.skillResult&&m.serverNow>=m.opensAt)m.state=m.skillResult;
+ rankedPaintState(m,false);
  if(entering||wasPhase==='select'){showScreen('battleScreen');setupActionNames();}
  setPlayerNames(m.players[1].name,m.players[2].bot?botDisplayName():m.players[2].name);
  updateBattleUI();

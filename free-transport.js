@@ -1,7 +1,7 @@
 import {ref,get,set,update,push,serverTimestamp,onValue,runTransaction} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js';
 import {calculate,stateFields} from './free-calculator.js?v=room-rules-1';
 import {historyMatch} from './battle-history-core.js?v=advanced-1';
-import {createAdvancedProtocol} from './advanced/protocol.js?v=skill-cutin-1';
+import {createAdvancedProtocol} from './advanced/protocol.js?v=skill-flow-1';
 export function createFreeTransport(db,auth,history){
  let offset=0;onValue(ref(db,'.info/serverTimeOffset'),s=>{offset=s.val()||0;});
  const now=()=>Date.now()+offset;
@@ -67,8 +67,8 @@ const initialAccount = {
  // Call + reveal + effect + margin = 3100 ms after the countdown ends.
  const transitionMs=6100;
  const countdownEndsAt=s=>Math.max(s.startedAt,Math.min(s.startedAt+3000,s.previousDeadline));
- const skillEndsAt=s=>(Number.isFinite(s.previousDeadline)?countdownEndsAt(s)+3100:s.startedAt+(s.turn>1?7500:5600))+window.AdvancedRules.WINDOW_MS;
- const turnOpensAt=(s,roomRules,advanced)=>(Number.isFinite(s.previousDeadline)?countdownEndsAt(s)+3100:s.startedAt+(s.turn>1?7500:5600))+(roomRules?.mode==='advanced'?window.AdvancedRules.WINDOW_MS+window.AdvancedRules.presentationMs(advanced,s.turn):0);
+ const skillEndsAt=s=>(Number.isFinite(s.previousDeadline)?countdownEndsAt(s)+3100:s.startedAt+(s.turn>1?7500:5600))+window.AdvancedRules.windowMs(s);
+ const turnOpensAt=(s,roomRules,advanced)=>(Number.isFinite(s.previousDeadline)?countdownEndsAt(s)+3100:s.startedAt+(s.turn>1?7500:5600))+(roomRules?.mode==='advanced'?window.AdvancedRules.windowMs(s)+window.AdvancedRules.presentationMs(advanced,s.turn):0);
  const protocolFlights=new Map(),advanceFlights=new Map();
  const permissionDenied=e=>/permission.?denied/i.test(String(e.code||'')+' '+e.message);
  let roomRulesProtocol=null;
@@ -108,6 +108,7 @@ const initialAccount = {
    if(!fresh||fresh.turn!==s.turn)return true;
    const c=roomRules?.mode==='advanced'?window.AdvancedRules.resolve(fresh,moves,advanced?.selected,window.AdvancedRules.forTurn(advanced,fresh.turn),calculate,roomRules):calculate(fresh,moves,rulesVersion,roomRules),state=Object.fromEntries(stateFields.map(k=>[k,k==='startedAt'?serverTimestamp():c[k]]));
    if(modern)state.previousDeadline=turnOpensAt(fresh,roomRules,advanced)+10000;
+   if(roomRules?.mode==='advanced')state.skillsExhausted=window.AdvancedRules.exhausted(advanced);
    try{await writeUpdate(path,{transition:c,state});}
    catch(e){
     const accepted=await read(path+'/state');
@@ -179,11 +180,13 @@ const initialAccount = {
    break;
   }
   const me=g.me,roomRules=window.RoomRules.normalize(g.roomRules);
-  const s=roomRules.mode==='advanced'?window.AdvancedRules.preview(g.state,g.advanced?.selected,window.AdvancedRules.forTurn(g.advanced,g.state?.turn),roomRules):g.state;
+  const advanced=roomRules.mode==='advanced',opensAt=g.state?turnOpensAt(g.state,roomRules,g.advanced):0;
+  const skillResult=advanced&&g.state&&window.AdvancedRules.presentationMs(g.advanced,g.state.turn)?window.AdvancedRules.preview(g.state,g.advanced?.selected,window.AdvancedRules.forTurn(g.advanced,g.state.turn),roomRules):null;
+  const s=skillResult&&now()>=opensAt?skillResult:g.state;
   const {players,loadouts}=g.ready[1]&&g.ready[2]?await metadata(id,g):{players:{},loadouts:{}};
   if(s&&(!loadouts[1]||!loadouts[2])){const saved=await archivedStatus(id,u);if(saved)return saved.match;throw Error('対戦情報を再取得してください');}
-  const state=s?{turn:s.turn,...Object.fromEntries(['hp','gauge','seal','enhance','momentum','ruin','last'].map(k=>[k,[null,s[k+'1'],s[k+'2']]]))}:null;
-  const closed=!!g.settled,opensAt=s?turnOpensAt(s,roomRules,g.advanced):0;
+  const board=value=>value?{turn:value.turn,...(advanced?{skillsExhausted:!!value.skillsExhausted}:{}),...Object.fromEntries(['hp','gauge','seal','enhance','momentum','ruin','last'].map(k=>[k,[null,value[k+'1'],value[k+'2']]]))}:null;
+  const state=board(s),closed=!!g.settled;
   const titleKey=u+':'+id;
   if(s&&(titleRecorded.get(titleKey)||0)<s.turn-1){
    titleRecorded.set(titleKey,s.turn-1);
@@ -195,7 +198,7 @@ const initialAccount = {
   }
   // A match that expires before either loadout still needs player names for results.
   if(closed&&!s)for(const p of [1,2]){const account=await read('freeAccounts/'+g.players[p]);players[p]={name:account?.name||'プレイヤー'};}
-  return {id,kind:g.kind||'random',roomId:g.room||null,roomRules:window.RoomRules.normalize(g.roomRules),you:me,...(roomRules.mode==='advanced'?{advanced:g.advanced,skillWindow:s?{startAt:skillEndsAt(s)-window.AdvancedRules.WINDOW_MS,endAt:skillEndsAt(s)}:null}:{}),players,ready:g.ready,loadouts,state,closed,phase:closed?'finished':s?'turn':'select',revision:now(),serverNow:now(),opensAt,deadline:s?opensAt+10000:g.createdAt+60000,graceDeadline:s?opensAt+40000:g.createdAt+90000,ownAction:g.own??null,reveal:g.transition?{turn:g.transition.turn-1,startedAt:s?.startedAt,countdownEndsAt:Number.isFinite(s?.previousDeadline)?countdownEndsAt(s):null,actions:{1:g.transition.action1,2:g.transition.action2},damage:{1:g.transition.damage1,2:g.transition.damage2}}:null,result:closed?{winner:g.settled.winner,rated:g.kind!=='friend',reason:g.resigned?'resigned':g.abandoned&&s?.hp1>0&&s?.hp2>0?'reconnect-timeout':!s?'selection-timeout':s.misses1>=2||s.misses2>=2?'idle-forfeit':s.turn>300?'turn-limit':'battle'}:null,rating:closed?{before:g.settled['before'+me],after:g.settled['after'+me],delta:g.settled['delta'+me]}:null};
+  return {id,kind:g.kind||'random',roomId:g.room||null,roomRules:window.RoomRules.normalize(g.roomRules),you:me,...(advanced?{advanced:g.advanced,skillResult:board(skillResult),skillWindow:s?{startAt:skillEndsAt(s)-window.AdvancedRules.windowMs(s),endAt:skillEndsAt(s)}:null}:{}),players,ready:g.ready,loadouts,state,closed,phase:closed?'finished':s?'turn':'select',revision:now(),serverNow:now(),opensAt,deadline:s?opensAt+10000:g.createdAt+60000,graceDeadline:s?opensAt+40000:g.createdAt+90000,ownAction:g.own??null,reveal:g.transition?{turn:g.transition.turn-1,startedAt:s?.startedAt,countdownEndsAt:Number.isFinite(s?.previousDeadline)?countdownEndsAt(s):null,actions:{1:g.transition.action1,2:g.transition.action2},damage:{1:g.transition.damage1,2:g.transition.damage2}}:null,result:closed?{winner:g.settled.winner,rated:g.kind!=='friend',reason:g.resigned?'resigned':g.abandoned&&s?.hp1>0&&s?.hp2>0?'reconnect-timeout':!s?'selection-timeout':s.misses1>=2||s.misses2>=2?'idle-forfeit':s.turn>300?'turn-limit':'battle'}:null,rating:closed?{before:g.settled['before'+me],after:g.settled['after'+me],delta:g.settled['delta'+me]}:null};
  }
  async function resumeActive(account){
   const u=auth.currentUser.uid,id=String(account?.active||'');
