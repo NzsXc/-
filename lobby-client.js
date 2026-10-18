@@ -60,7 +60,7 @@ async function submitFriendRoom(event){
  form.querySelectorAll('input,button').forEach(el=>{el.disabled=true;});renderProtectedRooms();
  try{
   const id=await window.protectedRooms.create(rules);
-  showScreen('friendLobbyScreen');protectedStatus(window.RoomRules.label(rules)+' · '+window.RoomRules.summary(rules)+' · 1/2 · 友達の参加を待っています…');
+  showScreen('friendLobbyScreen');protectedStatus(window.RoomRules.label(rules)+' · 1/2 · 友達の参加を待っています…');
   document.getElementById('friendCreateButton').hidden=true;
   protectedHostStop=window.protectedRooms.watchHost(id,enterProtectedMatch,e=>protectedStatus(e.message));
  }catch(error){
