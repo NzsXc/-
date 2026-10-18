@@ -320,4 +320,3 @@ async function rankedLeave(){
  }
  rankedStop();returnBattleHomeCore();
 }
-
