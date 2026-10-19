@@ -2056,7 +2056,7 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
 <link rel="stylesheet" href="battle-action-art.css?v=orbit-selection-1">
 <link rel="stylesheet" href="neon-controls.css?v=neon-menu-1">
 <link rel="stylesheet" href="mode-menu.css?v=mode-cards-1">
-<link rel="stylesheet" href="notice-guide.css?v=guide-1">
+<link rel="stylesheet" href="notice-guide.css?v=voting-1">
 </head>
 
 
@@ -2325,14 +2325,14 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
         <header class="guideHeader"><span class="guideEyebrow">TECHNIQUES &amp; SKILLS</span><h1>技・スキル効果</h1><p>ゲーム内と同じ絵柄で、消費ゲージと効果をチェック。</p></header>
         <h2 class="guideSectionTitle">基本行動 <small>3種類 / 共通</small></h2><div id="guideBasicActions" class="guideCatalog"></div>
         <h2 class="guideSectionTitle">選択技 <small>12種類から3つを装備</small></h2><div id="guideTechniques" class="guideCatalog"></div>
-        <h2 class="guideSectionTitle">スキル <small>Advanced専用 / 6種類から1つ</small></h2><p class="guideNote">各ターンの最初の3秒間に使用。ゲージ消費なし・1ターン1回まで。回復・補給は部屋のHP・ゲージ上限までです。</p><div id="guideSkills" class="guideCatalog"></div>
+        <h2 class="guideSectionTitle">スキル <small>Advanced専用 / 6種類から1つ</small></h2><div id="guideSkills" class="guideCatalog"></div>
       </div></section>
       <section id="tipPage3" class="tipPage" aria-labelledby="tipNav3" aria-hidden="true" inert><div class="tipPageInner guidePage">
         <header class="guideHeader"><span class="guideEyebrow">COMMUNITY TIER LIST</span><h1>みんなの技・スキル評価</h1><p>S / A / B / C の4段階で、絵柄から探せるティア表。</p></header>
-        <p class="guideDraft"><strong>仮評価</strong> 現在はサンプルの配置です。みんなの投票・集計結果ではありません。</p>
-        <h2 class="guideSectionTitle">技のティア表 <small>基本行動 + 選択技</small></h2><div id="guideTechniqueTiers" class="guideTierTable" role="table" aria-label="技の仮ティア表"></div>
-        <h2 class="guideSectionTitle">スキルのティア表 <small>Advanced専用</small></h2><div id="guideSkillTiers" class="guideTierTable" role="table" aria-label="スキルの仮ティア表"></div>
-        <p class="guideNote">同じランク内の並び順に優劣はありません。相手の構成や使うタイミングによって強さは変わります。</p>
+        <p class="guideNote">1アカウントにつき各項目1票。1〜4点で評価でき、あとから変更できます。全プレイヤーの平均で S：3.5以上 / A：3以上 / B：2.5以上 / C：2.5未満 に分かれます。</p><p id="guideRatingsStatus" class="guideNote" role="status" aria-live="polite"></p>
+        <div class="guideTierHeading"><h2 class="guideSectionTitle">技のティア表 <small>選択技12種類</small></h2><button id="guideVoteTechniques" class="guideVoteButton" type="button">技に投票</button></div><div id="guideTechniqueTiers" class="guideTierTable" role="table" aria-label="技の平均評価ティア表"></div>
+        <div class="guideTierHeading"><h2 class="guideSectionTitle">スキルのティア表 <small>Advanced専用</small></h2><button id="guideVoteSkills" class="guideVoteButton" type="button">スキルに投票</button></div><div id="guideSkillTiers" class="guideTierTable" role="table" aria-label="スキルの平均評価ティア表"></div>
+        <p class="guideNote">平均点は小数第2位まで表示します。投票のない項目は未評価です。相手の構成や使うタイミングによって強さは変わります。</p>
         <button class="guideTextLink" onclick="showTipPage(2)">技・スキルの効果を見る →</button>
       </div></section>
     </div>
@@ -2749,6 +2749,7 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
   import {createBattleHistory} from "./battle-history.js?v=attack-stance-1";
   import {createPlayerProfile} from "./player-profile.js?v=usage-1";
   import {createHistoryScreen} from "./battle-history-client.js?v=history-nulls-1";
+  import {createCommunityRatings} from "./community-ratings.js?v=voting-1";
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
   import {
     getAuth,
@@ -2784,6 +2785,8 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
   const auth = getAuth(app);
+  window.communityRatings=createCommunityRatings(db,auth);
+  window.dispatchEvent(new Event("community-ratings-ready"));
   window.battleHistory=createBattleHistory(db,auth);
   window.titleService=createTitleService(db,auth,window.battleHistory);
   window.rankedTransport=createFreeTransport(db,auth,window.battleHistory);
@@ -3386,6 +3389,7 @@ window.techniquePoolForOnline = techniquePool;
 
 function showTipPage(page){
   const index=Math.max(0,Math.min(3,Math.trunc(Number(page)||0)));
+  if(index===3)window.NoticeGuide?.loadRatings();
   const pages=document.getElementById("tipPages");
   if(pages)pages.style.transform=`translateX(-${index*100}%)`;
   document.querySelectorAll(".tipNavButton").forEach((button,i)=>{
@@ -6988,7 +6992,8 @@ updateTechniqueDisplay();
   requestAnimationFrame(()=>{opening.classList.add('playing');setTimeout(()=>opening.classList.add('finished'),1450);});
 })();
 </script>
-<script src="notice-guide.js?v=guide-1"></script>
+<script src="community-rating-core.js?v=voting-1"></script>
+<script src="notice-guide.js?v=voting-1"></script>
 <!-- PWA registration -->
 <script src="./pwa-register.js" defer></script>
 </body>

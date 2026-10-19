@@ -28,6 +28,11 @@ const mime = {'.html':'text/html', '.css':'text/css', '.js':'text/javascript', '
         document.getElementById('openingTransition').remove();
         HTMLMediaElement.prototype.play = () => Promise.resolve();
         showScreen('modeScreen');
+        const state={uid:'p1',canVote:true,connected:true,loaded:{techniques:true,skills:true},errors:{},ballots:{techniques:{p1:{tech1:4,tech2:3,tech3:3,tech4:2},p2:{tech1:3,tech2:3,tech3:2,tech4:2}},skills:{p1:{boost:4,heal:3,chain:3,cleanse:2},p2:{boost:3,heal:3,chain:2,cleanse:2}}}};
+        window.voteTest={state,saves:[],fail:false,listeners:[],emit(){this.listeners.forEach(fn=>fn(structuredClone(this.state)));}};
+        window.communityRatings={watch(fn){voteTest.listeners.push(fn);fn(structuredClone(state));return()=>{};},retry(){voteTest.emit();},async save(category,values){if(voteTest.fail)throw Error('テスト通信エラー');voteTest.saves.push({category,values});state.ballots[category][state.uid]=values;voteTest.emit();}};
+        window.openPlayerLogin=()=>window.loginOpened=true;
+        window.dispatchEvent(new Event('community-ratings-ready'));
       });
       await page.getByRole('button', {name:'お知らせを開く',exact:true}).click();
       assert.equal(await page.locator('#tipPage0 h1').innerText(), '目次');
@@ -51,9 +56,12 @@ const mime = {'.html':'text/html', '.css':'text/css', '.js':'text/javascript', '
       await scroll.evaluate(n => n.scrollTop = n.scrollHeight);
       assert.equal(await scroll.evaluate(n => n.scrollTop + n.clientHeight >= n.scrollHeight - 1), true, 'last skill can be reached');
       await page.locator('#tipNav3').click();
-      assert.match(await page.locator('.guideDraft').innerText(), /仮評価.*投票・集計結果ではありません/);
-      for (const [tableId, expected] of [['guideTechniqueTiers', 15], ['guideSkillTiers', 6]]) {
-        assert.deepEqual(await page.locator(`#${tableId} .guideTierRank`).allTextContents(), ['S','A','B','C']);
+      assert.equal(await page.locator('.guideDraft').count(),0);
+      assert.doesNotMatch(await page.locator('#tipPage2').innerText(), /各ターンの最初の3秒間に使用/);
+      assert.equal(await page.locator('#guideTechniqueTiers [data-guide-id="tech1"] .guideTierScore').innerText(),'(3.50)');
+      assert.equal(await page.locator('#guideTechniqueTiers [data-guide-id="charge"],#guideTechniqueTiers [data-guide-id="block"],#guideTechniqueTiers [data-guide-id="attack"]').count(),0);
+      for (const [tableId, expected] of [['guideTechniqueTiers', 12], ['guideSkillTiers', 6]]) {
+        assert.deepEqual(await page.locator(`#${tableId} .guideTierRank`).allTextContents(), ['S','A','B','C','未評価']);
         const ids = await page.locator(`#${tableId} .guideTierTile`).evaluateAll(nodes => nodes.map(n => n.dataset.guideId));
         assert.equal(ids.length, expected);
         assert.equal(new Set(ids).size, expected, 'each action/skill appears once');
@@ -77,10 +85,52 @@ const mime = {'.html':'text/html', '.css':'text/css', '.js':'text/javascript', '
           await page.screenshot({path:path.join(process.env.GUIDE_SCREENSHOTS, `notice-p${index+1}-${width}.png`)});
         }
       }
+      await page.locator('#tipNav3').click();
+      await page.locator('#guideVoteTechniques').click();
+      assert.equal(await page.locator('#guideVoteDialog select').count(),12);
+      assert.equal(await page.getByLabel('ブリーチの評価',{exact:true}).inputValue(),'4');
+      await page.getByLabel('ブリーチの評価',{exact:true}).selectOption('2');
+      await page.getByRole('button',{name:'保存する',exact:true}).click();
+      assert.equal(await page.locator('#guideVoteDialog').isVisible(),false);
+      assert.equal(await page.locator('#guideTechniqueTiers [data-rank="B"] [data-guide-id="tech1"] .guideTierScore').innerText(),'(2.50)');
+      await page.locator('#guideVoteTechniques').click();
+      assert.equal(await page.getByLabel('ブリーチの評価',{exact:true}).inputValue(),'2');
+      await page.getByLabel('ブリーチの評価',{exact:true}).selectOption('4');
+      await page.getByRole('button',{name:'保存する',exact:true}).click();
+      assert.equal(await page.locator('#guideTechniqueTiers [data-guide-id="tech1"]').getAttribute('title').then(s=>s.includes('2票')),true);
+      await page.locator('#guideVoteSkills').click();
+      assert.equal(await page.locator('#guideVoteDialog select').count(),6);
+      await page.getByLabel('無敵の評価',{exact:true}).selectOption('4');
+      await page.evaluate(()=>voteTest.fail=true);
+      await page.getByRole('button',{name:'保存する',exact:true}).click();
+      await page.waitForFunction(()=>document.querySelector('.guideVoteMessage').textContent==='テスト通信エラー');
+      assert.equal(await page.getByLabel('無敵の評価',{exact:true}).inputValue(),'4');
+      await page.evaluate(()=>{voteTest.fail=false;voteTest.state.connected=false;voteTest.emit();});
+      assert.equal(await page.getByRole('button',{name:'保存する',exact:true}).isDisabled(),true);
+      await page.evaluate(()=>{voteTest.state.connected=true;voteTest.emit();});
+      assert.equal(await page.getByRole('button',{name:'保存する',exact:true}).isEnabled(),true);
+      const geometry=await page.locator('#guideVoteDialog').evaluate(n=>{const r=n.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,overflow:n.scrollWidth>n.clientWidth};});
+      assert(geometry.left>=0&&geometry.right<=width&&geometry.top>=0&&geometry.bottom<=height&&!geometry.overflow,JSON.stringify(geometry));
+      assert.equal(await page.locator('.guideVoteField select').evaluateAll(nodes=>nodes.every(n=>n.offsetHeight>=44)),true);
+      await page.locator('.guideVoteFields').evaluate(n=>n.scrollTop=n.scrollHeight);
+      await page.getByRole('button',{name:'保存する',exact:true}).click();
+      assert.equal(await page.locator('#guideSkillTiers [data-rank="S"] [data-guide-id="invincible"] .guideTierScore').innerText(),'(4.00)');
+      await page.locator('#guideVoteSkills').click();
+      await page.getByLabel('無敵の評価',{exact:true}).selectOption('1');
+      await page.keyboard.press('Escape');
+      await page.locator('#guideVoteSkills').click();
+      assert.equal(await page.getByLabel('無敵の評価',{exact:true}).inputValue(),'4','Escape discards draft');
+      await page.evaluate(()=>{voteTest.state.uid='p2';voteTest.emit();});
+      assert.equal(await page.getByLabel('無敵の評価',{exact:true}).inputValue(),'','changing account replaces old draft');
+      await page.evaluate(()=>{voteTest.state.canVote=false;voteTest.state.uid='guest';voteTest.emit();});
+      assert.equal(await page.locator('#guideVoteDialog select:enabled').count(),0);
+      assert.equal(await page.getByRole('button',{name:'保存する',exact:true}).isVisible(),false);
+      await page.getByRole('button',{name:'ログイン',exact:true}).click();
+      assert.equal(await page.evaluate(()=>window.loginOpened),true);
       await page.locator('.tipBackButton').click();
       assert.equal(await page.locator('#modeScreen').isVisible(), true);
       assert.deepEqual(errors, []);
-      console.log(`PASS ${width}x${height}: contents, navigation, 21 definitions, art, limits, SABC coverage, scrolling, layout and return`);
+      console.log(`PASS ${width}x${height}: contents, navigation, 21 definitions, art, limits, SABC averages, editable ballots, auth changes, offline/failure/cancel, dialog layout and return`);
       await page.close();
     }
   } finally { await browser.close(); }
