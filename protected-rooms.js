@@ -1,5 +1,6 @@
 import {ref,get,set,update,remove,push,onValue,onDisconnect,serverTimestamp} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js';
 import {signInAnonymously} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js';
+import {spectatorSkillMatch} from './advanced/spectator.js?v=skill-display-2';
 export function createProtectedRooms(db,auth,transport,history){
  let offset=0,hostRoom=null,heartbeat=null,disconnect=null;onValue(ref(db,'.info/serverTimeOffset'),s=>offset=Number(s.val()||0));
  const now=()=>Date.now()+offset,read=async p=>(await get(ref(db,p))).val();
@@ -21,7 +22,7 @@ export function createProtectedRooms(db,auth,transport,history){
  function archivedSnapshot(h){
   const raw=h?.finalState;if(!raw)return null;const s=h.roomRules?.mode==='advanced'?window.AdvancedRules.preview(raw,h.advanced?.selected,window.AdvancedRules.forTurn(h.advanced,raw.turn),h.roomRules):raw,people={};
   for(const p of [1,2])people[p]={name:h.players[p].name,joined:true,online:false,techniques:h.players[p].loadout?[0,1,2].map(i=>h.players[p].loadout[i]):[]};
-  return {players:people,battle:{roomRules:h.roomRules||null,phase:'finished',turn:s.turn,updatedAt:now(),result:h.settled.winner?h.settled.winner+'P WIN':'DRAW',hp:{1:s.hp1,2:s.hp2},gauge:{1:s.gauge1,2:s.gauge2},enhanceTurns:{1:s.enhance1,2:s.enhance2},blockSeal:{1:s.seal1,2:s.seal2}}};
+  return {players:people,battle:{skillMatch:spectatorSkillMatch(h.id||'archive',raw,h.advanced,h.roomRules,people,true,now()),roomRules:h.roomRules||null,phase:'finished',turn:s.turn,updatedAt:now(),result:h.settled.winner?h.settled.winner+'P WIN':'DRAW',hp:{1:s.hp1,2:s.hp2},gauge:{1:s.gauge1,2:s.gauge2},enhanceTurns:{1:s.enhance1,2:s.enhance2},blockSeal:{1:s.seal1,2:s.seal2},ruinTurns:{1:s.ruin1||0,2:s.ruin2||0}}};
  }
  const validId=id=>typeof id==='string'&&/^[A-Za-z0-9_-]+$/.test(id);
  async function snapshot(roomId,accounts){
@@ -35,14 +36,17 @@ export function createProtectedRooms(db,auth,transport,history){
   if(!players||!rawState)return archived();if(random&&kind!=='random')return null;
   const roomRules=await transport.supportsRoomRules?.()?await read(path+'/roomRules'):null;
   const advanced=roomRules?.mode==='advanced'?await read(path+'/advanced'):null;
-  const s=advanced?window.AdvancedRules.preview(rawState,advanced.selected,window.AdvancedRules.forTurn(advanced,rawState.turn),roomRules):rawState;
+  const skillMatch=spectatorSkillMatch(id,rawState,advanced,roomRules,null,settled,now());
+  const s=skillMatch&&window.AdvancedRules.presentationComplete(skillMatch,skillMatch.serverNow)?window.AdvancedRules.preview(rawState,advanced?.selected,window.AdvancedRules.forTurn(advanced,rawState.turn),roomRules):rawState;
   const people={};try{for(const p of [1,2]){const a=accounts?.[players[p]]||await read('freeAccounts/'+players[p]);people[p]={name:a?.name||'プレイヤー',joined:true,online:!settled,techniques:ready?.[1]===true&&ready?.[2]===true?await read(path+'/loadouts/'+p):[]};}}
   catch(error){if(!await read(path+'/players'))return archived();throw error;}
+  if(skillMatch)skillMatch.players=people;
   // Settlement can archive/delete the live node between these reads.
   if(!await read(path+'/players'))return archived();
   const battle={roomRules,phase:settled?'finished':'battle',turn:s.turn,updatedAt:now(),result:settled?(settled.winner?settled.winner+'P WIN':'DRAW'):'',hp:{1:s.hp1,2:s.hp2},gauge:{1:s.gauge1,2:s.gauge2},enhanceTurns:{1:s.enhance1,2:s.enhance2},blockSeal:{1:s.seal1,2:s.seal2},ruinTurns:{1:s.ruin1||0,2:s.ruin2||0},lastAction:{1:s.last1?{data:{type:s.last1}}:null,2:s.last2?{data:{type:s.last2}}:null}};
   const countdownEnd=Number.isFinite(s.previousDeadline)?Math.max(s.startedAt,Math.min(s.startedAt+3000,s.previousDeadline)):s.startedAt+3000;
   if(!settled&&reveal?.turn===s.turn&&s.turn>1&&now()<countdownEnd+3000){const action=id=>window.BattleAI.ACTIONS[id];battle.phase='effect';battle.resolvedTurn=reveal.turn-1;battle.countdownEndsAt=countdownEnd;battle.revealAt=countdownEnd+500;battle.effectStartAt=countdownEnd+1800;battle.damageTo1=reveal.damage1;battle.damageTo2=reveal.damage2;battle.actions={1:{id:reveal.action1,data:action(reveal.action1)},2:{id:reveal.action2,data:action(reveal.action2)}};}
+  if(skillMatch)battle.skillMatch=skillMatch;
   return {players:people,battle};
  }
  function poll(task,callback,onError){let cancelled=false,timer=null;const loop=async()=>{try{await ensure();const result=await task();if(!cancelled){try{callback(result);}catch(error){console.error('観戦画面の更新に失敗しました',error);}}}catch(e){if(!cancelled)onError?.(e);}finally{if(!cancelled)timer=setTimeout(loop,1200);}};loop();return ()=>{cancelled=true;clearTimeout(timer);};}
@@ -72,3 +76,4 @@ export function createProtectedRooms(db,auth,transport,history){
  }
  return {resume:async()=>{await ensure();return transport({op:'resume'});},ensure,create,join,leave,now,watchList,watchHost,watchAllRooms,watchRoom:(id,callback,onError)=>poll(()=>snapshot(id),callback,onError)};
 }
+

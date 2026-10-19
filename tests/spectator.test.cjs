@@ -1,7 +1,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const {harness}=require('./rules-harness.cjs');
 const root=path.resolve(__dirname,'..'),plain=value=>JSON.parse(JSON.stringify(value));
-const source=fs.readFileSync(path.join(root,'protected-rooms.js'),'utf8').replace(/^import[^\n]*\n/gm,'').replace('export function','function');
+const source=fs.readFileSync(path.join(root,'advanced/spectator.js'),'utf8').replace('export function','function')+'\n'+fs.readFileSync(path.join(root,'protected-rooms.js'),'utf8').replace(/^import[^\n]*\n/gm,'').replace('export function','function');
 function setup(){
  const h=harness(),reads=[],subscriptions=[],timers=new Map(),operations=[],renderErrors=[];let nextTimer=0,beforeGet=null;
  const db={uid:'viewer'},auth={currentUser:{uid:'viewer'},authStateReady:async()=>{}};
@@ -84,3 +84,4 @@ function setup(){
  const cancel=c.api.watchAllRooms(()=>assert.fail('cancelled callback'),()=>assert.fail('cancelled error'));cancel();release();await c.flush();assert.equal(c.subscriptions.length,1);assert.equal(c.timers.size,0);
  console.log('PASS: random discovery, actual rules/UI filter, deduplication, dynamic lists, friend regression, hidden loadouts/moves, transition timing, archive races, error isolation and cancellation');
 })().catch(error=>{console.error(error);process.exitCode=1;});
+

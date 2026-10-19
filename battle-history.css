@@ -39,4 +39,6 @@
 .historyTable th,.historyTable td{border-bottom:1px solid rgba(117,234,255,.13);padding:10px 8px;vertical-align:top}
 .historyTable thead th{overflow-wrap:anywhere;width:44%}.historyTable thead th:first-child{width:12%;white-space:nowrap}
 .historyTurnState{display:block;margin-top:5px;color:#b7d0e0;font-size:11px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.historyTurnSkill{display:block;margin:0 0 6px;color:#a4ffe2;font-size:11px;line-height:1.6;overflow-wrap:anywhere}
 @media(max-width:600px){.historyHeading{align-items:flex-start}.historyHeading h1{font-size:18px}.historyPlayers{grid-template-columns:1fr;gap:10px}.historySummary{grid-template-columns:38px minmax(0,1fr) 48px minmax(0,1fr) 38px;column-gap:5px;padding:10px 20px}.historySummaryName{font-size:12px}.historySummaryRate{font-size:12px}.historyExpanded{padding:0 14px 14px}.historyHeading .historyButton{font-size:10px}.historyTable{min-width:0;table-layout:fixed}.historyTable th,.historyTable td{padding:10px 5px}.historyTurnState{white-space:normal;line-height:1.7;overflow-wrap:anywhere}}
+

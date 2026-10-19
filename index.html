@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>心理バトル</title>
-<link rel="stylesheet" href="battle-history.css?v=history-2">
+<link rel="stylesheet" href="battle-history.css?v=history-skills-2">
 <link rel="stylesheet" href="advanced/advanced.css?v=skill-flow-1">
 <link rel="stylesheet" href="advanced/button-art.css?v=attack-stance-1">
 <link rel="stylesheet" href="advanced/cutin.css?v=attack-stance-1">
@@ -2733,10 +2733,10 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
 <script src="player-lightning.js?v=2"></script>
 <script src="bot-engine.js?v=punish-2"></script>
 <script src="bot-client.js?v=mode-cards-1"></script>
-<script src="advanced/rules.js?v=attack-stance-1"></script>
+<script src="advanced/rules.js?v=skill-display-2"></script>
 <script src="room-rules.js?v=advanced-1"></script>
 <script src="ranked-client.js?v=reveal-audio-1"></script>
-<script src="advanced/client.js?v=notice-art-1"></script>
+<script src="advanced/client.js?v=skill-display-2"></script>
 <script src="advanced/cutin.js?v=attack-stance-1"></script>
 <script src="battle-inspector.js?v=battle-layout-1"></script>
 <script src="lobby-client.js?v=friend-wait-mode-1"></script>
@@ -2744,11 +2744,11 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
 <script src="battle-effects.js?v=confirmed-1"></script>
 <script type="module">
   import {createTitleService} from "./title-service.js?v=crown-prestige-1";
-  import {createProtectedRooms} from "./protected-rooms.js?v=advanced-1";
+  import {createProtectedRooms} from "./protected-rooms.js?v=skill-display-2";
   import {createFreeTransport} from "./free-transport.js?v=attack-stance-1";
   import {createBattleHistory} from "./battle-history.js?v=attack-stance-1";
   import {createPlayerProfile} from "./player-profile.js?v=usage-1";
-  import {createHistoryScreen} from "./battle-history-client.js?v=history-nulls-1";
+  import {createHistoryScreen} from "./battle-history-client.js?v=history-skills-2";
   import {createCommunityRatings} from "./community-ratings.js?v=voting-1";
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
   import {
@@ -3554,6 +3554,14 @@ function renderSpectatorLoadouts(room){
       note.textContent="技の情報を読み込み中…";
       section.appendChild(note);
     }
+    const match=room.battle?.skillMatch;
+    if(match?.roomRules?.mode==="advanced"){
+      const skill=window.AdvancedRules?.byId[match.advanced?.selected?.[side]];
+      const item=document.createElement("details");item.className="spectatorTechnique";
+      const summary=document.createElement("summary");summary.textContent="スキル："+(skill?.name||"未記録");
+      const description=document.createElement("p");description.textContent=skill?skill.description+" / 1試合"+skill.limit+"回まで":"スキルの情報を読み込み中…";
+      item.append(summary,description);section.appendChild(item);
+    }
     panel.appendChild(section);
   }
 }
@@ -3605,7 +3613,7 @@ async function enterSpectator(code,p1,p2){
     const name2=data.players?.[2]?.name || "プレイヤー2";
     setPlayerNames(name1,name2);
     badge.querySelector("span").textContent=`観戦：${name1} VS ${name2}`;
-    const nextKey=JSON.stringify(data.players || {});
+    const nextKey=JSON.stringify([data.players || {},data.battle?.skillMatch?.advanced?.selected||{},data.battle?.roomRules?.mode]);
     if(loadoutKey!==nextKey){renderSpectatorLoadouts(data);loadoutKey=nextKey;}
     if(data.battle)receiveSpectatorBattleState(data.battle,data);
   },error=>{
@@ -3626,6 +3634,14 @@ function applySpectatorState(state){
   }
   if(state.lastAction)lastAction=state.lastAction;
   updateSpectatorBattleUI();
+  window.AdvancedSkills?.observe(state.skillMatch,after=>{
+    if(!spectatorActive || onlineTurnNumber!==state.turn || !after)return;
+    for(const side of [1,2]){
+      hp[side]=after.hp[side];gauge[side]=after.gauge[side];
+      enhanceTurns[side]=after.enhanceTurns[side];blockSeal[side]=after.blockSeal[side];ruinTurns[side]=after.ruinTurns[side];
+    }
+    lastAction=after.lastAction;updateSpectatorBattleUI();
+  });
 }
 
 function receiveSpectatorBattleState(state,roomData){
@@ -3721,6 +3737,7 @@ function updateSpectatorBattleUI(){
 }
 
 function stopSpectating(){
+  window.AdvancedSkills?.reset();
   ++spectatorSession;
   spectatorActive=false;
   spectatorRoomCode=null;
@@ -6998,4 +7015,5 @@ updateTechniqueDisplay();
 <script src="./pwa-register.js" defer></script>
 </body>
 </html>
+
 

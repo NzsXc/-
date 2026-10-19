@@ -1,6 +1,7 @@
 // UI lifecycle for Advanced. Hooks return immediately for all other room modes.
 (()=>{
  const choices=new Map();let current=null,selecting=null,sending=false,epoch=0,selection=null,dock=null,enemyDock=null,windowPanel=null;
+ let observerFrame=0;
  const advanced=m=>m?.roomRules?.mode==='advanced';
  const node=(tag,cls,text)=>{const el=document.createElement(tag);if(cls)el.className=cls;if(text!=null)el.textContent=text;return el;};
  function select(m){
@@ -73,28 +74,30 @@
   screen?.classList.toggle('advancedMode',enabled);
   if(!enabled){screen?.classList.remove('advancedSkillChoosing');window.AdvancedCutin?.cancel();current=null;if(dock)dock.hidden=true;if(enemyDock)enemyDock.hidden=true;if(windowPanel)windowPanel.hidden=true;if(!advanced(m)&&selection){selection.hidden=true;document.getElementById('techScreen')?.classList.remove('advancedSelection');}return;}
   current=m;ensureBattle();dock.hidden=false;enemyDock.hidden=false;
-  const you=m.you,skill=window.AdvancedRules.byId[m.advanced?.selected?.[you]],other=window.AdvancedRules.byId[m.advanced?.selected?.[3-you]],used=m.advanced?.current?.[you]?.used||0;
-  const duration=window.AdvancedRules.WINDOW_MS,ends=m.skillWindow?.endAt??m.opensAt,starts=m.skillWindow?.startAt??ends-duration,open=!m.closed&&!rankedAnimating&&now>=starts&&now<ends;
+  const you=m.you,skill=window.AdvancedRules.byId[m.advanced?.selected?.[you]],other=window.AdvancedRules.byId[m.advanced?.selected?.[3-you]],actualUsed=m.advanced?.current?.[you]?.used||0;
+  const used=window.AdvancedRules.visibleUses(m,you,now),revealed=window.AdvancedRules.presentationComplete(m,now);
+  const duration=window.AdvancedRules.WINDOW_MS,ends=m.skillWindow?.endAt??m.opensAt,starts=m.skillWindow?.startAt??ends-duration,animating=!m.spectator&&rankedAnimating,open=!m.closed&&!animating&&now>=starts&&now<ends;
   if(open)PlayerIntro.cancel();windowPanel.hidden=!open;
   screen.classList.toggle('advancedSkillChoosing',open);
   dock.classList.toggle('skillWindowOpen',open);enemyDock.classList.toggle('skillWindowOpen',open);
   if(open){const left=Math.max(0,Math.min(duration/1000,(ends-now)/1000));windowPanel.querySelector('.advancedSkillSeconds').textContent=left.toFixed(1)+'秒';windowPanel.querySelector('.advancedSkillFill').style.transform='scaleX('+(left*1000/duration)+')';windowPanel.querySelector('[role="progressbar"]').setAttribute('aria-valuenow',left.toFixed(2));}
-  const button=dock.querySelector('button');button.disabled=!open||sending||!skill||used>=skill.limit||!!window.AdvancedRules.forTurn(m.advanced,m.state.turn)[you];
+  const button=dock.querySelector('button');button.disabled=!!m.spectator||!open||sending||!skill||actualUsed>=skill.limit||!!window.AdvancedRules.forTurn(m.advanced,m.state.turn)[you];
   paint(button,skill?.id);button.classList.toggle('exhausted',!!skill&&used>=skill.limit);button.setAttribute('aria-busy',String(sending));
   button.querySelector('.advancedSkillName').textContent=skill?.name||'スキル未選択';
   button.querySelector('.advancedSkillUses').textContent=skill?Math.max(0,skill.limit-used)+'/'+skill.limit:'';
   button.querySelector('.advancedSkillDescription').textContent=sending?'発動中…':skill?.description||'';
-  dock.querySelector('#advancedOpponentSkill').textContent=other?'相手：'+other.name+' · '+Math.max(0,other.limit-(m.advanced?.current?.[3-you]?.used||0))+'/'+other.limit+'回':'';
+  dock.querySelector('#advancedOpponentSkill').textContent=other?(m.spectator?'2P：':'相手：')+other.name+' · '+Math.max(0,other.limit-window.AdvancedRules.visibleUses(m,3-you,now))+'/'+other.limit+'回':'';
   const label=skill?skill.name+'、残り'+Math.max(0,skill.limit-used)+'/'+skill.limit+'回。'+(sending?'発動中…':skill.description)+'。'+(open?'スキル選択猶予':'ターン開始時の3秒間に使用'):'';
   button.setAttribute('aria-label',label);button.title=label+'\n'+dock.querySelector('#advancedOpponentSkill').textContent;
-  const enemyButton=enemyDock.querySelector('button'),otherUsed=m.advanced?.current?.[3-you]?.used||0;
+  const enemyButton=enemyDock.querySelector('button'),otherUsed=window.AdvancedRules.visibleUses(m,3-you,now);
   paint(enemyButton,other?.id);enemyButton.classList.toggle('exhausted',!!other&&otherUsed>=other.limit);
   enemyButton.querySelector('.advancedSkillName').textContent=other?.name||'スキル未選択';
   enemyButton.querySelector('.advancedSkillUses').textContent=other?Math.max(0,other.limit-otherUsed)+'/'+other.limit:'';
   enemyButton.querySelector('.advancedSkillDescription').textContent=other?.description||'';
-  enemyButton.setAttribute('aria-label',other?'相手：'+other.name+'、残り'+Math.max(0,other.limit-otherUsed)+'/'+other.limit+'回。'+other.description:'相手のスキル未選択');enemyButton.title=enemyButton.getAttribute('aria-label');
-  for(const [side,target]of [[you,button],[3-you,enemyButton]])target.classList.toggle('usedThisTurn',!!window.AdvancedRules.forTurn(m.advanced,m.state.turn)[side]);
-  place();window.AdvancedCutin?.sync(m,now,{blocked:rankedAnimating});
+  enemyButton.setAttribute('aria-label',other?(m.spectator?'2P：':'相手：')+other.name+'、残り'+Math.max(0,other.limit-otherUsed)+'/'+other.limit+'回。'+other.description:'相手のスキル未選択');enemyButton.title=enemyButton.getAttribute('aria-label');
+  if(m.spectator){button.setAttribute('aria-label','1P：'+label);button.title=button.getAttribute('aria-label');}
+  for(const [side,target]of [[you,button],[3-you,enemyButton]])target.classList.toggle('usedThisTurn',revealed&&!!window.AdvancedRules.forTurn(m.advanced,m.state.turn)[side]);
+  place();window.AdvancedCutin?.sync(m,now,{blocked:animating});
  }
  async function activate(){
   const m=current;if(!m||sending||!advanced(m)||document.getElementById('advancedSkillButton').disabled)return;
@@ -109,7 +112,19 @@
   const receipts=window.AdvancedRules.forTurn(m.advanced,turn);
   return [1,2].flatMap(player=>{const id=m.advanced?.selected?.[player],skill=window.AdvancedRules.byId[id];return skill&&receipts[player]?.id===id?[{player,id,name:skill.name,description:skill.description,turn,used:receipts[player].used}]:[];});
  }
- function reset(){window.AdvancedCutin?.reset();epoch++;sending=false;current=selecting=null;choices.clear();if(selection)selection.hidden=true;if(dock)dock.hidden=true;if(enemyDock)enemyDock.hidden=true;if(windowPanel)windowPanel.hidden=true;document.getElementById('battleScreen')?.classList.remove('advancedMode','advancedSkillChoosing');document.getElementById('techScreen')?.classList.remove('advancedSelection');}
- window.AdvancedSkills={select,ready,loadout,sync,reset,usedForTurn,paintArt:paint};
+ function observe(m,onComplete){
+  cancelAnimationFrame(observerFrame);observerFrame=0;
+  if(!m){sync(null,0);return;}
+  const receivedAt=performance.now();let completed=false;
+  const tick=()=>{
+   observerFrame=0;const now=m.serverNow+performance.now()-receivedAt;
+   sync(m,now);
+   if(!completed&&window.AdvancedRules.presentationComplete(m,now)){completed=true;onComplete?.(m.skillResult);}
+   if(!m.closed)observerFrame=requestAnimationFrame(tick);
+  };tick();
+ }
+ function reset(){cancelAnimationFrame(observerFrame);observerFrame=0;window.AdvancedCutin?.reset();epoch++;sending=false;current=selecting=null;choices.clear();if(selection)selection.hidden=true;if(dock)dock.hidden=true;if(enemyDock)enemyDock.hidden=true;if(windowPanel)windowPanel.hidden=true;document.getElementById('battleScreen')?.classList.remove('advancedMode','advancedSkillChoosing');document.getElementById('techScreen')?.classList.remove('advancedSelection');}
+ window.AdvancedSkills={select,ready,loadout,sync,reset,observe,usedForTurn,paintArt:paint};
 })();
+
 
