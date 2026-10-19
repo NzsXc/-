@@ -2056,6 +2056,7 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
 <link rel="stylesheet" href="battle-action-art.css?v=orbit-selection-1">
 <link rel="stylesheet" href="neon-controls.css?v=neon-menu-1">
 <link rel="stylesheet" href="mode-menu.css?v=mode-cards-1">
+<link rel="stylesheet" href="notice-guide.css?v=guide-1">
 </head>
 
 
@@ -2290,71 +2291,54 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
 ========================= -->
 
 <div id="tipScreen" class="screen">
-  <div class="tipNav" aria-label="TIPページ">
-    <button class="tipNavButton active" data-page="0" onclick="showTipPage(0)">1</button>
-    <button class="tipNavButton" data-page="1" onclick="showTipPage(1)">2</button>
-    <button class="tipNavButton" data-page="2" onclick="showTipPage(2)">3</button>
-    <button class="tipNavButton" data-page="3" onclick="showTipPage(3)">4</button>
-  </div>
-
-  <div class="tipViewport" aria-label="TIP内容">
+  <nav class="tipNav" aria-label="お知らせのページ">
+    <button id="tipNav0" class="tipNavButton active" data-page="0" aria-current="page" aria-controls="tipPage0" onclick="showTipPage(0)"><small>p1</small>目次</button>
+    <button id="tipNav1" class="tipNavButton" data-page="1" aria-controls="tipPage1" onclick="showTipPage(1)"><small>p2</small>遊び方</button>
+    <button id="tipNav2" class="tipNavButton" data-page="2" aria-controls="tipPage2" onclick="showTipPage(2)"><small>p3</small>技・スキル効果</button>
+    <button id="tipNav3" class="tipNavButton" data-page="3" aria-controls="tipPage3" onclick="showTipPage(3)"><small>p4</small>みんなの評価</button>
+  </nav>
+  <div class="tipViewport" aria-label="お知らせの内容">
     <div class="tipPages" id="tipPages">
-      <section class="tipPage"><div class="tipPageInner tipIntroPage">
-・相手の行動を読み、技を使い分けて勝利を目指すターン制バトルです。<br>・お互いに行動を選ぶと、選択した技が公開されて効果が発動します。<br>
-・相手のHPを0にすれば勝利です。チャージでゲージをため、攻撃や特殊技につなげましょう。
-</div></section>
-      <section class="tipPage"><div class="tipPageInner tipRulesPage">
-        <div class="tipRulesContent">
-          <h2>心理バトル 大会ルール</h2>
-
-          <h3>1. 大会形式</h3>
-          <p>大会形式は、参加人数の確定後に決定します。</p>
-          <p>参加人数に応じて、総当たり戦またはトーナメント戦を採用します。</p>
-
-          <h3>2. 試合中のトラブル</h3>
-          <p>ゲーム側の不具合が発生し、正常に試合を続行できないと主催者が判断した場合は、その試合を無効として再試合を行います。</p>
-          <p>プレイヤー側の通信切断・離脱については、切断・離脱したプレイヤーの敗北とします。</p>
-
-          <h3>3. 主催者本人が関係する試合</h3>
-          <p>主催者本人が関係する試合中にゲーム側の不具合が疑われ、試合を中断する必要があると主催者が判断した場合、対戦相手に中断の確認を取ります。</p>
-          <p>対戦相手が承認した場合は、試合を中断します。</p>
-          <p>対戦相手が中断を拒否した場合は、試合に関係していない第三者3人による多数決で、中断するかどうかを決定します。</p>
-          <p>中断後、ゲーム側の不具合であると判断された場合は再試合とします。</p>
-
-          <h3>4. 引き分け</h3>
-          <p>試合が引き分けとなった場合は、再試合を行います。</p>
-
-          <h3>5. 助言の禁止</h3>
-          <p>試合中に、他の参加者・観戦者などから助言を受けることを禁止します。</p>
-
-          <h3>6. 不正行為の禁止</h3>
-          <p>以下のような不正行為を禁止します。</p>
-          <ul>
-            <li>バグの意図的な利用</li>
-            <li>チートの使用</li>
-            <li>その他、試合を不正に有利にする行為</li>
-          </ul>
-          <p>不正行為が確認された場合は、失格とする場合があります。</p>
-
-          <h3>7. 賞金</h3>
-          <p>大会には少額の賞金を設定します。</p>
-          <p>賞金は大会終了後に支払います。</p>
-          <p>支払い方法は、以下のいずれかとします。</p>
-          <ul>
-            <li>PayPay</li>
-            <li>手渡し</li>
-          </ul>
+      <section id="tipPage0" class="tipPage" aria-labelledby="tipNav0"><div class="tipPageInner guidePage">
+        <header class="guideHeader"><span class="guideEyebrow">心理バトル / GUIDE</span><h1>目次</h1><p>遊び方を覚えて、自分だけの戦術を見つけよう。</p></header>
+        <div class="guideContents">
+          <button onclick="showTipPage(1)"><span class="guidePageNumber">p2</span><span><strong>遊び方</strong><small>対戦の流れ・基本行動・Advancedのスキル</small></span><span aria-hidden="true">→</span></button>
+          <button onclick="showTipPage(2)"><span class="guidePageNumber">p3</span><span><strong>技・スキル効果</strong><small>すべての技とスキルを、絵柄と効果で確認</small></span><span aria-hidden="true">→</span></button>
+          <button onclick="showTipPage(3)"><span class="guidePageNumber">p4</span><span><strong>みんなの技・スキル評価</strong><small>S / A / B / C のティア表を見る</small></span><span aria-hidden="true">→</span></button>
         </div>
+        <p class="guideNote">上のページボタンからも、いつでも切り替えられます。</p>
       </div></section>
-      <section class="tipPage"><div class="tipPageInner">TIP 3</div></section>
-      <section class="tipPage"><div class="tipPageInner">TIP 4</div></section>
+      <section id="tipPage1" class="tipPage" aria-labelledby="tipNav1" aria-hidden="true" inert><div class="tipPageInner guidePage">
+        <header class="guideHeader"><span class="guideEyebrow">HOW TO PLAY</span><h1>遊び方</h1><p>相手の行動を読み、HPを0にしたら勝利。</p></header>
+        <ol class="guideSteps">
+          <li><h2>対戦モードを選ぶ</h2><p>ひとりでCPUと練習するほか、オンライン対戦や、1台の端末で2人対戦ができます。友達対戦ではStandard・Custom・Advancedを選べます。</p></li>
+          <li><h2>使う技を3つ選ぶ</h2><p>12種類の選択技から3つを装備します。基本行動の「チャージ」「アタック」「ブロック」は、いつでも使えます。</p></li>
+          <li><h2>毎ターン、行動を選ぶ</h2><p>10秒以内に行動を選択。お互いの行動が公開され、効果が発動します。ゲージが足りない技や、連続使用が禁止された技は選べません。</p></li>
+          <li><h2>チャージ・攻撃・防御を使い分ける</h2><p>チャージでゲージをため、アタックや選択技で攻撃。相手の攻撃はブロックで防ぎます。ブロックを貫く技や相手のチャージを狙う技もあるので、読み合いが勝負の鍵です。</p></li>
+        </ol>
+        <div class="guideBasics" id="guideBasicPreview"></div>
+        <aside class="guideCallout"><h2>Standardの初期設定</h2><p>HP 10 / 初期ゲージ 8 / 最大ゲージ 10。Customでは部屋の設定によって変わります。</p></aside>
+        <aside class="guideCallout"><h2>Advanced：スキルを1つ追加</h2><p>技3つに加えて、6種類からスキルを1つ選択。各ターンの行動選択前にある3秒間に発動できます。ゲージ消費はなく、1ターン1回まで。スキルごとに1試合の使用回数が決まっています。両者が使い切ると、3秒間の受付は省かれます。</p></aside>
+        <button class="guideTextLink" onclick="showTipPage(2)">絵柄とすべての効果を確認する →</button>
+      </div></section>
+      <section id="tipPage2" class="tipPage" aria-labelledby="tipNav2" aria-hidden="true" inert><div class="tipPageInner guidePage">
+        <header class="guideHeader"><span class="guideEyebrow">TECHNIQUES &amp; SKILLS</span><h1>技・スキル効果</h1><p>ゲーム内と同じ絵柄で、消費ゲージと効果をチェック。</p></header>
+        <h2 class="guideSectionTitle">基本行動 <small>3種類 / 共通</small></h2><div id="guideBasicActions" class="guideCatalog"></div>
+        <h2 class="guideSectionTitle">選択技 <small>12種類から3つを装備</small></h2><div id="guideTechniques" class="guideCatalog"></div>
+        <h2 class="guideSectionTitle">スキル <small>Advanced専用 / 6種類から1つ</small></h2><p class="guideNote">各ターンの最初の3秒間に使用。ゲージ消費なし・1ターン1回まで。回復・補給は部屋のHP・ゲージ上限までです。</p><div id="guideSkills" class="guideCatalog"></div>
+      </div></section>
+      <section id="tipPage3" class="tipPage" aria-labelledby="tipNav3" aria-hidden="true" inert><div class="tipPageInner guidePage">
+        <header class="guideHeader"><span class="guideEyebrow">COMMUNITY TIER LIST</span><h1>みんなの技・スキル評価</h1><p>S / A / B / C の4段階で、絵柄から探せるティア表。</p></header>
+        <p class="guideDraft"><strong>仮評価</strong> 現在はサンプルの配置です。みんなの投票・集計結果ではありません。</p>
+        <h2 class="guideSectionTitle">技のティア表 <small>基本行動 + 選択技</small></h2><div id="guideTechniqueTiers" class="guideTierTable" role="table" aria-label="技の仮ティア表"></div>
+        <h2 class="guideSectionTitle">スキルのティア表 <small>Advanced専用</small></h2><div id="guideSkillTiers" class="guideTierTable" role="table" aria-label="スキルの仮ティア表"></div>
+        <p class="guideNote">同じランク内の並び順に優劣はありません。相手の構成や使うタイミングによって強さは変わります。</p>
+        <button class="guideTextLink" onclick="showTipPage(2)">技・スキルの効果を見る →</button>
+      </div></section>
     </div>
   </div>
-
   <button class="tipBackButton" onclick="showScreen('modeScreen')">戻る</button>
-
 </div>
-
 
 <!-- =========================
      画面3：技選択
@@ -2752,7 +2736,7 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
 <script src="advanced/rules.js?v=attack-stance-1"></script>
 <script src="room-rules.js?v=advanced-1"></script>
 <script src="ranked-client.js?v=reveal-audio-1"></script>
-<script src="advanced/client.js?v=attack-stance-1"></script>
+<script src="advanced/client.js?v=notice-art-1"></script>
 <script src="advanced/cutin.js?v=attack-stance-1"></script>
 <script src="battle-inspector.js?v=battle-layout-1"></script>
 <script src="lobby-client.js?v=friend-wait-mode-1"></script>
@@ -3401,13 +3385,18 @@ window.techniquePoolForOnline = techniquePool;
 ========================= */
 
 function showTipPage(page){
+  const index=Math.max(0,Math.min(3,Math.trunc(Number(page)||0)));
   const pages=document.getElementById("tipPages");
-  if(pages){
-    const index=Math.max(0,Math.min(3,Number(page)||0));
-    pages.style.transform=`translateX(-${index*100}%)`;
-  }
-  document.querySelectorAll(".tipNavButton").forEach((button,index)=>{
-    button.classList.toggle("active",index===Number(page));
+  if(pages)pages.style.transform=`translateX(-${index*100}%)`;
+  document.querySelectorAll(".tipNavButton").forEach((button,i)=>{
+    button.classList.toggle("active",i===index);
+    if(i===index)button.setAttribute('aria-current','page');
+    else button.removeAttribute('aria-current');
+  });
+  document.querySelectorAll('.tipPage').forEach((section,i)=>{
+    if(i!==index&&section.contains(document.activeElement))document.getElementById('tipNav'+index)?.focus({preventScroll:true});
+    section.inert=i!==index;
+    section.setAttribute('aria-hidden',String(i!==index));
   });
 }
 
@@ -6999,6 +6988,7 @@ updateTechniqueDisplay();
   requestAnimationFrame(()=>{opening.classList.add('playing');setTimeout(()=>opening.classList.add('finished'),1450);});
 })();
 </script>
+<script src="notice-guide.js?v=guide-1"></script>
 <!-- PWA registration -->
 <script src="./pwa-register.js" defer></script>
 </body>

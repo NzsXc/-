@@ -110,6 +110,6 @@
   return [1,2].flatMap(player=>{const id=m.advanced?.selected?.[player],skill=window.AdvancedRules.byId[id];return skill&&receipts[player]?.id===id?[{player,id,name:skill.name,description:skill.description,turn,used:receipts[player].used}]:[];});
  }
  function reset(){window.AdvancedCutin?.reset();epoch++;sending=false;current=selecting=null;choices.clear();if(selection)selection.hidden=true;if(dock)dock.hidden=true;if(enemyDock)enemyDock.hidden=true;if(windowPanel)windowPanel.hidden=true;document.getElementById('battleScreen')?.classList.remove('advancedMode','advancedSkillChoosing');document.getElementById('techScreen')?.classList.remove('advancedSelection');}
- window.AdvancedSkills={select,ready,loadout,sync,reset,usedForTurn};
+ window.AdvancedSkills={select,ready,loadout,sync,reset,usedForTurn,paintArt:paint};
 })();
 

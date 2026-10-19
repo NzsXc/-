@@ -1,0 +1,85 @@
+/* Four-page notice guide. All layout overrides stay inside the notice screen. */
+#tipScreen{height:100vh;height:100dvh;min-height:0;padding:18px max(14px,var(--safe-right)) 72px max(14px,var(--safe-left));gap:14px;justify-content:flex-start;overflow:hidden}
+#tipScreen .tipNav{position:static;transform:none;width:min(1040px,100%);flex:none;gap:6px}
+#tipScreen .tipNavButton{aspect-ratio:auto;min-height:58px;padding:8px 6px;font-size:14px;line-height:1.35;border-radius:5px;transform:none;background:#182e45;color:#b6cde0}
+#tipScreen .tipNavButton small{display:block;font-size:10px;letter-spacing:.14em;color:#92bad3;margin-bottom:3px}
+#tipScreen .tipNavButton.active{background:#315776;border-color:#acdfff;color:#fff;box-shadow:inset 0 -2px #84d8f6}
+#tipScreen .tipViewport{width:min(1040px,100%);height:auto;min-height:0;flex:1;margin:0;border-radius:6px}
+#tipScreen .tipPage{min-width:0;padding:0}
+#tipScreen .guidePage{display:block;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;scrollbar-gutter:stable;padding:26px 30px;border-radius:6px;font-size:14px;font-weight:400;line-height:1.75;color:#d5e6f2;text-align:left}
+#tipScreen .guideHeader{margin-bottom:22px;border-bottom:1px solid #a1c9e32c;padding-bottom:18px}
+#tipScreen .guideEyebrow{font-size:10px;letter-spacing:.18em;color:#87cfe9;font-weight:700}
+#tipScreen h1{font-size:clamp(21px,3vw,28px);line-height:1.4;margin:6px 0 8px;color:#f2faff}
+#tipScreen p{margin:6px 0}
+#tipScreen .guideHeader p,#tipScreen .guideNote{color:#b2cada;font-size:13px}
+#tipScreen h2{font-size:17px;line-height:1.5;margin:0 0 6px;color:#eff9ff}
+#tipScreen h3{font-size:15px;line-height:1.5;margin:0 0 4px;color:#f2faff}
+#tipScreen .guideSectionTitle{margin:26px 0 12px}
+#tipScreen .guideSectionTitle small{display:inline-block;margin-left:8px;font-size:12px;font-weight:400;color:#a3c2d6}
+#tipScreen .guideContents{display:grid;gap:12px;margin:22px 0}
+#tipScreen .guideContents button{display:grid;grid-template-columns:42px 1fr 16px;gap:14px;align-items:center;width:100%;padding:20px 18px;border:1px solid #7ea4c15c;border-radius:5px;background:#152b42;color:#eaf7ff;font:inherit;text-align:left;cursor:pointer}
+#tipScreen .guideContents button:hover{background:#24455f;border-color:#92ddfa}
+#tipScreen .guidePageNumber{font-size:20px;font-weight:700;color:#88d9f6}
+#tipScreen .guideContents strong{display:block;font-size:17px;line-height:1.5}
+#tipScreen .guideContents small{display:block;font-size:12px;color:#abc4d6;margin-top:4px}
+#tipScreen .guideSteps{padding-left:27px;margin:0}
+#tipScreen .guideSteps li{padding:0 0 18px 8px}
+#tipScreen .guideSteps li::marker{color:#8ddafa;font-size:18px;font-weight:700}
+#tipScreen .guideCatalog{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+#tipScreen .guideCard{min-width:0;display:flex;align-items:flex-start;gap:14px;padding:16px 12px;border:1px solid #89b8d638;border-radius:5px;background:#0e2337a8}
+#tipScreen .guideCardCopy{min-width:0;overflow-wrap:anywhere}
+#tipScreen .guideCard p{font-size:13px;line-height:1.7;margin:7px 0 0}
+#tipScreen .guideBadge{display:inline-block;font-size:11px;line-height:1.5;padding:2px 7px;background:#36557170;color:#b5def3;border:1px solid #91cde637;border-radius:3px}
+#tipScreen .guideArt{position:relative;display:block;flex:none;width:68px;height:68px;overflow:hidden;border:1px solid #85c5e140;border-radius:8px;background:radial-gradient(ellipse at 40% 32%,#28516c,#102338 72%)}
+#tipScreen .guideArt img{width:100%;height:100%;object-fit:contain;display:block}
+#tipScreen .guideArt.advancedSkillOrb{--orb-scale:.515625;--orb-ink:#f3fcff;--energy:#56bcf2;border-radius:50%}
+#tipScreen .guideArt[data-skill="heal"]{--energy:#49d5a1}
+#tipScreen .guideArt[data-skill="chain"]{--energy:#f0b75b}
+#tipScreen .guideArt[data-skill="cleanse"]{--energy:#b696ff}
+#tipScreen .guideArt[data-skill="invincible"]{--energy:#ffe06b}
+#tipScreen .guideArt[data-skill="stance"]{--energy:#ff8b72}
+#tipScreen .guideBasics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:4px 0 20px}
+#tipScreen .guideBasics .guideCard{flex-direction:column}
+#tipScreen .guideCallout{margin-top:14px;padding:16px 18px;border-left:3px solid #82c9e7;background:#142c42}
+#tipScreen .guideTextLink{margin:16px 0 0;padding:10px 0;min-height:44px;border:0;background:transparent;color:#9de1ff;text-align:left;font:inherit;cursor:pointer;text-decoration:underline;text-underline-offset:4px}
+#tipScreen .guideDraft{padding:12px 14px;background:#574c2d70;border:1px solid #dfc17460;border-radius:4px;color:#f3dfb2;font-size:13px}
+#tipScreen .guideDraft strong{margin-right:8px}
+#tipScreen .guideTierTable{border:1px solid #85abc356;border-radius:5px;overflow:hidden}
+#tipScreen .guideTierRow{display:grid;grid-template-columns:58px minmax(0,1fr);background:#102338}
+#tipScreen .guideTierRow + .guideTierRow{border-top:1px solid #85abc342}
+#tipScreen .guideTierRank{display:grid;place-items:center;font-size:24px;font-weight:800;color:#241e25;background:#ef9899}
+#tipScreen [data-rank="A"] .guideTierRank{background:#edba86}
+#tipScreen [data-rank="B"] .guideTierRank{background:#e7d88b}
+#tipScreen [data-rank="C"] .guideTierRank{background:#a6d8b6}
+#tipScreen .guideTierItems{display:flex;flex-wrap:wrap;gap:12px 8px;padding:12px;min-width:0}
+#tipScreen .guideTierTile{width:80px;min-width:0;margin:0;display:flex;align-items:center;flex-direction:column;gap:6px}
+#tipScreen .guideTierTile figcaption{font-size:11px;line-height:1.5;text-align:center;overflow-wrap:anywhere;color:#dcecf6}
+#tipScreen .tipBackButton{position:absolute;margin:0;left:max(14px,var(--safe-left));bottom:max(14px,var(--safe-bottom));min-height:44px;padding:9px 24px;border-radius:5px}
+#tipScreen button:focus-visible{outline:2px solid #b3ebff;outline-offset:2px}
+@media(max-width:640px){
+  #tipScreen{padding-top:max(10px,var(--safe-top));gap:10px}
+  #tipScreen .tipNavButton{font-size:11px;min-width:0;min-height:54px;padding:7px 2px}
+  #tipScreen .guidePage{padding:20px 14px;font-size:13px;scrollbar-gutter:auto}
+  #tipScreen .guideCatalog{grid-template-columns:1fr}
+  #tipScreen .guideHeader{margin-bottom:18px;padding-bottom:14px}
+  #tipScreen .guideContents button{grid-template-columns:30px 1fr 12px;gap:10px;padding:15px 12px}
+  #tipScreen .guideContents strong{font-size:15px}
+  #tipScreen .guideContents small{font-size:11px}
+  #tipScreen .guideBasics{grid-template-columns:1fr}
+  #tipScreen .guideBasics .guideCard{flex-direction:row}
+  #tipScreen .guideSectionTitle small{display:block;margin:3px 0 0}
+  #tipScreen .guideTierRow{grid-template-columns:36px minmax(0,1fr)}
+  #tipScreen .guideTierRank{font-size:21px}
+  #tipScreen .guideTierItems{gap:12px 4px;padding:10px 6px}
+  #tipScreen .guideTierTile{width:64px}
+  #tipScreen .guideTierTile .guideArt{width:56px;height:56px;--orb-scale:.421875}
+  #tipScreen .guideTierTile figcaption{font-size:10px}
+}
+@media(max-height:480px) and (min-width:641px){
+  #tipScreen{padding-top:8px;padding-bottom:62px;gap:6px}
+  #tipScreen .tipNavButton{min-height:44px;padding:4px}
+  #tipScreen .tipNavButton small{display:inline;margin-right:7px}
+  #tipScreen .guidePage{padding:18px 24px}
+  #tipScreen .tipBackButton{bottom:8px}
+}
+@media(prefers-reduced-motion:reduce){#tipScreen .tipPages{transition:none}}
