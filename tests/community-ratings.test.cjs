@@ -6,7 +6,7 @@ const root = path.resolve(__dirname, '..');
 const rules = JSON.parse(fs.readFileSync(path.join(root, 'firebase-database.rules.json'), 'utf8')).rules;
 assert.deepEqual(core.categories.techniques, Array.from({length:12}, (_, i) => 'tech' + (i+1)));
 assert.deepEqual(core.categories.skills, require('../advanced/rules.js').SKILLS.map(s => s.id));
-assert.deepEqual([10,9,8.999,8.5,8.499,7.5,7.499,1,null].map(core.rank), ['S','S','A','A','B','B','C','C','unrated']);
+assert.deepEqual([10,9,8.999,8,7.999,7,6.999,1,null].map(core.rank), ['S','S','A','A','B','B','C','C','unrated']);
 assert.equal(core.summarize('techniques', {a:{tech1:4},b:{tech1:3}}).tech1.label, '(3.50)');
 assert.equal(core.summarize('techniques').tech1.average, null);
 const many = Object.fromEntries(Array.from({length:9}, (_, i) => ['u'+i,{tech1:i<5?4:3}]));

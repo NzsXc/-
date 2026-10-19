@@ -6,7 +6,7 @@
     skills: Object.freeze(['boost', 'heal', 'chain', 'cleanse', 'invincible', 'stance'])
   });
   const validScore = value => Number.isInteger(value) && value >= 1 && value <= 10;
-  const rank = average => average == null ? 'unrated' : average >= 9 ? 'S' : average >= 8.5 ? 'A' : average >= 7.5 ? 'B' : 'C';
+  const rank = average => average == null ? 'unrated' : average >= 9 ? 'S' : average >= 8 ? 'A' : average >= 7 ? 'B' : 'C';
   function ballot(category, value) {
     if (!categories[category] || !value || typeof value !== 'object' || Array.isArray(value)) throw Error('評価を確認してください。');
     const entries = Object.entries(value);
