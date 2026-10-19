@@ -15,7 +15,7 @@ nodes.get('friendRuleHp').value='10';nodes.get('friendRuleInitialGauge').value='
 const radio=node('advancedRadio','input');radio.value='advanced';form.append(radio);
 for(const side of [1,2]){const area=node('player'+side+'Area');area.append(node('actions'+side));body.append(area);}
 let mode='advanced';const created=[];
-const document={createElement:t=>new Element(t),getElementById:id=>nodes.get(id)||findId(body,id),querySelector:s=>s==='input[name="friendRuleMode"]:checked'?{value:mode}:body.querySelector(s)};
+const document={querySelectorAll:s=>body.querySelectorAll(s),createElement:t=>new Element(t),getElementById:id=>nodes.get(id)||findId(body,id),querySelector:s=>s==='input[name="friendRuleMode"]:checked'?{value:mode}:body.querySelector(s)};
 function findId(n,id){if(n.id===id)return n;for(const child of n.children){const found=findId(child,id);if(found)return found;}return null;}
 const c=vm.createContext({document,console,RoomRules,setInterval:()=>1,clearInterval(){},showScreen(){},protectedRooms:{create:async rules=>{created.push(rules);return 'room';},watchHost:()=>()=>{},now:()=>0},rankedActive:false});c.window=c;
 vm.runInContext(read('lobby-client.js'),c);vm.runInContext(read('advanced/special.js'),c);
@@ -35,6 +35,6 @@ vm.runInContext(read('lobby-client.js'),c);vm.runInContext(read('advanced/specia
  assert.deepEqual(ordinary,{1:8,2:7});c.SpecialGauge.sync({roomRules:{mode:'advanced'}});assert(document.getElementById('specialGauge1').hidden);assert(document.getElementById('specialGauge2').hidden);assert(!document.getElementById('battleScreen').classList.contains('specialMode'));
  c.SpecialGauge.sync({roomRules:rules});assert.equal(document.getElementById('specialGauge1').querySelector('.specialGaugeValue').textContent,'0/30');c.SpecialGauge.reset();assert(document.getElementById('specialGauge1').hidden);
  const html=read('index.html');assert(/id="friendRuleSkills" type="checkbox" checked/.test(html));assert(/id="friendRuleSpecial" type="checkbox" onchange/.test(html));
- for(const file of ['room-rules.js','lobby-client.js','advanced/rules.js','advanced/client.js','advanced/cutin.js','advanced/special.js','free-transport.js','protected-rooms.js','battle-history.js','battle-history-client.js'])assert(html.includes(file+'?v=advanced-options-1'),file);
+ for(const file of ['room-rules.js','lobby-client.js','advanced/rules.js','advanced/client.js','advanced/cutin.js','advanced/special.js','free-transport.js','protected-rooms.js','battle-history.js','battle-history-client.js'])assert(html.includes(file+'?v=special-gauge-1'),file);
  console.log('PASS checkbox form submissions, both enabled, mode switching, default selection, independent 0/30 bars, clamping, accessibility and cleanup');
 })().catch(e=>{console.error(e);process.exitCode=1;});

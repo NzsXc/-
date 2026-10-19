@@ -155,6 +155,7 @@ function rankedTick(){
  }
  if(m.state){locked[m.you]=rankedAnimating||m.closed||rankedSending||m.ownAction!==null||!turnOpen||inputExpired;document.getElementById('player'+m.you+'Area').classList.toggle('locked',locked[m.you]);}
  window.AdvancedSkills?.sync(m,now);
+ window.SpecialGauge?.place(m);
  if(!m.closed||rankedAnimating)rankedFrame=requestAnimationFrame(rankedTick);
 }
 function rankedReveal(m){
@@ -226,6 +227,7 @@ function rankedApply(m,visualCommit=false){
  const inGrace=!m.closed&&m.serverNow>=m.deadline+(m.state?5000:0),remaining=Math.max(0,Math.ceil(((m.graceDeadline??m.deadline)-m.serverNow)/1000));
  if(m.phase==='select'){
   window.AdvancedSkills?.select(m);
+  window.SpecialGauge?.select(m);
   if(entering){showScreen('techScreen');updateTechniqueDisplay();}
   document.getElementById('techTitle').textContent=m.ready[me]?'技を確定しました。相手を待っています…':(m.kind==='friend'?window.RoomRules.label(m.roomRules)+' ルーム対戦':'ランダム対戦')+'：技選択（残り'+Math.max(0,Math.ceil((m.deadline-m.serverNow)/1000))+'秒）';
   if(inGrace)document.getElementById('techTitle').textContent='復帰猶予：あと'+remaining+'秒（未確定側は期限後に敗北）';
@@ -289,6 +291,7 @@ async function rankedChoose(player,action){
  const inputNow=performance.now();
  if(rankedTurnDeadline>0&&(inputNow<rankedTurnOpensAt||inputNow>=rankedTurnDeadline))return;
  if(!isBattleActionAvailable(player,action))return;
+ if(action.startsWith('tech')&&window.SpecialGauge?.isSpecialView(m))return;
  const id=['charge','attack','block'].includes(action)?['charge','attack','block'].indexOf(action):m.loadouts[player][Number(action.replace('tech',''))]+3;
  return rankedSubmitAction(m,id);
 }

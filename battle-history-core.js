@@ -47,15 +47,17 @@ export function replayHistory(h){
  if(h?.version!==1)throw Error('この対戦のバトルデータには対応していません');
  if(h.rulesVersion!=null&&h.rulesVersion!==2)throw Error('この戦闘ルールの履歴には対応していません');
  const calculate=h.rulesVersion===2?calculateV2:calculateV1;
- let state=initialReplayState(h.roomRules);const turns=[];
+ let state=initialReplayState(h.roomRules),special=h.special?.version===1?window.SpecialRules.initial():null;const turns=[];
  for(let turn=1;turn<=h.turnCount;turn++){
   const moves=h.moves?.[turn];
   if(![1,2].every(p=>Number.isInteger(moves?.[p])&&moves[p]>=0&&moves[p]<=14))throw Error('バトルデータが不足しています');
   const result=h.roomRules?.mode==='advanced'?window.AdvancedRules.resolve(state,moves,h.advanced?.selected,window.AdvancedRules.forTurn(h.advanced,turn),calculateV2,h.roomRules):h.rulesVersion===2?calculate(state,moves,2,h.roomRules):calculate(state,moves);
-  turns.push({turn,actions:{1:moves[1],2:moves[2]},before:{hp:{1:state.hp1,2:state.hp2},gauge:{1:state.gauge1,2:state.gauge2}},after:{hp:{1:result.hp1,2:result.hp2},gauge:{1:result.gauge1,2:result.gauge2}},damage:{1:result.damage1,2:result.damage2}});
+  const beforeSpecial=special;special=special?window.SpecialRules.advance(special,result):null;
+  turns.push({...(special?{special:{before:beforeSpecial.gauge,after:special.gauge}}:{}),turn,actions:{1:moves[1],2:moves[2]},before:{hp:{1:state.hp1,2:state.hp2},gauge:{1:state.gauge1,2:state.gauge2}},after:{hp:{1:result.hp1,2:result.hp2},gauge:{1:result.gauge1,2:result.gauge2}},damage:{1:result.damage1,2:result.damage2}});
   state={...result,startedAt:0};
  }
  if(h.finalState&&stateFields.some(k=>k!=='startedAt'&&state[k]!==h.finalState[k]))throw Error('保存済みの最終状態と一致しないため、バトルデータを表示できません');
+ if(special&&[1,2].some(p=>special.gauge[p]!==h.special.gauge[p]))throw Error('保存済みのスペシャルゲージと一致しません');
  return turns;
 }
 export function historyMatch(h,uid,serverNow){

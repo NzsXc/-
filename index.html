@@ -6,7 +6,7 @@
 <title>心理バトル</title>
 <link rel="stylesheet" href="battle-history.css?v=history-skills-2">
 <link rel="stylesheet" href="advanced/advanced.css?v=skill-flow-1">
-<link rel="stylesheet" href="advanced/special.css?v=advanced-options-1">
+<link rel="stylesheet" href="advanced/special.css?v=special-gauge-1">
 <link rel="stylesheet" href="advanced/button-art.css?v=attack-stance-1">
 <link rel="stylesheet" href="advanced/cutin.css?v=attack-stance-1">
 
@@ -2254,7 +2254,7 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
     <fieldset id="friendAdvancedOptions" class="friendAdvancedOptions" hidden disabled>
       <legend>Advancedの追加システム（両方選択できます）</legend>
       <label class="friendRuleChoice"><input id="friendRuleSkills" type="checkbox" checked onchange="updateFriendRuleSettings()"><span><strong>スキル</strong><small>スキル1種を選び、ターン開始時に発動</small></span></label>
-      <label class="friendRuleChoice"><input id="friendRuleSpecial" type="checkbox" onchange="updateFriendRuleSettings()"><span><strong>スペシャル</strong><small>専用ゲージ 0〜30。スペシャル技は準備中</small></span></label>
+      <label class="friendRuleChoice"><input id="friendRuleSpecial" type="checkbox" onchange="updateFriendRuleSettings()"><span><strong>スペシャル</strong><small>毎ターン・被ダメージ・チャージで蓄積（最大30）。S技の効果は準備中</small></span></label>
     </fieldset>
     <p id="friendAdvancedRules" class="settingsNote" hidden></p>
     <fieldset id="friendCustomRules" class="friendCustomFields" hidden disabled>
@@ -2353,6 +2353,8 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
 <div id="techScreen" class="screen">
 
   <div id="techTitle" class="screenTitle">1P：技選択</div>
+
+  <p id="specialSelectionNote" class="specialSelectionNote" hidden>スペシャル：毎ターン＋1 ／ 受けたダメージ1につき＋1 ／ チャージすると＋1（最大30）<br>⇋で選択技のS表示に切り替え。基礎技は共通です。</p>
 
   <div class="techSelect">
 
@@ -2739,23 +2741,24 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
 <script src="player-lightning.js?v=2"></script>
 <script src="bot-engine.js?v=punish-2"></script>
 <script src="bot-client.js?v=mode-cards-1"></script>
-<script src="advanced/rules.js?v=advanced-options-1"></script>
-<script src="advanced/special.js?v=advanced-options-1"></script>
-<script src="room-rules.js?v=advanced-options-1"></script>
-<script src="ranked-client.js?v=advanced-options-1"></script>
-<script src="advanced/client.js?v=advanced-options-1"></script>
-<script src="advanced/cutin.js?v=advanced-options-1"></script>
+<script src="advanced/rules.js?v=special-gauge-1"></script>
+<script src="advanced/special-rules.js?v=special-gauge-1"></script>
+<script src="advanced/special.js?v=special-gauge-1"></script>
+<script src="room-rules.js?v=special-gauge-1"></script>
+<script src="ranked-client.js?v=special-gauge-1"></script>
+<script src="advanced/client.js?v=special-gauge-1"></script>
+<script src="advanced/cutin.js?v=special-gauge-1"></script>
 <script src="battle-inspector.js?v=battle-layout-1"></script>
-<script src="lobby-client.js?v=advanced-options-1"></script>
+<script src="lobby-client.js?v=special-gauge-1"></script>
 <script src="battle-action-art.js?v=confirmed-1"></script>
 <script src="battle-effects.js?v=confirmed-1"></script>
 <script type="module">
   import {createTitleService} from "./title-service.js?v=crown-prestige-1";
-  import {createProtectedRooms} from "./protected-rooms.js?v=advanced-options-1";
-  import {createFreeTransport} from "./free-transport.js?v=advanced-options-1";
-  import {createBattleHistory} from "./battle-history.js?v=advanced-options-1";
+  import {createProtectedRooms} from "./protected-rooms.js?v=special-gauge-1";
+  import {createFreeTransport} from "./free-transport.js?v=special-gauge-1";
+  import {createBattleHistory} from "./battle-history.js?v=special-gauge-1";
   import {createPlayerProfile} from "./player-profile.js?v=usage-1";
-  import {createHistoryScreen} from "./battle-history-client.js?v=advanced-options-1";
+  import {createHistoryScreen} from "./battle-history-client.js?v=special-gauge-1";
   import {createCommunityRatings} from "./community-ratings.js?v=voting-1";
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
   import {
@@ -3890,6 +3893,7 @@ function updateTechniqueDisplay(){
 
     });
 
+  window.SpecialGauge?.paintSelection();
   // 旧UIとの互換用。現在は表示しない。
   const oldDescription = document.getElementById("techDescription");
   if(oldDescription){
@@ -5130,6 +5134,8 @@ function showTechniqueReveal(a1,a2){
   const label2=document.createElement("div");
   label1.className="battleActionLabel p1";
   label2.className="battleActionLabel p2";
+  label1.classList.toggle('specialActionLabel',a1?.special===true);
+  label2.classList.toggle('specialActionLabel',a2?.special===true);
 
   const action1Name = a1?.name || selectedAction[1]?.data?.name || "";
   const action2Name = a2?.name || selectedAction[2]?.data?.name || "";
@@ -6817,6 +6823,7 @@ function updateDisabledActions(){
   });
   syncConfirmedActionArt();
   syncBattleInspector();
+  window.SpecialGauge?.paintBattle(rankedActive?rankedMatch:null);
 }
 
 
