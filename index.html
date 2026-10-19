@@ -2329,7 +2329,7 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
       </div></section>
       <section id="tipPage3" class="tipPage" aria-labelledby="tipNav3" aria-hidden="true" inert><div class="tipPageInner guidePage">
         <header class="guideHeader"><span class="guideEyebrow">COMMUNITY TIER LIST</span><h1>みんなの技・スキル評価</h1><p>S / A / B / C の4段階で、絵柄から探せるティア表。</p></header>
-        <p class="guideNote">1アカウントにつき各項目1票。1〜4点で評価でき、あとから変更できます。全プレイヤーの平均で S：3.5以上 / A：3以上 / B：2.5以上 / C：2.5未満 に分かれます。</p><p id="guideRatingsStatus" class="guideNote" role="status" aria-live="polite"></p>
+        <p class="guideNote">1アカウントにつき各項目1票。1〜10点で評価でき、あとから変更できます。全プレイヤーの平均で S：9以上 / A：8.5以上 / B：7.5以上 / C：7.5未満 に分かれます。</p><p id="guideRatingsStatus" class="guideNote" role="status" aria-live="polite"></p>
         <div class="guideTierHeading"><h2 class="guideSectionTitle">技のティア表 <small>選択技12種類</small></h2><button id="guideVoteTechniques" class="guideVoteButton" type="button">技に投票</button></div><div id="guideTechniqueTiers" class="guideTierTable" role="table" aria-label="技の平均評価ティア表"></div>
         <div class="guideTierHeading"><h2 class="guideSectionTitle">スキルのティア表 <small>Advanced専用</small></h2><button id="guideVoteSkills" class="guideVoteButton" type="button">スキルに投票</button></div><div id="guideSkillTiers" class="guideTierTable" role="table" aria-label="スキルの平均評価ティア表"></div>
         <p class="guideNote">平均点は小数第2位まで表示します。投票のない項目は未評価です。相手の構成や使うタイミングによって強さは変わります。</p>
@@ -6992,8 +6992,8 @@ updateTechniqueDisplay();
   requestAnimationFrame(()=>{opening.classList.add('playing');setTimeout(()=>opening.classList.add('finished'),1450);});
 })();
 </script>
-<script src="community-rating-core.js?v=voting-1"></script>
-<script src="notice-guide.js?v=voting-1"></script>
+<script src="community-rating-core.js?v=voting-10-1"></script>
+<script src="notice-guide.js?v=voting-10-1"></script>
 <!-- PWA registration -->
 <script src="./pwa-register.js" defer></script>
 </body>
