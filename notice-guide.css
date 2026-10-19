@@ -83,3 +83,43 @@
   #tipScreen .tipBackButton{bottom:8px}
 }
 @media(prefers-reduced-motion:reduce){#tipScreen .tipPages{transition:none}}
+
+#tipScreen .guideTierHeading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:26px 0 12px}
+#tipScreen .guideTierHeading .guideSectionTitle{margin:0}
+#tipScreen .guideVoteButton{flex:none;min-height:44px;padding:9px 15px;border:1px solid #91d5f1;border-radius:5px;background:#315e7b;color:#f1fbff;font:inherit;font-size:13px;cursor:pointer}
+#tipScreen .guideVoteButton:hover:not(:disabled){background:#427c9d}
+#tipScreen .guideVoteButton:disabled{opacity:.45;cursor:default}
+#tipScreen .guideTierScore{font-size:12px;font-variant-numeric:tabular-nums;line-height:1.3;color:#b3e6ff;font-weight:700}
+#tipScreen .guideTierEmpty{align-self:center;color:#91aec4;font-size:12px}
+#tipScreen [data-rank="unrated"] .guideTierRank{background:#8ca6ba;font-size:12px;writing-mode:vertical-rl;letter-spacing:.15em}
+#tipScreen .guideVoteDialog{width:min(680px,calc(100vw - 24px));max-height:min(85vh,800px);max-height:min(85dvh,800px);padding:0;border:1px solid #8bc8e2;border-radius:8px;background:#172e45;color:#e7f3fc;box-shadow:0 20px 80px #0009;line-height:1.65;text-align:left;overflow:hidden}
+#tipScreen .guideVoteDialog[open]{display:flex;flex-direction:column}
+#tipScreen .guideVoteDialog::backdrop{background:#050d1cba}
+#tipScreen .guideVoteHeader{display:flex;flex:none;align-items:center;justify-content:space-between;gap:14px;padding:16px 20px 6px}
+#tipScreen .guideVoteHeader h2{margin:0;font-size:21px}
+#tipScreen .guideVoteClose{width:44px;min-height:44px;border:0;border-radius:4px;background:#34536c;color:#fff;font-size:25px;cursor:pointer}
+#tipScreen #guideVoteHelp{flex:none;margin:0;padding:0 20px 14px;font-size:12px}
+#tipScreen .guideVoteForm{display:flex;flex-direction:column;min-height:0;overflow:hidden}
+#tipScreen .guideVoteFields{min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:0 20px}
+#tipScreen .guideVoteField{display:grid;grid-template-columns:56px minmax(0,1fr) 92px;gap:14px;align-items:center;padding:12px 0;border-top:1px solid #91b6cc42}
+#tipScreen .guideVoteItemName{font-size:14px;font-weight:700;overflow-wrap:anywhere}
+#tipScreen .guideVoteField .guideArt{width:56px;height:56px;--orb-scale:.421875}
+#tipScreen .guideVoteField select{width:100%;min-height:44px;border:1px solid #86b3ce;border-radius:4px;padding:6px;color:#effaff;background:#233f58;font:inherit;font-size:14px}
+#tipScreen .guideVoteField select:focus-visible{outline:2px solid #b3ebff;outline-offset:2px}
+#tipScreen .guideVoteField select:disabled{opacity:.6}
+#tipScreen .guideVoteMessage{flex:none;min-height:24px;padding:8px 20px 0;font-size:12px;color:#f4d9a3}
+#tipScreen .guideVoteActions{flex:none;display:flex;align-items:center;justify-content:flex-end;gap:12px;padding:12px 20px 18px}
+#tipScreen .guideVoteCancel{min-height:44px;border:1px solid #678ca7;border-radius:4px;padding:8px 14px;background:#203a52;color:#d8ebf7;font:inherit;cursor:pointer}
+#tipScreen .guideVoteActions [hidden]{display:none}
+#tipScreen #guideRatingsStatus .guideTextLink{margin:0 0 0 8px;padding:4px;min-height:32px}
+@media(max-width:420px){
+  #tipScreen .guideTierHeading{gap:8px}
+  #tipScreen .guideVoteButton{font-size:12px;padding:8px 10px}
+  #tipScreen .guideVoteField{grid-template-columns:44px minmax(0,1fr) 80px;gap:9px}
+  #tipScreen .guideVoteField .guideArt{width:44px;height:44px;--orb-scale:.328125}
+  #tipScreen .guideVoteItemName{font-size:12px}
+  #tipScreen .guideVoteFields{padding:0 12px}
+  #tipScreen .guideVoteHeader{padding:10px 12px 6px}
+  #tipScreen #guideVoteHelp{padding:0 12px 10px}
+  #tipScreen .guideVoteHeader h2{font-size:18px}
+}

@@ -1217,6 +1217,82 @@
      ".validate": "newData.isNumber()&&newData.val()===newData.parent().parent().parent().child('battleHistory').child($game).child('endedAt').val()&&($uid===newData.parent().parent().parent().child('battleHistory').child($game).child('players/1/uid').val()||$uid===newData.parent().parent().parent().child('battleHistory').child($game).child('players/2/uid').val())"
     }
    }
+  },
+  "communityRatings": {
+   "techniques": {
+    ".read": "auth!=null",
+    "$uid": {
+     ".write": "auth!=null&&auth.uid===$uid&&auth.token.firebase.sign_in_provider!=='anonymous'&&root.child('users').child(auth.uid).exists()&&newData.exists()",
+     ".validate": "newData.child('tech1').exists()||newData.child('tech2').exists()||newData.child('tech3').exists()||newData.child('tech4').exists()||newData.child('tech5').exists()||newData.child('tech6').exists()||newData.child('tech7').exists()||newData.child('tech8').exists()||newData.child('tech9').exists()||newData.child('tech10').exists()||newData.child('tech11').exists()||newData.child('tech12').exists()",
+     "tech1": {
+      ".validate": "newData.isNumber()&&newData.val()%1===0&&newData.val()>=1&&newData.val()<=4"
+     },
+     "tech2": {
+      ".validate": "newData.isNumber()&&newData.val()%1===0&&newData.val()>=1&&newData.val()<=4"
+     },
+     "tech3": {
+      ".validate": "newData.isNumber()&&newData.val()%1===0&&newData.val()>=1&&newData.val()<=4"
+     },
+     "tech4": {
+      ".validate": "newData.isNumber()&&newData.val()%1===0&&newData.val()>=1&&newData.val()<=4"
+     },
+     "tech5": {
+      ".validate": "newData.isNumber()&&newData.val()%1===0&&newData.val()>=1&&newData.val()<=4"
+     },
+     "tech6": {
+      ".validate": "newData.isNumber()&&newData.val()%1===0&&newData.val()>=1&&newData.val()<=4"
+     },
+     "tech7": {
+      ".validate": "newData.isNumber()&&newData.val()%1===0&&newData.val()>=1&&newData.val()<=4"
+     },
+     "tech8": {
+      ".validate": "newData.isNumber()&&newData.val()%1===0&&newData.val()>=1&&newData.val()<=4"
+     },
+     "tech9": {
+      ".validate": "newData.isNumber()&&newData.val()%1===0&&newData.val()>=1&&newData.val()<=4"
+     },
+     "tech10": {
+      ".validate": "newData.isNumber()&&newData.val()%1===0&&newData.val()>=1&&newData.val()<=4"
+     },
+     "tech11": {
+      ".validate": "newData.isNumber()&&newData.val()%1===0&&newData.val()>=1&&newData.val()<=4"
+     },
+     "tech12": {
+      ".validate": "newData.isNumber()&&newData.val()%1===0&&newData.val()>=1&&newData.val()<=4"
+     },
+     "$other": {
+      ".validate": false
+     }
+    }
+   },
+   "skills": {
+    ".read": "auth!=null",
+    "$uid": {
+     ".write": "auth!=null&&auth.uid===$uid&&auth.token.firebase.sign_in_provider!=='anonymous'&&root.child('users').child(auth.uid).exists()&&newData.exists()",
+     ".validate": "newData.child('boost').exists()||newData.child('heal').exists()||newData.child('chain').exists()||newData.child('cleanse').exists()||newData.child('invincible').exists()||newData.child('stance').exists()",
+     "boost": {
+      ".validate": "newData.isNumber()&&newData.val()%1===0&&newData.val()>=1&&newData.val()<=4"
+     },
+     "heal": {
+      ".validate": "newData.isNumber()&&newData.val()%1===0&&newData.val()>=1&&newData.val()<=4"
+     },
+     "chain": {
+      ".validate": "newData.isNumber()&&newData.val()%1===0&&newData.val()>=1&&newData.val()<=4"
+     },
+     "cleanse": {
+      ".validate": "newData.isNumber()&&newData.val()%1===0&&newData.val()>=1&&newData.val()<=4"
+     },
+     "invincible": {
+      ".validate": "newData.isNumber()&&newData.val()%1===0&&newData.val()>=1&&newData.val()<=4"
+     },
+     "stance": {
+      ".validate": "newData.isNumber()&&newData.val()%1===0&&newData.val()>=1&&newData.val()<=4"
+     },
+     "$other": {
+      ".validate": false
+     }
+    }
+   }
   }
  }
 }
