@@ -1,4 +1,4 @@
-import {ACTION_NAMES,HISTORY_REASONS,historySide,replayHistory,slots} from './battle-history-core.js?v=advanced-options-1';
+import {ACTION_NAMES,HISTORY_REASONS,historySide,replayHistory,slots} from './battle-history-core.js?v=special-gauge-1';
 
 const element=(tag,className,text)=>{const node=document.createElement(tag);if(className)node.className=className;if(text!=null)node.textContent=String(text);return node;};
 const advanced=h=>h.roomRules?.mode==='advanced'&&h.roomRules.skills!==false;
@@ -48,7 +48,7 @@ export function createHistoryScreen(history){
      const tr=element('tr'),label=element('th',null,'T'+turn.turn);label.scope='row';tr.append(label);
      for(const p of [1,2]){const cell=element('td');
       if(advanced(h)){const name=turnSkill(h,p,turn.turn);cell.append(element('span','historyTurnSkill',h.advanced?'スキル：'+(name||'使用なし'):'スキル：未記録'));}
-      cell.append(element('strong',null,ACTION_NAMES[turn.actions[p]]||'不明'),element('span','historyTurnState','HP '+turn.before.hp[p]+' → '+turn.after.hp[p]+' / ゲージ '+turn.before.gauge[p]+' → '+turn.after.gauge[p]));tr.append(cell);}
+      cell.append(element('strong',null,ACTION_NAMES[turn.actions[p]]||'不明'),element('span','historyTurnState','HP '+turn.before.hp[p]+' → '+turn.after.hp[p]+' / ゲージ '+turn.before.gauge[p]+' → '+turn.after.gauge[p]));if(turn.special)cell.append(element('span','historyTurnState','スペシャル '+turn.special.before[p]+' → '+turn.special.after[p]));tr.append(cell);}
      body.append(tr);
     }
     table.append(caption,head,body);scroll.append(table);details.append(scroll);

@@ -1,7 +1,7 @@
 import {ref,get,set,update,push,serverTimestamp,onValue,runTransaction} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js';
 import {calculate,stateFields} from './free-calculator.js?v=attack-stance-1';
-import {historyMatch} from './battle-history-core.js?v=advanced-options-1';
-import {createAdvancedProtocol} from './advanced/protocol.js?v=advanced-options-1';
+import {historyMatch} from './battle-history-core.js?v=special-gauge-1';
+import {createAdvancedProtocol} from './advanced/protocol.js?v=special-gauge-1';
 export function createFreeTransport(db,auth,history){
  let offset=0;onValue(ref(db,'.info/serverTimeOffset'),s=>{offset=s.val()||0;});
  const now=()=>Date.now()+offset;
@@ -110,7 +110,9 @@ const initialAccount = {
    const c=roomRules?.mode==='advanced'?window.AdvancedRules.resolve(fresh,moves,advanced?.selected,window.AdvancedRules.forTurn(advanced,fresh.turn),calculate,roomRules):calculate(fresh,moves,rulesVersion,roomRules),state=Object.fromEntries(stateFields.map(k=>[k,k==='startedAt'?serverTimestamp():c[k]]));
    if(modern)state.previousDeadline=turnOpensAt(fresh,roomRules,advanced)+10000;
    if(roomRules?.mode==='advanced')state.skillsExhausted=window.AdvancedRules.exhausted(advanced,roomRules);
-   try{await writeUpdate(path,{transition:c,state});}
+   const special=window.RoomRules.hasSpecial(roomRules)?await read(path+'/special'):null;
+   const specialPatch=special?.version===1?{special:window.SpecialRules.advance(special,c)}:{};
+   try{await writeUpdate(path,{transition:c,state,...specialPatch});}
    catch(e){
     const accepted=await read(path+'/state');
     if(!accepted){const saved=await archivedStatus(id,u);if(saved)return true;throw e;}
@@ -247,8 +249,9 @@ const initialAccount = {
    if(roomRules.mode==='custom'&&!await supportsRoomRules())throw Error('カスタム対戦はまだ利用できません。更新後にお試しください。');
    if(roomRules.mode==='advanced'&&!await advancedProtocol.supports())throw Error('Advancedはまだ利用できません。更新後にお試しください。');
    if(window.RoomRules.needsAdvancedOptions(roomRules)&&!await advancedProtocol.supportsOptions())throw Error('Advancedの追加設定を利用するには、対戦ルールを更新してください。');
+   if(window.RoomRules.hasSpecial(roomRules)&&!await advancedProtocol.supportsSpecialGauge())throw Error('スペシャルゲージを利用するには、対戦ルールを更新してください。');
    const id=push(ref(db,'freeGames')).key,versionPatch=await supportsPunish()?{['freeGames/'+id+'/rulesVersion']:2}:{},roomPatch=roomRules.mode!=='standard'?{['freeGames/'+id+'/roomRules']:roomRules}:{};
-   try{await update(ref(db),{...versionPatch,...roomPatch,...(window.RoomRules.hasSpecial(roomRules)?{['freeGames/'+id+'/special']:{max:30,gauge:{1:0,2:0}}}:{}),['freeGames/'+id+'/players']:{1:u,2:lobby.host},['freeGames/'+id+'/createdAt']:serverTimestamp(),['freeGames/'+id+'/kind']:'friend',['freeGames/'+id+'/room']:d.roomId,['freeAccounts/'+u+'/active']:id,['freeAccounts/'+lobby.host+'/active']:id,['friendRooms/'+d.roomId+'/game']:id});}
+   try{await update(ref(db),{...versionPatch,...roomPatch,...(window.RoomRules.hasSpecial(roomRules)?{['freeGames/'+id+'/special']:window.SpecialRules.initial()}:{}),['freeGames/'+id+'/players']:{1:u,2:lobby.host},['freeGames/'+id+'/createdAt']:serverTimestamp(),['freeGames/'+id+'/kind']:'friend',['freeGames/'+id+'/room']:d.roomId,['freeAccounts/'+u+'/active']:id,['freeAccounts/'+lobby.host+'/active']:id,['friendRooms/'+d.roomId+'/game']:id});}
    catch(e){
     const fresh=await profile();if(fresh.active)return {match:await status(fresh.active)};
     const current=await read('friendRooms/'+d.roomId);
@@ -328,6 +331,7 @@ const initialAccount = {
  };
  request.supportsAdvanced=advancedProtocol.supports;
  request.supportsAdvancedOptions=advancedProtocol.supportsOptions;
+ request.supportsSpecialGauge=advancedProtocol.supportsSpecialGauge;
  request.supportsRoomRules=supportsRoomRules;
  request.transitionMs=transitionMs;
  return request;
