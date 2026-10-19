@@ -93,7 +93,7 @@
   close.type = 'button'; close.setAttribute('aria-label', '投票画面を閉じる');
   close.onclick = () => dialog.close();
   header.append(title, close);
-  const help = node('p', 'guideNote', '評価したい項目に1〜4点を設定してください。再投票は前の点数に上書きされます。');
+  const help = node('p', 'guideNote', '評価したい項目に1〜10点を設定してください。再投票は前の点数に上書きされます。');
   help.id = 'guideVoteHelp';
   const form = node('form', 'guideVoteForm');
   const fields = node('div', 'guideVoteFields');
@@ -131,7 +131,7 @@
       const copy = node('span', 'guideVoteItemName', item.name);
       const input = node('select'); input.name = item.id; input.setAttribute('aria-label', item.name + 'の評価');
       const score = current.ballots[category]?.[current.uid]?.[item.id];
-      for (const [value, text] of [['', '未評価'], ['1','1点'], ['2','2点'], ['3','3点'], ['4','4点']]) {
+      for (const [value, text] of [['', '未評価'], ...Array.from({length:10}, (_, i) => [String(i + 1), (i + 1) + '点'])]) {
         const option = node('option', '', text); option.value = value; input.append(option);
       }
       input.value = core.validScore(score) ? String(score) : '';

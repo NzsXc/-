@@ -1225,40 +1225,40 @@
      ".write": "auth!=null&&auth.uid===$uid&&auth.token.firebase.sign_in_provider!=='anonymous'&&root.child('users').child(auth.uid).exists()&&newData.exists()",
      ".validate": "newData.child('tech1').exists()||newData.child('tech2').exists()||newData.child('tech3').exists()||newData.child('tech4').exists()||newData.child('tech5').exists()||newData.child('tech6').exists()||newData.child('tech7').exists()||newData.child('tech8').exists()||newData.child('tech9').exists()||newData.child('tech10').exists()||newData.child('tech11').exists()||newData.child('tech12').exists()",
      "tech1": {
-      ".validate": "newData.isNumber()&&newData.val()%1===0&&newData.val()>=1&&newData.val()<=4"
+      ".validate": "newData.isNumber()&&newData.val()%1===0&&newData.val()>=1&&newData.val()<=10"
      },
      "tech2": {
-      ".validate": "newData.isNumber()&&newData.val()%1===0&&newData.val()>=1&&newData.val()<=4"
+      ".validate": "newData.isNumber()&&newData.val()%1===0&&newData.val()>=1&&newData.val()<=10"
      },
      "tech3": {
-      ".validate": "newData.isNumber()&&newData.val()%1===0&&newData.val()>=1&&newData.val()<=4"
+      ".validate": "newData.isNumber()&&newData.val()%1===0&&newData.val()>=1&&newData.val()<=10"
      },
      "tech4": {
-      ".validate": "newData.isNumber()&&newData.val()%1===0&&newData.val()>=1&&newData.val()<=4"
+      ".validate": "newData.isNumber()&&newData.val()%1===0&&newData.val()>=1&&newData.val()<=10"
      },
      "tech5": {
-      ".validate": "newData.isNumber()&&newData.val()%1===0&&newData.val()>=1&&newData.val()<=4"
+      ".validate": "newData.isNumber()&&newData.val()%1===0&&newData.val()>=1&&newData.val()<=10"
      },
      "tech6": {
-      ".validate": "newData.isNumber()&&newData.val()%1===0&&newData.val()>=1&&newData.val()<=4"
+      ".validate": "newData.isNumber()&&newData.val()%1===0&&newData.val()>=1&&newData.val()<=10"
      },
      "tech7": {
-      ".validate": "newData.isNumber()&&newData.val()%1===0&&newData.val()>=1&&newData.val()<=4"
+      ".validate": "newData.isNumber()&&newData.val()%1===0&&newData.val()>=1&&newData.val()<=10"
      },
      "tech8": {
-      ".validate": "newData.isNumber()&&newData.val()%1===0&&newData.val()>=1&&newData.val()<=4"
+      ".validate": "newData.isNumber()&&newData.val()%1===0&&newData.val()>=1&&newData.val()<=10"
      },
      "tech9": {
-      ".validate": "newData.isNumber()&&newData.val()%1===0&&newData.val()>=1&&newData.val()<=4"
+      ".validate": "newData.isNumber()&&newData.val()%1===0&&newData.val()>=1&&newData.val()<=10"
      },
      "tech10": {
-      ".validate": "newData.isNumber()&&newData.val()%1===0&&newData.val()>=1&&newData.val()<=4"
+      ".validate": "newData.isNumber()&&newData.val()%1===0&&newData.val()>=1&&newData.val()<=10"
      },
      "tech11": {
-      ".validate": "newData.isNumber()&&newData.val()%1===0&&newData.val()>=1&&newData.val()<=4"
+      ".validate": "newData.isNumber()&&newData.val()%1===0&&newData.val()>=1&&newData.val()<=10"
      },
      "tech12": {
-      ".validate": "newData.isNumber()&&newData.val()%1===0&&newData.val()>=1&&newData.val()<=4"
+      ".validate": "newData.isNumber()&&newData.val()%1===0&&newData.val()>=1&&newData.val()<=10"
      },
      "$other": {
       ".validate": false
@@ -1271,22 +1271,22 @@
      ".write": "auth!=null&&auth.uid===$uid&&auth.token.firebase.sign_in_provider!=='anonymous'&&root.child('users').child(auth.uid).exists()&&newData.exists()",
      ".validate": "newData.child('boost').exists()||newData.child('heal').exists()||newData.child('chain').exists()||newData.child('cleanse').exists()||newData.child('invincible').exists()||newData.child('stance').exists()",
      "boost": {
-      ".validate": "newData.isNumber()&&newData.val()%1===0&&newData.val()>=1&&newData.val()<=4"
+      ".validate": "newData.isNumber()&&newData.val()%1===0&&newData.val()>=1&&newData.val()<=10"
      },
      "heal": {
-      ".validate": "newData.isNumber()&&newData.val()%1===0&&newData.val()>=1&&newData.val()<=4"
+      ".validate": "newData.isNumber()&&newData.val()%1===0&&newData.val()>=1&&newData.val()<=10"
      },
      "chain": {
-      ".validate": "newData.isNumber()&&newData.val()%1===0&&newData.val()>=1&&newData.val()<=4"
+      ".validate": "newData.isNumber()&&newData.val()%1===0&&newData.val()>=1&&newData.val()<=10"
      },
      "cleanse": {
-      ".validate": "newData.isNumber()&&newData.val()%1===0&&newData.val()>=1&&newData.val()<=4"
+      ".validate": "newData.isNumber()&&newData.val()%1===0&&newData.val()>=1&&newData.val()<=10"
      },
      "invincible": {
-      ".validate": "newData.isNumber()&&newData.val()%1===0&&newData.val()>=1&&newData.val()<=4"
+      ".validate": "newData.isNumber()&&newData.val()%1===0&&newData.val()>=1&&newData.val()<=10"
      },
      "stance": {
-      ".validate": "newData.isNumber()&&newData.val()%1===0&&newData.val()>=1&&newData.val()<=4"
+      ".validate": "newData.isNumber()&&newData.val()%1===0&&newData.val()>=1&&newData.val()<=10"
      },
      "$other": {
       ".validate": false

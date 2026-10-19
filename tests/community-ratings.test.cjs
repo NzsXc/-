@@ -6,7 +6,7 @@ const root = path.resolve(__dirname, '..');
 const rules = JSON.parse(fs.readFileSync(path.join(root, 'firebase-database.rules.json'), 'utf8')).rules;
 assert.deepEqual(core.categories.techniques, Array.from({length:12}, (_, i) => 'tech' + (i+1)));
 assert.deepEqual(core.categories.skills, require('../advanced/rules.js').SKILLS.map(s => s.id));
-assert.deepEqual([4,3.5,3.499,3,2.999,2.5,2.499,1,null].map(core.rank), ['S','S','A','A','B','B','C','C','unrated']);
+assert.deepEqual([10,9,8.999,8.5,8.499,7.5,7.499,1,null].map(core.rank), ['S','S','A','A','B','B','C','C','unrated']);
 assert.equal(core.summarize('techniques', {a:{tech1:4},b:{tech1:3}}).tech1.label, '(3.50)');
 assert.equal(core.summarize('techniques').tech1.average, null);
 const many = Object.fromEntries(Array.from({length:9}, (_, i) => ['u'+i,{tech1:i<5?4:3}]));
@@ -15,12 +15,12 @@ const h = harness();
 for (const uid of ['p1','p2']) h.put('users/'+uid, {name:uid});
 for (const category of Object.keys(core.categories)) {
   const id = core.categories[category][0], p = 'communityRatings/'+category+'/p1';
-  h.commit({[p]:{[id]:4}}, 'p1');
-  h.commit({[p]:{[id]:2}}, 'p1');
-  h.commit({['communityRatings/'+category+'/p2']:{[id]:4}}, 'p2');
+  for (let score=1;score<=10;score++) h.commit({[p]:{[id]:score}}, 'p1');
+  h.commit({[p]:{[id]:8}}, 'p1');
+  h.commit({['communityRatings/'+category+'/p2']:{[id]:9}}, 'p2');
   const result = core.summarize(category, h.get('communityRatings/'+category))[id];
-  assert.equal(result.count, 2); assert.equal(result.average,3); assert.equal(result.rank,'A');
-  for (const bad of [0,5,1.5,'4',true]) assert.throws(() => h.commit({[p]:{[id]:bad}},'p1'), /permission_denied/);
+  assert.equal(result.count, 2); assert.equal(result.average,8.5); assert.equal(result.rank,'A');
+  for (const bad of [0,11,1.5,'10',true]) assert.throws(() => h.commit({[p]:{[id]:bad}},'p1'), /permission_denied/);
   for (const value of [{charge:4},{attack:3},{block:2},{[id]:4,unknown:1},7,null,{}]) assert.throws(() => h.commit({[p]:value},'p1'), /permission_denied/);
   assert.throws(() => h.commit({[p]:{[id]:1}},'p2'), /permission_denied/);
   assert.throws(() => h.commit({['communityRatings/'+category+'/stranger']:{[id]:1}},'stranger'), /permission_denied/);
@@ -31,7 +31,8 @@ for (const category of Object.keys(core.categories)) {
   }
 }
 const before = JSON.parse(require('node:child_process').execFileSync('git',['show','HEAD:firebase-database.rules.json'],{cwd:root,encoding:'utf8'})).rules;
-for (const key of Object.keys(before)) assert.deepEqual(rules[key],before[key], 'existing rule preserved: '+key);
+for (const [category,ids] of Object.entries(core.categories)) for (const id of ids) before.communityRatings[category].$uid[id]['.validate']=before.communityRatings[category].$uid[id]['.validate'].replace('newData.val()<=4','newData.val()<=10');
+for (const key of Object.keys(before)) assert.deepEqual(rules[key],before[key], 'existing rule preserved except rating range: '+key);
 
 async function transportTests() {
   let user={uid:'p1',isAnonymous:false}, authCallback, callbacks=[], saves=[], connected=true;
@@ -62,7 +63,7 @@ async function transportTests() {
   assert.equal(saves.length,2);assert.equal(saves[0].p,saves[1].p);
   assert.equal(core.summarize('techniques',state.ballots.techniques).tech1.count,2);
   assert.equal(core.summarize('techniques',state.ballots.techniques).tech1.average,2.5);
-  await assert.rejects(service.save('techniques',{tech1:7}));
+  await assert.rejects(service.save('techniques',{tech1:11}));
   rejected=true;await assert.rejects(service.save('skills',{boost:4}),/permission denied/);rejected=false;
   connected=false;callbacks.find(x=>x.p==='.info/connected').fn({val:()=>false});
   await assert.rejects(service.save('skills',{boost:3}),/通信/);connected=true;

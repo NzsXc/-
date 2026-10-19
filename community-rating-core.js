@@ -5,12 +5,12 @@
     techniques: Object.freeze(Array.from({length:12}, (_, i) => 'tech' + (i + 1))),
     skills: Object.freeze(['boost', 'heal', 'chain', 'cleanse', 'invincible', 'stance'])
   });
-  const validScore = value => Number.isInteger(value) && value >= 1 && value <= 4;
-  const rank = average => average == null ? 'unrated' : average >= 3.5 ? 'S' : average >= 3 ? 'A' : average >= 2.5 ? 'B' : 'C';
+  const validScore = value => Number.isInteger(value) && value >= 1 && value <= 10;
+  const rank = average => average == null ? 'unrated' : average >= 9 ? 'S' : average >= 8.5 ? 'A' : average >= 7.5 ? 'B' : 'C';
   function ballot(category, value) {
     if (!categories[category] || !value || typeof value !== 'object' || Array.isArray(value)) throw Error('評価を確認してください。');
     const entries = Object.entries(value);
-    if (!entries.length || entries.some(([id, score]) => !categories[category].includes(id) || !validScore(score))) throw Error('1つ以上の項目に1〜4点を設定してください。');
+    if (!entries.length || entries.some(([id, score]) => !categories[category].includes(id) || !validScore(score))) throw Error('1つ以上の項目に1〜10点を設定してください。');
     return Object.fromEntries(entries);
   }
   function summarize(category, votes = {}) {
