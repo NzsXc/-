@@ -19,7 +19,7 @@ function protectedApi(h,{supported=true}={}){
   db:{},auth:{currentUser:{uid:'p2'},authStateReady:async()=>{}},transport,
   history:{find:async id=>h.get('battleHistory/'+id)}
  });
- vm.runInContext(source('protected-rooms.js').replace(/^import[^\n]*\n/gm,'').replace('export function','function'),context);
+ vm.runInContext(source('advanced/spectator.js').replace('export function','function')+'\n'+source('protected-rooms.js').replace(/^import[^\n]*\n/gm,'').replace('export function','function'),context);
  const api=vm.runInContext('createProtectedRooms(db,auth,transport,history)',context);
  async function snapshot(id){let value,error;const stop=api.watchRoom(id,v=>value=v,e=>error=e);for(let i=0;i<20;i++)await new Promise(setImmediate);stop();if(error)throw error;return plain(value);}
  return {api,reads,writes,snapshot};
@@ -89,3 +89,4 @@ function historyApi(){
  auto.rankedMatch.state.gauge[1]=20;auto.rankedAutoRetryAt=0;vm.runInContext('rankedAutoSelect()',auto);assert.equal(defaults.at(-1),1,'20/20 defaults to attack');
  console.log('PASS: Standard compatibility, Custom validation/immutability, real create → join → loadout → turns → settlement/history, spectator metadata, forged joins and '+cases+' custom action-pair rule checks');
 })().catch(error=>{console.error(error);process.exitCode=1;});
+

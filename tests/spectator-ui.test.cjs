@@ -6,7 +6,7 @@ const spectator=html.slice(html.indexOf('let spectatorActive = false;'),html.ind
 const filter=html.slice(html.indexOf('  function activeBattles(rooms){'),html.indexOf('  window.onlineBattle ='));
 const result=html.slice(html.indexOf('function showBattleResult(text){'),html.indexOf('/* =========================\r\n   UI更新',html.indexOf('function showBattleResult(text){')));
 assert(spectator.includes('enterSpectator')&&result.includes('resultShow'));
-const protectedSource=fs.readFileSync(path.join(root,'protected-rooms.js'),'utf8').replace(/^import[^\n]*\n/gm,'').replace('export function','function');
+const protectedSource=fs.readFileSync(path.join(root,'advanced/spectator.js'),'utf8').replace('export function','function')+'\n'+fs.readFileSync(path.join(root,'protected-rooms.js'),'utf8').replace(/^import[^\n]*\n/gm,'').replace('export function','function');
 const battleUI=html.slice(html.indexOf('let displayedHp='),html.indexOf('function startMenuBGM(){'));
 const playerMarkup=side=>`<div id="player${side}Area"><div class="playerName"><span class="playerNameText"></span></div><span id="hp${side}Text"></span><div id="hp${side}Fill"></div><span id="gauge${side}Text"></span><div id="gauge${side}Fill"></div>${['charge','attack','block',0,1,2].map(action=>`<button class="action" data-action="${action}" ${typeof action==='number'?`id="p${side}tech${action}"`:''}><span class="actionName"></span></button>`).join('')}</div>`;
 const css=html.match(/#battleScreen\.spectatorMode \.action\{[^}]+\}/)[0];
@@ -91,3 +91,4 @@ ${result}
   console.log('PASS: real battle UI: mid-match entry, previous-action indicators, HP updates, transient read failure/recovery, archived result preserved and exit; actual Firebase rules enforced');
  }finally{await browser?.close();await new Promise(resolve=>server.close(resolve));}
 })().catch(error=>{console.error(error);process.exitCode=1;});
+

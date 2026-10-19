@@ -1,7 +1,7 @@
 import {ref,get,set,update,push,serverTimestamp,onValue,runTransaction} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js';
 import {calculate,stateFields} from './free-calculator.js?v=attack-stance-1';
-import {historyMatch} from './battle-history-core.js?v=attack-stance-1';
-import {createAdvancedProtocol} from './advanced/protocol.js?v=attack-stance-1';
+import {historyMatch} from './battle-history-core.js?v=advanced-options-1';
+import {createAdvancedProtocol} from './advanced/protocol.js?v=advanced-options-1';
 export function createFreeTransport(db,auth,history){
  let offset=0;onValue(ref(db,'.info/serverTimeOffset'),s=>{offset=s.val()||0;});
  const now=()=>Date.now()+offset;
@@ -109,7 +109,7 @@ const initialAccount = {
    if(!fresh||fresh.turn!==s.turn)return true;
    const c=roomRules?.mode==='advanced'?window.AdvancedRules.resolve(fresh,moves,advanced?.selected,window.AdvancedRules.forTurn(advanced,fresh.turn),calculate,roomRules):calculate(fresh,moves,rulesVersion,roomRules),state=Object.fromEntries(stateFields.map(k=>[k,k==='startedAt'?serverTimestamp():c[k]]));
    if(modern)state.previousDeadline=turnOpensAt(fresh,roomRules,advanced)+10000;
-   if(roomRules?.mode==='advanced')state.skillsExhausted=window.AdvancedRules.exhausted(advanced);
+   if(roomRules?.mode==='advanced')state.skillsExhausted=window.AdvancedRules.exhausted(advanced,roomRules);
    try{await writeUpdate(path,{transition:c,state});}
    catch(e){
     const accepted=await read(path+'/state');
@@ -121,7 +121,7 @@ const initialAccount = {
   advanceFlights.set(key,job);
   try{return await job;}finally{if(advanceFlights.get(key)===job)advanceFlights.delete(key);}
  }
- const initial=(rules)=>Object.fromEntries(stateFields.map(k=>[k,k==='turn'?1:k==='startedAt'?serverTimestamp():k.startsWith('hp')?rules.hp:k.startsWith('gauge')?rules.initialGauge:k.startsWith('seal')||k.startsWith('momentum')?false:k.startsWith('last')?'':0]));
+ const initial=(rules)=>({...Object.fromEntries(stateFields.map(k=>[k,k==='turn'?1:k==='startedAt'?serverTimestamp():k.startsWith('hp')?rules.hp:k.startsWith('gauge')?rules.initialGauge:k.startsWith('seal')||k.startsWith('momentum')?false:k.startsWith('last')?'':0])),...(rules.mode==='advanced'&&!window.RoomRules.hasSkills(rules)?{skillsExhausted:true}:{})});
  const matchMetadata=new Map(),titleRecorded=new Map(),ratingClaimed=new Set(),skillSnapshots=new Map();
  const historyWarnings=new Set();
  async function archivedStatus(id,u){
@@ -146,7 +146,8 @@ const initialAccount = {
    const keys=['players','createdAt','state','ready','resigned','settled','transition','kind','room',...(punishEnabled?['rulesVersion']:[]),...(roomRulesEnabled?['roomRules']:[])];g=Object.fromEntries(await Promise.all(keys.map(async k=>[k,await read(path+'/'+k)])));g.ready||={};const roomRules=window.RoomRules.normalize(g.roomRules);roomRulesCache.set(id,roomRules);
    const me=g.players?.[1]===u?1:g.players?.[2]===u?2:0;
    if(!me){const saved=await archivedStatus(id,u);if(saved)return saved.match;throw Error('参加者ではありません');}g.me=me;
-   if(roomRules.mode==='advanced')g.advanced=await advancedProtocol.snapshot(id,g,me);
+   if(window.RoomRules.hasSkills(roomRules))g.advanced=await advancedProtocol.snapshot(id,g,me);
+   if(window.RoomRules.hasSpecial(roomRules))g.special=await read(path+'/special');
    try{await history?.markClient(id,g.players);}catch(error){console.warn('履歴対応状態の保存を再試行します',error);}
    if(g.settled&&history){
     try{
@@ -199,8 +200,8 @@ const initialAccount = {
   }
   // A match that expires before either loadout still needs player names for results.
   if(closed&&!s)for(const p of [1,2]){const account=await read('freeAccounts/'+g.players[p]);players[p]={name:account?.name||'プレイヤー'};}
-  const match={id,kind:g.kind||'random',roomId:g.room||null,roomRules:window.RoomRules.normalize(g.roomRules),you:me,...(advanced?{advanced:g.advanced,skillResult:board(skillResult),skillWindow:s?{startAt:skillEndsAt(s)-window.AdvancedRules.windowMs(s),endAt:skillEndsAt(s),confirmAt:confirmAt(s)}:null}:{}),players,ready:g.ready,loadouts,state,closed,phase:closed?'finished':s?'turn':'select',revision:now(),serverNow:now(),opensAt,deadline:s?opensAt+10000:g.createdAt+60000,graceDeadline:s?opensAt+40000:g.createdAt+90000,ownAction:g.own??null,reveal:g.transition?{turn:g.transition.turn-1,startedAt:s?.startedAt,countdownEndsAt:Number.isFinite(s?.previousDeadline)?countdownEndsAt(s):null,actions:{1:g.transition.action1,2:g.transition.action2},damage:{1:g.transition.damage1,2:g.transition.damage2}}:null,result:closed?{winner:g.settled.winner,rated:g.kind!=='friend',reason:g.resigned?'resigned':g.abandoned&&s?.hp1>0&&s?.hp2>0?'reconnect-timeout':!s?'selection-timeout':s.misses1>=2||s.misses2>=2?'idle-forfeit':s.turn>300?'turn-limit':'battle'}:null,rating:closed?{before:g.settled['before'+me],after:g.settled['after'+me],delta:g.settled['delta'+me]}:null};
-  if(advanced&&state&&!closed)skillSnapshots.set(u+':'+id,match);else skillSnapshots.delete(u+':'+id);
+  const match={id,kind:g.kind||'random',roomId:g.room||null,roomRules:window.RoomRules.normalize(g.roomRules),you:me,...(window.RoomRules.hasSpecial(roomRules)?{special:g.special}:{}),...(advanced?{advanced:g.advanced,skillResult:board(skillResult),skillWindow:s?{startAt:skillEndsAt(s)-window.AdvancedRules.windowMs(s),endAt:skillEndsAt(s),confirmAt:confirmAt(s)}:null}:{}),players,ready:g.ready,loadouts,state,closed,phase:closed?'finished':s?'turn':'select',revision:now(),serverNow:now(),opensAt,deadline:s?opensAt+10000:g.createdAt+60000,graceDeadline:s?opensAt+40000:g.createdAt+90000,ownAction:g.own??null,reveal:g.transition?{turn:g.transition.turn-1,startedAt:s?.startedAt,countdownEndsAt:Number.isFinite(s?.previousDeadline)?countdownEndsAt(s):null,actions:{1:g.transition.action1,2:g.transition.action2},damage:{1:g.transition.damage1,2:g.transition.damage2}}:null,result:closed?{winner:g.settled.winner,rated:g.kind!=='friend',reason:g.resigned?'resigned':g.abandoned&&s?.hp1>0&&s?.hp2>0?'reconnect-timeout':!s?'selection-timeout':s.misses1>=2||s.misses2>=2?'idle-forfeit':s.turn>300?'turn-limit':'battle'}:null,rating:closed?{before:g.settled['before'+me],after:g.settled['after'+me],delta:g.settled['delta'+me]}:null};
+  if(window.RoomRules.hasSkills(roomRules)&&state&&!closed)skillSnapshots.set(u+':'+id,match);else skillSnapshots.delete(u+':'+id);
   return match;
  }
  async function resumeActive(account){
@@ -245,8 +246,9 @@ const initialAccount = {
    const roomRules=window.RoomRules.normalize(lobby.roomRules);
    if(roomRules.mode==='custom'&&!await supportsRoomRules())throw Error('カスタム対戦はまだ利用できません。更新後にお試しください。');
    if(roomRules.mode==='advanced'&&!await advancedProtocol.supports())throw Error('Advancedはまだ利用できません。更新後にお試しください。');
+   if(window.RoomRules.needsAdvancedOptions(roomRules)&&!await advancedProtocol.supportsOptions())throw Error('Advancedの追加設定を利用するには、対戦ルールを更新してください。');
    const id=push(ref(db,'freeGames')).key,versionPatch=await supportsPunish()?{['freeGames/'+id+'/rulesVersion']:2}:{},roomPatch=roomRules.mode!=='standard'?{['freeGames/'+id+'/roomRules']:roomRules}:{};
-   try{await update(ref(db),{...versionPatch,...roomPatch,['freeGames/'+id+'/players']:{1:u,2:lobby.host},['freeGames/'+id+'/createdAt']:serverTimestamp(),['freeGames/'+id+'/kind']:'friend',['freeGames/'+id+'/room']:d.roomId,['freeAccounts/'+u+'/active']:id,['freeAccounts/'+lobby.host+'/active']:id,['friendRooms/'+d.roomId+'/game']:id});}
+   try{await update(ref(db),{...versionPatch,...roomPatch,...(window.RoomRules.hasSpecial(roomRules)?{['freeGames/'+id+'/special']:{max:30,gauge:{1:0,2:0}}}:{}),['freeGames/'+id+'/players']:{1:u,2:lobby.host},['freeGames/'+id+'/createdAt']:serverTimestamp(),['freeGames/'+id+'/kind']:'friend',['freeGames/'+id+'/room']:d.roomId,['freeAccounts/'+u+'/active']:id,['freeAccounts/'+lobby.host+'/active']:id,['friendRooms/'+d.roomId+'/game']:id});}
    catch(e){
     const fresh=await profile();if(fresh.active)return {match:await status(fresh.active)};
     const current=await read('friendRooms/'+d.roomId);
@@ -279,13 +281,13 @@ const initialAccount = {
   if(d.op!=='status'&&await read(path+'/settled'))return {match:await status(id)};
   const roomRules=roomRulesCache.get(id)||(await supportsRoomRules()?await read(path+'/roomRules'):null);
   if(d.op==='advancedSkill'){
-   if(roomRules?.mode!=='advanced')throw Error('このモードではスキルを使用できません。');
+   if(!window.RoomRules.hasSkills(roomRules))throw Error('このモードではスキルを使用できません。');
    const state=await read(path+'/state');if(!state)throw Error('対戦はまだ開始していません。');
    await advancedProtocol.activate(id,me,d.turn,skillEndsAt(state),{pressedAt});return {match:await status(id)};
   }
   if(d.op==='loadout'){
-   const savedSkill=roomRules?.mode==='advanced'?await read(path+'/advanced/selected/'+me):null;
-   const skillPatch=roomRules?.mode==='advanced'?advancedProtocol.loadoutPatch({selected:{[me]:savedSkill}},me,d.advancedSkill):{};
+   const savedSkill=window.RoomRules.hasSkills(roomRules)?await read(path+'/advanced/selected/'+me):null;
+   const skillPatch=window.RoomRules.hasSkills(roomRules)?advancedProtocol.loadoutPatch({selected:{[me]:savedSkill}},me,d.advancedSkill):{};
    // Snapshot before ready/state. A rules-first rollout also remains compatible
    // with older clients that do not send profiles.
    try{
@@ -298,7 +300,7 @@ const initialAccount = {
     await writeUpdate(path,{...skillPatch,['loadouts/'+me]:d.loadout,['ready/'+me]:true});
    }catch(error){
     const [savedReady,savedLoadout]=await Promise.all([read(path+'/ready/'+me),read(path+'/loadouts/'+me)]);
-    if(savedReady!==true||JSON.stringify(savedLoadout)!==JSON.stringify(d.loadout)||(roomRules?.mode==='advanced'&&await read(path+'/advanced/selected/'+me)!==d.advancedSkill))throw error;
+    if(savedReady!==true||JSON.stringify(savedLoadout)!==JSON.stringify(d.loadout)||(window.RoomRules.hasSkills(roomRules)&&await read(path+'/advanced/selected/'+me)!==d.advancedSkill))throw error;
    }
   }
   else if(d.op==='action'){
@@ -325,8 +327,10 @@ const initialAccount = {
   return ()=>stops.forEach(stop=>stop());
  };
  request.supportsAdvanced=advancedProtocol.supports;
+ request.supportsAdvancedOptions=advancedProtocol.supportsOptions;
  request.supportsRoomRules=supportsRoomRules;
  request.transitionMs=transitionMs;
  return request;
 }
+
 

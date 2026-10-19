@@ -312,7 +312,7 @@ async function rankedSubmitAction(m,id,automatic=false){
   rankedMessage((automatic?'自動選択を送信できませんでした：':'')+e.message);
  }
 }
-function rankedStop(){window.AdvancedSkills?.reset();rankedWatchStop?.();rankedWatchStop=null;rankedStatusFlight=null;rankedStatusDirty=false;rankedVisualStop();rankedEpoch++;rankedActive=false;rankedMatch=null;rankedSending=false;rankedButtons(false);}
+function rankedStop(){window.SpecialGauge?.reset();window.AdvancedSkills?.reset();rankedWatchStop?.();rankedWatchStop=null;rankedStatusFlight=null;rankedStatusDirty=false;rankedVisualStop();rankedEpoch++;rankedActive=false;rankedMatch=null;rankedSending=false;rankedButtons(false);}
 async function rankedLeave(){
  if(rankedMatch&&!rankedMatch.closed){
   if(!confirm(rankedMatch.kind==='friend'?'降参してホームに戻りますか？':'降参してホームに戻りますか？ レートに反映されます。'))return;
@@ -320,3 +320,4 @@ async function rankedLeave(){
  }
  rankedStop();returnBattleHomeCore();
 }
+

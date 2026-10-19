@@ -1,11 +1,17 @@
-import {ACTION_NAMES,HISTORY_REASONS,historySide,replayHistory,slots} from './battle-history-core.js?v=history-nulls-1';
+import {ACTION_NAMES,HISTORY_REASONS,historySide,replayHistory,slots} from './battle-history-core.js?v=advanced-options-1';
 
 const element=(tag,className,text)=>{const node=document.createElement(tag);if(className)node.className=className;if(text!=null)node.textContent=String(text);return node;};
+const advanced=h=>h.roomRules?.mode==='advanced'&&h.roomRules.skills!==false;
+const skillFor=(h,p)=>window.AdvancedRules?.byId[h.advanced?.selected?.[p]];
+function turnSkill(h,p,turn){
+ const receipt=window.AdvancedRules?.forTurn(h.advanced,turn)?.[p];
+ return receipt?window.AdvancedRules?.byId[receipt.id]?.name||'不明なスキル':null;
+}
 export function createHistoryScreen(history){
  const screen=element('div');screen.id='historyScreen';screen.className='screen';
  const panel=element('div','historyPanel'),heading=element('div','historyHeading'),title=element('h1',null,'対戦履歴'),back=element('button','historyButton','プロフィールへ戻る');back.type='button';
  heading.append(title,back);
- const note=element('p','historyNote','直近10戦。履歴を押すと、対戦データ・称号・技構成を表示します。'),status=element('p','historyStatus'),list=element('div','historyList');
+ const note=element('p','historyNote','直近10戦。履歴を押すと、対戦データ・称号・技構成・Advancedのスキルを表示します。'),status=element('p','historyStatus'),list=element('div','historyList');
  status.setAttribute('role','status');list.setAttribute('aria-label','直近10戦の対戦履歴');panel.append(heading,note,status,list);screen.append(panel);document.body.append(screen);
  let generation=0,owner=null;
  back.onclick=()=>{generation++;window.showScreen('playerCardScreen');document.getElementById('playerCardHistoryButton')?.focus();};
@@ -14,6 +20,13 @@ export function createHistoryScreen(history){
   box.append(name,rate);
   const loadout=player.loadout?slots(player.loadout).map(i=>ACTION_NAMES[i+3]||'不明').join(' / '):'技選択前';
   box.append(element('p','historyLoadout','技構成：'+loadout));
+  if(advanced(h)){
+   const skill=skillFor(h,p),current=h.advanced?.current?.[p];
+   const receipts=Object.values(h.advanced?.uses?.[p]||{}),recorded=!!h.advanced;
+   const count=Math.max(Number(current?.used||0),...receipts.map(r=>Number(r?.used||0)));
+   box.append(element('p','historyLoadout','スキル：'+(skill?skill.name+' / 使用 '+count+'/'+skill.limit+'回':recorded?'未選択':'未記録')));
+  }
+  if(h.roomRules?.mode==='advanced'&&h.roomRules.special===true)box.append(element('p','historyLoadout','スペシャルゲージ：'+(h.special?.gauge?.[p]??0)+'/30'));
   const titles=element('div','historyTitles');
   if(!player.snapshot)titles.append(element('span','historyNote','対戦時の称号は未記録'));
   else{
@@ -27,19 +40,27 @@ export function createHistoryScreen(history){
   const details=element('section','historyDetails');details.append(element('h3',null,'バトルデータ'));
    try{
     const turns=replayHistory(h);
-    if(!turns.length){details.append(element('p','historyNote','行動が解決する前に対戦が終了しました。'));return details;}
+    if(!turns.length){details.append(element('p','historyNote','行動が解決する前に対戦が終了しました。'));appendUnresolvedSkills(details,h);return details;}
     const scroll=element('div','historyTableScroll'),table=element('table','historyTable'),caption=element('caption',null,'各ターンの選択と、解決後のHP・ゲージ'),head=element('thead'),row=element('tr');
     for(const text of ['ターン',h.players[1].name,h.players[2].name]){const th=element('th',null,text);th.scope='col';row.append(th);}head.append(row);
     const body=element('tbody');
     for(const turn of turns){
      const tr=element('tr'),label=element('th',null,'T'+turn.turn);label.scope='row';tr.append(label);
-     for(const p of [1,2]){const cell=element('td');cell.append(element('strong',null,ACTION_NAMES[turn.actions[p]]||'不明'),element('span','historyTurnState','HP '+turn.before.hp[p]+' → '+turn.after.hp[p]+' / ゲージ '+turn.before.gauge[p]+' → '+turn.after.gauge[p]));tr.append(cell);}
+     for(const p of [1,2]){const cell=element('td');
+      if(advanced(h)){const name=turnSkill(h,p,turn.turn);cell.append(element('span','historyTurnSkill',h.advanced?'スキル：'+(name||'使用なし'):'スキル：未記録'));}
+      cell.append(element('strong',null,ACTION_NAMES[turn.actions[p]]||'不明'),element('span','historyTurnState','HP '+turn.before.hp[p]+' → '+turn.after.hp[p]+' / ゲージ '+turn.before.gauge[p]+' → '+turn.after.gauge[p]));tr.append(cell);}
      body.append(tr);
     }
     table.append(caption,head,body);scroll.append(table);details.append(scroll);
+    appendUnresolvedSkills(details,h);
     if(['resigned','reconnect-timeout'].includes(h.reason))details.append(element('p','historyNote','T'+h.finalState.turn+'の行動が解決する前に終了しています。'));
    }catch(error){details.append(element('p','historyStatus',error.message));}
   return details;
+ }
+ function appendUnresolvedSkills(details,h){
+  if(!advanced(h)||!h.finalState)return;
+  const turn=h.finalState.turn;
+  for(const p of [1,2]){const name=turnSkill(h,p,turn);if(name)details.append(element('p','historyTurnSkill','T'+turn+' '+h.players[p].name+'：'+name+'を発動（技の解決前に終了）'));}
  }
  function card(h,uid){
   const side=historySide(h,uid),outcome=h.settled.winner===0?'引き分け':h.settled.winner===side?'勝利':'敗北';
@@ -58,7 +79,7 @@ export function createHistoryScreen(history){
   let rendered=false;
   article.addEventListener('toggle',()=>{
    if(!article.open||rendered)return;rendered=true;
-   const content=element('div','historyExpanded');content.append(element('p','historyMeta',date+' · '+mode+' · '+h.turnCount+'ターン · '+reason));
+   const content=element('div','historyExpanded');content.append(element('p','historyMeta',date+' · '+mode+(h.roomRules?.mode==='advanced'?' · Advanced'+(h.roomRules.special===true?'（'+(advanced(h)?'スキル＋':'')+'スペシャル）':''):'')+' · '+h.turnCount+'ターン · '+reason));
    const players=element('div','historyPlayers');players.append(playerInfo(h,side),playerInfo(h,opponent));content.append(players,battleDetails(h));article.append(content);
   });return article;
  }
@@ -76,3 +97,4 @@ export function createHistoryScreen(history){
  }
  return {open};
 }
+
