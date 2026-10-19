@@ -6,6 +6,7 @@
 <title>心理バトル</title>
 <link rel="stylesheet" href="battle-history.css?v=history-skills-2">
 <link rel="stylesheet" href="advanced/advanced.css?v=skill-flow-1">
+<link rel="stylesheet" href="advanced/special.css?v=advanced-options-1">
 <link rel="stylesheet" href="advanced/button-art.css?v=attack-stance-1">
 <link rel="stylesheet" href="advanced/cutin.css?v=attack-stance-1">
 
@@ -2246,11 +2247,16 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
     <fieldset class="friendRuleModes">
       <legend>対戦ルールを選択</legend>
       <label class="friendRuleChoice"><input type="radio" name="friendRuleMode" value="standard" checked onchange="updateFriendRuleSettings()"><span><strong>Standard</strong><small>いつものルールで対戦</small></span></label>
-      <label class="friendRuleChoice"><input type="radio" name="friendRuleMode" value="advanced" onchange="updateFriendRuleSettings()"><span><strong>Advanced</strong><small>スキルで戦術を広げる</small></span></label>
+      <label class="friendRuleChoice"><input type="radio" name="friendRuleMode" value="advanced" onchange="updateFriendRuleSettings()"><span><strong>Advanced</strong><small>スキル・スペシャルを選択</small></span></label>
       <label class="friendRuleChoice"><input type="radio" name="friendRuleMode" value="custom" onchange="updateFriendRuleSettings()"><span><strong>Custom</strong><small>HPとゲージを自由に設定</small></span></label>
     </fieldset>
     <p id="friendStandardRules" class="settingsNote">HP 10 / 初期ゲージ 8 / 最大ゲージ 10<br>基礎技3種 ＋ 選択技3種</p>
-    <p id="friendAdvancedRules" class="settingsNote" hidden>HP 10 / 初期ゲージ 8 / 最大ゲージ 10<br>基礎技3種 ＋ 選択技3種 ＋ スキル1種。各ターン開始時の3秒間にスキルを発動できます。</p>
+    <fieldset id="friendAdvancedOptions" class="friendAdvancedOptions" hidden disabled>
+      <legend>Advancedの追加システム（両方選択できます）</legend>
+      <label class="friendRuleChoice"><input id="friendRuleSkills" type="checkbox" checked onchange="updateFriendRuleSettings()"><span><strong>スキル</strong><small>スキル1種を選び、ターン開始時に発動</small></span></label>
+      <label class="friendRuleChoice"><input id="friendRuleSpecial" type="checkbox" onchange="updateFriendRuleSettings()"><span><strong>スペシャル</strong><small>専用ゲージ 0〜30。スペシャル技は準備中</small></span></label>
+    </fieldset>
+    <p id="friendAdvancedRules" class="settingsNote" hidden></p>
     <fieldset id="friendCustomRules" class="friendCustomFields" hidden disabled>
       <legend>Customの設定</legend>
       <label>HP<input id="friendRuleHp" type="number" min="1" max="100" step="1" value="10" required inputmode="numeric"></label>
@@ -2733,22 +2739,23 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
 <script src="player-lightning.js?v=2"></script>
 <script src="bot-engine.js?v=punish-2"></script>
 <script src="bot-client.js?v=mode-cards-1"></script>
-<script src="advanced/rules.js?v=skill-display-2"></script>
-<script src="room-rules.js?v=advanced-1"></script>
-<script src="ranked-client.js?v=reveal-audio-1"></script>
-<script src="advanced/client.js?v=skill-display-2"></script>
-<script src="advanced/cutin.js?v=attack-stance-1"></script>
+<script src="advanced/rules.js?v=advanced-options-1"></script>
+<script src="advanced/special.js?v=advanced-options-1"></script>
+<script src="room-rules.js?v=advanced-options-1"></script>
+<script src="ranked-client.js?v=advanced-options-1"></script>
+<script src="advanced/client.js?v=advanced-options-1"></script>
+<script src="advanced/cutin.js?v=advanced-options-1"></script>
 <script src="battle-inspector.js?v=battle-layout-1"></script>
-<script src="lobby-client.js?v=friend-wait-mode-1"></script>
+<script src="lobby-client.js?v=advanced-options-1"></script>
 <script src="battle-action-art.js?v=confirmed-1"></script>
 <script src="battle-effects.js?v=confirmed-1"></script>
 <script type="module">
   import {createTitleService} from "./title-service.js?v=crown-prestige-1";
-  import {createProtectedRooms} from "./protected-rooms.js?v=skill-display-2";
-  import {createFreeTransport} from "./free-transport.js?v=attack-stance-1";
-  import {createBattleHistory} from "./battle-history.js?v=attack-stance-1";
+  import {createProtectedRooms} from "./protected-rooms.js?v=advanced-options-1";
+  import {createFreeTransport} from "./free-transport.js?v=advanced-options-1";
+  import {createBattleHistory} from "./battle-history.js?v=advanced-options-1";
   import {createPlayerProfile} from "./player-profile.js?v=usage-1";
-  import {createHistoryScreen} from "./battle-history-client.js?v=history-skills-2";
+  import {createHistoryScreen} from "./battle-history-client.js?v=advanced-options-1";
   import {createCommunityRatings} from "./community-ratings.js?v=voting-1";
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
   import {
@@ -3555,7 +3562,7 @@ function renderSpectatorLoadouts(room){
       section.appendChild(note);
     }
     const match=room.battle?.skillMatch;
-    if(match?.roomRules?.mode==="advanced"){
+    if(window.AdvancedRules?.hasSkills(match?.roomRules)){
       const skill=window.AdvancedRules?.byId[match.advanced?.selected?.[side]];
       const item=document.createElement("details");item.className="spectatorTechnique";
       const summary=document.createElement("summary");summary.textContent="スキル："+(skill?.name||"未記録");
@@ -3625,6 +3632,7 @@ async function enterSpectator(code,p1,p2){
 
 function applySpectatorState(state){
   window._spectatorRoomRules=state.roomRules||null;
+  window._spectatorSpecialMatch={roomRules:state.roomRules,special:state.special};
   for(const side of [1,2]){
     if(state.hp?.[side]!=null)hp[side]=Number(state.hp[side]);
     if(state.gauge?.[side]!=null)gauge[side]=Number(state.gauge[side]);
@@ -3737,6 +3745,7 @@ function updateSpectatorBattleUI(){
 }
 
 function stopSpectating(){
+  window._spectatorSpecialMatch=null;window.SpecialGauge?.reset();
   window.AdvancedSkills?.reset();
   ++spectatorSession;
   spectatorActive=false;
@@ -6694,6 +6703,7 @@ function battleLimits(){
 }
 
 function updateBattleUI(){
+  window.SpecialGauge?.sync(rankedActive?rankedMatch:gameMode==="spectator"?window._spectatorSpecialMatch:null);
   const limits=battleLimits();
   updateBlockSealIndicators();
   updateRuinIndicators();

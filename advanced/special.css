@@ -1,0 +1,11 @@
+.friendAdvancedOptions{border:0;padding:0;margin:4px 0 0;display:grid;grid-template-columns:1fr 1fr;gap:8px;min-width:0}
+.friendAdvancedOptions[hidden],.specialGaugePanel[hidden]{display:none!important}
+.friendAdvancedOptions legend{font-size:13px;font-weight:700;padding:0 0 9px}
+.friendAdvancedOptions .friendRuleChoice{min-width:0}
+.specialGaugePanel{margin:0 0 8px;color:#e2c5ff;min-width:0}
+.specialGaugeTitle{font-size:11px;line-height:1.3;font-weight:800;margin-bottom:3px;letter-spacing:.08em}
+.specialGaugeRow{display:flex;align-items:center;gap:8px}
+.specialGaugeTrack{flex:1;min-width:0;height:8px;background:#0e0a19;border:1px solid #ad79df77;overflow:hidden}
+.specialGaugeFill{height:100%;width:0;background:linear-gradient(90deg,#9a59db,#e1b3ff);transition:width .25s ease-out}
+.specialGaugeValue{flex:0 0 46px;text-align:right;font-size:13px;font-weight:800;font-variant-numeric:tabular-nums}
+@media(max-width:420px){.friendAdvancedOptions{grid-template-columns:1fr}.specialGaugePanel{margin-bottom:5px}.specialGaugeTitle{font-size:10px}}

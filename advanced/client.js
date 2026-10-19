@@ -2,7 +2,7 @@
 (()=>{
  const choices=new Map();let current=null,selecting=null,sending=false,epoch=0,selection=null,dock=null,enemyDock=null,windowPanel=null;
  let observerFrame=0;
- const advanced=m=>m?.roomRules?.mode==='advanced';
+ const advanced=m=>window.AdvancedRules.hasSkills(m?.roomRules);
  const node=(tag,cls,text)=>{const el=document.createElement(tag);if(cls)el.className=cls;if(text!=null)el.textContent=text;return el;};
  function select(m){
   const screen=document.getElementById('techScreen');if(!screen)return;

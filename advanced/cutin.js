@@ -44,7 +44,7 @@
   ownsEffect=!!window.BattleEffects?.play({layer:root.querySelector('.game-effect-layer'),actions,rawActions:actions,damage:[0,0],sealed:[false,false],onComplete(){ownsEffect=false;}});
  }
  function sync(m,now,{blocked=false}={}){
-  if(m?.roomRules?.mode!=='advanced'||!m.state||m.closed||blocked||!m.skillWindow){if(key)cancel();return;}
+  if(!window.AdvancedRules.hasSkills(m?.roomRules)||!m.state||m.closed||blocked||!m.skillWindow){if(key)cancel();return;}
   const used=window.AdvancedSkills.usedForTurn(m),start=m.skillWindow.confirmAt??m.skillWindow.endAt,end=start+window.AdvancedRules.presentationMs(m.advanced,m.state.turn);
   // Wait for a server snapshot at/after the deadline: it includes last-moment uses.
   if(!used.length||now<start||now>=end||m.serverNow<start){if(key)cancel();return;}
@@ -59,4 +59,5 @@
  }
  window.AdvancedCutin={sync,cancel,reset};
 })();
+
 

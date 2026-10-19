@@ -1,6 +1,13 @@
 // Persistence for Advanced skills only; Standard/Custom never call these operations.
 export function createAdvancedProtocol({read,writeUpdate,now,serverTimestamp}){
  let supported=null;
+ let optionsSupported=null;
+ function supportsOptions(){
+  if(!optionsSupported)optionsSupported=read('freeGames/_protocol/advanced/optionsV1').then(()=>true).catch(error=>{
+   if(/permission.?denied/i.test(String(error.code||'')+' '+error.message))return false;
+   optionsSupported=null;throw error;
+  });return optionsSupported;
+ }
  function supports(){
   if(!supported)supported=read('freeGames/_protocol/advanced/attackStance').then(()=>true).catch(error=>{
    if(/permission.?denied/i.test(String(error.code||'')+' '+error.message))return false;
@@ -30,6 +37,7 @@ export function createAdvancedProtocol({read,writeUpdate,now,serverTimestamp}){
   try{await writeUpdate(path,{['advanced/uses/'+me+'/'+(count+1)]:receipt,['advanced/current/'+me]:current});}
   catch(error){const accepted=await read(path+'/advanced/current/'+me);if(accepted?.id!==skill||accepted.turn!==turn)throw error;}
  }
- return {supports,snapshot,loadoutPatch,activate};
+ return {supports,supportsOptions,snapshot,loadoutPatch,activate};
 }
+
 

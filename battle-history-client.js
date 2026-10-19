@@ -1,7 +1,7 @@
-import {ACTION_NAMES,HISTORY_REASONS,historySide,replayHistory,slots} from './battle-history-core.js?v=history-nulls-1';
+import {ACTION_NAMES,HISTORY_REASONS,historySide,replayHistory,slots} from './battle-history-core.js?v=advanced-options-1';
 
 const element=(tag,className,text)=>{const node=document.createElement(tag);if(className)node.className=className;if(text!=null)node.textContent=String(text);return node;};
-const advanced=h=>h.roomRules?.mode==='advanced';
+const advanced=h=>h.roomRules?.mode==='advanced'&&h.roomRules.skills!==false;
 const skillFor=(h,p)=>window.AdvancedRules?.byId[h.advanced?.selected?.[p]];
 function turnSkill(h,p,turn){
  const receipt=window.AdvancedRules?.forTurn(h.advanced,turn)?.[p];
@@ -26,6 +26,7 @@ export function createHistoryScreen(history){
    const count=Math.max(Number(current?.used||0),...receipts.map(r=>Number(r?.used||0)));
    box.append(element('p','historyLoadout','スキル：'+(skill?skill.name+' / 使用 '+count+'/'+skill.limit+'回':recorded?'未選択':'未記録')));
   }
+  if(h.roomRules?.mode==='advanced'&&h.roomRules.special===true)box.append(element('p','historyLoadout','スペシャルゲージ：'+(h.special?.gauge?.[p]??0)+'/30'));
   const titles=element('div','historyTitles');
   if(!player.snapshot)titles.append(element('span','historyNote','対戦時の称号は未記録'));
   else{
@@ -78,7 +79,7 @@ export function createHistoryScreen(history){
   let rendered=false;
   article.addEventListener('toggle',()=>{
    if(!article.open||rendered)return;rendered=true;
-   const content=element('div','historyExpanded');content.append(element('p','historyMeta',date+' · '+mode+(advanced(h)?' · Advanced':'')+' · '+h.turnCount+'ターン · '+reason));
+   const content=element('div','historyExpanded');content.append(element('p','historyMeta',date+' · '+mode+(h.roomRules?.mode==='advanced'?' · Advanced'+(h.roomRules.special===true?'（'+(advanced(h)?'スキル＋':'')+'スペシャル）':''):'')+' · '+h.turnCount+'ターン · '+reason));
    const players=element('div','historyPlayers');players.append(playerInfo(h,side),playerInfo(h,opponent));content.append(players,battleDetails(h));article.append(content);
   });return article;
  }

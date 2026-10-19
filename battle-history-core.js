@@ -24,6 +24,7 @@ export function buildHistory(id,g,accounts){
  const h={version:1,createdAt:g.createdAt,endedAt:g.settled.at,kind:g.kind||'random',room:g.room||'',turnCount,reason:finishReason(g),players:{},settled:{...g.settled}};
  if(g.rulesVersion===2)h.rulesVersion=2;
  if(g.roomRules)h.roomRules={...g.roomRules};
+ if(g.roomRules?.mode==='advanced'&&g.roomRules.special===true&&g.special)h.special=JSON.parse(JSON.stringify(g.special));
  if(g.roomRules?.mode==='advanced'&&g.advanced)h.advanced=JSON.parse(JSON.stringify(g.advanced));
  for(const p of [1,2]){
   const snapshot=g.profiles?.[p],account=accounts?.[p];
@@ -64,6 +65,7 @@ export function historyMatch(h,uid,serverNow){
  const state=s?{turn:s.turn,...Object.fromEntries(['hp','gauge','seal','enhance','momentum','ruin','last'].map(k=>[k,[null,s[k+'1'],s[k+'2']]]))}:null;
  let reveal=null;
  try{const turns=replayHistory(h),last=turns.at(-1);if(last)reveal={turn:last.turn,startedAt:s.startedAt,actions:last.actions,damage:last.damage};}catch(error){/* Historical results remain readable even when a legacy replay differs. */}
- return {id:h.id,kind:h.kind,roomId:h.room||null,roomRules:h.roomRules||null,you,...(h.roomRules?.mode==='advanced'?{advanced:h.advanced||{}}:{}),players,loadouts,ready,state,closed:true,phase:'finished',revision:serverNow,serverNow,opensAt:s?.startedAt||0,deadline:serverNow,graceDeadline:serverNow,ownAction:null,reveal,result:{winner:h.settled.winner,rated:h.kind!=='friend',reason:h.reason},rating:{before:h.settled['before'+you],after:h.settled['after'+you],delta:h.settled['delta'+you]}};
+ return {id:h.id,kind:h.kind,roomId:h.room||null,roomRules:h.roomRules||null,you,...(h.roomRules?.special===true?{special:h.special||{max:30,gauge:{1:0,2:0}}}:{}),...(h.roomRules?.mode==='advanced'?{advanced:h.advanced||{}}:{}),players,loadouts,ready,state,closed:true,phase:'finished',revision:serverNow,serverNow,opensAt:s?.startedAt||0,deadline:serverNow,graceDeadline:serverNow,ownAction:null,reveal,result:{winner:h.settled.winner,rated:h.kind!=='friend',reason:h.reason},rating:{before:h.settled['before'+you],after:h.settled['after'+you],delta:h.settled['delta'+you]}};
 }
+
 
