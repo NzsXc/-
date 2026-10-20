@@ -1,4 +1,4 @@
-import {ACTION_NAMES,historySide} from './battle-history-core.js?v=history-1';
+import {ACTION_NAMES,historySide} from './battle-history-core.js?v=special-moves-1';
 
 export function techniquesFromUsage(uses){
  const techniques=[];

@@ -1,7 +1,7 @@
 import {ref,get,set,update,push,serverTimestamp,onValue,runTransaction} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js';
-import {calculate,stateFields} from './free-calculator.js?v=attack-stance-1';
-import {historyMatch} from './battle-history-core.js?v=special-gauge-1';
-import {createAdvancedProtocol} from './advanced/protocol.js?v=special-hp15-1';
+import {calculate,stateFields} from './free-calculator.js?v=special-moves-1';
+import {historyMatch} from './battle-history-core.js?v=special-moves-1';
+import {createAdvancedProtocol} from './advanced/protocol.js?v=special-moves-1';
 export function createFreeTransport(db,auth,history){
  let offset=0;onValue(ref(db,'.info/serverTimeOffset'),s=>{offset=s.val()||0;});
  const now=()=>Date.now()+offset;
@@ -108,10 +108,11 @@ const initialAccount = {
    const fresh=await read(path+'/state');
    if(!fresh||fresh.turn!==s.turn)return true;
    const c=roomRules?.mode==='advanced'?window.AdvancedRules.resolve(fresh,moves,advanced?.selected,window.AdvancedRules.forTurn(advanced,fresh.turn),calculate,roomRules):calculate(fresh,moves,rulesVersion,roomRules),state=Object.fromEntries(stateFields.map(k=>[k,k==='startedAt'?serverTimestamp():c[k]]));
+   if(rulesVersion===3)for(const k of window.SpecialRules.fields)state[k]=c[k];
    if(modern)state.previousDeadline=turnOpensAt(fresh,roomRules,advanced)+10000;
    if(roomRules?.mode==='advanced')state.skillsExhausted=window.AdvancedRules.exhausted(advanced,roomRules);
    const special=window.RoomRules.hasSpecial(roomRules)?await read(path+'/special'):null;
-   const specialPatch=special?.version===1?{special:window.SpecialRules.advance(special,c)}:{};
+   const specialPatch=[1,2].includes(special?.version)?{special:window.SpecialRules.advance(special,c)}:{};
    try{await writeUpdate(path,{transition:c,state,...specialPatch});}
    catch(e){
     const accepted=await read(path+'/state');
@@ -123,7 +124,7 @@ const initialAccount = {
   advanceFlights.set(key,job);
   try{return await job;}finally{if(advanceFlights.get(key)===job)advanceFlights.delete(key);}
  }
- const initial=(rules)=>({...Object.fromEntries(stateFields.map(k=>[k,k==='turn'?1:k==='startedAt'?serverTimestamp():k.startsWith('hp')?rules.hp:k.startsWith('gauge')?rules.initialGauge:k.startsWith('seal')||k.startsWith('momentum')?false:k.startsWith('last')?'':0])),...(rules.mode==='advanced'&&!window.RoomRules.hasSkills(rules)?{skillsExhausted:true}:{})});
+ const initial=(rules,version=2)=>({... (version===3?window.SpecialRules.extraState():{}),...Object.fromEntries(stateFields.map(k=>[k,k==='turn'?1:k==='startedAt'?serverTimestamp():k.startsWith('hp')?rules.hp:k.startsWith('gauge')?rules.initialGauge:k.startsWith('seal')||k.startsWith('momentum')?false:k.startsWith('last')?'':0])),...(rules.mode==='advanced'&&!window.RoomRules.hasSkills(rules)?{skillsExhausted:true}:{})});
  const matchMetadata=new Map(),titleRecorded=new Map(),ratingClaimed=new Set(),skillSnapshots=new Map();
  const historyWarnings=new Set();
  async function archivedStatus(id,u){
@@ -172,14 +173,14 @@ const initialAccount = {
    }
    if(!s&&!terminal&&g.ready[1]&&g.ready[2]){
     try{
-     await withTimeout(runTransaction(ref(db,path+'/state'),current=>current===null?initial(roomRules):undefined,{applyLocally:false}),8000,'対戦開始');
+     await withTimeout(runTransaction(ref(db,path+'/state'),current=>current===null?initial(roomRules,g.rulesVersion):undefined,{applyLocally:false}),8000,'対戦開始');
     }catch(e){if(!await read(path+'/state'))throw e;}
     continue;
    }
    if(s&&!terminal&&now()>=turnOpensAt(s,roomRules,g.advanced)){
     g.own=await read(path+'/moves/'+s.turn+'/'+me);let moves=null;
     try{moves=await read(path+'/moves/'+s.turn);}catch(e){if(!String(e.code||e.message).toLowerCase().includes('permission'))throw e;}
-    if(moves?.[1]!=null&&moves?.[2]!=null){if(await advanceTurn(id,s,moves,u,g.rulesVersion===2?2:1,roomRules,g.advanced))continue;}
+    if(moves?.[1]!=null&&moves?.[2]!=null){if(await advanceTurn(id,s,moves,u,[2,3].includes(g.rulesVersion)?g.rulesVersion:1,roomRules,g.advanced))continue;}
    }
    break;
   }
@@ -189,7 +190,7 @@ const initialAccount = {
   const s=skillResult&&now()>=opensAt?skillResult:g.state;
   const {players,loadouts}=g.ready[1]&&g.ready[2]?await metadata(id,g):{players:{},loadouts:{}};
   if(s&&(!loadouts[1]||!loadouts[2])){const saved=await archivedStatus(id,u);if(saved)return saved.match;throw Error('対戦情報を再取得してください');}
-  const board=value=>value?{turn:value.turn,...(advanced?{skillsExhausted:!!value.skillsExhausted}:{}),...Object.fromEntries(['hp','gauge','seal','enhance','momentum','ruin','last'].map(k=>[k,[null,value[k+'1'],value[k+'2']]]))}:null;
+  const board=value=>value?{turn:value.turn,...(advanced?{skillsExhausted:!!value.skillsExhausted}:{}),...Object.fromEntries(['hp','gauge','seal','enhance','momentum','ruin','last',...(value.specialSeal1!=null?['specialSeal','specialRuin','specialMomentum']:[])].map(k=>[k,[null,value[k+'1'],value[k+'2']]]))}:null;
   const state=board(s),closed=!!g.settled;
   const titleKey=u+':'+id;
   if(s&&(titleRecorded.get(titleKey)||0)<s.turn-1){
@@ -202,7 +203,7 @@ const initialAccount = {
   }
   // A match that expires before either loadout still needs player names for results.
   if(closed&&!s)for(const p of [1,2]){const account=await read('freeAccounts/'+g.players[p]);players[p]={name:account?.name||'プレイヤー'};}
-  const match={id,kind:g.kind||'random',roomId:g.room||null,roomRules:window.RoomRules.normalize(g.roomRules),you:me,...(window.RoomRules.hasSpecial(roomRules)?{special:g.special}:{}),...(advanced?{advanced:g.advanced,skillResult:board(skillResult),skillWindow:s?{startAt:skillEndsAt(s)-window.AdvancedRules.windowMs(s),endAt:skillEndsAt(s),confirmAt:confirmAt(s)}:null}:{}),players,ready:g.ready,loadouts,state,closed,phase:closed?'finished':s?'turn':'select',revision:now(),serverNow:now(),opensAt,deadline:s?opensAt+10000:g.createdAt+60000,graceDeadline:s?opensAt+40000:g.createdAt+90000,ownAction:g.own??null,reveal:g.transition?{turn:g.transition.turn-1,startedAt:s?.startedAt,countdownEndsAt:Number.isFinite(s?.previousDeadline)?countdownEndsAt(s):null,actions:{1:g.transition.action1,2:g.transition.action2},damage:{1:g.transition.damage1,2:g.transition.damage2}}:null,result:closed?{winner:g.settled.winner,rated:g.kind!=='friend',reason:g.resigned?'resigned':g.abandoned&&s?.hp1>0&&s?.hp2>0?'reconnect-timeout':!s?'selection-timeout':s.misses1>=2||s.misses2>=2?'idle-forfeit':s.turn>300?'turn-limit':'battle'}:null,rating:closed?{before:g.settled['before'+me],after:g.settled['after'+me],delta:g.settled['delta'+me]}:null};
+  const match={id,rulesVersion:g.rulesVersion,kind:g.kind||'random',roomId:g.room||null,roomRules:window.RoomRules.normalize(g.roomRules),you:me,...(window.RoomRules.hasSpecial(roomRules)?{special:g.special}:{}),...(advanced?{advanced:g.advanced,skillResult:board(skillResult),skillWindow:s?{startAt:skillEndsAt(s)-window.AdvancedRules.windowMs(s),endAt:skillEndsAt(s),confirmAt:confirmAt(s)}:null}:{}),players,ready:g.ready,loadouts,state,closed,phase:closed?'finished':s?'turn':'select',revision:now(),serverNow:now(),opensAt,deadline:s?opensAt+10000:g.createdAt+60000,graceDeadline:s?opensAt+40000:g.createdAt+90000,ownAction:g.own??null,reveal:g.transition?{turn:g.transition.turn-1,startedAt:s?.startedAt,countdownEndsAt:Number.isFinite(s?.previousDeadline)?countdownEndsAt(s):null,actions:{1:g.transition.action1,2:g.transition.action2},damage:{1:g.transition.damage1,2:g.transition.damage2}}:null,result:closed?{winner:g.settled.winner,rated:g.kind!=='friend',reason:g.resigned?'resigned':g.abandoned&&s?.hp1>0&&s?.hp2>0?'reconnect-timeout':!s?'selection-timeout':s.misses1>=2||s.misses2>=2?'idle-forfeit':s.turn>300?'turn-limit':'battle'}:null,rating:closed?{before:g.settled['before'+me],after:g.settled['after'+me],delta:g.settled['delta'+me]}:null};
   if(window.RoomRules.hasSkills(roomRules)&&state&&!closed)skillSnapshots.set(u+':'+id,match);else skillSnapshots.delete(u+':'+id);
   return match;
  }
@@ -251,8 +252,9 @@ const initialAccount = {
    if(window.RoomRules.needsAdvancedOptions(roomRules)&&!await advancedProtocol.supportsOptions())throw Error('Advancedの追加設定を利用するには、対戦ルールを更新してください。');
    if(window.RoomRules.hasSpecial(roomRules)&&!await advancedProtocol.supportsSpecialGauge())throw Error('スペシャルゲージを利用するには、対戦ルールを更新してください。');
    if(window.RoomRules.hasSpecial(roomRules)&&roomRules.hp===15&&!await advancedProtocol.supportsSpecialHp())throw Error('HP15のスペシャル対戦を利用するには、Firebaseの対戦ルールを更新・公開してください。');
-   const id=push(ref(db,'freeGames')).key,versionPatch=await supportsPunish()?{['freeGames/'+id+'/rulesVersion']:2}:{},roomPatch=roomRules.mode!=='standard'?{['freeGames/'+id+'/roomRules']:roomRules}:{};
-   try{await update(ref(db),{...versionPatch,...roomPatch,...(window.RoomRules.hasSpecial(roomRules)?{['freeGames/'+id+'/special']:window.SpecialRules.initial()}:{}),['freeGames/'+id+'/players']:{1:u,2:lobby.host},['freeGames/'+id+'/createdAt']:serverTimestamp(),['freeGames/'+id+'/kind']:'friend',['freeGames/'+id+'/room']:d.roomId,['freeAccounts/'+u+'/active']:id,['freeAccounts/'+lobby.host+'/active']:id,['friendRooms/'+d.roomId+'/game']:id});}
+   if(window.RoomRules.hasSpecial(roomRules)&&!await advancedProtocol.supportsSpecialMoves())throw Error('S技を利用するには、Firebaseの対戦ルールを更新・公開してください。');
+   const id=push(ref(db,'freeGames')).key,versionPatch=window.RoomRules.hasSpecial(roomRules)?{['freeGames/'+id+'/rulesVersion']:3}:await supportsPunish()?{['freeGames/'+id+'/rulesVersion']:2}:{},roomPatch=roomRules.mode!=='standard'?{['freeGames/'+id+'/roomRules']:roomRules}:{};
+   try{await update(ref(db),{...versionPatch,...roomPatch,...(window.RoomRules.hasSpecial(roomRules)?{['freeGames/'+id+'/special']:window.SpecialRules.initial(2)}:{}),['freeGames/'+id+'/players']:{1:u,2:lobby.host},['freeGames/'+id+'/createdAt']:serverTimestamp(),['freeGames/'+id+'/kind']:'friend',['freeGames/'+id+'/room']:d.roomId,['freeAccounts/'+u+'/active']:id,['freeAccounts/'+lobby.host+'/active']:id,['friendRooms/'+d.roomId+'/game']:id});}
    catch(e){
     const fresh=await profile();if(fresh.active)return {match:await status(fresh.active)};
     const current=await read('friendRooms/'+d.roomId);
@@ -333,6 +335,7 @@ const initialAccount = {
  request.supportsAdvanced=advancedProtocol.supports;
  request.supportsAdvancedOptions=advancedProtocol.supportsOptions;
  request.supportsSpecialGauge=advancedProtocol.supportsSpecialGauge;
+ request.supportsSpecialMoves=advancedProtocol.supportsSpecialMoves;
  request.supportsSpecialHp=advancedProtocol.supportsSpecialHp;
  request.supportsRoomRules=supportsRoomRules;
  request.transitionMs=transitionMs;

@@ -172,7 +172,7 @@ function rankedReveal(m){
  rankedVisualCountdownEnd=countdownEnd;
  rankedVisualRevealAt=revealAt;
  const valid=()=>rankedActive&&token===rankedVisualToken;
- const action=p=>m.reveal.actions[p]<3?basicActions[['charge','attack','block'][m.reveal.actions[p]]]:techniquePool[m.reveal.actions[p]-3];
+ const action=p=>m.reveal.actions[p]<3?basicActions[['charge','attack','block'][m.reveal.actions[p]]]:window.SpecialRules.actionData(m.reveal.actions[p],techniquePool);
  const a1=action(1),a2=action(2);
  document.getElementById('resultMessage').textContent='';
  locked[1]=true;locked[2]=true;
@@ -291,8 +291,7 @@ async function rankedChoose(player,action){
  const inputNow=performance.now();
  if(rankedTurnDeadline>0&&(inputNow<rankedTurnOpensAt||inputNow>=rankedTurnDeadline))return;
  if(!isBattleActionAvailable(player,action))return;
- if(action.startsWith('tech')&&window.SpecialGauge?.isSpecialView(m))return;
- const id=['charge','attack','block'].includes(action)?['charge','attack','block'].indexOf(action):m.loadouts[player][Number(action.replace('tech',''))]+3;
+ const id=['charge','attack','block'].includes(action)?['charge','attack','block'].indexOf(action):m.loadouts[player][Number(action.replace('tech',''))]+(window.SpecialGauge?.isSpecialView(m)?15:3);
  return rankedSubmitAction(m,id);
 }
 async function rankedSubmitAction(m,id,automatic=false){

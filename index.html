@@ -6,7 +6,7 @@
 <title>心理バトル</title>
 <link rel="stylesheet" href="battle-history.css?v=history-skills-2">
 <link rel="stylesheet" href="advanced/advanced.css?v=skill-flow-1">
-<link rel="stylesheet" href="advanced/special.css?v=special-notice-1">
+<link rel="stylesheet" href="advanced/special.css?v=special-moves-1">
 <link rel="stylesheet" href="advanced/button-art.css?v=attack-stance-1">
 <link rel="stylesheet" href="advanced/cutin.css?v=attack-stance-1">
 
@@ -2254,7 +2254,7 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
     <fieldset id="friendAdvancedOptions" class="friendAdvancedOptions" hidden disabled>
       <legend>Advancedの追加システム（両方選択できます）</legend>
       <label class="friendRuleChoice"><input id="friendRuleSkills" type="checkbox" checked onchange="updateFriendRuleSettings()"><span><strong>スキル</strong><small>スキル1種を選び、ターン開始時に発動</small></span></label>
-      <label class="friendRuleChoice"><input id="friendRuleSpecial" type="checkbox" onchange="updateFriendRuleSettings()"><span><strong>スペシャル</strong><small>毎ターン・被ダメージ・チャージで蓄積（最大30）。S技の効果は準備中</small></span></label>
+      <label class="friendRuleChoice"><input id="friendRuleSpecial" type="checkbox" onchange="updateFriendRuleSettings()"><span><strong>スペシャル</strong><small>毎ターン・被ダメージ・チャージで蓄積（最大30）。通常技分のゲージ＋Sゲージを消費してS技を使用</small></span></label>
     </fieldset>
     <p id="friendAdvancedRules" class="settingsNote" hidden></p>
     <fieldset id="friendCustomRules" class="friendCustomFields" hidden disabled>
@@ -2332,14 +2332,14 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
         <h2 class="guideSectionTitle">基本行動 <small>3種類 / 共通</small></h2><div id="guideBasicActions" class="guideCatalog"></div>
         <h2 class="guideSectionTitle">選択技 <small>12種類から3つを装備</small></h2><div id="guideTechniques" class="guideCatalog"></div>
         <h2 class="guideSectionTitle">スキル <small>Advanced専用 / 6種類から1つ</small></h2><div id="guideSkills" class="guideCatalog"></div>
-        <h2 class="guideSectionTitle">S技 <small>スペシャル専用 / 効果・消費量は準備中</small></h2><div id="guideSpecialTechniques" class="guideCatalog"></div>
+        <h2 class="guideSectionTitle">S技 <small>スペシャル専用 / 通常技の効果に追加</small></h2><div id="guideSpecialTechniques" class="guideCatalog"></div>
       </div></section>
       <section id="tipPage3" class="tipPage" aria-labelledby="tipNav3" aria-hidden="true" inert><div class="tipPageInner guidePage">
         <header class="guideHeader"><span class="guideEyebrow">COMMUNITY TIER LIST</span><h1>みんなの技・スキル評価</h1><p>S / A / B / C の4段階で、絵柄から探せるティア表。</p></header>
         <p class="guideNote">1アカウントにつき各項目1票。1〜10点で評価でき、あとから変更できます。全プレイヤーの平均で S：9以上 / A：8以上 / B：7以上 / C：7未満 に分かれます。</p><p id="guideRatingsStatus" class="guideNote" role="status" aria-live="polite"></p>
         <div class="guideTierHeading"><h2 class="guideSectionTitle">技のティア表 <small>選択技12種類</small></h2><button id="guideVoteTechniques" class="guideVoteButton" type="button">技に投票</button></div><div id="guideTechniqueTiers" class="guideTierTable" role="table" aria-label="技の平均評価ティア表"></div>
         <div class="guideTierHeading"><h2 class="guideSectionTitle">スキルのティア表 <small>Advanced専用</small></h2><button id="guideVoteSkills" class="guideVoteButton" type="button">スキルに投票</button></div><div id="guideSkillTiers" class="guideTierTable" role="table" aria-label="スキルの平均評価ティア表"></div>
-        <div class="guideTierHeading"><h2 class="guideSectionTitle">S技のティア表 <small>スペシャル専用</small></h2><button id="guideVoteSpecialTechniques" class="guideVoteButton" type="button" disabled>S技に投票（準備中）</button></div><p class="guideNote">S技の効果・消費量は準備中です。アンケートは仕様確定後に受付します。</p><div id="guideSpecialTechniqueTiers" class="guideTierTable" role="table" aria-label="S技の評価ティア表（準備中）"></div>
+        <div class="guideTierHeading"><h2 class="guideSectionTitle">S技のティア表 <small>スペシャル専用</small></h2><button id="guideVoteSpecialTechniques" class="guideVoteButton" type="button">S技に投票</button></div><p class="guideNote">通常技とは別にS技を1〜10点で評価できます。</p><div id="guideSpecialTechniqueTiers" class="guideTierTable" role="table" aria-label="S技の評価ティア表"></div>
         <p class="guideNote">平均点は小数第2位まで表示します。投票のない項目は未評価です。相手の構成や使うタイミングによって強さは変わります。</p>
         <button class="guideTextLink" onclick="showTipPage(2)">技・スキルの効果を見る →</button>
       </div></section>
@@ -2356,7 +2356,7 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
 
   <div id="techTitle" class="screenTitle">1P：技選択</div>
 
-  <p id="specialSelectionNote" class="specialSelectionNote" hidden>スペシャル：毎ターン＋1 ／ 受けたダメージ1につき＋1 ／ チャージすると＋1（最大30）<br>⇋で選択技のS表示に切り替え。基礎技は共通です。</p>
+  <p id="specialSelectionNote" class="specialSelectionNote" hidden>スペシャル：毎ターン＋1 ／ 受けたダメージ1につき＋1 ／ チャージすると＋1（最大30）<br>⇋で選択技のS表示に切り替え。通常技分のゲージ＋Sゲージを消費します。基礎技は共通です。</p>
 
   <div class="techSelect">
 
@@ -2743,12 +2743,12 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
 <script src="player-lightning.js?v=2"></script>
 <script src="bot-engine.js?v=punish-2"></script>
 <script src="bot-client.js?v=mode-cards-1"></script>
-<script src="advanced/rules.js?v=special-gauge-1"></script>
-<script src="advanced/special-rules.js?v=special-gauge-1"></script>
-<script src="advanced/special.js?v=special-notice-1"></script>
+<script src="advanced/rules.js?v=special-moves-1"></script>
+<script src="advanced/special-rules.js?v=special-moves-1"></script>
+<script src="advanced/special.js?v=special-moves-1"></script>
 <script src="room-rules.js?v=special-hp15-1"></script>
-<script src="ranked-client.js?v=special-gauge-1"></script>
-<script src="advanced/client.js?v=special-gauge-1"></script>
+<script src="ranked-client.js?v=special-moves-1"></script>
+<script src="advanced/client.js?v=special-moves-1"></script>
 <script src="advanced/cutin.js?v=special-gauge-1"></script>
 <script src="battle-inspector.js?v=battle-layout-1"></script>
 <script src="lobby-client.js?v=special-hp15-1"></script>
@@ -2756,12 +2756,12 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
 <script src="battle-effects.js?v=confirmed-1"></script>
 <script type="module">
   import {createTitleService} from "./title-service.js?v=crown-prestige-1";
-  import {createProtectedRooms} from "./protected-rooms.js?v=special-hp15-1";
-  import {createFreeTransport} from "./free-transport.js?v=special-hp15-1";
-  import {createBattleHistory} from "./battle-history.js?v=special-gauge-1";
+  import {createProtectedRooms} from "./protected-rooms.js?v=special-moves-1";
+  import {createFreeTransport} from "./free-transport.js?v=special-moves-1";
+  import {createBattleHistory} from "./battle-history.js?v=special-moves-1";
   import {createPlayerProfile} from "./player-profile.js?v=usage-1";
-  import {createHistoryScreen} from "./battle-history-client.js?v=special-gauge-1";
-  import {createCommunityRatings} from "./community-ratings.js?v=voting-1";
+  import {createHistoryScreen} from "./battle-history-client.js?v=special-moves-1";
+  import {createCommunityRatings} from "./community-ratings.js?v=special-moves-1";
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
   import {
     getAuth,
@@ -3637,7 +3637,7 @@ async function enterSpectator(code,p1,p2){
 
 function applySpectatorState(state){
   window._spectatorRoomRules=state.roomRules||null;
-  window._spectatorSpecialMatch={roomRules:state.roomRules,special:state.special};
+  window._spectatorSpecialMatch={roomRules:state.roomRules,special:state.special,state};
   for(const side of [1,2]){
     if(state.hp?.[side]!=null)hp[side]=Number(state.hp[side]);
     if(state.gauge?.[side]!=null)gauge[side]=Number(state.gauge[side]);
@@ -3653,7 +3653,7 @@ function applySpectatorState(state){
       hp[side]=after.hp[side];gauge[side]=after.gauge[side];
       enhanceTurns[side]=after.enhanceTurns[side];blockSeal[side]=after.blockSeal[side];ruinTurns[side]=after.ruinTurns[side];
     }
-    lastAction=after.lastAction;updateSpectatorBattleUI();
+    window._spectatorSpecialMatch.state=after;lastAction=after.lastAction;updateSpectatorBattleUI();
   });
 }
 
@@ -5172,11 +5172,14 @@ function clearOnlineTechniqueDescription(){
 function isBattleActionAvailable(player,action,data){
   if((player!==1&&player!==2)||typeof action!=="string")return false;
   data=data||getActionData(player,action);
+  if(rankedActive)data=window.SpecialGauge?.battleData(rankedMatch,player,action,data)||data;
+  if(rankedActive&&rankedMatch?.state?.specialSeal?.[player]>0&&(action.startsWith('tech')||action==='block'))return false;
+  if(data?.special&&(rankedMatch?.special?.version!==2||data.specialCost>(rankedMatch?.special?.gauge?.[player]||0)))return false;
   if(!data||!Number.isFinite(data.cost)||data.cost<0||data.cost>gauge[player])return false;
   if(blockSeal[player]&&(data.type==="block"||data.skill==="tech2"))return false;
   if(data.type==="block"&&lastAction[player]?.data?.type==="block")return false;
   if(data.skill==="tech2"&&lastAction[player]?.data?.type==="reflect")return false;
-  if(data.skill==="tech8"&&gauge[player===1?2:1]>=7)return false;
+  if(data.skill==="tech8"&&!data.special&&gauge[player===1?2:1]>=7)return false;
   if(data.type==="charge"&&gauge[player]>=battleLimits().maxGauge)return false;
   return true;
 }
@@ -6665,8 +6668,9 @@ function updateRuinIndicators(){
     indicator.classList.add("enhanceIndicator","ruinIndicator");
     indicator.setAttribute("role","status");
     indicator.hidden=turns===0;
-    indicator.textContent=`ルイン ${turns}T`;
-    indicator.title=`ルイン：チャージするたび1ダメージ（残り${turns}ターン）`;
+    const special=rankedActive?rankedMatch?.state?.specialRuin?.[player]:gameMode==='spectator'?window._spectatorSpecialMatch?.state?.specialRuin?.[player]:0;
+    indicator.textContent=`${special?'Sルイン':'ルイン'} ${turns}T`;
+    indicator.title=`${special?'Sルイン':'ルイン'}：チャージするたび1ダメージ${special?'、通常ゲージ−1':''}（残り${turns}ターン）`;
     indicator.setAttribute("aria-label",indicator.title);
   });
 }
@@ -6717,6 +6721,7 @@ function updateBattleUI(){
   updateRuinIndicators();
   updateEnhanceIndicators();
   updateActionChainIndicators();
+  window.SpecialGauge?.paintStatuses(rankedActive?rankedMatch:gameMode==='spectator'?window._spectatorSpecialMatch:null);
   [1,2].forEach(player=>{
     const hpText=document.getElementById("hp"+player+"Text");
     const hpFill=document.getElementById("hp"+player+"Fill");
@@ -6767,7 +6772,7 @@ function syncConfirmedActionArt(){
     const selected={};
     if(rankedActive&&rankedMatch?.ownAction!=null){
       const id=Number(rankedMatch.ownAction),loadout=rankedMatch.loadouts?.[localPlayer]||[];
-      selected[localPlayer]=id<3?["charge","attack","block"][id]:"tech"+loadout.indexOf(id-3);
+      selected[localPlayer]=id<3?["charge","attack","block"][id]:"tech"+loadout.indexOf(id-(id>=15?15:3));
     }else if(!rankedActive){for(const player of [1,2])if(!localPlayer||player===localPlayer)selected[player]=selectedAction[player]?.id;}
     window.BattleActionArt.update({loadouts:{1:player1Techs,2:player2Techs},selected,localPlayer,spectator:gameMode==="spectator"});
   }catch(error){console.warn("技ボタンの表示更新に失敗しました",error);}
@@ -6777,7 +6782,9 @@ function syncBattleInspector(){
   const side=rankedActive?Number(rankedMatch?.you):gameMode==="online"?Number(window.onlineBattle?.localPlayer):0;
   const enabled=document.getElementById("battleScreen")?.classList.contains("active") && !PlayerIntro.isActive() &&
     (rankedActive ? !!rankedMatch?.state && !rankedMatch.closed && !rankedAnimating : gameMode==="online" && onlineInputOpen && onlineTurnPhase==="input");
-  window.BattleInspector.update({enabled,side,loadouts:{1:player1Techs,2:player2Techs},names:{1:getBattlePlayerName(1),2:getBattlePlayerName(2)}});
+  const inspectorLoadouts={1:player1Techs,2:player2Techs};
+  if(rankedActive&&window.SpecialGauge?.isSpecialView(rankedMatch))for(const p of [1,2])inspectorLoadouts[p]=rankedMatch.loadouts[p].map(index=>{const action=window.SpecialRules.actionData(index+15,techniquePool);return {...action,description:'S消費 '+action.specialCost+' / '+action.description};});
+  window.BattleInspector.update({enabled,side,loadouts:inspectorLoadouts,names:{1:getBattlePlayerName(1),2:getBattlePlayerName(2)}});
 }
 document.addEventListener("DOMContentLoaded",()=>syncConfirmedActionArt());
 
@@ -6816,7 +6823,7 @@ function updateDisabledActions(){
 
     if(blockEl){
       const blockDisabled =
-        (blockSeal[player]) ||
+        (blockSeal[player]) || (rankedActive&&rankedMatch?.state?.specialSeal?.[player]>0) ||
         (lastAction[player] &&
          lastAction[player].data.type === "block");
 
@@ -7028,8 +7035,8 @@ updateTechniqueDisplay();
   requestAnimationFrame(()=>{opening.classList.add('playing');setTimeout(()=>opening.classList.add('finished'),1450);});
 })();
 </script>
-<script src="community-rating-core.js?v=voting-9-8-7"></script>
-<script src="notice-guide.js?v=special-notice-1"></script>
+<script src="community-rating-core.js?v=special-moves-1"></script>
+<script src="notice-guide.js?v=special-moves-1"></script>
 <!-- PWA registration -->
 <script src="./pwa-register.js" defer></script>
 </body>

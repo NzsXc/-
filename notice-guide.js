@@ -9,7 +9,7 @@
   };
   const basics = Object.entries(basicActions).map(([id, action]) => ({...action, id}));
   const techniques = techniquePool.map(action => ({...action, id: action.skill}));
-  const specialTechniques = techniques.map(item => ({...item, id:'s-' + item.id, name:'S' + item.name, cost:null, description:'スペシャル消費量・効果は準備中', special:true}));
+  const specialTechniques = techniques.map((item,index) => ({...window.SpecialRules.actionData(index+15,techniquePool), id:'s-' + item.id}));
   const skills = window.AdvancedRules.SKILLS;
 
   function illustration(item, skill = false) {
@@ -34,7 +34,7 @@
     article.dataset.guideId = item.id;
     const copy = node('div', 'guideCardCopy');
     copy.append(node('h3', '', item.name));
-    copy.append(node('span', 'guideBadge', item.special ? 'スペシャル消費量：準備中' : skill ? `1試合 ${item.limit}回` : `消費ゲージ ${item.cost}`));
+    copy.append(node('span', 'guideBadge', item.special ? `S消費 ${item.specialCost} / 通常消費 ${item.cost}` : skill ? `1試合 ${item.limit}回` : `消費ゲージ ${item.cost}`));
     copy.append(node('p', '', item.description));
     article.append(illustration(item, skill), copy);
     return article;
@@ -53,15 +53,13 @@
   const core = window.CommunityRatingCore;
   const lists = {techniques, skills, specialTechniques};
   const tables = {techniques:'guideTechniqueTiers', skills:'guideSkillTiers', specialTechniques:'guideSpecialTechniqueTiers'};
-  let current = {uid:null, canVote:false, connected:false, ballots:{techniques:{},skills:{}}, loaded:{techniques:false,skills:false}, errors:{}};
+  let current = {uid:null, canVote:false, connected:false, ballots:{techniques:{},skills:{},specialTechniques:{}}, loaded:{techniques:false,skills:false,specialTechniques:false}, errors:{}};
   let watching = false, requested = false, saving = false, formUid = null;
   const status = document.getElementById('guideRatingsStatus');
 
   function tierTable(category) {
     const table = document.getElementById(tables[category]);
-    const summary = category === 'specialTechniques'
-      ? Object.fromEntries(specialTechniques.map(item => [item.id, {rank:'unrated',count:0,label:'(準備中)'}]))
-      : core.summarize(category, current.ballots[category]);
+    const summary = core.summarize(category, current.ballots[category]);
     const rows = [];
     for (const rank of ['S', 'A', 'B', 'C', 'unrated']) {
       const items = lists[category].filter(item => summary[item.id].rank === rank);
@@ -176,7 +174,7 @@
   function openVote(category) {
     loadRatings();
     dialog.dataset.category = category;
-    title.textContent = category === 'techniques' ? '技に投票' : 'スキルに投票';
+    title.textContent = category === 'specialTechniques' ? 'S技に投票' : category === 'techniques' ? '技に投票' : 'スキルに投票';
     message.textContent = '';
     dialog.showModal(); fillForm();
   }
@@ -199,6 +197,7 @@
   });
   dialog.addEventListener('cancel', event => { if (saving) event.preventDefault(); });
   document.getElementById('guideVoteTechniques').onclick = () => openVote('techniques');
+  document.getElementById('guideVoteSpecialTechniques').onclick = () => openVote('specialTechniques');
   document.getElementById('guideVoteSkills').onclick = () => openVote('skills');
   window.addEventListener('community-ratings-ready', () => { if (requested) loadRatings(); });
   window.NoticeGuide = Object.freeze({loadRatings});

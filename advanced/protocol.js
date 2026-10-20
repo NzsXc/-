@@ -1,5 +1,12 @@
 // Persistence for Advanced skills only; Standard/Custom never call these operations.
 export function createAdvancedProtocol({read,writeUpdate,now,serverTimestamp}){
+ let specialMovesSupported=null;
+ function supportsSpecialMoves(){
+  if(!specialMovesSupported)specialMovesSupported=read('freeGames/_protocol/advanced/specialMovesV1').then(()=>true).catch(error=>{
+   if(/permission.?denied/i.test(String(error.code||'')+' '+error.message))return false;
+   specialMovesSupported=null;throw error;
+  });return specialMovesSupported;
+ }
  let supported=null;
  let optionsSupported=null;
  let specialSupported=null;
@@ -51,7 +58,7 @@ export function createAdvancedProtocol({read,writeUpdate,now,serverTimestamp}){
   try{await writeUpdate(path,{['advanced/uses/'+me+'/'+(count+1)]:receipt,['advanced/current/'+me]:current});}
   catch(error){const accepted=await read(path+'/advanced/current/'+me);if(accepted?.id!==skill||accepted.turn!==turn)throw error;}
  }
- return {supports,supportsOptions,supportsSpecialGauge,supportsSpecialHp,snapshot,loadoutPatch,activate};
+ return {supportsSpecialMoves,supports,supportsOptions,supportsSpecialGauge,supportsSpecialHp,snapshot,loadoutPatch,activate};
 }
 
 

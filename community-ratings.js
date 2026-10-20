@@ -4,7 +4,7 @@ import {onAuthStateChanged, signInAnonymously} from 'https://www.gstatic.com/fir
 export function createCommunityRatings(db, auth) {
   const core = window.CommunityRatingCore, listeners = new Set();
   let stops = [], generation = 0, started = false;
-  let state = {uid:null, canVote:false, connected:false, ballots:{techniques:{},skills:{}}, loaded:{techniques:false,skills:false}, errors:{}};
+  let state = {uid:null, canVote:false, connected:false, ballots:{techniques:{},skills:{},specialTechniques:{}}, loaded:{techniques:false,skills:false,specialTechniques:false}, errors:{}};
   const emit = () => { for (const listener of listeners) listener(state); };
   const fail = (category, message) => { state = {...state, errors:{...state.errors,[category]:message}}; emit(); };
   async function connect() {
@@ -31,7 +31,7 @@ export function createCommunityRatings(db, auth) {
     }
   }
   onAuthStateChanged(auth, user => {
-    state = {...state, uid:user?.uid || null, canVote:!!user && !user.isAnonymous, connected:false, loaded:{techniques:false,skills:false}, ballots:{techniques:{},skills:{}}, errors:{}};
+    state = {...state, uid:user?.uid || null, canVote:!!user && !user.isAnonymous, connected:false, loaded:{techniques:false,skills:false,specialTechniques:false}, ballots:{techniques:{},skills:{},specialTechniques:{}}, errors:{}};
     emit();
     if (started) connect();
   });

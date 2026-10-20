@@ -3,6 +3,7 @@
   'use strict';
   const categories = Object.freeze({
     techniques: Object.freeze(Array.from({length:12}, (_, i) => 'tech' + (i + 1))),
+    specialTechniques: Object.freeze(Array.from({length:12}, (_, i) => 's-tech' + (i + 1))),
     skills: Object.freeze(['boost', 'heal', 'chain', 'cleanse', 'invincible', 'stance'])
   });
   const validScore = value => Number.isInteger(value) && value >= 1 && value <= 10;
