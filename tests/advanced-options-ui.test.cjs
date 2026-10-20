@@ -40,4 +40,3 @@ vm.runInContext(read('lobby-client.js'),c);vm.runInContext(read('advanced/specia
  assert(html.includes('protected-rooms.js?v=host-entry-retry-1'));assert(html.includes('battle-history.js?v=profile-s-moves-1'));assert(html.includes('player-profile.js?v=usage-s-moves-1'));
  console.log('PASS checkbox form submissions, both enabled, mode switching, default selection, independent 0/30 bars, clamping, accessibility and cleanup');
 })().catch(e=>{console.error(e);process.exitCode=1;});
-

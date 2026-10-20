@@ -103,4 +103,3 @@ export function createProtectedRooms(db,auth,transport,history){
  return {resume:async()=>{await ensure();return transport({op:'resume'});},ensure,create,join,leave,now,watchList,watchHost,watchAllRooms,watchRoom:(id,callback,onError)=>poll(()=>snapshot(id),callback,onError)};
 }
 
-

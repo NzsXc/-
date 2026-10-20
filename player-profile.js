@@ -77,4 +77,3 @@ export function createPlayerProfile({history,loadTitles,showScreen,playSound=()=
  }
  return {open};
 }
-
