@@ -24,7 +24,7 @@
 .specialSwitchDock{position:absolute;z-index:35;width:56px;height:56px}
 .specialBattleToggle{width:100%;height:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;border:2px solid #c898f5;border-radius:50%;background:radial-gradient(circle at 35% 25%,#8a42c8,#31104e 75%);color:#f2dcff;box-shadow:0 0 18px #a947e855;font-size:30px;line-height:1;cursor:pointer}
 .specialBattleToggle small{font-size:10px;margin-top:2px}
-#battleScreen.specialMode .hpBar::after{background-size:calc(100% / var(--special-hp-max,12)) 100%}
+#battleScreen.specialMode{--hp-max:var(--special-hp-max,12)}
 #battleScreen .action.specialTechniqueAction{border-color:#bc83ec!important;box-shadow:inset 0 0 12px #c2a2de18,0 0 9px #a54bea44!important;opacity:1!important;position:relative}
 #battleScreen .specialTechniqueAction .battleActionArt{filter:grayscale(1) sepia(.4) saturate(1.5) hue-rotate(220deg) drop-shadow(0 0 3px #d6b9ec66)}
 @property --special-edge-angle{syntax:"<angle>";inherits:false;initial-value:0deg}
@@ -40,3 +40,14 @@
 .specialMoveCost{position:absolute;right:5px;bottom:3px;z-index:4;padding:1px 5px;border-radius:6px;background:#210d36db;color:#eedcff;font-weight:800;font-size:10px;pointer-events:none}
 .specialMoveCost[hidden]{display:none}
 #battleScreen .action.specialTechniqueAction.disabled{opacity:.4!important}
+
+/* The basic-action row becomes a read-only guide aligned with the three S moves. */
+.specialMoveExplanation{display:none}
+#battleScreen .action.specialExplanation{border-color:#a56cd2;opacity:1!important;filter:none!important;cursor:default;background:#231632;color:#ecd9ff;padding:4px;align-items:center}
+#battleScreen .specialExplanation>:not(.specialMoveExplanation){visibility:hidden}
+#battleScreen .specialExplanation::after{display:none}
+#battleScreen .specialExplanation .specialMoveExplanation{position:absolute;inset:4px;display:flex;flex-direction:column;justify-content:center;gap:3px;text-align:center;overflow:hidden}
+.specialMoveExplanation strong{font-size:10px;line-height:1.15;color:#e5baff;font-weight:800}
+.specialMoveExplanation span{font-size:10px;line-height:1.3;overflow-wrap:anywhere;white-space:pre-line}
+@media(max-width:350px){.specialMoveExplanation strong{font-size:9px}.specialMoveExplanation span{font-size:9px;line-height:1.2}#battleScreen .specialExplanation .specialMoveExplanation{inset:3px;gap:2px}}
+@media(min-width:640px) and (max-height:680px){.specialMoveExplanation strong,.specialMoveExplanation span{font-size:8px;line-height:1.15;letter-spacing:0}#battleScreen .specialExplanation .specialMoveExplanation{inset:2px;gap:2px}}
