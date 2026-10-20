@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   const duration = 1200, settings = {glow:.9, breachSize:1.8};
-  const red = '#ff5266', blue = '#69aaff';
+  const red = '#ff5266', blue = '#69aaff', violet = '#bd75ff', violetWhite = '#f3e4ff';
   const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
   const ease = v => 1 - Math.pow(1 - clamp(v), 3);
   const rgba = (hex, a) => {const n = parseInt(hex.slice(1), 16); return `rgba(${n >> 16},${n >> 8 & 255},${n & 255},${clamp(a)})`;};
@@ -32,7 +32,7 @@
     const players = resolved.map((action, i) => {
       action = action || noEffect;
       const kind = kindOf(action), sealed = !!options.sealed?.[i];
-      return {side:i + 1, action, kind, attack:action.type === 'attack', impact:kind === 'punish' ? 370 : 440,
+      return {side:i + 1, action, kind, special:!!(raw[i]?.special||action.special), attack:action.type === 'attack', impact:kind === 'punish' ? 370 : 440,
         boost:kind === 'momentum' && !!options.momentum?.[i],
         disabled:sealed && ['block','foresight','counter'].includes(kind),
         mirror:raw[i]?.skill === 'tech12', damage:damage[i], power:1};
@@ -133,6 +133,7 @@
   }
 
   function drawSide(ctx, ms, player, opponent, layout) {
+    const red=player.special?violet:'#ff5266',blue=player.special?violet:'#69aaff';
     const kind = player.kind, spec = {role:!player.attack};
     if (!kind || player.disabled) return;
     const origin = layout.points[player.side-1], target = layout.points[opponent.side-1];
@@ -141,7 +142,7 @@
     const blocked = guarded && !player.action.pierce || reflected;
     const contact = guarded || reflected ? {x:target.x-toward.x*74,y:target.y-toward.y*74} : target;
     const bonus = kind === 'punish' && opponent.action.type === 'charge', boost = player.boost;
-    const color = bonus ? '#ff2949' : colors[kind], white = bonus ? '#ffb5c3' : '#fff6f0';
+    const color = player.special ? violet : bonus ? '#ff2949' : colors[kind], white = player.special ? violetWhite : bonus ? '#ffb5c3' : '#fff6f0';
     const impact = player.attack ? player.impact : opponent.attack ? opponent.impact : 440;
     const hit = clamp((ms-impact)/480), fly = clamp((ms-120)/(impact-120)), fade = 1-ease((ms-850)/350);
     const angle = Math.atan2(contact.y-origin.y,contact.x-origin.x), ax = Math.cos(angle), ay = Math.sin(angle);
@@ -182,7 +183,7 @@
             const begin=300+i*42,p=clamp((ms-begin)/350),a=i*Math.PI/4,sx=ox+Math.cos(a)*68,sy=oy+Math.sin(a)*58;
             if(ms<begin)continue;
             const x=sx+(gx-sx)*ease(p),y=sy+(gy-sy)*ease(p)-Math.sin(p*Math.PI)*25;
-            if(p<1){haze(x,y,28,color,.25);circle(x,y,7.5,color,1,alive,16,true);circle(x,y,3.7,'#ffe2e8',1,alive,8,true);line([[x+10,y-13],[x,y]],color,2,.35*alive,8);}
+            if(p<1){haze(x,y,28,color,.25);circle(x,y,7.5,color,1,alive,16,true);circle(x,y,3.7,(player.special?'#f3e4ff':'#ffe2e8'),1,alive,8,true);line([[x+10,y-13],[x,y]],color,2,.35*alive,8);}
             else{const a=1-clamp((ms-begin-350)/140);circle(gx,gy,3+(ms-begin-350)/12,color,1.5,a,10);}
           }
         }
@@ -254,7 +255,7 @@
         }
         if(kind==='punish'){
           const telegraph=clamp((ms-100)/140),r=(bonus?99:76)*telegraph;
-          if(bonus){haze(target.x,target.y,145,'#160008',telegraph*.82);haze(target.x,target.y,105,color,telegraph*.24);}
+          if(bonus){haze(target.x,target.y,145,(player.special?'#180827':'#160008'),telegraph*.82);haze(target.x,target.y,105,color,telegraph*.24);}
           circle(target.x,target.y,r,color,1.5,.25,8,false,.6);
           if(ms>260){const fall=clamp((ms-260)/(impact-260));blade(contact.x,contact.y-190*(1-fall),Math.PI/2,bonus?320:270,bonus?47:36,fall,color);}
           for(let i=0;i<5;i++){const xx=target.x+(i-2)*22;line([[xx,target.y-135],[xx,target.y-75]],color,1,.12*telegraph);}
@@ -271,7 +272,7 @@
         }
         if(kind==='punish'&&!blocked){
           const power=bonus?1.7:1.4;
-          if(bonus){haze(target.x,target.y,205,'#160008',.96*burst*fade);haze(target.x,target.y,150,'#700018',.58*burst*fade);circle(target.x,target.y,36+hit*125,'#3f0010',12,.75*burst*fade,8,false,.76);}
+          if(bonus){haze(target.x,target.y,205,(player.special?'#180827':'#160008'),.96*burst*fade);haze(target.x,target.y,150,(player.special?'#4b176c':'#700018'),.58*burst*fade);circle(target.x,target.y,36+hit*125,(player.special?'#300d49':'#3f0010'),12,.75*burst*fade,8,false,.76);}
           blade(target.x,target.y,Math.PI/2,(225+hit*30)*power,(29*burst+3)*power,burst*fade,color);
           circle(target.x,target.y,22+hit*125*power,color,3,burst*fade,18,false,.76);
           circle(target.x,target.y,10+hit*95*power,white,1.5,burst*.6*fade,9,false,.76);
@@ -279,14 +280,14 @@
           if(bonus)for(let i=0;i<4;i++){const a=i*Math.PI/2+.3;blade(target.x+Math.cos(a)*hit*105,target.y+Math.sin(a)*hit*80,a,43,7,burst*.65*fade,color);}
           lightning(target.x,target.y,bonus?124:103,color,(1-clamp((ms-impact)/360))*.7*fade,31);
           if(bonus){
-            line([[target.x-19,target.y-119],[target.x-7,target.y-38],[target.x-16,target.y+8],[target.x+7,target.y+96],[target.x+3,target.y+20],[target.x+15,target.y-24],[target.x-2,target.y-74],[target.x-19,target.y-119]],'#130006',1,.85*burst*fade,0,true);
+            line([[target.x-19,target.y-119],[target.x-7,target.y-38],[target.x-16,target.y+8],[target.x+7,target.y+96],[target.x+3,target.y+20],[target.x+15,target.y-24],[target.x-2,target.y-74],[target.x-19,target.y-119]],(player.special?'#14051f':'#130006'),1,.85*burst*fade,0,true);
             line([[target.x-18,target.y-120],[target.x-5,target.y-36],[target.x-13,target.y+8],[target.x+7,target.y+96]],color,1.5,.8*burst*fade,8);
           }
         }
         if(kind==='momentum'&&!blocked){
           blade(target.x,target.y,angle,boost?220:156,boost?29:18,burst*fade,color);
           circle(target.x,target.y,10+hit*(boost?130:96),color,boost?3:2,burst*fade,16,false,.65);
-          if(boost)circle(target.x,target.y,14+hit*142,'#ffbcc6',1.5,burst*.55*fade,10,false,.65);
+          if(boost)circle(target.x,target.y,14+hit*142,player.special?violetWhite:'#ffbcc6',1.5,burst*.55*fade,10,false,.65);
         }
         if(kind==='orb'&&!blocked){circle(target.x,target.y,12+hit*97,color,3,burst*fade,16);circle(target.x,target.y,5+hit*73,white,1.5,burst*.65*fade,8);}
         if(blocked){
@@ -305,7 +306,7 @@
   }
 
   function drawClash(ctx, ms, plan, layout) {
-    const kind = plan.players[0].kind, color = colors[kind], white = '#fff6f0';
+    const kind = plan.players[0].kind, color = plan.players[0].special?violet:colors[kind], enemyColor=plan.players[1].special?violet:blue, white = plan.players.some(p=>p.special)?violetWhite:'#fff6f0';
     const origin = layout.points[0], target = layout.points[1];
     const angle = Math.atan2(target.y-origin.y,target.x-origin.x), impact = plan.clashAt;
     const fly = clamp((ms-120)/(impact-120)), arrival = impact+330;
@@ -317,13 +318,13 @@
         const mx=(origin.x+target.x)/2,my=(origin.y+target.y)/2;
         if(ms>=120&&ms<impact){
           const p=fly*fly;weapon(kind,origin.x+(mx-origin.x)*p,origin.y+(my-origin.y)*p,angle,color,1,boost);
-          weapon(enemy.kind,target.x+(mx-target.x)*p,target.y+(my-target.y)*p,angle+Math.PI,blue,1,plan.players[1].boost);
+          weapon(enemy.kind,target.x+(mx-target.x)*p,target.y+(my-target.y)*p,angle+Math.PI,enemyColor,1,plan.players[1].boost);
         }
         if(ms>=impact){
           const q=clamp((ms-impact)/380),a=1-q;
-          circle(mx,my,8+ease(q)*133,white,2.5,a,14);circle(mx,my,4+ease(q)*94,blue,1.5,a*.65,10);haze(mx,my,45+q*65,white,.2*a);
+          circle(mx,my,8+ease(q)*133,white,2.5,a,14);circle(mx,my,4+ease(q)*94,plan.players.some(p=>p.special)?violet:blue,1.5,a*.65,10);haze(mx,my,45+q*65,white,.2*a);
           if(ownPower!==enemy.power){
-            const wins=ownPower>enemy.power,dest=wins?target:origin,c=wins?color:blue,type=wins?kind:enemy.kind,difference=Math.abs(ownPower-enemy.power),p=clamp((ms-impact-70)/260);
+            const wins=ownPower>enemy.power,dest=wins?target:origin,c=wins?color:enemyColor,type=wins?kind:enemy.kind,difference=Math.abs(ownPower-enemy.power),p=clamp((ms-impact-70)/260);
             if(ms<arrival){const x=mx+(dest.x-mx)*ease(p),y=my+(dest.y-my)*ease(p);weapon(type,x,y,wins?angle:angle+Math.PI,c,.7+.3*difference/Math.max(ownPower,enemy.power),wins&&boost);}
             else{
               const h=clamp((ms-arrival)/300),f=1-h;haze(dest.x,dest.y,95,c,.35*f);circle(dest.x,dest.y,12+ease(h)*86,c,2.3,f,14);
@@ -342,9 +343,10 @@
     for (const p of plan.players) if (p.mirror) {
       const self = layout.points[p.side-1], other = layout.points[2-p.side];
       const x = (self.x+other.x)/2, y = (self.y+other.y)/2;
-      const {line,haze} = painter(ctx,ms,colors.mirror,'#fff6f0'), alpha = 1-ease((ms-850)/350);
-      line([[x-36,y-86],[x+39,y-69],[x+39,y+86],[x-36,y+69],[x-36,y-86]],colors.mirror,2,alpha,14);
-      line([[x-25,y+49],[x+27,y-49]],'#fff6f0',1.5,.5*alpha,8);haze(x,y,105,colors.mirror,.2*alpha);
+      const color=p.special?violet:colors.mirror,white=p.special?violetWhite:'#fff6f0';
+      const {line,haze} = painter(ctx,ms,color,white), alpha = 1-ease((ms-850)/350);
+      line([[x-36,y-86],[x+39,y-69],[x+39,y+86],[x-36,y+69],[x-36,y-86]],color,2,alpha,14);
+      line([[x-25,y+49],[x+27,y-49]],white,1.5,.5*alpha,8);haze(x,y,105,color,.2*alpha);
     }
     if (plan.duel) drawClash(ctx,ms,plan,layout);
     else for (let i=0;i<2;i++) drawSide(ctx,ms,plan.players[i],plan.players[1-i],layout);
@@ -368,8 +370,8 @@
     function dispatch(ms) {
       for (const event of plan.events) if (ms>=event.at&&!record.seen.has(event.side)) {
         record.seen.add(event.side);options.onImpact?.(event.side,event.damage);
-        const screen=document.getElementById('battleScreen');
-        if (event.shake&&!reduced&&screen?.animate) record.shakes.push(screen.animate([
+        // Camera movement belongs to the effect layer; controls and HP stay still.
+        if (event.shake&&!reduced&&canvas.animate) record.shakes.push(canvas.animate([
           {transform:'translate(0,0)'},{transform:'translate(-3px,1px)'},{transform:'translate(2px,-1px)'},{transform:'translate(-1px,0)'},{transform:'translate(0,0)'}
         ],{duration:180,easing:'linear'}));
       }

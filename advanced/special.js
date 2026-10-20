@@ -4,6 +4,7 @@
  let selectionMatch=null,battleKey='',specialView=false,dock=null;
  const node=(tag,cls,text)=>{const el=document.createElement(tag);el.className=cls;if(text!=null)el.textContent=text;return el;};
  const enabled=m=>window.RoomRules.hasSpecial(m?.roomRules);
+ const explanations=['相殺に勝つ。\nS同士は通常相殺。','反射ダメージが2に。','常に基本攻撃力3。','HPを2回復。','通常ゲージを\n追加で＋3。','次のモーメンタム＋1。\n通常・S共通。','Sゲージ＋15。','2ターン、装備技と\nブロックを封印。','攻撃力＋1が\n次の4ターン続く。','通常ゲージを\n最大3奪う。','3ターン、チャージ時\n通常ゲージ－1。','基礎技をまねると\n通常ゲージ＋2。'];
  function ensure(side){
   if(panels.has(side))return panels.get(side);
   const area=document.getElementById('player'+side+'Area');if(!area)return null;
@@ -39,6 +40,7 @@
   }
  }
  function restoreButtons(){
+  for(const button of document.querySelectorAll('.specialExplanation')){button.classList.remove('specialExplanation');button.disabled=false;button.removeAttribute('aria-label');button.removeAttribute('aria-disabled');}
   for(const button of document.querySelectorAll('.specialTechniqueAction')){
    button.classList.remove('specialTechniqueAction');button.disabled=false;
    const name=button.querySelector('.actionName');if(name&&button.dataset.normalName)name.textContent=button.dataset.normalName;
@@ -74,6 +76,16 @@
   dock.hidden=m.closed;const toggle=dock.querySelector('button');
   toggle.onclick=()=>{specialView=!specialView;if(typeof updateDisabledActions==='function')updateDisabledActions();else paintBattle(m);};
   toggle.setAttribute('aria-label',specialView?'通常技に戻す':'スペシャル技を表示');toggle.setAttribute('aria-pressed',String(specialView));
+  for(const [slot,action]of ['charge','attack','block'].entries()){
+   const button=document.querySelector('#player'+m.you+'Area [data-action="'+action+'"]');if(!button)continue;
+   button.classList.toggle('specialExplanation',specialView);button.disabled=specialView;
+   if(specialView){
+    const index=m.loadouts?.[m.you]?.[slot],tech=techniquePool[index],definition=window.SpecialRules.definitions[index];if(!tech||!definition)continue;
+    let box=button.querySelector('.specialMoveExplanation');if(!box){box=node('span','specialMoveExplanation');box.append(node('strong',''),node('span',''));button.append(box);}
+    box.querySelector('strong').textContent='S'+tech.name;box.querySelector('span').textContent=explanations[index];
+    button.setAttribute('aria-label','S'+tech.name+'：Sゲージ追加消費'+definition.cost+'。'+definition.description);button.setAttribute('aria-disabled','true');
+   }else{button.removeAttribute('aria-label');button.removeAttribute('aria-disabled');}
+  }
   for(let slot=0;slot<3;slot++){
    const button=document.getElementById('p'+m.you+'tech'+slot),tech=typeof techniquePool==='undefined'?null:techniquePool[m.loadouts?.[m.you]?.[slot]];if(!button||!tech)continue;
    button.dataset.normalName=tech.name;button.classList.toggle('specialTechniqueAction',specialView);
@@ -94,7 +106,7 @@
  }
  function paintStatuses(m){
   for(const side of [1,2])for(const [key,title,description]of [['specialSeal','Sアンチガード','装備技3つとブロックを封印'],['specialMomentum','次のモーメンタム+1','次のモーメンタムの攻撃力+1']]){
-   const name=document.querySelector('#player'+side+'Area .playerName');let el=document.getElementById('p'+side+key);
+   const name=document.getElementById('player'+side+'Statuses')||document.querySelector('#player'+side+'Area .playerName');let el=document.getElementById('p'+side+key);
    if(!el&&name){el=node('span','enhanceIndicator blockSealIndicator');el.id='p'+side+key;name.append(el);}if(!el)continue;
    const value=Number(m?.state?.[key]?.[side]||0);el.hidden=value<=0;el.textContent=title+(key==='specialSeal'?' '+value+'T':'');el.title=description;el.setAttribute('role','status');
   }

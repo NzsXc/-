@@ -6,7 +6,7 @@
 <title>心理バトル</title>
 <link rel="stylesheet" href="battle-history.css?v=history-skills-2">
 <link rel="stylesheet" href="advanced/advanced.css?v=skill-flow-1">
-<link rel="stylesheet" href="advanced/special.css?v=special-hp12-1">
+<link rel="stylesheet" href="advanced/special.css?v=special-mobile-1">
 <link rel="stylesheet" href="advanced/button-art.css?v=attack-stance-1">
 <link rel="stylesheet" href="advanced/cutin.css?v=attack-stance-1">
 
@@ -1793,6 +1793,10 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
 .playerHeader{min-width:0;min-height:27px;margin-bottom:7px;}
 .playerName{display:flex;align-items:center;gap:8px;min-width:0;max-width:100%;font-size:20px;letter-spacing:1px;}
 .playerNameText{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.playerHeader .playerName{flex:0 1 auto;flex-wrap:nowrap;}
+.playerStatuses{display:flex;align-items:center;gap:4px;flex:0 1 auto;max-width:65%;height:24px;min-width:0;overflow-x:auto;overflow-y:hidden;white-space:nowrap;scrollbar-width:none;touch-action:pan-x;}
+.playerStatuses::-webkit-scrollbar{display:none;}
+.playerStatuses>*{flex:none;}
 .enhanceBadge{
   flex:none;
   display:inline-flex;
@@ -1817,6 +1821,10 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
 #resultMessage{font-size:14px;line-height:1.5;letter-spacing:0;max-width:min(100%,440px);overflow-wrap:anywhere;text-transform:none;text-shadow:none;}
 #resultMessage.resultShow{font-size:clamp(32px,7vw,98px);line-height:1.1;letter-spacing:3px;max-width:100%;text-shadow:0 0 12px currentColor,0 0 35px currentColor;}
 #battleHomeButton{pointer-events:auto;min-width:180px;min-height:48px;margin-top:18px;padding:12px 20px;font-size:16px;font-weight:800;cursor:pointer;z-index:60;}
+/* Turn controls keep their slots while labels and availability change. */
+#battleScreen #battleHomeButton[hidden]{display:block!important;visibility:hidden;pointer-events:none;}
+#battleScreen #countdown{min-height:1.2em;line-height:1.2;flex:none;}
+#battleScreen #resultMessage:not(.resultShow){height:42px;min-height:42px;flex:none;overflow:hidden;}
 .onlineTechniqueDescription{max-width:min(90vw,440px);font-size:13px;}
 .spectatorBadge{top:calc(8px + var(--safe-top));max-width:calc(100% - 24px);min-height:48px;white-space:normal;padding:4px 8px 4px 12px;}
 .spectatorBadge button{flex:none;min-height:44px;padding:8px 12px;}
@@ -2053,8 +2061,8 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
 <link rel="stylesheet" href="titles-champion-crown.css?v=ribbon-size-2">
 <link rel="stylesheet" href="titles-prestige.css?v=ribbon-size-2">
 <link rel="stylesheet" href="titles-season2.css?v=season2-fit-2">
-<link rel="stylesheet" href="battle-inspector.css?v=battle-layout-1">
-<link rel="stylesheet" href="battle-action-art.css?v=orbit-selection-1">
+<link rel="stylesheet" href="battle-inspector.css?v=stable-turn-1">
+<link rel="stylesheet" href="battle-action-art.css?v=hp-grid-1">
 <link rel="stylesheet" href="neon-controls.css?v=neon-menu-1">
 <link rel="stylesheet" href="mode-menu.css?v=mode-cards-1">
 <link rel="stylesheet" href="notice-guide.css?v=special-notice-1">
@@ -2416,8 +2424,8 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
 
       <div class="playerName">
         <span class="playerNameText">1P</span>
-        <span id="p1Enhance" class="enhanceBadge" hidden title="攻撃力+1" aria-label="攻撃力が1上がっています">↑+1</span>
       </div>
+      <div id="player1Statuses" class="playerStatuses" aria-label="1Pの状態変化"><span id="p1Enhance" class="enhanceBadge" hidden title="攻撃力+1" aria-label="攻撃力が1上がっています">↑+1</span></div>
 
     </div>
 
@@ -2589,8 +2597,8 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
 
       <div class="playerName">
         <span class="playerNameText">2P</span>
-        <span id="p2Enhance" class="enhanceBadge" hidden title="攻撃力+1" aria-label="攻撃力が1上がっています">↑+1</span>
       </div>
+      <div id="player2Statuses" class="playerStatuses" aria-label="2Pの状態変化"><span id="p2Enhance" class="enhanceBadge" hidden title="攻撃力+1" aria-label="攻撃力が1上がっています">↑+1</span></div>
 
     </div>
 
@@ -2745,15 +2753,15 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
 <script src="bot-client.js?v=mode-cards-1"></script>
 <script src="advanced/rules.js?v=special-moves-1"></script>
 <script src="advanced/special-rules.js?v=special-description-1"></script>
-<script src="advanced/special.js?v=special-hp12-1"></script>
+<script src="advanced/special.js?v=special-mobile-1"></script>
 <script src="room-rules.js?v=special-hp12-1"></script>
 <script src="ranked-client.js?v=special-moves-1"></script>
-<script src="advanced/client.js?v=special-moves-1"></script>
+<script src="advanced/client.js?v=stable-turn-1"></script>
 <script src="advanced/cutin.js?v=special-gauge-1"></script>
 <script src="battle-inspector.js?v=battle-layout-1"></script>
 <script src="lobby-client.js?v=special-hp12-1"></script>
 <script src="battle-action-art.js?v=confirmed-1"></script>
-<script src="battle-effects.js?v=confirmed-1"></script>
+<script src="battle-effects.js?v=special-purple-1"></script>
 <script type="module">
   import {createTitleService} from "./title-service.js?v=crown-prestige-1";
   import {createProtectedRooms} from "./protected-rooms.js?v=host-entry-retry-1";
@@ -5172,6 +5180,7 @@ function clearOnlineTechniqueDescription(){
 function isBattleActionAvailable(player,action,data){
   if((player!==1&&player!==2)||typeof action!=="string")return false;
   data=data||getActionData(player,action);
+  if(rankedActive&&window.SpecialGauge?.isSpecialView(rankedMatch)&&['charge','attack','block'].includes(action))return false;
   if(rankedActive)data=window.SpecialGauge?.battleData(rankedMatch,player,action,data)||data;
   if(rankedActive&&rankedMatch?.state?.specialSeal?.[player]>0&&(action.startsWith('tech')||action==='block'))return false;
   if(data?.special&&(rankedMatch?.special?.version!==2||data.specialCost>(rankedMatch?.special?.gauge?.[player]||0)))return false;
@@ -6617,7 +6626,7 @@ let displayedGauge={1:0,2:0};
 function updateEnhanceIndicators(){
   [1,2].forEach(player=>{
     // 既存の表示欄を優先し、旧レイアウトでも名前の横へ作成できるようにする。
-    const name=document.querySelector(`#player${player}Area .playerName`);
+    const name=document.getElementById('player'+player+'Statuses')||document.querySelector(`#player${player}Area .playerName`);
     let indicator=document.getElementById(`p${player}Enhance`);
     if(name && !indicator){
       indicator=document.createElement("span");
@@ -6637,7 +6646,7 @@ function updateEnhanceIndicators(){
 
 function updateBlockSealIndicators(){
   [1,2].forEach(player=>{
-    const name=document.querySelector(`#player${player}Area .playerName`);
+    const name=document.getElementById('player'+player+'Statuses')||document.querySelector(`#player${player}Area .playerName`);
     let indicator=document.getElementById(`p${player}BlockSeal`);
     if(name && !indicator){
       indicator=document.createElement("span");
@@ -6656,7 +6665,7 @@ function updateBlockSealIndicators(){
 
 function updateRuinIndicators(){
   [1,2].forEach(player=>{
-    const name=document.querySelector(`#player${player}Area .playerName`);
+    const name=document.getElementById('player'+player+'Statuses')||document.querySelector(`#player${player}Area .playerName`);
     let indicator=document.getElementById(`p${player}Ruin`);
     if(name && !indicator){
       indicator=document.createElement("span");
@@ -6677,7 +6686,7 @@ function updateRuinIndicators(){
 
 function updateActionChainIndicators(){
   [1,2].forEach(player=>{
-    const name=document.querySelector(`#player${player}Area .playerName`);
+    const name=document.getElementById('player'+player+'Statuses')||document.querySelector(`#player${player}Area .playerName`);
     if(!name)return;
     const ensureIndicator=(suffix,classes)=>{
       let indicator=document.getElementById(`p${player}${suffix}`);
@@ -6729,6 +6738,7 @@ function updateBattleUI(){
     const gaugeFill=document.getElementById("gauge"+player+"Fill");
 
     hpText.textContent=hp[player]+"/"+limits.hp;
+    hpFill.parentElement.style.setProperty('--hp-max',String(limits.hp));
     hpFill.style.width=(Math.max(0,Math.min(1,hp[player]/limits.hp))*100)+"%";
 
     if(hp[player] < displayedHp[player]){
