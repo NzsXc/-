@@ -8,6 +8,7 @@
   if(panels.has(side))return panels.get(side);
   const area=document.getElementById('player'+side+'Area');if(!area)return null;
   const panel=node('section','specialGaugePanel'),title=node('div','specialGaugeTitle','スペシャル'),row=node('div','specialGaugeRow'),track=node('div','specialGaugeTrack'),fill=node('div','specialGaugeFill'),value=node('span','specialGaugeValue','0/'+MAX);
+  title.append(node('small','specialGaugeHint','（チャージ、ターン終了、被弾ごとに+1）'));
   panel.id='specialGauge'+side;panel.setAttribute('aria-label',side+'Pのスペシャルゲージ');
   track.setAttribute('role','progressbar');track.setAttribute('aria-label','スペシャルゲージ');track.setAttribute('aria-valuemin','0');track.setAttribute('aria-valuemax',String(MAX));
   track.append(fill);row.append(track,value);panel.append(title,row);

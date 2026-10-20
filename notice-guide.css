@@ -123,3 +123,12 @@
   #tipScreen #guideVoteHelp{padding:0 12px 10px}
   #tipScreen .guideVoteHeader h2{font-size:18px}
 }
+
+/* S definitions and voting remain pending until their effects are specified. */
+#tipScreen .guideSpecialCard{border-color:#c099e75c}
+#tipScreen .guideSpecialCard h3{color:#ead7fa}
+#tipScreen .guideSpecialArt{border-color:#bc83ec}
+#tipScreen .guideSpecialArt img{filter:grayscale(1) sepia(.4) saturate(1.5) hue-rotate(220deg)}
+#tipScreen .guideSpecialArt::after{content:"";position:absolute;inset:0;padding:2px;pointer-events:none;border-radius:inherit;background:conic-gradient(from var(--special-edge-angle),#7536a8,#d8b2fa 80deg,#9e52d2 150deg,#f2dcff 210deg,#8b3ac2 280deg,#7536a8);-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);mask-composite:exclude;animation:specialEdgeFlow 3s linear infinite}
+#tipScreen #guideVoteSpecialTechniques{white-space:normal}
+@media(prefers-reduced-motion:reduce){#tipScreen .guideSpecialArt::after{animation:none;--special-edge-angle:45deg}}

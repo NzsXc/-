@@ -45,8 +45,11 @@ const mime = {'.html':'text/html', '.css':'text/css', '.js':'text/javascript', '
       const definitions = await page.evaluate(() => [
         ...Object.values(basicActions), ...techniquePool, ...AdvancedRules.SKILLS
       ].map(item => ({name:item.name,description:item.description})));
-      const cards = await page.locator('#tipPage2 .guideCard').evaluateAll(nodes => nodes.map(n => ({name:n.querySelector('h3').textContent,description:n.querySelector('p').textContent})));
+      const cards = await page.locator('#tipPage2 .guideCard:not(.guideSpecialCard)').evaluateAll(nodes => nodes.map(n => ({name:n.querySelector('h3').textContent,description:n.querySelector('p').textContent})));
       assert.deepEqual(cards, definitions, 'every current game definition is shown exactly');
+      assert.deepEqual(await page.locator('#guideSpecialTechniques h3').allTextContents(),await page.evaluate(()=>techniquePool.map(t=>'S'+t.name)));
+      assert.equal(await page.locator('#guideSpecialTechniques .guideSpecialArt').count(),12);
+      assert((await page.locator('#guideSpecialTechniques p').allTextContents()).every(t=>t==='スペシャル消費量・効果は準備中'));
       assert.equal(await page.locator('#guideSkills .guideBadge').count(), 6);
       assert.deepEqual(await page.locator('#guideSkills .guideBadge').allTextContents(), await page.evaluate(() => AdvancedRules.SKILLS.map(s => `1試合 ${s.limit}回`)));
       await page.waitForFunction(() => [...document.querySelectorAll('#tipScreen img')].every(img => img.complete && img.naturalWidth > 0));
@@ -55,11 +58,18 @@ const mime = {'.html':'text/html', '.css':'text/css', '.js':'text/javascript', '
       const scroll = page.locator('#tipPage2 .guidePage');
       await scroll.evaluate(n => n.scrollTop = n.scrollHeight);
       assert.equal(await scroll.evaluate(n => n.scrollTop + n.clientHeight >= n.scrollHeight - 1), true, 'last skill can be reached');
+      assert(await page.locator('#guideSpecialTechniques .guideCard').last().isVisible());
+      if(process.env.GUIDE_SCREENSHOTS&&[390,1365].includes(width)){await page.waitForTimeout(500);await page.screenshot({path:path.join(process.env.GUIDE_SCREENSHOTS,'notice-s-catalog-'+width+'.png')});}
       await page.locator('#tipNav3').click();
       assert.equal(await page.locator('.guideDraft').count(),0);
       assert.doesNotMatch(await page.locator('#tipPage2').innerText(), /各ターンの最初の3秒間に使用/);
       assert.equal(await page.locator('#guideTechniqueTiers [data-guide-id="tech1"] .guideTierScore').innerText(),'(9.00)');
       assert.equal(await page.locator('#guideTechniqueTiers [data-guide-id="charge"],#guideTechniqueTiers [data-guide-id="block"],#guideTechniqueTiers [data-guide-id="attack"]').count(),0);
+      assert.equal(await page.locator('#guideVoteSpecialTechniques').isDisabled(),true);
+      assert.equal(await page.locator('#guideSpecialTechniqueTiers [data-rank="unrated"] .guideTierTile').count(),12);
+      assert((await page.locator('#guideSpecialTechniqueTiers .guideTierScore').allTextContents()).every(t=>t==='(準備中)'));
+      await page.locator('#guideSpecialTechniqueTiers').scrollIntoViewIfNeeded();
+      if(process.env.GUIDE_SCREENSHOTS&&[390,1365].includes(width))await page.screenshot({path:path.join(process.env.GUIDE_SCREENSHOTS,'notice-s-ratings-'+width+'.png')});
       for (const [tableId, expected] of [['guideTechniqueTiers', 12], ['guideSkillTiers', 6]]) {
         assert.deepEqual(await page.locator(`#${tableId} .guideTierRank`).allTextContents(), ['S','A','B','C','未評価']);
         const ids = await page.locator(`#${tableId} .guideTierTile`).evaluateAll(nodes => nodes.map(n => n.dataset.guideId));

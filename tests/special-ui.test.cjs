@@ -28,6 +28,7 @@ const html=read('index.html').replace(/<script\b[^>]*>[\s\S]*?<\/script>/g,'').r
    const artLoadout=[{skill:'tech1'},{skill:'tech2'},{skill:'tech3'}];BattleActionArt.update({loadouts:{1:artLoadout,2:artLoadout},localPlayer:1});SpecialGauge.paintBattle(m);
    for(const p of [1,2])document.getElementById('hp'+p+'Text').textContent=m.roomRules.hp+'/'+m.roomRules.hp;
   },skills);
+  for(const side of [1,2])assert.equal(await page.locator('#specialGauge'+side+' .specialGaugeHint').innerText(),'（チャージ、ターン終了、被弾ごとに+1）');
   const hpStep=await page.locator('#player1Area .hpBar').evaluate(n=>getComputedStyle(n,'::after').backgroundSize);assert(Math.abs(parseFloat(hpStep)-100/15)<.01,'15 HP segments');
   await page.locator('#specialSwitchDock button').click();
   const ranked=read('ranked-client.js'),choose=ranked.slice(ranked.indexOf('async function rankedChoose('),ranked.indexOf('async function rankedSubmitAction('));
