@@ -2,7 +2,7 @@ const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),asse
 const {harness}=require('./rules-harness.cjs'),R=require('../room-rules.js'),A=require('../advanced/rules.js');
 const root=path.resolve(__dirname,'..'),read=f=>fs.readFileSync(path.join(root,f),'utf8'),plain=x=>JSON.parse(JSON.stringify(x));
 function protectedApi(h,supported=true){
- const transport=async data=>h.transports[1](data);transport.supportsRoomRules=async()=>true;transport.supportsAdvanced=async()=>true;transport.supportsAdvancedOptions=async()=>supported;transport.supportsSpecialGauge=async()=>true;transport.supportsSpecialHp=async()=>supported;
+ const transport=async data=>h.transports[1](data);transport.supportsRoomRules=async()=>true;transport.supportsAdvanced=async()=>true;transport.supportsAdvancedOptions=async()=>supported;transport.supportsSpecialGauge=async()=>true;transport.supportsSpecialHp=async()=>supported;transport.supportsSpecialMoves=async()=>supported;
  const ctx=vm.createContext({window:{RoomRules:R,AdvancedRules:A,BattleAI:require('../bot-engine.js')},console,Date:{now:h.now},
   ref:(_db,p)=>({p}),get:async r=>{assert(h.allowed('.read',r.p,'p2'));return {val:()=>structuredClone(h.get(r.p))};},
   set:async(r,v)=>h.commit({[r.p]:v},'p2'),update:async(r,p)=>h.commit(Object.fromEntries(Object.entries(p).map(([k,v])=>[r.p+'/'+k,v])),'p2'),
@@ -30,7 +30,7 @@ function archiveFunctions(h){
   assert.throws(()=>h.commit({'friendRooms/optionsRoom/roomRules/special':!special},'p2'),/permission_denied/);
   const joined=(await h.transports[0]({op:'friendJoin',roomId:'optionsRoom'})).match,id=joined.id,p='freeGames/'+id;
   assert.deepEqual(plain(joined.roomRules),options);assert.equal(!!h.get(p+'/special'),special);
-  if(special){assert.deepEqual(plain(joined.special),{max:30,version:1,gauge:{1:0,2:0}});for(const value of [1,30,31,-1])assert.throws(()=>h.commit({[p+'/special/gauge/1']:value},'p1'),/permission_denied/);assert.throws(()=>h.commit({[p+'/special/max']:31},'p1'),/permission_denied/);}
+  if(special){assert.deepEqual(plain(joined.special),{max:30,version:2,gauge:{1:0,2:0}});for(const value of [1,30,31,-1])assert.throws(()=>h.commit({[p+'/special/gauge/1']:value},'p1'),/permission_denied/);assert.throws(()=>h.commit({[p+'/special/max']:31},'p1'),/permission_denied/);}
   await h.transports[0]({op:'loadout',matchId:id,loadout:[0,1,2],...(skills?{advancedSkill:'boost'}:{})});
   const start=(await h.transports[1]({op:'loadout',matchId:id,loadout:[0,1,2],...(skills?{advancedSkill:'heal'}:{})})).match;
   assert.equal(start.state.hp[1],special?15:10);assert.equal(start.state.hp[2],special?15:10);assert.equal(start.state.turn,1);assert.equal(start.skillWindow.endAt-start.skillWindow.startAt,skills?3000:0);assert.equal(start.opensAt-h.get(p+'/state/startedAt'),skills?9100:5600);
@@ -41,11 +41,11 @@ function archiveFunctions(h){
   const spectator=await host.snapshot();assert.deepEqual(plain(spectator.battle.roomRules),options);assert.equal(!!spectator.battle.special,special);
   h.setClock(latest.opensAt);await h.transports[0]({op:'action',matchId:id,turn:1,action:skills?1:0});
   const next=(await h.transports[1]({op:'action',matchId:id,turn:1,action:1})).match;
-  assert.equal(next.state.turn,2);assert.equal(next.skillWindow.endAt-next.skillWindow.startAt,skills?3000:0);if(special)assert.deepEqual(plain(next.special),{max:30,version:1,gauge:{1:skills?1:3,2:1}});
+  assert.equal(next.state.turn,2);assert.equal(next.skillWindow.endAt-next.skillWindow.startAt,skills?3000:0);if(special)assert.deepEqual(plain(next.special),{max:30,version:2,gauge:{1:skills?1:3,2:1}});
   if(!skills){assert.equal(next.state.skillsExhausted,true);assert.equal(next.state.gauge[1],10);assert.equal(next.state.gauge[2],7);}
   const closed=(await h.transports[0]({op:'resign',matchId:id})).match;assert(closed.closed);
   const archive=archiveFunctions(h),game=h.get(p),saved=plain(archive.build(id,game,{1:h.get('freeAccounts/p1'),2:h.get('freeAccounts/p2')}));
-  assert.equal(archive.replay(saved).length,1);if(special)assert.deepEqual(saved.special,{max:30,version:1,gauge:{1:skills?1:3,2:1}});
+  assert.equal(archive.replay(saved).length,1);if(special)assert.deepEqual(saved.special,{max:30,version:2,gauge:{1:skills?1:3,2:1}});
   h.commit({['battleHistory/'+id]:saved,['playerHistory/p1/'+id]:saved.endedAt,['playerHistory/p2/'+id]:saved.endedAt},'p1');
   assert.equal(saved.roomRules.hp,special?15:10);const restored=archive.match({...saved,id},'p1',h.now());assert.deepEqual(plain(restored.roomRules),options);assert.equal(!!restored.special,special);
   console.log('PASS real room → join → battle → spectator → history: skills='+skills+', special='+special);

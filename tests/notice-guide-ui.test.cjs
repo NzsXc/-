@@ -28,7 +28,7 @@ const mime = {'.html':'text/html', '.css':'text/css', '.js':'text/javascript', '
         document.getElementById('openingTransition').remove();
         HTMLMediaElement.prototype.play = () => Promise.resolve();
         showScreen('modeScreen');
-        const state={uid:'p1',canVote:true,connected:true,loaded:{techniques:true,skills:true},errors:{},ballots:{techniques:{p1:{tech1:10,tech2:9,tech3:8,tech4:7},p2:{tech1:8,tech2:8,tech3:7,tech4:7}},skills:{p1:{boost:10,heal:9,chain:8,cleanse:7},p2:{boost:8,heal:8,chain:7,cleanse:7}}}};
+        const state={uid:'p1',canVote:true,connected:true,loaded:{techniques:true,skills:true,specialTechniques:true},errors:{},ballots:{specialTechniques:{},techniques:{p1:{tech1:10,tech2:9,tech3:8,tech4:7},p2:{tech1:8,tech2:8,tech3:7,tech4:7}},skills:{p1:{boost:10,heal:9,chain:8,cleanse:7},p2:{boost:8,heal:8,chain:7,cleanse:7}}}};
         window.voteTest={state,saves:[],fail:false,listeners:[],emit(){this.listeners.forEach(fn=>fn(structuredClone(this.state)));}};
         window.communityRatings={watch(fn){voteTest.listeners.push(fn);fn(structuredClone(state));return()=>{};},retry(){voteTest.emit();},async save(category,values){if(voteTest.fail)throw Error('テスト通信エラー');voteTest.saves.push({category,values});state.ballots[category][state.uid]=values;voteTest.emit();}};
         window.openPlayerLogin=()=>window.loginOpened=true;
@@ -49,7 +49,7 @@ const mime = {'.html':'text/html', '.css':'text/css', '.js':'text/javascript', '
       assert.deepEqual(cards, definitions, 'every current game definition is shown exactly');
       assert.deepEqual(await page.locator('#guideSpecialTechniques h3').allTextContents(),await page.evaluate(()=>techniquePool.map(t=>'S'+t.name)));
       assert.equal(await page.locator('#guideSpecialTechniques .guideSpecialArt').count(),12);
-      assert((await page.locator('#guideSpecialTechniques p').allTextContents()).every(t=>t==='スペシャル消費量・効果は準備中'));
+      assert((await page.locator('#guideSpecialTechniques p').allTextContents()).every(t=>t.includes('S追加：')));
       assert.equal(await page.locator('#guideSkills .guideBadge').count(), 6);
       assert.deepEqual(await page.locator('#guideSkills .guideBadge').allTextContents(), await page.evaluate(() => AdvancedRules.SKILLS.map(s => `1試合 ${s.limit}回`)));
       await page.waitForFunction(() => [...document.querySelectorAll('#tipScreen img')].every(img => img.complete && img.naturalWidth > 0));
@@ -65,9 +65,9 @@ const mime = {'.html':'text/html', '.css':'text/css', '.js':'text/javascript', '
       assert.doesNotMatch(await page.locator('#tipPage2').innerText(), /各ターンの最初の3秒間に使用/);
       assert.equal(await page.locator('#guideTechniqueTiers [data-guide-id="tech1"] .guideTierScore').innerText(),'(9.00)');
       assert.equal(await page.locator('#guideTechniqueTiers [data-guide-id="charge"],#guideTechniqueTiers [data-guide-id="block"],#guideTechniqueTiers [data-guide-id="attack"]').count(),0);
-      assert.equal(await page.locator('#guideVoteSpecialTechniques').isDisabled(),true);
+      assert.equal(await page.locator('#guideVoteSpecialTechniques').isDisabled(),false);
       assert.equal(await page.locator('#guideSpecialTechniqueTiers [data-rank="unrated"] .guideTierTile').count(),12);
-      assert((await page.locator('#guideSpecialTechniqueTiers .guideTierScore').allTextContents()).every(t=>t==='(準備中)'));
+      assert((await page.locator('#guideSpecialTechniqueTiers .guideTierScore').allTextContents()).every(t=>t==='(未評価)'));
       await page.locator('#guideSpecialTechniqueTiers').scrollIntoViewIfNeeded();
       if(process.env.GUIDE_SCREENSHOTS&&[390,1365].includes(width))await page.screenshot({path:path.join(process.env.GUIDE_SCREENSHOTS,'notice-s-ratings-'+width+'.png')});
       for (const [tableId, expected] of [['guideTechniqueTiers', 12], ['guideSkillTiers', 6]]) {
@@ -96,6 +96,7 @@ const mime = {'.html':'text/html', '.css':'text/css', '.js':'text/javascript', '
         }
       }
       await page.locator('#tipNav3').click();
+      await page.locator('#guideVoteSpecialTechniques').click();assert.equal(await page.locator('#guideVoteDialog select').count(),12);await page.locator('#guideVoteDialog select').first().selectOption('9');await page.locator('#guideVoteDialog button[type=submit]').click();assert.equal(await page.evaluate(()=>voteTest.saves.at(-1).category),'specialTechniques');await page.evaluate(()=>{voteTest.saves=[];});
       await page.locator('#guideVoteTechniques').click();
       assert.equal(await page.locator('#guideVoteDialog select').count(),12);
       assert.deepEqual(await page.getByLabel('ブリーチの評価',{exact:true}).locator('option').evaluateAll(nodes=>nodes.map(n=>n.value)),['',...Array.from({length:10},(_,i)=>String(i+1))]);

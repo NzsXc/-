@@ -29,14 +29,14 @@
    if(active(selected,turn,p,'boost'))s['gauge'+p]=Math.min(rules.maxGauge??10,s['gauge'+p]+2);
    if(active(selected,turn,p,'heal'))s['hp'+p]=Math.min(rules.hp??10,s['hp'+p]+1);
    if(active(selected,turn,p,'chain'))s['last'+p]='';
-   if(active(selected,turn,p,'cleanse')){s['gauge'+p]=Math.min(rules.maxGauge??10,s['gauge'+p]+4);s['seal'+p]=false;s['ruin'+p]=0;}
+   if(active(selected,turn,p,'cleanse')){s['gauge'+p]=Math.min(rules.maxGauge??10,s['gauge'+p]+4);s['seal'+p]=false;s['ruin'+p]=0;if('specialSeal'+p in s){s['specialSeal'+p]=0;s['specialRuin'+p]=0;}}
   }
   return s;
  }
  function resolve(state,moves,selected,turn,calculate,rules={}){
-  if(isAdvanced(rules)&&!hasSkills(rules))return calculate(state,moves,2,rules);
+  if(isAdvanced(rules)&&!hasSkills(rules))return calculate(state,moves,state.specialSeal1!=null?3:2,rules);
   const s=preview(state,selected,turn,rules),powerBonus={1:active(selected,turn,1,'stance')?1:0,2:active(selected,turn,2,'stance')?1:0};
-  const out=calculate(s,moves,2,rules,powerBonus);
+  const out=calculate(s,moves,s.specialSeal1!=null?3:2,rules,powerBonus);
   for(const p of [1,2])if(active(selected,turn,p,'invincible')){
    out['damage'+p]=out['skill'+p]==='tech7'?2:0;
    out['hp'+p]=out['misses'+p]>=2?0:Math.max(0,out['healed'+p]-out['damage'+p]);

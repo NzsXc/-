@@ -30,14 +30,12 @@ for (const category of Object.keys(core.categories)) {
     assert.equal(vm.runInNewContext(expression, {auth,$uid:'p1',root:new Snapshot(h.copy()),newData:new Snapshot(h.copy(),p)}), false);
   }
 }
-const before = JSON.parse(require('node:child_process').execFileSync('git',['show','HEAD:firebase-database.rules.json'],{cwd:root,encoding:'utf8'})).rules;
-for (const [category,ids] of Object.entries(core.categories)) for (const id of ids) before.communityRatings[category].$uid[id]['.validate']=before.communityRatings[category].$uid[id]['.validate'].replace('newData.val()<=4','newData.val()<=10');
-for (const key of Object.keys(before)) assert.deepEqual(rules[key],before[key], 'existing rule preserved except rating range: '+key);
+assert.deepEqual(core.categories.specialTechniques, Array.from({length:12}, (_, i) => 's-tech' + (i+1)));
 
 async function transportTests() {
   let user={uid:'p1',isAnonymous:false}, authCallback, callbacks=[], saves=[], connected=true;
   const auth={get currentUser(){return user;},authStateReady:async()=>{}};
-  const storage={techniques:{p1:{tech1:4},p2:{tech1:3}},skills:{p1:{boost:2}}};
+  const storage={specialTechniques:{},techniques:{p1:{tech1:4},p2:{tech1:3}},skills:{p1:{boost:2}}};
   let rejected=false;
   const context = vm.createContext({window:{CommunityRatingCore:core},Promise,setTimeout,clearTimeout,
     ref:(_,p)=>p,
@@ -69,10 +67,10 @@ async function transportTests() {
   await assert.rejects(service.save('skills',{boost:3}),/通信/);connected=true;
   user={uid:'p2',isAnonymous:false};authCallback(user);await tick();assert.equal(state.uid,'p2');assert.equal(state.ballots.techniques.p1.tech1,2);
   callbacks.find(x=>x.p==='communityRatings/skills').error(Error('denied'));assert.match(state.errors.skills,/読み込めません/);
-  await service.retry();assert.equal(callbacks.length,3);
+  await service.retry();assert.equal(callbacks.length,4);
   user={uid:'guest',isAnonymous:true};authCallback(user);await tick();assert.equal(state.canVote,false);
   await assert.rejects(service.save('skills',{boost:3}),/ログイン/);
   user=null;authCallback(user);await tick();assert.equal(state.uid,'guest');
   unwatch();assert.equal(callbacks.length,0);
 }
-transportTests().then(()=>console.log('PASS: thresholds, two decimals, one vote per account, editable ballots, access/score validation, unchanged existing rules, transport subscription/save/auth/error/retry lifecycle')).catch(error=>{console.error(error);process.exitCode=1;});
+transportTests().then(()=>console.log('PASS: thresholds, two decimals, one vote per account, editable ballots, access/score validation, separate normal/S/skill ballots, transport subscription/save/auth/error/retry lifecycle')).catch(error=>{console.error(error);process.exitCode=1;});

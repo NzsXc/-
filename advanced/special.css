@@ -36,3 +36,7 @@
 @media(prefers-reduced-motion:reduce){.specialGaugeFill,.specialGaugeFill::after{animation:none}.specialGaugeFill{transition:none}}
 .specialGaugeValue{flex:0 0 46px;text-align:right;font-size:13px;font-weight:800;font-variant-numeric:tabular-nums}
 @media(max-width:420px){.friendAdvancedOptions{grid-template-columns:1fr}.specialGaugePanel{margin-bottom:5px}.specialGaugeTitle{font-size:10px}}
+
+.specialMoveCost{position:absolute;right:5px;bottom:3px;z-index:4;padding:1px 5px;border-radius:6px;background:#210d36db;color:#eedcff;font-weight:800;font-size:10px;pointer-events:none}
+.specialMoveCost[hidden]{display:none}
+#battleScreen .action.specialTechniqueAction.disabled{opacity:.4!important}

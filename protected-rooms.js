@@ -1,6 +1,6 @@
 import {ref,get,set,update,remove,push,onValue,onDisconnect,serverTimestamp} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js';
 import {signInAnonymously} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js';
-import {spectatorSkillMatch} from './advanced/spectator.js?v=skill-display-2';
+import {spectatorSkillMatch} from './advanced/spectator.js?v=special-moves-1';
 export function createProtectedRooms(db,auth,transport,history){
  let offset=0,hostRoom=null,heartbeat=null,disconnect=null;onValue(ref(db,'.info/serverTimeOffset'),s=>offset=Number(s.val()||0));
  const now=()=>Date.now()+offset,read=async p=>(await get(ref(db,p))).val();
@@ -11,6 +11,7 @@ export function createProtectedRooms(db,auth,transport,history){
   if(window.RoomRules.needsAdvancedOptions(rules)&&!await transport.supportsAdvancedOptions?.())throw Error('Advancedの追加設定を利用するには、対戦ルールを更新してください。');
   if(window.RoomRules.hasSpecial(rules)&&!await transport.supportsSpecialGauge?.())throw Error('スペシャルゲージを利用するには、対戦ルールを更新してください。');
   if(window.RoomRules.hasSpecial(rules)&&!await transport.supportsSpecialHp?.())throw Error('HP15のスペシャル対戦を利用するには、Firebaseの対戦ルールを更新・公開してください。');
+  if(window.RoomRules.hasSpecial(rules)&&!await transport.supportsSpecialMoves?.())throw Error('S技を利用するには、Firebaseの対戦ルールを更新・公開してください。');
   const roomPatch=rules.mode!=='standard'?{roomRules:rules}:{};
   const id=push(ref(db,'friendRooms')).key;await set(ref(db,'friendRooms/'+id),{host:who,name:account.name,createdAt:serverTimestamp(),heartbeat:serverTimestamp(),game:'',...roomPatch});hostRoom=id;
   disconnect=onDisconnect(ref(db,'friendRooms/'+id));await disconnect.remove();
@@ -21,11 +22,12 @@ export function createProtectedRooms(db,auth,transport,history){
  async function join(id){await ensure();return transport({op:'friendJoin',roomId:id});}
  function watchList(callback,onError){let stop=null,cancelled=false;ensure().then(()=>{if(!cancelled)stop=onValue(ref(db,'friendRooms'),s=>callback(s.val()||{}),onError);}).catch(onError);return ()=>{cancelled=true;stop?.();};}
  function watchHost(id,onMatch,onError){let busy=false;return onValue(ref(db,'friendRooms/'+id),async s=>{const room=s.val();if(room?.game&&!busy){busy=true;try{await releaseHost();onMatch((await transport({op:'status',matchId:room.game})).match);}catch(e){busy=false;onError(e);}}},onError);}
+ const specialStates=s=>Object.fromEntries(['specialSeal','specialRuin','specialMomentum'].map(k=>[k,{1:s[k+'1']||0,2:s[k+'2']||0}]));
  const observedGames=new Map();
  function archivedSnapshot(h){
   const raw=h?.finalState;if(!raw)return null;const s=h.roomRules?.mode==='advanced'?window.AdvancedRules.preview(raw,h.advanced?.selected,window.AdvancedRules.forTurn(h.advanced,raw.turn),h.roomRules):raw,people={};
   for(const p of [1,2])people[p]={name:h.players[p].name,joined:true,online:false,techniques:h.players[p].loadout?[0,1,2].map(i=>h.players[p].loadout[i]):[]};
-  return {players:people,battle:{special:h.special||null,skillMatch:spectatorSkillMatch(h.id||'archive',raw,h.advanced,h.roomRules,people,true,now()),roomRules:h.roomRules||null,phase:'finished',turn:s.turn,updatedAt:now(),result:h.settled.winner?h.settled.winner+'P WIN':'DRAW',hp:{1:s.hp1,2:s.hp2},gauge:{1:s.gauge1,2:s.gauge2},enhanceTurns:{1:s.enhance1,2:s.enhance2},blockSeal:{1:s.seal1,2:s.seal2},ruinTurns:{1:s.ruin1||0,2:s.ruin2||0}}};
+  return {players:people,battle:{special:h.special||null,...specialStates(s),skillMatch:spectatorSkillMatch(h.id||'archive',raw,h.advanced,h.roomRules,people,true,now()),roomRules:h.roomRules||null,phase:'finished',turn:s.turn,updatedAt:now(),result:h.settled.winner?h.settled.winner+'P WIN':'DRAW',hp:{1:s.hp1,2:s.hp2},gauge:{1:s.gauge1,2:s.gauge2},enhanceTurns:{1:s.enhance1,2:s.enhance2},blockSeal:{1:s.seal1,2:s.seal2},ruinTurns:{1:s.ruin1||0,2:s.ruin2||0}}};
  }
  const validId=id=>typeof id==='string'&&/^[A-Za-z0-9_-]+$/.test(id);
  async function snapshot(roomId,accounts){
@@ -47,9 +49,9 @@ export function createProtectedRooms(db,auth,transport,history){
   if(skillMatch)skillMatch.players=people;
   // Settlement can archive/delete the live node between these reads.
   if(!await read(path+'/players'))return archived();
-  const battle={roomRules,special,phase:settled?'finished':'battle',turn:s.turn,updatedAt:now(),result:settled?(settled.winner?settled.winner+'P WIN':'DRAW'):'',hp:{1:s.hp1,2:s.hp2},gauge:{1:s.gauge1,2:s.gauge2},enhanceTurns:{1:s.enhance1,2:s.enhance2},blockSeal:{1:s.seal1,2:s.seal2},ruinTurns:{1:s.ruin1||0,2:s.ruin2||0},lastAction:{1:s.last1?{data:{type:s.last1}}:null,2:s.last2?{data:{type:s.last2}}:null}};
+  const battle={roomRules,special,...specialStates(s),phase:settled?'finished':'battle',turn:s.turn,updatedAt:now(),result:settled?(settled.winner?settled.winner+'P WIN':'DRAW'):'',hp:{1:s.hp1,2:s.hp2},gauge:{1:s.gauge1,2:s.gauge2},enhanceTurns:{1:s.enhance1,2:s.enhance2},blockSeal:{1:s.seal1,2:s.seal2},ruinTurns:{1:s.ruin1||0,2:s.ruin2||0},lastAction:{1:s.last1?{data:{type:s.last1}}:null,2:s.last2?{data:{type:s.last2}}:null}};
   const countdownEnd=Number.isFinite(s.previousDeadline)?Math.max(s.startedAt,Math.min(s.startedAt+3000,s.previousDeadline)):s.startedAt+3000;
-  if(!settled&&reveal?.turn===s.turn&&s.turn>1&&now()<countdownEnd+3000){const action=id=>window.BattleAI.ACTIONS[id];battle.phase='effect';battle.resolvedTurn=reveal.turn-1;battle.countdownEndsAt=countdownEnd;battle.revealAt=countdownEnd+500;battle.effectStartAt=countdownEnd+1800;battle.damageTo1=reveal.damage1;battle.damageTo2=reveal.damage2;battle.actions={1:{id:reveal.action1,data:action(reveal.action1)},2:{id:reveal.action2,data:action(reveal.action2)}};}
+  if(!settled&&reveal?.turn===s.turn&&s.turn>1&&now()<countdownEnd+3000){const action=id=>id>=15?window.SpecialRules.actionData(id,window.BattleAI.ACTIONS.slice(3)):window.BattleAI.ACTIONS[id];battle.phase='effect';battle.resolvedTurn=reveal.turn-1;battle.countdownEndsAt=countdownEnd;battle.revealAt=countdownEnd+500;battle.effectStartAt=countdownEnd+1800;battle.damageTo1=reveal.damage1;battle.damageTo2=reveal.damage2;battle.actions={1:{id:reveal.action1,data:action(reveal.action1)},2:{id:reveal.action2,data:action(reveal.action2)}};}
   if(skillMatch)battle.skillMatch=skillMatch;
   return {players:people,battle};
  }
