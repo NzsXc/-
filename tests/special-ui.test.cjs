@@ -19,7 +19,7 @@ const html=read('index.html').replace(/<script\b[^>]*>[\s\S]*?<\/script>/g,'').r
   await page.locator('#techIcon0').evaluate(n=>n.parentElement.querySelector('button').click());assert.equal(await page.locator('#techIcon0').innerText(),'Sブリーチ');
   await page.screenshot({path:path.join(root,'..','special-selection-'+width+'-'+skills+'.png')});
   const after=await page.locator('#techConfirmButton').boundingBox();assert(Math.abs(before.y-after.y)<.1,'toggle does not move confirm button');assert.equal(await page.locator('#techIcon0').evaluate(n=>n.closest('.techCard').getBoundingClientRect().height),cardBefore,'toggle keeps card height');
-  assert.match(await page.locator('#techCardDescription0').innerText(),/S消費 8/);assert(await page.locator('#specialSelectionNote').isVisible());
+  assert.match(await page.locator('#techCardDescription0').innerText(),/Sゲージ追加消費\+8/);assert(await page.locator('#specialSelectionNote').isVisible());
   await page.locator('#techIcon0').evaluate(n=>n.parentElement.querySelector('button').click());assert.equal(await page.locator('#techIcon0').innerText(),'ブリーチ');
   await page.evaluate(skills=>{
    document.querySelectorAll('.screen').forEach(n=>n.classList.toggle('active',n.id==='battleScreen'));document.getElementById('battleScreen').dataset.localPlayer='1';m.phase='turn';

@@ -34,7 +34,7 @@
     article.dataset.guideId = item.id;
     const copy = node('div', 'guideCardCopy');
     copy.append(node('h3', '', item.name));
-    copy.append(node('span', 'guideBadge', item.special ? `S消費 ${item.specialCost} / 通常消費 ${item.cost}` : skill ? `1試合 ${item.limit}回` : `消費ゲージ ${item.cost}`));
+    copy.append(node('span', 'guideBadge', item.special ? `Sゲージ追加消費+${item.specialCost}` : skill ? `1試合 ${item.limit}回` : `消費ゲージ ${item.cost}`));
     copy.append(node('p', '', item.description));
     article.append(illustration(item, skill), copy);
     return article;

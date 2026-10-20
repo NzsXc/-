@@ -17,7 +17,7 @@
  function actionData(id,pool,basic){
   if(id<15)return id<3?basic?.[['charge','attack','block'][id]]:pool?.[id-3];
   const d=definition(id),base=pool?.[id-15];
-  return d&&base?{...base,name:'S'+base.name,special:true,specialCost:d.cost,description:base.description+' / S追加：'+d.description}:null;
+  return d&&base?{...base,name:'S'+base.name,special:true,specialCost:d.cost,description:d.description}:null;
  }
  function advance(special,result){
   if(![VERSION,MOVE_VERSION].includes(special?.version))return special;

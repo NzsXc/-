@@ -2744,8 +2744,8 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
 <script src="bot-engine.js?v=punish-2"></script>
 <script src="bot-client.js?v=mode-cards-1"></script>
 <script src="advanced/rules.js?v=special-moves-1"></script>
-<script src="advanced/special-rules.js?v=special-moves-1"></script>
-<script src="advanced/special.js?v=special-moves-1"></script>
+<script src="advanced/special-rules.js?v=special-description-1"></script>
+<script src="advanced/special.js?v=special-description-1"></script>
 <script src="room-rules.js?v=special-hp15-1"></script>
 <script src="ranked-client.js?v=special-moves-1"></script>
 <script src="advanced/client.js?v=special-moves-1"></script>
@@ -6783,7 +6783,7 @@ function syncBattleInspector(){
   const enabled=document.getElementById("battleScreen")?.classList.contains("active") && !PlayerIntro.isActive() &&
     (rankedActive ? !!rankedMatch?.state && !rankedMatch.closed && !rankedAnimating : gameMode==="online" && onlineInputOpen && onlineTurnPhase==="input");
   const inspectorLoadouts={1:player1Techs,2:player2Techs};
-  if(rankedActive&&window.SpecialGauge?.isSpecialView(rankedMatch))for(const p of [1,2])inspectorLoadouts[p]=rankedMatch.loadouts[p].map(index=>{const action=window.SpecialRules.actionData(index+15,techniquePool);return {...action,description:'S消費 '+action.specialCost+' / '+action.description};});
+  if(rankedActive&&window.SpecialGauge?.isSpecialView(rankedMatch))for(const p of [1,2])inspectorLoadouts[p]=rankedMatch.loadouts[p].map(index=>{const action=window.SpecialRules.actionData(index+15,techniquePool);return {...action,description:'Sゲージ追加消費+'+action.specialCost+' / '+action.description};});
   window.BattleInspector.update({enabled,side,loadouts:inspectorLoadouts,names:{1:getBattlePlayerName(1),2:getBattlePlayerName(2)}});
 }
 document.addEventListener("DOMContentLoaded",()=>syncConfirmedActionArt());
@@ -7036,7 +7036,7 @@ updateTechniqueDisplay();
 })();
 </script>
 <script src="community-rating-core.js?v=special-moves-1"></script>
-<script src="notice-guide.js?v=special-moves-1"></script>
+<script src="notice-guide.js?v=special-description-1"></script>
 <!-- PWA registration -->
 <script src="./pwa-register.js" defer></script>
 </body>

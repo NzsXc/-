@@ -49,7 +49,8 @@ const mime = {'.html':'text/html', '.css':'text/css', '.js':'text/javascript', '
       assert.deepEqual(cards, definitions, 'every current game definition is shown exactly');
       assert.deepEqual(await page.locator('#guideSpecialTechniques h3').allTextContents(),await page.evaluate(()=>techniquePool.map(t=>'S'+t.name)));
       assert.equal(await page.locator('#guideSpecialTechniques .guideSpecialArt').count(),12);
-      assert((await page.locator('#guideSpecialTechniques p').allTextContents()).every(t=>t.includes('S追加：')));
+      assert.deepEqual(await page.locator('#guideSpecialTechniques p').allTextContents(),await page.evaluate(()=>SpecialRules.definitions.map(d=>d.description)));
+      assert.deepEqual(await page.locator('#guideSpecialTechniques .guideBadge').allTextContents(),await page.evaluate(()=>SpecialRules.definitions.map(d=>'Sゲージ追加消費+'+d.cost)));
       assert.equal(await page.locator('#guideSkills .guideBadge').count(), 6);
       assert.deepEqual(await page.locator('#guideSkills .guideBadge').allTextContents(), await page.evaluate(() => AdvancedRules.SKILLS.map(s => `1試合 ${s.limit}回`)));
       await page.waitForFunction(() => [...document.querySelectorAll('#tipScreen img')].every(img => img.complete && img.naturalWidth > 0));
