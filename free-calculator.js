@@ -16,7 +16,7 @@ const ACTIONS=[
  {cost:1,type:'ruin',skill:'tech11',power:0,pierce:false},
  {cost:2,type:'mirror',skill:'tech12',power:0,pierce:false}
 ];
-const S_COSTS=[8,8,8,12,12,8,12,12,16,8,4,6];
+const S_COSTS=[8,8,8,12,12,8,12,12,16,8,6,6];
 ACTIONS.push(...ACTIONS.slice(3).map((a,i)=>({...a,special:true,specialCost:S_COSTS[i]})));
 const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
 const chosen=(s,moves,p,maxGauge)=>Number.isInteger(moves?.[p])?moves[p]:(s['gauge'+p]>=maxGauge?1:0);

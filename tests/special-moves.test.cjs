@@ -5,7 +5,7 @@ const rules=JSON.parse(read('firebase-database.rules.json')).rules,roomRules={mo
 const calculate=vm.runInNewContext(read('free-calculator.js').replaceAll('export ','')+'\ncalculate');
 const base=()=>({turn:1,startedAt:0,hp1:9,hp2:9,gauge1:8,gauge2:8,seal1:false,seal2:false,enhance1:0,enhance2:0,momentum1:false,momentum2:false,ruin1:0,ruin2:0,last1:'',last2:'',misses1:0,misses2:0,...S.extraState()});
 const resolve=(a,b,extra={})=>plain(calculate({...base(),...extra},{1:a,2:b},3,roomRules));
-assert.deepEqual(S.definitions.map(d=>d.cost),[8,8,8,12,12,8,12,12,16,8,4,6]);
+assert.deepEqual(S.definitions.map(d=>d.cost),[8,8,8,12,12,8,12,12,16,8,6,6]);
 assert.deepEqual([resolve(15,17).damage1,resolve(15,17).damage2],[0,2]);
 assert.deepEqual([resolve(15,15).damage1,resolve(15,15).damage2],[0,0]);
 assert.equal(resolve(16,1).damage2,2);assert.equal(resolve(17,0).damage2,3);assert.equal(resolve(17,9).damage2,5);assert.equal(resolve(17,2).damage2,0);assert.equal(resolve(17,0).gauge2,9);
@@ -43,6 +43,10 @@ function setup(loadout=[0,7,9]){const h=harness(),p='freeGames/match';h.put(p+'/
  const short=setup();short.h.put(short.p+'/special/gauge/1',7);await assert.rejects(()=>short.h.transports[0]({op:'action',matchId:'match',turn:1,action:24}),/permission_denied/);
  const unequipped=setup();await assert.rejects(()=>unequipped.h.transports[0]({op:'action',matchId:'match',turn:1,action:23}),/permission_denied/);
  const forged=setup();assert.throws(()=>forged.h.commit({[forged.p+'/special/gauge/1']:29},'p1'),/permission_denied/);
+ // S Ruin needs both its normal gauge cost (1) and S gauge cost (6).
+ const ruinShort=setup([10,7,9]);ruinShort.h.put(ruinShort.p+'/special/gauge/1',5);await assert.rejects(()=>ruinShort.h.transports[0]({op:'action',matchId:'match',turn:1,action:25}),/permission_denied/);
+ const ruinNormalShort=setup([10,7,9]);ruinNormalShort.h.put(ruinNormalShort.p+'/state/gauge1',0);ruinNormalShort.h.put(ruinNormalShort.p+'/special/gauge/1',6);await assert.rejects(()=>ruinNormalShort.h.transports[0]({op:'action',matchId:'match',turn:1,action:25}),/permission_denied/);
+ const ruinExact=setup([10,7,9]);ruinExact.h.put(ruinExact.p+'/state/gauge1',1);ruinExact.h.put(ruinExact.p+'/special/gauge/1',6);await ruinExact.h.transports[0]({op:'action',matchId:'match',turn:1,action:25});const ruined=(await ruinExact.h.transports[1]({op:'action',matchId:'match',turn:1,action:2})).match;assert.equal(ruined.state.gauge[1],0);assert.equal(ruined.special.gauge[1],1);assert.equal(ruined.state.specialRuin[2],3);
  const oldRules=structuredClone(rules);delete oldRules.freeGames.$game.advanced.specialMovesV1;assert.equal(await harness(oldRules).transports[0].supportsSpecialMoves(),false);
  const f=harness(),ctx=vm.createContext({window:{SpecialRules:S,AdvancedRules:A},calculateV1:calculate,calculateV2:calculate,stateFields:vm.runInContext('stateFields',f.ctx)});vm.runInContext(read('battle-history-core.js').replace(/^import[^\n]*\n/gm,'').replaceAll('export ',''),ctx);
  const replay=setup(),rh=replay.h,rp=replay.p;rh.put(rp+'/special',S.initial(2));let current=(await rh.transports[0]({op:'status',matchId:'match'})).match;
