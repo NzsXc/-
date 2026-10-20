@@ -5,11 +5,12 @@ export function createProtectedRooms(db,auth,transport,history){
  let offset=0,hostRoom=null,heartbeat=null,disconnect=null;onValue(ref(db,'.info/serverTimeOffset'),s=>offset=Number(s.val()||0));
  const now=()=>Date.now()+offset,read=async p=>(await get(ref(db,p))).val();
  async function ensure(){await auth.authStateReady();if(!auth.currentUser)await signInAnonymously(auth);await transport({op:'profile'});}
- async function create(options){const rules=window.RoomRules.normalize(options);await ensure();const who=auth.currentUser.uid;const account=await read('freeAccounts/'+who);if(account.active)throw Error('進行中の対戦を終了してください');
+ async function create(options){const rules=window.RoomRules.normalize(options);if(window.RoomRules.hasSpecial(rules))rules.hp=15;await ensure();const who=auth.currentUser.uid;const account=await read('freeAccounts/'+who);if(account.active)throw Error('進行中の対戦を終了してください');
   if(rules.mode==='custom'&&!await transport.supportsRoomRules?.())throw Error('カスタム対戦はまだ利用できません。更新後にお試しください。');
   if(rules.mode==='advanced'&&!await transport.supportsAdvanced?.())throw Error('Advancedはまだ利用できません。更新後にお試しください。');
   if(window.RoomRules.needsAdvancedOptions(rules)&&!await transport.supportsAdvancedOptions?.())throw Error('Advancedの追加設定を利用するには、対戦ルールを更新してください。');
   if(window.RoomRules.hasSpecial(rules)&&!await transport.supportsSpecialGauge?.())throw Error('スペシャルゲージを利用するには、対戦ルールを更新してください。');
+  if(window.RoomRules.hasSpecial(rules)&&!await transport.supportsSpecialHp?.())throw Error('HP15のスペシャル対戦を利用するには、Firebaseの対戦ルールを更新・公開してください。');
   const roomPatch=rules.mode!=='standard'?{roomRules:rules}:{};
   const id=push(ref(db,'friendRooms')).key;await set(ref(db,'friendRooms/'+id),{host:who,name:account.name,createdAt:serverTimestamp(),heartbeat:serverTimestamp(),game:'',...roomPatch});hostRoom=id;
   disconnect=onDisconnect(ref(db,'friendRooms/'+id));await disconnect.remove();

@@ -6,7 +6,7 @@
 <title>心理バトル</title>
 <link rel="stylesheet" href="battle-history.css?v=history-skills-2">
 <link rel="stylesheet" href="advanced/advanced.css?v=skill-flow-1">
-<link rel="stylesheet" href="advanced/special.css?v=special-gauge-1">
+<link rel="stylesheet" href="advanced/special.css?v=special-notice-1">
 <link rel="stylesheet" href="advanced/button-art.css?v=attack-stance-1">
 <link rel="stylesheet" href="advanced/cutin.css?v=attack-stance-1">
 
@@ -2057,7 +2057,7 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
 <link rel="stylesheet" href="battle-action-art.css?v=orbit-selection-1">
 <link rel="stylesheet" href="neon-controls.css?v=neon-menu-1">
 <link rel="stylesheet" href="mode-menu.css?v=mode-cards-1">
-<link rel="stylesheet" href="notice-guide.css?v=voting-1">
+<link rel="stylesheet" href="notice-guide.css?v=special-notice-1">
 </head>
 
 
@@ -2332,12 +2332,14 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
         <h2 class="guideSectionTitle">基本行動 <small>3種類 / 共通</small></h2><div id="guideBasicActions" class="guideCatalog"></div>
         <h2 class="guideSectionTitle">選択技 <small>12種類から3つを装備</small></h2><div id="guideTechniques" class="guideCatalog"></div>
         <h2 class="guideSectionTitle">スキル <small>Advanced専用 / 6種類から1つ</small></h2><div id="guideSkills" class="guideCatalog"></div>
+        <h2 class="guideSectionTitle">S技 <small>スペシャル専用 / 効果・消費量は準備中</small></h2><div id="guideSpecialTechniques" class="guideCatalog"></div>
       </div></section>
       <section id="tipPage3" class="tipPage" aria-labelledby="tipNav3" aria-hidden="true" inert><div class="tipPageInner guidePage">
         <header class="guideHeader"><span class="guideEyebrow">COMMUNITY TIER LIST</span><h1>みんなの技・スキル評価</h1><p>S / A / B / C の4段階で、絵柄から探せるティア表。</p></header>
         <p class="guideNote">1アカウントにつき各項目1票。1〜10点で評価でき、あとから変更できます。全プレイヤーの平均で S：9以上 / A：8以上 / B：7以上 / C：7未満 に分かれます。</p><p id="guideRatingsStatus" class="guideNote" role="status" aria-live="polite"></p>
         <div class="guideTierHeading"><h2 class="guideSectionTitle">技のティア表 <small>選択技12種類</small></h2><button id="guideVoteTechniques" class="guideVoteButton" type="button">技に投票</button></div><div id="guideTechniqueTiers" class="guideTierTable" role="table" aria-label="技の平均評価ティア表"></div>
         <div class="guideTierHeading"><h2 class="guideSectionTitle">スキルのティア表 <small>Advanced専用</small></h2><button id="guideVoteSkills" class="guideVoteButton" type="button">スキルに投票</button></div><div id="guideSkillTiers" class="guideTierTable" role="table" aria-label="スキルの平均評価ティア表"></div>
+        <div class="guideTierHeading"><h2 class="guideSectionTitle">S技のティア表 <small>スペシャル専用</small></h2><button id="guideVoteSpecialTechniques" class="guideVoteButton" type="button" disabled>S技に投票（準備中）</button></div><p class="guideNote">S技の効果・消費量は準備中です。アンケートは仕様確定後に受付します。</p><div id="guideSpecialTechniqueTiers" class="guideTierTable" role="table" aria-label="S技の評価ティア表（準備中）"></div>
         <p class="guideNote">平均点は小数第2位まで表示します。投票のない項目は未評価です。相手の構成や使うタイミングによって強さは変わります。</p>
         <button class="guideTextLink" onclick="showTipPage(2)">技・スキルの効果を見る →</button>
       </div></section>
@@ -2743,19 +2745,19 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
 <script src="bot-client.js?v=mode-cards-1"></script>
 <script src="advanced/rules.js?v=special-gauge-1"></script>
 <script src="advanced/special-rules.js?v=special-gauge-1"></script>
-<script src="advanced/special.js?v=special-gauge-1"></script>
-<script src="room-rules.js?v=special-gauge-1"></script>
+<script src="advanced/special.js?v=special-notice-1"></script>
+<script src="room-rules.js?v=special-hp15-1"></script>
 <script src="ranked-client.js?v=special-gauge-1"></script>
 <script src="advanced/client.js?v=special-gauge-1"></script>
 <script src="advanced/cutin.js?v=special-gauge-1"></script>
 <script src="battle-inspector.js?v=battle-layout-1"></script>
-<script src="lobby-client.js?v=special-gauge-1"></script>
+<script src="lobby-client.js?v=special-hp15-1"></script>
 <script src="battle-action-art.js?v=confirmed-1"></script>
 <script src="battle-effects.js?v=confirmed-1"></script>
 <script type="module">
   import {createTitleService} from "./title-service.js?v=crown-prestige-1";
-  import {createProtectedRooms} from "./protected-rooms.js?v=special-gauge-1";
-  import {createFreeTransport} from "./free-transport.js?v=special-gauge-1";
+  import {createProtectedRooms} from "./protected-rooms.js?v=special-hp15-1";
+  import {createFreeTransport} from "./free-transport.js?v=special-hp15-1";
   import {createBattleHistory} from "./battle-history.js?v=special-gauge-1";
   import {createPlayerProfile} from "./player-profile.js?v=usage-1";
   import {createHistoryScreen} from "./battle-history-client.js?v=special-gauge-1";
@@ -7027,7 +7029,7 @@ updateTechniqueDisplay();
 })();
 </script>
 <script src="community-rating-core.js?v=voting-9-8-7"></script>
-<script src="notice-guide.js?v=voting-10-1"></script>
+<script src="notice-guide.js?v=special-notice-1"></script>
 <!-- PWA registration -->
 <script src="./pwa-register.js" defer></script>
 </body>

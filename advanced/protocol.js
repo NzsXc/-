@@ -3,6 +3,13 @@ export function createAdvancedProtocol({read,writeUpdate,now,serverTimestamp}){
  let supported=null;
  let optionsSupported=null;
  let specialSupported=null;
+ let specialHpSupported=null;
+ function supportsSpecialHp(){
+  if(!specialHpSupported)specialHpSupported=read('freeGames/_protocol/advanced/specialHp15').then(()=>true).catch(error=>{
+   if(/permission.?denied/i.test(String(error.code||'')+' '+error.message))return false;
+   specialHpSupported=null;throw error;
+  });return specialHpSupported;
+ }
  function supportsSpecialGauge(){
   if(!specialSupported)specialSupported=read('freeGames/_protocol/advanced/specialGaugeV1').then(()=>true).catch(error=>{
    if(/permission.?denied/i.test(String(error.code||'')+' '+error.message))return false;
@@ -44,7 +51,7 @@ export function createAdvancedProtocol({read,writeUpdate,now,serverTimestamp}){
   try{await writeUpdate(path,{['advanced/uses/'+me+'/'+(count+1)]:receipt,['advanced/current/'+me]:current});}
   catch(error){const accepted=await read(path+'/advanced/current/'+me);if(accepted?.id!==skill||accepted.turn!==turn)throw error;}
  }
- return {supports,supportsOptions,supportsSpecialGauge,snapshot,loadoutPatch,activate};
+ return {supports,supportsOptions,supportsSpecialGauge,supportsSpecialHp,snapshot,loadoutPatch,activate};
 }
 
 
