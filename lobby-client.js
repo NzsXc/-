@@ -42,7 +42,8 @@ function updateFriendRuleSettings(){
  document.getElementById('friendStandardRules').hidden=custom||advanced;document.getElementById('friendAdvancedRules').hidden=!advanced;
  const options=document.getElementById('friendAdvancedOptions');options.hidden=!advanced;options.disabled=!advanced;
  const selected=[];if(document.getElementById('friendRuleSkills').checked)selected.push('スキル1種：各ターン開始時の3秒間に発動');if(document.getElementById('friendRuleSpecial').checked)selected.push('スペシャルゲージ：初期0 / 最大30');
- document.getElementById('friendAdvancedRules').textContent='HP '+(document.getElementById('friendRuleSpecial').checked?12:10)+' / 初期ゲージ 8 / 最大ゲージ 10。基礎技3種 ＋ 選択技3種。'+(selected.length?selected.join('。'):'追加システムなし');
+ const rules=window.RoomRules.normalize({mode:'advanced',skills:document.getElementById('friendRuleSkills').checked,special:document.getElementById('friendRuleSpecial').checked});
+ document.getElementById('friendAdvancedRules').textContent=`HP ${rules.hp} / 初期ゲージ ${rules.initialGauge} / 最大ゲージ ${rules.maxGauge}。基礎技3種 ＋ 選択技3種。`+(selected.length?selected.join('。'):'追加システムなし');
  validateFriendRuleGauge();
 }
 function cancelFriendRoomSettings(){
