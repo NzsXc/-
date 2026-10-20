@@ -2,7 +2,7 @@
 export function createAdvancedProtocol({read,writeUpdate,now,serverTimestamp}){
  let specialMovesSupported=null;
  function supportsSpecialMoves(){
-  if(!specialMovesSupported)specialMovesSupported=read('freeGames/_protocol/advanced/specialMovesV1').then(()=>true).catch(error=>{
+  if(!specialMovesSupported)specialMovesSupported=read('freeGames/_protocol/advanced/specialMovesV2').then(()=>true).catch(error=>{
    if(/permission.?denied/i.test(String(error.code||'')+' '+error.message))return false;
    specialMovesSupported=null;throw error;
   });return specialMovesSupported;
@@ -11,7 +11,7 @@ export function createAdvancedProtocol({read,writeUpdate,now,serverTimestamp}){
  let optionsSupported=null;
  let specialSupported=null;
  const specialHpSupported={};
- function supportsSpecialHp(hp=12){
+ function supportsSpecialHp(hp=10){
   if(!specialHpSupported[hp])specialHpSupported[hp]=read('freeGames/_protocol/advanced/specialHp'+hp).then(()=>true).catch(error=>{
    if(/permission.?denied/i.test(String(error.code||'')+' '+error.message))return false;
    delete specialHpSupported[hp];throw error;
@@ -60,5 +60,6 @@ export function createAdvancedProtocol({read,writeUpdate,now,serverTimestamp}){
  }
  return {supportsSpecialMoves,supports,supportsOptions,supportsSpecialGauge,supportsSpecialHp,snapshot,loadoutPatch,activate};
 }
+
 
 

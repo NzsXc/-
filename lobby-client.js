@@ -56,7 +56,7 @@ async function submitFriendRoom(event){
  let rules;
  try{
   const mode=document.querySelector('input[name="friendRuleMode"]:checked')?.value;
-  rules=window.RoomRules.normalize({mode,skills:document.getElementById('friendRuleSkills').checked,special:document.getElementById('friendRuleSpecial').checked,hp:mode==='advanced'&&document.getElementById('friendRuleSpecial').checked?12:Number(document.getElementById('friendRuleHp').value),initialGauge:Number(document.getElementById('friendRuleInitialGauge').value),maxGauge:Number(document.getElementById('friendRuleMaxGauge').value)});
+  rules=window.RoomRules.normalize({mode,skills:document.getElementById('friendRuleSkills').checked,special:document.getElementById('friendRuleSpecial').checked,hp:mode==='advanced'&&document.getElementById('friendRuleSpecial').checked?10:Number(document.getElementById('friendRuleHp').value),initialGauge:Number(document.getElementById('friendRuleInitialGauge').value),maxGauge:Number(document.getElementById('friendRuleMaxGauge').value)});
  }catch(error){status.textContent=error.message;return;}
  protectedLobbyBusy=true;status.textContent='部屋を作成しています…';
  document.getElementById('friendCreateButton').disabled=true;document.getElementById('friendLobbyBack').disabled=true;
@@ -91,4 +91,5 @@ async function closeFriendLobby(){
  catch(e){protectedStatus('退出できません：'+e.message);}
  finally{document.getElementById('friendLobbyBack').disabled=false;}
 }
+
 

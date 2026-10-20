@@ -1,4 +1,4 @@
-import {ACTION_NAMES,HISTORY_REASONS,historySide,replayHistory,slots} from './battle-history-core.js?v=special-moves-1';
+import {ACTION_NAMES,HISTORY_REASONS,historySide,replayHistory,slots} from './battle-history-core.js?v=special-balance-2';
 
 const element=(tag,className,text)=>{const node=document.createElement(tag);if(className)node.className=className;if(text!=null)node.textContent=String(text);return node;};
 const advanced=h=>h.roomRules?.mode==='advanced'&&h.roomRules.skills!==false;
@@ -97,4 +97,5 @@ export function createHistoryScreen(history){
  }
  return {open};
 }
+
 

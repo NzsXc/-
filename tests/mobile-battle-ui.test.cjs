@@ -20,7 +20,7 @@ async function battle(page,{mode='standard',skills=false,you=1,hp=10}={}){
   rankedStop();rankedActive=true;rankedMatch=null;rankedSeenReveal=0;
   const pair=value=>[null,value,value],rules=mode==='standard'?{mode,hp:maxHp,initialGauge:8,maxGauge:10}:{mode,hp:maxHp,initialGauge:8,maxGauge:10,skills,special:true};
   const m={id:'mobile-'+mode+'-'+skills+'-'+you,kind:'friend',rulesVersion:mode==='standard'?2:3,roomRules:rules,you,players:{1:{name:'プレイヤー1',titles:[]},2:{name:'プレイヤー2',titles:[]}},ready:{1:true,2:true},loadouts:{1:[0,7,10],2:[0,7,10]},state:{turn:4,hp:pair(maxHp-2),gauge:pair(8),seal:pair(false),enhance:pair(0),momentum:pair(false),ruin:pair(0),last:pair(''),specialSeal:pair(0),specialRuin:pair(0),specialMomentum:pair(0)},closed:false,phase:'turn',revision:20000,serverNow:20000,opensAt:19000,deadline:29000,graceDeadline:59000,ownAction:null,reveal:null};
-  if(mode==='advanced'){m.special={version:2,max:30,gauge:{1:30,2:30}};m.advanced={selected:{1:'stance',2:'heal'}};m.skillWindow={startAt:15500,endAt:18500,confirmAt:19000};}
+  if(mode==='advanced'){m.special={version:3,max:30,gauge:{1:30,2:30}};m.advanced={selected:{1:'stance',2:'heal'}};m.skillWindow={startAt:15500,endAt:18500,confirmAt:19000};}
   rankedApply(m);window.mobileMatch=m;stopTurnCountdownSE();
  },{mode,skills,you,maxHp:hp});
  await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
@@ -28,12 +28,15 @@ async function battle(page,{mode='standard',skills=false,you=1,hp=10}={}){
 (async()=>{
  const browser=await chromium.launch({headless:true,...(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE?{executablePath:process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE}:{})});
  try{
-  for(const [width,height]of [[390,844],[320,640],[844,390]])for(const you of [1,2]){
+  for(const [width,height]of [[390,844],[375,667],[360,640],[320,568],[844,390]])for(const you of [1,2]){
    const page=await browser.newPage({viewport:{width,height},deviceScaleFactor:2}),errors=[];page.on('pageerror',e=>errors.push(e.message));await setup(page);
    for(const [mode,skills]of [['standard',false],['advanced',false],['advanced',true]]){
-    await battle(page,{mode,skills,you,hp:mode==='standard'?10:12});
-    await page.evaluate(()=>{cancelAnimationFrame(rankedFrame);rankedFrame=0;});
+    await battle(page,{mode,skills,you,hp:10});
+    await page.evaluate(()=>{cancelAnimationFrame(rankedFrame);rankedFrame=0;document.body.classList.add('hasRoomCode');document.getElementById('roomCodeButton').hidden=false;document.getElementById('roomCodeText').textContent='123456';if(innerWidth===360){document.documentElement.style.setProperty('--safe-top','20px');document.documentElement.style.setProperty('--safe-bottom','20px');}AdvancedSkills.sync(mobileMatch,20000);SpecialGauge.paintBattle(mobileMatch);syncBattleInspector();});
     const initial=await measure(page);
+    assert(initial.width<=width&&initial.height<=height,'battle fits viewport '+JSON.stringify({width,height,mode,skills,initial}));
+    const clipped=await page.locator('#battleScreen .playerArea,#battleHomeButton,#specialSwitchDock:not([hidden]),.advancedSkillDock:not([hidden]),#battleInspectorToggle:not([hidden])').evaluateAll(nodes=>nodes.filter(n=>{const r=n.getBoundingClientRect();return r.width&&r.height&&(r.left<-.1||r.top<-.1||r.right>innerWidth+.1||r.bottom>innerHeight+.1);}).map(n=>n.id));
+    assert.deepEqual(clipped,[],'all player cards and controls stay visible');
     for(let turn=0;turn<3;turn++){
      await page.evaluate(()=>{rankedAnimating=true;syncBattleInspector();document.getElementById('battleHomeButton').hidden=true;document.getElementById('countdown').textContent='';document.getElementById('resultMessage').textContent='';});
      stable(initial,await measure(page),'hidden controls '+width+' '+mode+' '+skills);
@@ -48,8 +51,10 @@ async function battle(page,{mode='standard',skills=false,you=1,hp=10}={}){
       await page.evaluate(group=>{mobileMatch.loadouts[mobileMatch.you]=[group*3,group*3+1,group*3+2];SpecialGauge.paintBattle(mobileMatch);},group);
       await page.locator('#specialSwitchDock button').click();
       stable(initial,await measure(page),'S explanation '+width+' '+skills);
-      const descriptions=await page.locator('#player'+you+'Area .specialMoveExplanation').evaluateAll(nodes=>nodes.map(n=>({text:n.innerText,overflow:n.scrollHeight>n.clientHeight+1,disabled:n.closest('button').disabled})));
-      assert.equal(descriptions.length,3);assert(descriptions.every(d=>d.text.startsWith('S')&&d.disabled&&!d.overflow),JSON.stringify({width,descriptions}));
+      const descriptions=await page.locator('#player'+you+'Area .specialMoveExplanation').evaluateAll(nodes=>nodes.map(n=>({text:n.querySelector('span').innerText,name:n.querySelector('strong').textContent,overflow:n.scrollHeight>n.clientHeight+1,disabled:n.closest('button').disabled})));
+      assert.equal(descriptions.length,3);assert(descriptions.every(d=>d.name.startsWith('S')&&d.text&&d.disabled&&!d.overflow),JSON.stringify({width,descriptions}));
+      if(group===0)assert.equal(descriptions[0].text,'攻撃同士の相殺に、一方的に打ち勝つ');
+      if(group===3)assert.equal(descriptions[0].text,'奪うゲージの量+1');
       assert.equal(await page.evaluate(you=>isBattleActionAvailable(you,'charge'),you),false,'explanatory cards cannot send a basic action through the keyboard');
       await page.locator('#specialSwitchDock button').click();stable(initial,await measure(page),'normal controls restored');
       assert.equal(await page.locator('#player'+you+'Area [data-action="charge"]').isDisabled(),false);
@@ -58,7 +63,7 @@ async function battle(page,{mode='standard',skills=false,you=1,hp=10}={}){
     }
     await page.evaluate(()=>{const bar=document.getElementById('hp1Fill').parentElement;bar.style.width='';});
     const hpGeometry=await page.locator('#hp1Fill').evaluate(fill=>{const bar=fill.parentElement,r=bar.getBoundingClientRect(),f=fill.getBoundingClientRect(),cs=getComputedStyle(bar),s=getComputedStyle(fill),b=parseFloat(cs.borderLeftWidth);return {inner:r.width-b-parseFloat(cs.borderRightWidth),fill:f.width,max:Number(cs.getPropertyValue('--hp-max')),shadow:s.boxShadow,grid:getComputedStyle(bar,'::after').backgroundImage};});
-    assert.equal(hpGeometry.max,mode==='standard'?10:12);assert(Math.abs(hpGeometry.fill-hpGeometry.inner*(hpGeometry.max-2)/hpGeometry.max)<.03);assert(hpGeometry.shadow.includes('inset'));assert(hpGeometry.grid.startsWith('repeating-linear-gradient'));
+    assert.equal(hpGeometry.max,10);assert(Math.abs(hpGeometry.fill-hpGeometry.inner*(hpGeometry.max-2)/hpGeometry.max)<.03);assert(hpGeometry.shadow.includes('inset'));assert(hpGeometry.grid.startsWith('repeating-linear-gradient'));
     console.log('PASS stable turn geometry and HP grid '+width+'x'+height+' side='+you+' '+mode+' skills='+skills);
    }
    assert.deepEqual(errors,[]);await page.close();
