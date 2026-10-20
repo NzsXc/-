@@ -33,7 +33,7 @@
    if(selectionMatch&&!button){button=node('button','specialPreviewToggle','⇋');button.type='button';button.onclick=()=>{preview[slot]=!preview[slot];paintSelection();};body.append(button);}
    if(button){button.hidden=!selectionMatch;button.setAttribute('aria-label','通常技とスペシャル技の説明を切り替え');button.setAttribute('aria-pressed',String(!!selectionMatch&&preview[slot]));}
    const tech=techniquePool[selectedTechniques[selectingPlayer][slot]],show=!!selectionMatch&&preview[slot];if(!tech)continue;
-   if(selectionMatch){stableText(name,tech.name,'S'+tech.name,show);stableText(description,tech.description,'S消費 '+window.SpecialRules.definitions[selectedTechniques[selectingPlayer][slot]].cost+' / '+tech.description+' / S追加：'+window.SpecialRules.definitions[selectedTechniques[selectingPlayer][slot]].description,show);}
+   if(selectionMatch){stableText(name,tech.name,'S'+tech.name,show);stableText(description,tech.description,'Sゲージ追加消費+'+window.SpecialRules.definitions[selectedTechniques[selectingPlayer][slot]].cost+' / '+window.SpecialRules.definitions[selectedTechniques[selectingPlayer][slot]].description,show);}
    else{name.textContent=tech.name;description.textContent=tech.description;}
    name.classList.toggle('specialTechniqueName',show);body.classList.toggle('specialTechniquePreview',show);
   }
@@ -80,7 +80,7 @@
    const usable=typeof isBattleActionAvailable==='function'?isBattleActionAvailable(m.you,'tech'+slot):false,ready=m.special?.version===2;
    button.disabled=specialView&&!ready;button.classList.toggle('disabled',!usable||button.disabled);
    button.querySelector('.actionName').textContent=(specialView?'S':'')+tech.name;
-   if(specialView){const d=window.SpecialRules.definitions[m.loadouts[m.you][slot]];button.title=ready?'通常ゲージ '+tech.cost+' / Sゲージ '+d.cost+' / '+d.description:'この対戦は旧スペシャル仕様です。新しく部屋を作るとS技を使えます。';
+   if(specialView){const d=window.SpecialRules.definitions[m.loadouts[m.you][slot]];button.title=ready?'Sゲージ追加消費+'+d.cost+' / '+d.description:'この対戦は旧スペシャル仕様です。新しく部屋を作るとS技を使えます。';
     let cost=button.querySelector('.specialMoveCost');if(!cost){cost=node('small','specialMoveCost');button.append(cost);}cost.textContent='S '+d.cost;
    }else button.removeAttribute('title');
    const cost=button.querySelector('.specialMoveCost');if(cost)cost.hidden=!specialView;
