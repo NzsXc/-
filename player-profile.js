@@ -18,8 +18,9 @@ export function summarizePlayerHistories(histories,uid,currentRating){
   for(const value of [h.settled?.['before'+side],h.settled?.['after'+side]])if(Number.isFinite(value))peakRating=Math.max(peakRating,value);
   for(let turn=1;turn<=h.turnCount;turn++){
    const action=h.moves?.[turn]?.[side];
-   if(!Number.isInteger(action)||action<0||action>14)throw Error('使用回数を集計できない対戦データがあります');
-   if(action>=3)counts[action-3]++;
+   if(!Number.isInteger(action)||action<0||action>(h.rulesVersion===3?26:14))throw Error('使用回数を集計できない対戦データがあります');
+   // S moves are valid history, but normal-technique usage has its own counter.
+   if(action>=3&&action<=14)counts[action-3]++;
   }
  }
  const techniques=counts.map((count,index)=>({action:index+3,name:ACTION_NAMES[index+3],count})).filter(t=>t.count>0).sort((a,b)=>b.count-a.count||a.action-b.action).slice(0,3);
@@ -76,3 +77,4 @@ export function createPlayerProfile({history,loadTitles,showScreen,playSound=()=
  }
  return {open};
 }
+

@@ -2,7 +2,7 @@ import {ref,get,set,update,remove,push,onValue,onDisconnect,serverTimestamp} fro
 import {signInAnonymously} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js';
 import {spectatorSkillMatch} from './advanced/spectator.js?v=special-moves-1';
 export function createProtectedRooms(db,auth,transport,history){
- let offset=0,hostRoom=null,heartbeat=null,disconnect=null;onValue(ref(db,'.info/serverTimeOffset'),s=>offset=Number(s.val()||0));
+ let offset=0,hostRoom=null,heartbeat=null,disconnect=null,stopHostWatch=null;onValue(ref(db,'.info/serverTimeOffset'),s=>offset=Number(s.val()||0));
  const now=()=>Date.now()+offset,read=async p=>(await get(ref(db,p))).val();
  async function ensure(){await auth.authStateReady();if(!auth.currentUser)await signInAnonymously(auth);await transport({op:'profile'});}
  async function create(options){const rules=window.RoomRules.normalize(options);if(window.RoomRules.hasSpecial(rules))rules.hp=12;await ensure();const who=auth.currentUser.uid;const account=await read('freeAccounts/'+who);if(account.active)throw Error('進行中の対戦を終了してください');
@@ -17,11 +17,31 @@ export function createProtectedRooms(db,auth,transport,history){
   disconnect=onDisconnect(ref(db,'friendRooms/'+id));await disconnect.remove();
   heartbeat=setInterval(()=>update(ref(db,'friendRooms/'+id),{heartbeat:serverTimestamp()}).catch(()=>{}),5000);return id;
  }
- async function releaseHost(){clearInterval(heartbeat);heartbeat=null;const d=disconnect;disconnect=null;hostRoom=null;if(d)await d.cancel();}
- async function leave(){const id=hostRoom;await releaseHost();if(id){const room=await read('friendRooms/'+id);if(room?.game)return transport({op:'status',matchId:room.game});if(room)await remove(ref(db,'friendRooms/'+id));}return null;}
+ async function releaseHost(keepRoom=false){clearInterval(heartbeat);heartbeat=null;const d=disconnect;disconnect=null;if(!keepRoom)hostRoom=null;if(d)await d.cancel();}
+ async function leave(){stopHostWatch?.();const id=hostRoom;await releaseHost();if(id){const room=await read('friendRooms/'+id);if(room?.game)return transport({op:'status',matchId:room.game});if(room)await remove(ref(db,'friendRooms/'+id));}return null;}
  async function join(id){await ensure();return transport({op:'friendJoin',roomId:id});}
  function watchList(callback,onError){let stop=null,cancelled=false;ensure().then(()=>{if(!cancelled)stop=onValue(ref(db,'friendRooms'),s=>callback(s.val()||{}),onError);}).catch(onError);return ()=>{cancelled=true;stop?.();};}
- function watchHost(id,onMatch,onError){let busy=false;return onValue(ref(db,'friendRooms/'+id),async s=>{const room=s.val();if(room?.game&&!busy){busy=true;try{await releaseHost();onMatch((await transport({op:'status',matchId:room.game})).match);}catch(e){busy=false;onError(e);}}},onError);}
+ function watchHost(id,onMatch,onError){
+  stopHostWatch?.();
+  let game=null,busy=false,cancelled=false,finished=false,timer=null,delay=1000;
+  async function connect(){
+   timer=null;if(cancelled||finished||busy||!game)return;busy=true;
+   try{
+    // Stop the waiting-room heartbeat, but keep its ID until entry succeeds.
+    await releaseHost(true);if(cancelled)return;
+    const response=await transport({op:'status',matchId:game});if(cancelled)return;
+    finished=true;if(hostRoom===id)hostRoom=null;onMatch(response.match);
+   }catch(error){
+    if(!cancelled&&!finished){timer=setTimeout(connect,delay);delay=Math.min(5000,delay*2);onError?.(error);}
+   }finally{busy=false;}
+  }
+  const unsubscribe=onValue(ref(db,'friendRooms/'+id),s=>{
+   if(cancelled||finished)return;
+   const room=s.val();if(room?.game){game=room.game;if(!busy&&timer===null)connect();}
+  },error=>{if(!cancelled&&!finished)onError?.(error);});
+  const stop=()=>{cancelled=true;clearTimeout(timer);timer=null;unsubscribe();if(stopHostWatch===stop)stopHostWatch=null;};
+  stopHostWatch=stop;return stop;
+ }
  const specialStates=s=>Object.fromEntries(['specialSeal','specialRuin','specialMomentum'].map(k=>[k,{1:s[k+'1']||0,2:s[k+'2']||0}]));
  const observedGames=new Map();
  function archivedSnapshot(h){
@@ -82,4 +102,5 @@ export function createProtectedRooms(db,auth,transport,history){
  }
  return {resume:async()=>{await ensure();return transport({op:'resume'});},ensure,create,join,leave,now,watchList,watchHost,watchAllRooms,watchRoom:(id,callback,onError)=>poll(()=>snapshot(id),callback,onError)};
 }
+
 

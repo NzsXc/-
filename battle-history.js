@@ -1,6 +1,6 @@
 import {ref,get,update,query,orderByValue,limitToLast,endBefore} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js';
 import {buildHistory,HISTORY_LIMIT,historySide} from './battle-history-core.js?v=special-moves-1';
-import {summarizePlayerHistories,techniquesFromUsage} from './player-profile.js?v=usage-1';
+import {summarizePlayerHistories,techniquesFromUsage} from './player-profile.js?v=usage-s-moves-1';
 
 export function createBattleHistory(db,auth){
  const flights=new Map(),markedClients=new Set();
@@ -89,5 +89,6 @@ export function createBattleHistory(db,auth){
  }
  return {find,list,profileStats,archiveFinished,markClient};
 }
+
 
 

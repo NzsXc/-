@@ -35,7 +35,9 @@ vm.runInContext(read('lobby-client.js'),c);vm.runInContext(read('advanced/specia
  assert.deepEqual(ordinary,{1:8,2:7});c.SpecialGauge.sync({roomRules:{mode:'advanced'}});assert(document.getElementById('specialGauge1').hidden);assert(document.getElementById('specialGauge2').hidden);assert(!document.getElementById('battleScreen').classList.contains('specialMode'));
  c.SpecialGauge.sync({roomRules:rules});assert.equal(document.getElementById('specialGauge1').querySelector('.specialGaugeValue').textContent,'0/30');c.SpecialGauge.reset();assert(document.getElementById('specialGauge1').hidden);
  const html=read('index.html');assert(html.includes('advanced/special.js?v=special-hp12-1'));assert(/id="friendRuleSkills" type="checkbox" checked/.test(html));assert(/id="friendRuleSpecial" type="checkbox" onchange/.test(html));
- for(const file of ['room-rules.js','lobby-client.js','free-transport.js','protected-rooms.js'])assert(html.includes(file+'?v=special-hp12-1'),file);
- for(const file of ['advanced/rules.js','advanced/client.js','battle-history.js','battle-history-client.js'])assert(html.includes(file+'?v=special-moves-1'),file);assert(html.includes('advanced/cutin.js?v=special-gauge-1'));
+ for(const file of ['room-rules.js','lobby-client.js','free-transport.js'])assert(html.includes(file+'?v=special-hp12-1'),file);
+ for(const file of ['advanced/rules.js','advanced/client.js','battle-history-client.js'])assert(html.includes(file+'?v=special-moves-1'),file);assert(html.includes('advanced/cutin.js?v=special-gauge-1'));
+ assert(html.includes('protected-rooms.js?v=host-entry-retry-1'));assert(html.includes('battle-history.js?v=profile-s-moves-1'));assert(html.includes('player-profile.js?v=usage-s-moves-1'));
  console.log('PASS checkbox form submissions, both enabled, mode switching, default selection, independent 0/30 bars, clamping, accessibility and cleanup');
 })().catch(e=>{console.error(e);process.exitCode=1;});
+
