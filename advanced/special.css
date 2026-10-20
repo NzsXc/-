@@ -24,7 +24,7 @@
 .specialSwitchDock{position:absolute;z-index:35;width:56px;height:56px}
 .specialBattleToggle{width:100%;height:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;border:2px solid #c898f5;border-radius:50%;background:radial-gradient(circle at 35% 25%,#8a42c8,#31104e 75%);color:#f2dcff;box-shadow:0 0 18px #a947e855;font-size:30px;line-height:1;cursor:pointer}
 .specialBattleToggle small{font-size:10px;margin-top:2px}
-#battleScreen.specialMode .hpBar::after{background-size:calc(100% / var(--special-hp-max,15)) 100%}
+#battleScreen.specialMode .hpBar::after{background-size:calc(100% / var(--special-hp-max,12)) 100%}
 #battleScreen .action.specialTechniqueAction{border-color:#bc83ec!important;box-shadow:inset 0 0 12px #c2a2de18,0 0 9px #a54bea44!important;opacity:1!important;position:relative}
 #battleScreen .specialTechniqueAction .battleActionArt{filter:grayscale(1) sepia(.4) saturate(1.5) hue-rotate(220deg) drop-shadow(0 0 3px #d6b9ec66)}
 @property --special-edge-angle{syntax:"<angle>";inherits:false;initial-value:0deg}

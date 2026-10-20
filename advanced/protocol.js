@@ -10,12 +10,12 @@ export function createAdvancedProtocol({read,writeUpdate,now,serverTimestamp}){
  let supported=null;
  let optionsSupported=null;
  let specialSupported=null;
- let specialHpSupported=null;
- function supportsSpecialHp(){
-  if(!specialHpSupported)specialHpSupported=read('freeGames/_protocol/advanced/specialHp15').then(()=>true).catch(error=>{
+ const specialHpSupported={};
+ function supportsSpecialHp(hp=12){
+  if(!specialHpSupported[hp])specialHpSupported[hp]=read('freeGames/_protocol/advanced/specialHp'+hp).then(()=>true).catch(error=>{
    if(/permission.?denied/i.test(String(error.code||'')+' '+error.message))return false;
-   specialHpSupported=null;throw error;
-  });return specialHpSupported;
+   delete specialHpSupported[hp];throw error;
+  });return specialHpSupported[hp];
  }
  function supportsSpecialGauge(){
   if(!specialSupported)specialSupported=read('freeGames/_protocol/advanced/specialGaugeV1').then(()=>true).catch(error=>{

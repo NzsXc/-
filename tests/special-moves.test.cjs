@@ -1,7 +1,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
 const {harness,evaluate}=require('./rules-harness.cjs'),S=require('../advanced/special-rules.js'),A=require('../advanced/rules.js');
 const read=f=>fs.readFileSync(path.join(__dirname,'..',f),'utf8'),plain=x=>JSON.parse(JSON.stringify(x));
-const rules=JSON.parse(read('firebase-database.rules.json')).rules,roomRules={mode:'advanced',hp:15,initialGauge:8,maxGauge:10,skills:false,special:true};
+const rules=JSON.parse(read('firebase-database.rules.json')).rules,roomRules={mode:'advanced',hp:12,initialGauge:8,maxGauge:10,skills:false,special:true};
 const calculate=vm.runInNewContext(read('free-calculator.js').replaceAll('export ','')+'\ncalculate');
 const base=()=>({turn:1,startedAt:0,hp1:9,hp2:9,gauge1:8,gauge2:8,seal1:false,seal2:false,enhance1:0,enhance2:0,momentum1:false,momentum2:false,ruin1:0,ruin2:0,last1:'',last2:'',misses1:0,misses2:0,...S.extraState()});
 const resolve=(a,b,extra={})=>plain(calculate({...base(),...extra},{1:a,2:b},3,roomRules));
@@ -9,7 +9,7 @@ assert.deepEqual(S.definitions.map(d=>d.cost),[8,8,8,12,12,8,12,12,16,8,6,6]);
 assert.deepEqual([resolve(15,17).damage1,resolve(15,17).damage2],[0,2]);
 assert.deepEqual([resolve(15,15).damage1,resolve(15,15).damage2],[0,0]);
 assert.equal(resolve(16,1).damage2,2);assert.equal(resolve(17,0).damage2,3);assert.equal(resolve(17,9).damage2,5);assert.equal(resolve(17,2).damage2,0);assert.equal(resolve(17,0).gauge2,9);
-assert.equal(resolve(18,2).hp1,11);assert.equal(resolve(18,2,{hp1:14}).hp1,15);
+assert.equal(resolve(18,2).hp1,11);assert.equal(resolve(18,2,{hp1:11}).hp1,12);
 assert.equal(resolve(19,2,{gauge1:3}).gauge1,5);assert.equal(resolve(19,0,{gauge1:3}).gauge1,8);
 let c=resolve(20,2);assert.equal(c.specialMomentum1,1);c=plain(calculate({...c,startedAt:0},{1:0,2:2},3,roomRules));assert.equal(c.specialMomentum1,1);c=plain(calculate(c,{1:8,2:0},3,roomRules));assert.equal(c.power1,2);assert.equal(c.specialMomentum1,0);
 assert.equal(resolve(22,1).specialSeal2,2);assert.equal(resolve(21,2).specialGain1,15);assert.equal(resolve(21,2).damage1,2);assert.equal(resolve(23,2).enhance1,4);
@@ -33,7 +33,7 @@ for(const a of A.SKILLS)for(const b of A.SKILLS)for(const pair of [[25,0],[15,17
  assert(evaluate(rules.freeGames.$game.transition['.validate'],before,after,'freeGames/match/transition','p1',10000,{$game:'match'}),'S skills '+a.id+'/'+b.id+'/'+pair);cases++;
  const tampered=structuredClone(after);tampered.freeGames.match.transition.gauge1++;assert.equal(evaluate(rules.freeGames.$game.transition['.validate'],before,tampered,'freeGames/match/transition','p1',10000,{$game:'match'}),false);
 }
-function setup(loadout=[0,7,9]){const h=harness(),p='freeGames/match';h.put(p+'/kind','friend');h.put(p+'/rulesVersion',3);h.put(p+'/roomRules',roomRules);h.put(p+'/special',{...S.initial(2),gauge:{1:30,2:30}});h.put(p+'/state',{...base(),hp1:15,hp2:15,skillsExhausted:true});for(const side of [1,2])h.put(p+'/loadouts/'+side,loadout);h.setClock(5600);return {h,p};}
+function setup(loadout=[0,7,9]){const h=harness(),p='freeGames/match';h.put(p+'/kind','friend');h.put(p+'/rulesVersion',3);h.put(p+'/roomRules',roomRules);h.put(p+'/special',{...S.initial(2),gauge:{1:30,2:30}});h.put(p+'/state',{...base(),hp1:12,hp2:12,skillsExhausted:true});for(const side of [1,2])h.put(p+'/loadouts/'+side,loadout);h.setClock(5600);return {h,p};}
 (async()=>{
  const {h,p}=setup();await h.transports[0]({op:'action',matchId:'match',turn:1,action:24});const m=(await h.transports[1]({op:'action',matchId:'match',turn:1,action:22})).match;
  assert.equal(m.state.turn,2);assert.equal(m.state.specialSeal[1],2);assert.equal(m.state.gauge[1],8);assert.equal(m.state.gauge[2],5);assert.equal(m.special.gauge[1],23);assert.equal(m.special.gauge[2],19);

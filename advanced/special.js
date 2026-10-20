@@ -53,7 +53,7 @@
  function sync(match){
   if(!enabled(match)){reset();return;}
   const screen=document.getElementById('battleScreen');screen?.classList.add('specialMode');
-  screen?.style.setProperty('--special-hp-max',String(match.roomRules.hp??15));
+  screen?.style.setProperty('--special-hp-max',String(match.roomRules.hp??12));
   for(const side of [1,2]){
    const panel=ensure(side);if(!panel)continue;panel.hidden=false;
    const raw=Number(match.special?.gauge?.[side]??0),amount=Number.isFinite(raw)?Math.max(0,Math.min(MAX,Math.floor(raw))):0;

@@ -24,7 +24,7 @@ vm.runInContext(read('lobby-client.js'),c);vm.runInContext(read('advanced/specia
  for(const skills of [true,false])for(const special of [false,true]){
   nodes.get('friendRuleSkills').checked=skills;nodes.get('friendRuleSpecial').checked=special;
   c.updateFriendRuleSettings();assert.equal(nodes.get('friendAdvancedOptions').hidden,false);assert.equal(nodes.get('friendAdvancedOptions').disabled,false);
-  await c.submitFriendRoom({preventDefault(){}});const rules=created.at(-1);assert.equal(RoomRules.hasSkills(rules),skills);assert.equal(RoomRules.hasSpecial(rules),special);assert.equal(rules.hp,special?15:10);vm.runInContext('protectedLobbyBusy=false',c);
+  await c.submitFriendRoom({preventDefault(){}});const rules=created.at(-1);assert.equal(RoomRules.hasSkills(rules),skills);assert.equal(RoomRules.hasSpecial(rules),special);assert.equal(rules.hp,special?12:10);vm.runInContext('protectedLobbyBusy=false',c);
  }
  mode='standard';c.updateFriendRuleSettings();assert(nodes.get('friendAdvancedOptions').hidden);assert(nodes.get('friendAdvancedOptions').disabled);
  mode='advanced';c.updateFriendRuleSettings();assert.equal(nodes.get('friendRuleSpecial').checked,true,'changing the top-level mode retains the checkboxes');
@@ -34,8 +34,8 @@ vm.runInContext(read('lobby-client.js'),c);vm.runInContext(read('advanced/specia
  c.SpecialGauge.sync({roomRules:rules,special:{max:30,gauge:{1:30,2:99}}});assert.equal(document.getElementById('specialGauge1').querySelector('.specialGaugeFill').style.width,'100%');assert.equal(document.getElementById('specialGauge2').querySelector('.specialGaugeValue').textContent,'30/30');
  assert.deepEqual(ordinary,{1:8,2:7});c.SpecialGauge.sync({roomRules:{mode:'advanced'}});assert(document.getElementById('specialGauge1').hidden);assert(document.getElementById('specialGauge2').hidden);assert(!document.getElementById('battleScreen').classList.contains('specialMode'));
  c.SpecialGauge.sync({roomRules:rules});assert.equal(document.getElementById('specialGauge1').querySelector('.specialGaugeValue').textContent,'0/30');c.SpecialGauge.reset();assert(document.getElementById('specialGauge1').hidden);
- const html=read('index.html');assert(html.includes('advanced/special.js?v=special-notice-1'));assert(/id="friendRuleSkills" type="checkbox" checked/.test(html));assert(/id="friendRuleSpecial" type="checkbox" onchange/.test(html));
- for(const file of ['room-rules.js','lobby-client.js','free-transport.js','protected-rooms.js'])assert(html.includes(file+'?v=special-hp15-1'),file);
- for(const file of ['advanced/rules.js','advanced/client.js','advanced/cutin.js','battle-history.js','battle-history-client.js'])assert(html.includes(file+'?v=special-gauge-1'),file);
+ const html=read('index.html');assert(html.includes('advanced/special.js?v=special-hp12-1'));assert(/id="friendRuleSkills" type="checkbox" checked/.test(html));assert(/id="friendRuleSpecial" type="checkbox" onchange/.test(html));
+ for(const file of ['room-rules.js','lobby-client.js','free-transport.js','protected-rooms.js'])assert(html.includes(file+'?v=special-hp12-1'),file);
+ for(const file of ['advanced/rules.js','advanced/client.js','battle-history.js','battle-history-client.js'])assert(html.includes(file+'?v=special-moves-1'),file);assert(html.includes('advanced/cutin.js?v=special-gauge-1'));
  console.log('PASS checkbox form submissions, both enabled, mode switching, default selection, independent 0/30 bars, clamping, accessibility and cleanup');
 })().catch(e=>{console.error(e);process.exitCode=1;});

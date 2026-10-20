@@ -12,7 +12,7 @@ const html=read('index.html').replace(/<script\b[^>]*>[\s\S]*?<\/script>/g,'').r
   await page.addScriptTag({content:read('advanced/rules.js')});await page.addScriptTag({content:read('advanced/client.js')});
   await page.addScriptTag({content:read('advanced/special-rules.js')});await page.addScriptTag({content:read('advanced/special.js')});await page.addScriptTag({url:'https://special.test/battle-action-art.js'});
   await page.evaluate(skills=>{
-   window.m={id:'ui',you:1,phase:'select',roomRules:{mode:'advanced',skills,special:true,hp:15},special:{version:2,max:30,gauge:{1:14,2:5}},state:{turn:2,specialSeal:{1:0,2:2},specialRuin:{1:0,2:0},specialMomentum:{1:1,2:0}},loadouts:{1:[0,1,2],2:[0,1,2]}};
+   window.m={id:'ui',you:1,phase:'select',roomRules:{mode:'advanced',skills,special:true,hp:12},special:{version:2,max:30,gauge:{1:14,2:5}},state:{turn:2,specialSeal:{1:0,2:2},specialRuin:{1:0,2:0},specialMomentum:{1:1,2:0}},loadouts:{1:[0,1,2],2:[0,1,2]}};
    document.querySelectorAll('.screen').forEach(n=>n.classList.toggle('active',n.id==='techScreen'));SpecialGauge.select(m);
   },skills);
   const before=await page.locator('#techConfirmButton').boundingBox(),cardBefore=await page.locator('#techIcon0').evaluate(n=>n.closest('.techCard').getBoundingClientRect().height);
@@ -29,7 +29,7 @@ const html=read('index.html').replace(/<script\b[^>]*>[\s\S]*?<\/script>/g,'').r
    for(const p of [1,2])document.getElementById('hp'+p+'Text').textContent=m.roomRules.hp+'/'+m.roomRules.hp;
   },skills);
   for(const side of [1,2])assert.equal(await page.locator('#specialGauge'+side+' .specialGaugeHint').innerText(),'（チャージ、ターン終了、被弾ごとに+1）');
-  const hpStep=await page.locator('#player1Area .hpBar').evaluate(n=>getComputedStyle(n,'::after').backgroundSize);assert(Math.abs(parseFloat(hpStep)-100/15)<.01,'15 HP segments');
+  const hpStep=await page.locator('#player1Area .hpBar').evaluate(n=>getComputedStyle(n,'::after').backgroundSize);assert(Math.abs(parseFloat(hpStep)-100/12)<.01,'12 HP segments');
   await page.locator('#specialSwitchDock button').click();
   const ranked=read('ranked-client.js'),choose=ranked.slice(ranked.indexOf('async function rankedChoose('),ranked.indexOf('async function rankedSubmitAction('));
   await page.addScriptTag({content:`let rankedMatch=m,rankedSending=false,rankedTurnDeadline=0,rankedTurnOpensAt=0;const locked={1:false};let rankedActive=true,gameMode='online';const gauge={1:8,2:8},blockSeal={1:false,2:false},lastAction={1:null,2:null};const getActionData=(p,a)=>a.startsWith('tech')?techniquePool[Number(a.slice(4))]:{cost:0,type:a};const battleLimits=()=>({maxGauge:10});${read('index.html').slice(read('index.html').indexOf('function isBattleActionAvailable('),read('index.html').indexOf('function chooseAction('))}window.submitted=[];const rankedSubmitAction=async(m,id)=>submitted.push(id);PlayerIntro.isActive=()=>false;${choose}`});
