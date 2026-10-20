@@ -1,7 +1,7 @@
 import {ref,get,set,update,push,serverTimestamp,onValue,runTransaction} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js';
 import {calculate,stateFields} from './free-calculator.js?v=attack-stance-1';
 import {historyMatch} from './battle-history-core.js?v=special-gauge-1';
-import {createAdvancedProtocol} from './advanced/protocol.js?v=special-gauge-1';
+import {createAdvancedProtocol} from './advanced/protocol.js?v=special-hp15-1';
 export function createFreeTransport(db,auth,history){
  let offset=0;onValue(ref(db,'.info/serverTimeOffset'),s=>{offset=s.val()||0;});
  const now=()=>Date.now()+offset;
@@ -250,6 +250,7 @@ const initialAccount = {
    if(roomRules.mode==='advanced'&&!await advancedProtocol.supports())throw Error('Advancedはまだ利用できません。更新後にお試しください。');
    if(window.RoomRules.needsAdvancedOptions(roomRules)&&!await advancedProtocol.supportsOptions())throw Error('Advancedの追加設定を利用するには、対戦ルールを更新してください。');
    if(window.RoomRules.hasSpecial(roomRules)&&!await advancedProtocol.supportsSpecialGauge())throw Error('スペシャルゲージを利用するには、対戦ルールを更新してください。');
+   if(window.RoomRules.hasSpecial(roomRules)&&roomRules.hp===15&&!await advancedProtocol.supportsSpecialHp())throw Error('HP15のスペシャル対戦を利用するには、Firebaseの対戦ルールを更新・公開してください。');
    const id=push(ref(db,'freeGames')).key,versionPatch=await supportsPunish()?{['freeGames/'+id+'/rulesVersion']:2}:{},roomPatch=roomRules.mode!=='standard'?{['freeGames/'+id+'/roomRules']:roomRules}:{};
    try{await update(ref(db),{...versionPatch,...roomPatch,...(window.RoomRules.hasSpecial(roomRules)?{['freeGames/'+id+'/special']:window.SpecialRules.initial()}:{}),['freeGames/'+id+'/players']:{1:u,2:lobby.host},['freeGames/'+id+'/createdAt']:serverTimestamp(),['freeGames/'+id+'/kind']:'friend',['freeGames/'+id+'/room']:d.roomId,['freeAccounts/'+u+'/active']:id,['freeAccounts/'+lobby.host+'/active']:id,['friendRooms/'+d.roomId+'/game']:id});}
    catch(e){
@@ -332,6 +333,7 @@ const initialAccount = {
  request.supportsAdvanced=advancedProtocol.supports;
  request.supportsAdvancedOptions=advancedProtocol.supportsOptions;
  request.supportsSpecialGauge=advancedProtocol.supportsSpecialGauge;
+ request.supportsSpecialHp=advancedProtocol.supportsSpecialHp;
  request.supportsRoomRules=supportsRoomRules;
  request.transitionMs=transitionMs;
  return request;

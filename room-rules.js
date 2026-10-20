@@ -6,7 +6,8 @@
   if(value.mode==='advanced'){
    for(const key of ['skills','special'])if(value[key]!=null&&typeof value[key]!=='boolean')throw Error('Advancedのチェック項目を確認してください。');
    const skills=value.skills!==false,special=value.special===true;
-   return {...STANDARD,mode:'advanced',...(!skills||special?{skills,special}:{})};
+   // Explicit HP10 belongs to older saved rooms and histories. New special rooms use HP15.
+   return {...STANDARD,mode:'advanced',hp:special&&value.hp!==10?15:10,...(!skills||special?{skills,special}:{})};
   }
   if(value.mode!=='custom')throw Error('対戦ルールを選択してください。');
   const {hp,initialGauge,maxGauge}=value;

@@ -20,16 +20,21 @@
   const note=document.getElementById('specialSelectionNote');if(note)note.hidden=!active;
   paintSelection();
  }
+ function stableText(target,normal,special,show){
+  const text=node('span','specialPreviewText',show?special:normal),reserve=node('span','specialPreviewReserve',show?normal:special);
+  reserve.setAttribute('aria-hidden','true');target.replaceChildren(text,reserve);
+ }
  function paintSelection(){
   if(typeof techniquePool==='undefined'||typeof selectedTechniques==='undefined')return;
   for(let slot=0;slot<3;slot++){
    const name=document.getElementById('techIcon'+slot),description=document.getElementById('techCardDescription'+slot);if(!name||!description)continue;
-   const body=name.parentElement;let button=body.querySelector('.specialPreviewToggle');
+   const body=name.parentElement;body.classList.toggle('specialSelectionBody',!!selectionMatch);let button=body.querySelector('.specialPreviewToggle');
    if(selectionMatch&&!button){button=node('button','specialPreviewToggle','⇋');button.type='button';button.onclick=()=>{preview[slot]=!preview[slot];paintSelection();};body.append(button);}
    if(button){button.hidden=!selectionMatch;button.setAttribute('aria-label','通常技とスペシャル技の説明を切り替え');button.setAttribute('aria-pressed',String(!!selectionMatch&&preview[slot]));}
    const tech=techniquePool[selectedTechniques[selectingPlayer][slot]],show=!!selectionMatch&&preview[slot];if(!tech)continue;
-   name.textContent=(show?'S':'')+tech.name;name.classList.toggle('specialTechniqueName',show);
-   description.textContent=show?'スペシャル消費量・効果は準備中':tech.description;body.classList.toggle('specialTechniquePreview',show);
+   if(selectionMatch){stableText(name,tech.name,'S'+tech.name,show);stableText(description,tech.description,'スペシャル消費量・効果は準備中',show);}
+   else{name.textContent=tech.name;description.textContent=tech.description;}
+   name.classList.toggle('specialTechniqueName',show);body.classList.toggle('specialTechniquePreview',show);
   }
  }
  function restoreButtons(){
@@ -46,7 +51,8 @@
  }
  function sync(match){
   if(!enabled(match)){reset();return;}
-  document.getElementById('battleScreen')?.classList.add('specialMode');
+  const screen=document.getElementById('battleScreen');screen?.classList.add('specialMode');
+  screen?.style.setProperty('--special-hp-max',String(match.roomRules.hp??15));
   for(const side of [1,2]){
    const panel=ensure(side);if(!panel)continue;panel.hidden=false;
    const raw=Number(match.special?.gauge?.[side]??0),amount=Number.isFinite(raw)?Math.max(0,Math.min(MAX,Math.floor(raw))):0;
