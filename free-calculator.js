@@ -16,7 +16,7 @@ const ACTIONS=[
  {cost:1,type:'ruin',skill:'tech11',power:0,pierce:false},
  {cost:2,type:'mirror',skill:'tech12',power:0,pierce:false}
 ];
-const S_COSTS=[8,8,8,12,12,8,12,12,16,8,6,6];
+const S_COSTS=[12,8,8,12,12,8,12,12,16,8,6,6];
 ACTIONS.push(...ACTIONS.slice(3).map((a,i)=>({...a,special:true,specialCost:S_COSTS[i]})));
 const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
 const chosen=(s,moves,p,maxGauge)=>Number.isInteger(moves?.[p])?moves[p]:(s['gauge'+p]>=maxGauge?1:0);
@@ -84,6 +84,7 @@ export function calculate(s,moves,rulesVersion=2,roomRules={},powerBonus={}){
  return out;
 }
 export const stateFields=['turn','startedAt','hp1','hp2','gauge1','gauge2','seal1','seal2','enhance1','enhance2','momentum1','momentum2','ruin1','ruin2','last1','last2','misses1','misses2'];
+
 
 
 
