@@ -4,6 +4,22 @@ const root=path.resolve(__dirname,'..'),read=f=>fs.readFileSync(path.join(root,f
 const html=read('index.html').replace(/<script\b[^>]*type="module"[^>]*>[\s\S]*?<\/script>/g,'').replace(/<script\b[^>]*src="\.\/pwa-register[^>]*><\/script>/g,'');
 const measure=page=>page.evaluate(()=>({boxes:['player1Area','player2Area','battleCenter','actions1','actions2'].map(id=>{const r=document.getElementById(id).getBoundingClientRect();return [id,r.x,r.y,r.width,r.height];}),height:document.documentElement.scrollHeight,width:document.documentElement.scrollWidth,scroll:scrollY}));
 function stable(a,b,label){assert.equal(b.height,a.height,label+' document height');assert.equal(b.width,a.width,label+' document width');assert.equal(b.scroll,a.scroll,label+' scroll');for(let i=0;i<a.boxes.length;i++)for(let k=1;k<5;k++)assert(Math.abs(a.boxes[i][k]-b.boxes[i][k])<.1,label+' '+a.boxes[i][0]+' '+k+': '+JSON.stringify([a.boxes[i],b.boxes[i]]));}
+async function controlsFit(page,label){
+ const issues=await page.evaluate(()=>{
+  const issues=[],safe=getComputedStyle(document.documentElement),inset=side=>parseFloat(safe.getPropertyValue('--safe-'+side))||0;
+  const controls=[...document.querySelectorAll('#battleScreen .action,#battleHomeButton,.advancedSkillDock button,.specialSwitchDock button,#battleInspectorToggle')].filter(n=>{const r=n.getBoundingClientRect();return r.width&&r.height&&getComputedStyle(n).visibility!=='hidden';});
+  for(const n of controls){
+   const r=n.getBoundingClientRect(),id=n.id||n.dataset.action||n.className;
+   if(r.left<inset('left')+3||r.top<inset('top')+3||r.right>innerWidth-inset('right')-3||r.bottom>innerHeight-inset('bottom')-3)issues.push(id+' outside safe viewport');
+   if(r.width<43.9||r.height<(n.matches('.action')?47.9:43.9))issues.push(id+' touch target too small');
+   if(n.matches('.action')&&innerWidth<640&&innerHeight-inset('top')-inset('bottom')>=800&&r.height<71.9)issues.push(id+' does not use available portrait height');
+   const name=n.querySelector('.actionName');if(name&&getComputedStyle(name).visibility!=='hidden'){const t=name.getBoundingClientRect();if(t.top<r.top||t.bottom>r.bottom||t.left<r.left||t.right>r.right)issues.push(id+' clipped name');}
+  }
+  for(let i=0;i<controls.length;i++)for(let j=i+1;j<controls.length;j++){const a=controls[i].getBoundingClientRect(),b=controls[j].getBoundingClientRect();if(Math.min(a.right,b.right)-Math.max(a.left,b.left)>.5&&Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top)>.5)issues.push((controls[i].id||controls[i].dataset.action)+' overlaps '+(controls[j].id||controls[j].dataset.action));}
+  return issues;
+ });
+ assert.deepEqual(issues,[],label);
+}
 async function setup(page){
  await page.route('https://mobile.test/**',route=>{
   const name=decodeURIComponent(new URL(route.request().url()).pathname).slice(1);
@@ -28,15 +44,16 @@ async function battle(page,{mode='standard',skills=false,you=1,hp=10}={}){
 (async()=>{
  const browser=await chromium.launch({headless:true,...(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE?{executablePath:process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE}:{})});
  try{
-  for(const [width,height]of [[390,844],[375,667],[360,640],[320,568],[844,390]])for(const you of [1,2]){
+  for(const [width,height,safe={}]of [[390,844],[430,932],[393,852,{top:47,bottom:34}],[375,667],[360,640,{top:20,bottom:20}],[320,568],[568,320],[667,375,{left:44,right:44,bottom:21}],[844,390,{left:44,right:44,bottom:21}]])for(const you of [1,2]){
    const page=await browser.newPage({viewport:{width,height},deviceScaleFactor:2}),errors=[];page.on('pageerror',e=>errors.push(e.message));await setup(page);
    for(const [mode,skills]of [['standard',false],['advanced',false],['advanced',true]]){
     await battle(page,{mode,skills,you,hp:10});
-    await page.evaluate(()=>{cancelAnimationFrame(rankedFrame);rankedFrame=0;document.body.classList.add('hasRoomCode');document.getElementById('roomCodeButton').hidden=false;document.getElementById('roomCodeText').textContent='123456';if(innerWidth===360){document.documentElement.style.setProperty('--safe-top','20px');document.documentElement.style.setProperty('--safe-bottom','20px');}AdvancedSkills.sync(mobileMatch,20000);SpecialGauge.paintBattle(mobileMatch);syncBattleInspector();});
+    await page.evaluate(safe=>{cancelAnimationFrame(rankedFrame);rankedFrame=0;document.body.classList.add('hasRoomCode');document.getElementById('roomCodeButton').hidden=false;document.getElementById('roomCodeText').textContent='123456';for(const [side,value]of Object.entries(safe))document.documentElement.style.setProperty('--safe-'+side,value+'px');AdvancedSkills.sync(mobileMatch,20000);SpecialGauge.paintBattle(mobileMatch);syncBattleInspector();},safe);
     const initial=await measure(page);
     assert(initial.width<=width&&initial.height<=height,'battle fits viewport '+JSON.stringify({width,height,mode,skills,initial}));
     const clipped=await page.locator('#battleScreen .playerArea,#battleHomeButton,#specialSwitchDock:not([hidden]),.advancedSkillDock:not([hidden]),#battleInspectorToggle:not([hidden])').evaluateAll(nodes=>nodes.filter(n=>{const r=n.getBoundingClientRect();return r.width&&r.height&&(r.left<-.1||r.top<-.1||r.right>innerWidth+.1||r.bottom>innerHeight+.1);}).map(n=>n.id));
     assert.deepEqual(clipped,[],'all player cards and controls stay visible');
+    await controlsFit(page,'initial controls '+width+'x'+height+' '+mode+' '+skills);
     for(let turn=0;turn<3;turn++){
      await page.evaluate(()=>{rankedAnimating=true;syncBattleInspector();document.getElementById('battleHomeButton').hidden=true;document.getElementById('countdown').textContent='';document.getElementById('resultMessage').textContent='';});
      stable(initial,await measure(page),'hidden controls '+width+' '+mode+' '+skills);
@@ -51,6 +68,7 @@ async function battle(page,{mode='standard',skills=false,you=1,hp=10}={}){
       await page.evaluate(group=>{mobileMatch.loadouts[mobileMatch.you]=[group*3,group*3+1,group*3+2];SpecialGauge.paintBattle(mobileMatch);},group);
       await page.locator('#specialSwitchDock button').click();
       stable(initial,await measure(page),'S explanation '+width+' '+skills);
+      await controlsFit(page,'S controls '+width+'x'+height+' '+skills);
       const descriptions=await page.locator('#player'+you+'Area .specialMoveExplanation').evaluateAll(nodes=>nodes.map(n=>({text:n.querySelector('span').innerText,name:n.querySelector('strong').textContent,overflow:n.scrollHeight>n.clientHeight+1,disabled:n.closest('button').disabled})));
       assert.equal(descriptions.length,3);assert(descriptions.every(d=>d.name.startsWith('S')&&d.text&&d.disabled&&!d.overflow),JSON.stringify({width,descriptions}));
       if(group===0)assert.equal(descriptions[0].text,'攻撃同士の相殺に、一方的に打ち勝つ');
@@ -59,7 +77,7 @@ async function battle(page,{mode='standard',skills=false,you=1,hp=10}={}){
       await page.locator('#specialSwitchDock button').click();stable(initial,await measure(page),'normal controls restored');
       assert.equal(await page.locator('#player'+you+'Area [data-action="charge"]').isDisabled(),false);
      }
-     if(skills){await page.evaluate(()=>AdvancedSkills.sync(mobileMatch,16000));stable(initial,await measure(page),'skill window');await page.evaluate(()=>AdvancedSkills.sync(mobileMatch,20000));stable(initial,await measure(page),'skill window ended');}
+     if(skills){await page.evaluate(()=>AdvancedSkills.sync(mobileMatch,16000));stable(initial,await measure(page),'skill window');await controlsFit(page,'skill window controls '+width+'x'+height);await page.evaluate(()=>AdvancedSkills.sync(mobileMatch,20000));stable(initial,await measure(page),'skill window ended');}
     }
     await page.evaluate(()=>{const bar=document.getElementById('hp1Fill').parentElement;bar.style.width='';});
     const hpGeometry=await page.locator('#hp1Fill').evaluate(fill=>{const bar=fill.parentElement,r=bar.getBoundingClientRect(),f=fill.getBoundingClientRect(),cs=getComputedStyle(bar),s=getComputedStyle(fill),b=parseFloat(cs.borderLeftWidth);return {inner:r.width-b-parseFloat(cs.borderRightWidth),fill:f.width,max:Number(cs.getPropertyValue('--hp-max')),shadow:s.boxShadow,grid:getComputedStyle(bar,'::after').backgroundImage};});

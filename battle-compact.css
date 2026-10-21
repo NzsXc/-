@@ -1,6 +1,6 @@
 /* Keep mobile battle controls in stable slots while fitting the visible viewport. */
 @media(max-width:639px){
- #battleScreen{padding:calc(8px + var(--safe-top)) calc(8px + var(--safe-right)) calc(8px + var(--safe-bottom)) calc(8px + var(--safe-left))}
+ #battleScreen{--mobile-action-height:clamp(48px,calc(48px + (100dvh - 600px - var(--safe-top) - var(--safe-bottom)) * .12),76px);padding:calc(8px + var(--safe-top)) calc(8px + var(--safe-right)) calc(8px + var(--safe-bottom)) calc(8px + var(--safe-left))}
  body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{padding-top:calc(52px + var(--safe-top))}
  #battleScreen.active{gap:6px;grid-template-rows:auto minmax(192px,1fr) auto}
  #battleScreen .playerArea{padding:6px 8px}
@@ -18,8 +18,8 @@
  #battleScreen .specialGaugeValue{font-size:12px;line-height:15px;flex-basis:38px}
  #battleScreen .specialGaugeTrack{height:8px}
  #battleScreen .actionList{gap:4px;clear:both}
- #battleScreen .action{aspect-ratio:auto;height:48px;min-height:48px;padding:3px}
- #battleScreen .actionName{font-size:11px;line-height:1.2}
+ #battleScreen .action{aspect-ratio:auto;height:var(--mobile-action-height);min-height:var(--mobile-action-height);padding:4px}
+ #battleScreen .actionName{font-size:clamp(12px,3.2vw,14px);line-height:1.2}
  #battleScreen .specialMoveCost{top:2px;bottom:auto;right:3px;font-size:9px;padding:1px 3px}
  #battleScreen .specialMoveExplanation strong{display:none}
  #battleScreen .specialMoveExplanation span{font-size:10px;line-height:1.2}
@@ -43,31 +43,55 @@
  #battleScreen .playerStatuses{height:20px}
  #battleScreen .statusTitle,#battleScreen .statusValue{line-height:14px}
  #battleScreen .statusBarRow{height:14px;margin-bottom:2px}
- #battleScreen .action{height:44px;min-height:44px}
  #battleScreen .specialMoveExplanation span{font-size:9px;line-height:1.15}
  #battleScreen .specialGaugeHint{font-size:7px}
  #battleScreen .specialGaugeValue{line-height:13px}
  #battleScreen .specialGaugePanel{margin-bottom:3px}
- #battleScreen.active{grid-template-rows:auto minmax(168px,1fr) auto}
- #battleScreen #battleCenter{min-height:168px;padding-top:46px;padding-bottom:46px}
- #battleScreen.advancedMode #battleCenter,#battleScreen.specialMode #battleCenter{padding-top:46px;padding-bottom:46px}
+ #battleScreen.active{grid-template-rows:auto minmax(156px,1fr) auto}
+ #battleScreen #battleCenter{min-height:156px;padding-top:40px;padding-bottom:40px}
+ #battleScreen.advancedMode #battleCenter,#battleScreen.specialMode #battleCenter{padding-top:40px;padding-bottom:40px}
+ #battleScreen #battleHomeButton{justify-self:start;width:160px}
  #battleScreen .advancedSkillDock,#battleScreen .advancedSkillDock.skillWindowOpen{--orb-size:44px;--orb-scale:.314;--orb-count-size:16px}
  #battleScreen .specialSwitchDock{width:44px;height:44px}
  #battleScreen .specialBattleToggle{font-size:25px}
  #battleScreen .specialBattleToggle small{font-size:8px}
 }
-@media(min-width:640px) and (max-height:680px){
- #battleScreen.advancedMode,#battleScreen.specialMode{padding-top:calc(64px + var(--safe-top));padding-bottom:calc(64px + var(--safe-bottom))}
- #battleScreen.active{grid-template-rows:minmax(0,1fr)}
- #battleScreen .playerArea{padding:6px}
- #battleScreen .playerHeader{margin-bottom:3px;padding-bottom:2px}
+@media(min-width:640px) and (max-height:680px),(orientation:landscape) and (max-height:500px){
+ #battleScreen{padding:calc(8px + var(--safe-top)) calc(12px + var(--safe-right)) calc(52px + var(--safe-bottom)) calc(12px + var(--safe-left))}
+ #battleScreen.advancedMode,#battleScreen.specialMode,body.hasRoomCode #battleScreen{padding-top:calc(52px + var(--safe-top))}
+ #battleScreen.advancedMode,#battleScreen.specialMode{padding-bottom:calc(52px + var(--safe-bottom))}
+ #battleScreen.active{grid-template-columns:minmax(0,1fr) minmax(104px,.65fr) minmax(0,1fr);grid-template-rows:minmax(0,1fr);gap:8px}
+ #battleScreen #player1Area,#battleScreen[data-local-player="2"] #player2Area{grid-column:1;grid-row:1;align-self:center}
+ #battleScreen #player2Area,#battleScreen[data-local-player="2"] #player1Area{grid-column:3;grid-row:1;align-self:center}
+ #battleScreen .playerArea{padding:5px}
+ #battleScreen .playerHeader{min-height:22px;margin-bottom:2px;padding-bottom:1px}
+ #battleScreen .playerName{font-size:16px;line-height:20px;letter-spacing:0}
+ #battleScreen .playerStatuses{height:20px}
  #battleScreen .statusTitle{float:left;clear:left;width:34px;font-size:9px;line-height:16px;margin:0}
  #battleScreen .statusBarRow{width:calc(100% - 34px);margin:0 0 3px 34px;height:16px}
  #battleScreen .statusValue{font-size:12px;line-height:16px;flex-basis:36px}
  #battleScreen .specialGaugePanel{clear:both;margin-bottom:3px}
+ #battleScreen .specialGaugeTitle{font-size:9px;line-height:1.1;letter-spacing:0;margin-bottom:2px}
+ #battleScreen .specialGaugeHint{font-size:8px;line-height:1.1}
+ #battleScreen .specialGaugeTrack{height:8px}
+ #battleScreen .specialGaugeValue{font-size:12px;line-height:15px;flex-basis:38px}
  #battleScreen .actionList{clear:both;gap:4px}
- #battleScreen .action{aspect-ratio:auto;height:44px;min-height:44px;padding:3px}
+ #battleScreen .action{aspect-ratio:auto;height:48px;min-height:48px;padding:4px}
+ #battleScreen .actionName{font-size:12px;line-height:1.2}
  #battleScreen .specialMoveCost{top:2px;bottom:auto;right:3px;font-size:9px;padding:1px 3px}
  #battleScreen .specialMoveExplanation strong{display:none}
- #battleScreen .advancedSkillDock.skillWindowOpen{--orb-size:56px;--orb-scale:.4;--orb-count-size:20px}
+ #battleScreen #battleCenter,#battleScreen.advancedMode #battleCenter,#battleScreen.specialMode #battleCenter{display:flex;grid-column:2;grid-row:1;align-self:center;min-height:0;padding:0}
+ #battleScreen .specialMoveExplanation span{font-size:9px;line-height:1.15}
+ #battleScreen .specialExplanation .specialMoveExplanation{inset:2px;gap:2px}
+ #battleScreen #countdown{font-size:36px;height:44px;min-height:44px;line-height:44px}
+ #battleScreen #resultMessage:not(.resultShow){height:42px;min-height:42px;font-size:11px}
+ #battleScreen #battleHomeButton{min-width:0;width:100%;max-width:100%;height:44px;min-height:44px;margin:0;padding:6px 3px;font-size:12px}
+ #battleScreen .advancedBattleControls{width:100%;min-height:44px;height:44px;margin:0}
+ #battleScreen .advancedSkillWindow{padding:5px}
+ #battleScreen .advancedSkillWindowHeading{font-size:11px;gap:3px;margin-bottom:3px}
+ #battleScreen .advancedSkillTrack{height:8px}
+ #battleScreen .advancedSkillDock,#battleScreen .advancedSkillDock.skillWindowOpen{--orb-size:44px;--orb-scale:.314;--orb-count-size:16px}
+ #battleScreen .specialSwitchDock{width:44px;height:44px}
+ #battleScreen .specialBattleToggle{font-size:25px}
+ #battleScreen .specialBattleToggle small{font-size:8px}
 }
