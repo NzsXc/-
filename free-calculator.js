@@ -20,7 +20,7 @@ const S_COSTS=[12,8,8,12,12,8,12,12,16,8,6,6];
 ACTIONS.push(...ACTIONS.slice(3).map((a,i)=>({...a,special:true,specialCost:S_COSTS[i]})));
 const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
 const chosen=(s,moves,p,maxGauge)=>Number.isInteger(moves?.[p])?moves[p]:(s['gauge'+p]>=maxGauge?1:0);
-export function calculate(s,moves,rulesVersion=2,roomRules={},powerBonus={}){
+export function calculate(s,moves,rulesVersion=2,roomRules={},powerBonus={},foresightShield=false){
  const maxHp=roomRules.hp??10,maxGauge=roomRules.maxGauge??10;
  const out={},modern=rulesVersion===3;
  out.action1=chosen(s,moves,1,maxGauge);out.misses1=Number.isInteger(moves?.[1])?0:s.misses1+1;
@@ -57,7 +57,7 @@ export function calculate(s,moves,rulesVersion=2,roomRules={},powerBonus={}){
   const win1=modern&&e1.special&&e1.skill==='tech1',win2=modern&&e2.special&&e2.skill==='tech1';
   d1+=win1&&!win2?0:win2&&!win1?out.power2:Math.max(0,out.power2-out.power1);d2+=win2&&!win1?0:win1&&!win2?out.power1:Math.max(0,out.power1-out.power2);
  }
- else{if(out.attack2&&!out.reflect1&&(!out.blocking1||out.pierce2))d1+=out.power2;if(out.attack1&&!out.reflect2&&(!out.blocking2||out.pierce1))d2+=out.power1;}
+ else{if(out.attack2&&!out.reflect1&&(!out.blocking1||(out.pierce2&&!(foresightShield&&e1.skill==='tech5'))))d1+=out.power2;if(out.attack1&&!out.reflect2&&(!out.blocking2||(out.pierce1&&!(foresightShield&&e2.skill==='tech5'))))d2+=out.power1;}
  if(e2.skill==='tech3'&&!(modern&&e2.special)&&e1.type==='charge'&&!out.blocking1&&!out.reflect1)d1+=rulesVersion>=2?1:2;
  if(e1.skill==='tech3'&&!(modern&&e1.special)&&e2.type==='charge'&&!out.blocking2&&!out.reflect2)d2+=rulesVersion>=2?1:2;
  if(e1.skill==='tech7')d1+=2;if(e2.skill==='tech7')d2+=2;

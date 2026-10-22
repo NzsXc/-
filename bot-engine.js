@@ -84,7 +84,7 @@ const techniquePool = [
       "ゲージ2消費 / 自分のHPを1回復"
   },
 
-  {name:"フォーサイト",cost:1,power:0,pierce:false,type:"block",skill:"tech5",description:"ゲージ1消費 / ブロック状態 / 相手がチャージならゲージ+3"},
+  {name:"フォーサイト",cost:1,power:0,pierce:false,type:"block",skill:"tech5",description:"ゲージ1消費 / 貫通攻撃も防ぐシールド / 相手がチャージならゲージ+3"},
   {name:"モーメンタム",cost:2,power:1,pierce:false,type:"attack",skill:"tech6",description:"ゲージ2消費 / 1ダメージ / 2連続使用ならさらに+1"},
   {name:"ランページ",cost:0,power:0,pierce:false,type:"special",skill:"tech7",description:"ゲージ+8 / HP-2"},
   {name:"アンチガード",cost:0,power:0,pierce:false,type:"seal",skill:"tech8",description:"相手のブロック系技を封印 / 相手のゲージが7に達すると解除"},
@@ -155,8 +155,8 @@ function resolve(s,a1,a2){
     if(power1 > power2) damageTo2 += power1 - power2;
     else if(power2 > power1) damageTo1 += power2 - power1;
   }else{
-    if(attack1 && !reflect2 && (!block2 || a1.pierce)) damageTo2 += power1;
-    if(attack2 && !reflect1 && (!block1 || a2.pierce)) damageTo1 += power2;
+    if(attack1 && !reflect2 && (!block2 || (a1.pierce && a2.skill !== "tech5"))) damageTo2 += power1;
+    if(attack2 && !reflect1 && (!block1 || (a2.pierce && a1.skill !== "tech5"))) damageTo1 += power2;
   }
 
   // 技3：チャージ中の相手には追加1ダメージ。

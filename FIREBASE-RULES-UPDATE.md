@@ -50,3 +50,18 @@ Local checks: `node tests/turn-gap.test.cjs`,
 `node tests/battle-rules.test.cjs`, `node tests/titles-release.test.cjs`.
 These evaluate the actual rule expressions in a local test harness; they do
 not claim to be a live Firebase or Firebase Emulator integration test.
+
+## フォーサイトのシールド変更
+
+`firebase-database.rules.json` の全文を上記のFirebase Consoleで公開し、両端末を再読み込みしてください。
+公開後に新しく作成したオンライン対戦から、フォーサイトはブリーチ・Sブリーチなどの貫通攻撃も防ぎます。
+反射ダメージはありません。消費ゲージ1、相手がチャージした場合のゲージ+3、
+通常ブロックとまとめた連続使用禁止、アンチガードによる封印は従来どおりです。
+エフェクトは変更していません。
+
+対戦作成時に `foresightShield: true` を保存します。この値は対戦途中で変更できません。
+公開前・更新前に開始したオンライン対戦は旧効果で継続し、過去の履歴も旧効果で再生します。
+ローカル対戦とBOT戦には新効果を適用します。
+
+確認: `node tests/foresight-shield.test.cjs`、`node tests/punish.test.cjs`。
+Firebase本番へのルール公開は、これらのローカルテストやGitHubへのコミットでは実行されません。

@@ -14,14 +14,14 @@ vm.runInContext(offlineSource.slice(offlineStart,offlineEnd)+'return {hp1:Math.m
 let cases=0;
 const states=[initial,{...initial,gauge1:5,gauge2:0},{...initial,gauge1:10,gauge2:9,hp1:4,hp2:6,enhance1:2,ruin2:2},{...initial,seal1:true,seal2:true,momentum1:true,enhance2:1}];
 for(const s of states)for(let a=0;a<=14;a++)for(let b=0;b<=14;b++){
- const moves={1:a,2:b},result=current(s,moves,2),old=current(s,moves,1);
+ const moves={1:a,2:b},result=current(s,moves,2,{}, {},true),old=current(s,moves,1);
  assert.deepEqual(plain(old),plain(legacy(s,moves)),'legacy '+a+','+b);
  const bot=ai.resolve(arrayState(s),ai.ACTIONS[a],ai.ACTIONS[b]);
  for(const [field,arr]of [['hp','hp'],['gauge','gauge'],['seal','seal'],['enhance','enhance'],['momentum','momentum'],['ruin','ruin'],['last','last']])for(const p of [1,2])assert.equal(bot[arr][p],result[field+p],`bot ${a},${b}: ${field}${p}`);
  const arrays=arrayState(s);Object.assign(offline,{selectedAction:{1:{data:ai.ACTIONS[a]},2:{data:ai.ACTIONS[b]}},hp:arrays.hp,gauge:arrays.gauge,blockSeal:arrays.seal,enhanceTurns:arrays.enhance,momentumBonus:arrays.momentum,ruinTurns:arrays.ruin});
  const actual=vm.runInContext('resolveBattle()',offline);for(const field of ['hp1','hp2','gauge1','gauge2'])assert.equal(actual[field],result[field],'offline '+a+','+b+': '+field);
  // Evaluate the exact deterministic rule clause, including mirror and effects.
- const before={freeGames:{match:{rulesVersion:2,state:s,moves:{1:moves}}}},after=structuredClone(before);
+ const before={freeGames:{match:{foresightShield:true,rulesVersion:2,state:s,moves:{1:moves}}}},after=structuredClone(before);
  after.freeGames.match.transition=plain(result);after.freeGames.match.state={...s,...plain(result)};
  assert(evaluate(rules.freeGames.$game.transition['.validate'],before,after,'freeGames/match/transition','p1',9000,{$game:'match'}),'rules '+a+','+b);
  cases++;

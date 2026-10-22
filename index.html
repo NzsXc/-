@@ -2063,7 +2063,7 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
 <link rel="stylesheet" href="titles-season2.css?v=season2-fit-2">
 <link rel="stylesheet" href="battle-inspector.css?v=stable-turn-1">
 <link rel="stylesheet" href="battle-action-art.css?v=hp-grid-1">
-<link rel="stylesheet" href="battle-compact.css?v=mobile-buttons-2">
+<link rel="stylesheet" href="battle-compact.css?v=foresight-shield-1">
 <link rel="stylesheet" href="neon-controls.css?v=neon-menu-1">
 <link rel="stylesheet" href="mode-menu.css?v=mode-cards-1">
 <link rel="stylesheet" href="notice-guide.css?v=special-notice-1">
@@ -2750,7 +2750,7 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
 <script src="player-intro.js?v=1"></script>
 <script src="titles-client.js?v=crown-prestige-1"></script>
 <script src="player-lightning.js?v=2"></script>
-<script src="bot-engine.js?v=punish-2"></script>
+<script src="bot-engine.js?v=foresight-shield-1"></script>
 <script src="bot-client.js?v=mode-cards-1"></script>
 <script src="advanced/rules.js?v=special-moves-1"></script>
 <script src="advanced/special-rules.js?v=special-balance-2"></script>
@@ -2766,10 +2766,10 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
 <script type="module">
   import {createTitleService} from "./title-service.js?v=crown-prestige-1";
   import {createProtectedRooms} from "./protected-rooms.js?v=special-hp10-2";
-  import {createFreeTransport} from "./free-transport.js?v=special-hp10-2";
-  import {createBattleHistory} from "./battle-history.js?v=special-balance-2";
-  import {createPlayerProfile} from "./player-profile.js?v=special-balance-2";
-  import {createHistoryScreen} from "./battle-history-client.js?v=special-balance-2";
+  import {createFreeTransport} from "./free-transport.js?v=foresight-shield-1";
+  import {createBattleHistory} from "./battle-history.js?v=foresight-shield-1";
+  import {createPlayerProfile} from "./player-profile.js?v=foresight-shield-1";
+  import {createHistoryScreen} from "./battle-history-client.js?v=foresight-shield-1";
   import {createCommunityRatings} from "./community-ratings.js?v=special-moves-1";
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
   import {
@@ -3390,7 +3390,7 @@ const techniquePool = [
       "ゲージ2消費 / 自分のHPを1回復"
   },
 
-  {name:"フォーサイト",cost:1,power:0,pierce:false,type:"block",skill:"tech5",description:"ゲージ1消費 / ブロック状態 / 相手がチャージならゲージ+3 / ブロックとまとめて連続使用不可"},
+  {name:"フォーサイト",cost:1,power:0,pierce:false,type:"block",skill:"tech5",description:"ゲージ1消費 / 貫通攻撃も防ぐシールド / 相手がチャージならゲージ+3 / ブロックとまとめて連続使用不可"},
   {name:"モーメンタム",cost:2,power:1,pierce:false,type:"attack",skill:"tech6",description:"ゲージ2消費 / 1ダメージ / 2連続使用ならさらに+1"},
   {name:"ランページ",cost:0,power:0,pierce:false,type:"special",skill:"tech7",description:"ゲージ+8 / HP-2"},
   {name:"アンチガード",cost:0,power:0,pierce:false,type:"seal",skill:"tech8",description:"相手のブロック系技とカウンターを封印 / 相手のゲージが7に達すると解除"},
@@ -5487,8 +5487,8 @@ function resolveBattle(){
     if(power1 > power2) damageTo2 += power1 - power2;
     else if(power2 > power1) damageTo1 += power2 - power1;
   }else{
-    if(attack1 && !reflect2 && (!block2 || e1.pierce)) damageTo2 += power1;
-    if(attack2 && !reflect1 && (!block1 || e2.pierce)) damageTo1 += power2;
+    if(attack1 && !reflect2 && (!block2 || (e1.pierce && e2.skill !== "tech5"))) damageTo2 += power1;
+    if(attack2 && !reflect1 && (!block1 || (e2.pierce && e1.skill !== "tech5"))) damageTo1 += power2;
   }
 
   // 技3：チャージ中の相手には追加1ダメージ。

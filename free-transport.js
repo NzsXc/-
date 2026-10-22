@@ -1,6 +1,6 @@
 import {ref,get,set,update,push,serverTimestamp,onValue,runTransaction} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js';
-import {calculate,stateFields} from './free-calculator.js?v=special-balance-2';
-import {historyMatch} from './battle-history-core.js?v=special-balance-2';
+import {calculate,stateFields} from './free-calculator.js?v=foresight-shield-1';
+import {historyMatch} from './battle-history-core.js?v=foresight-shield-1';
 import {createAdvancedProtocol} from './advanced/protocol.js?v=special-hp10-2';
 export function createFreeTransport(db,auth,history){
  let offset=0;onValue(ref(db,'.info/serverTimeOffset'),s=>{offset=s.val()||0;});
@@ -82,11 +82,16 @@ const initialAccount = {
   if(!punishProtocol)punishProtocol=read('freeGames/_protocol/rulesVersion').then(()=>true).catch(e=>{if(permissionDenied(e))return false;punishProtocol=null;throw e;});
   return punishProtocol;
  }
+ let foresightProtocol=null;
+ function supportsForesightShield(){
+  if(!foresightProtocol)foresightProtocol=read('freeGames/_protocol/foresightShield').then(()=>true).catch(e=>{if(permissionDenied(e))return false;foresightProtocol=null;throw e;});
+  return foresightProtocol;
+ }
  function supportsAdvance(id){
   if(!protocolFlights.has(id))protocolFlights.set(id,read('freeGames/'+id+'/advance').then(()=>true).catch(e=>{if(permissionDenied(e))return false;protocolFlights.delete(id);throw e;}));
   return protocolFlights.get(id);
  }
- async function advanceTurn(id,s,moves,u,rulesVersion,roomRules,advanced){
+ async function advanceTurn(id,s,moves,u,rulesVersion,roomRules,advanced,foresightShield){
   const key=id+':'+s.turn;
   if(advanceFlights.has(key))return advanceFlights.get(key);
   const job=(async()=>{
@@ -108,7 +113,8 @@ const initialAccount = {
    const fresh=await read(path+'/state');
    if(!fresh||fresh.turn!==s.turn)return true;
    const special=window.RoomRules.hasSpecial(roomRules)?await read(path+'/special'):null;
-   const c=roomRules?.mode==='advanced'?window.AdvancedRules.resolve(fresh,moves,advanced?.selected,window.AdvancedRules.forTurn(advanced,fresh.turn),calculate,roomRules):calculate(fresh,moves,rulesVersion,roomRules),state=Object.fromEntries(stateFields.map(k=>[k,k==='startedAt'?serverTimestamp():c[k]]));
+   const resolve=(...args)=>calculate(...args.slice(0,4),args[4]||{},foresightShield===true);
+   const c=roomRules?.mode==='advanced'?window.AdvancedRules.resolve(fresh,moves,advanced?.selected,window.AdvancedRules.forTurn(advanced,fresh.turn),resolve,roomRules):resolve(fresh,moves,rulesVersion,roomRules),state=Object.fromEntries(stateFields.map(k=>[k,k==='startedAt'?serverTimestamp():c[k]]));
    if(special)window.SpecialRules.adjustCosts(special,c);
    if(rulesVersion===3)for(const k of window.SpecialRules.fields)state[k]=c[k];
    if(modern)state.previousDeadline=turnOpensAt(fresh,roomRules,advanced)+10000;
@@ -148,7 +154,7 @@ const initialAccount = {
   const u=auth.currentUser.uid,path='freeGames/'+id;let g;
   const punishEnabled=await supportsPunish(),roomRulesEnabled=await supportsRoomRules();
   for(let attempt=0;attempt<4;attempt++){
-   const keys=['players','createdAt','state','ready','resigned','settled','transition','kind','room',...(punishEnabled?['rulesVersion']:[]),...(roomRulesEnabled?['roomRules']:[])];g=Object.fromEntries(await Promise.all(keys.map(async k=>[k,await read(path+'/'+k)])));g.ready||={};const roomRules=window.RoomRules.normalize(g.roomRules);roomRulesCache.set(id,roomRules);
+   const keys=['players','createdAt','state','ready','resigned','settled','transition','kind','room',...(punishEnabled?['rulesVersion']:[]),...(roomRulesEnabled?['roomRules']:[]),...(await supportsForesightShield()?['foresightShield']:[])];g=Object.fromEntries(await Promise.all(keys.map(async k=>[k,await read(path+'/'+k)])));g.ready||={};const roomRules=window.RoomRules.normalize(g.roomRules);roomRulesCache.set(id,roomRules);
    const me=g.players?.[1]===u?1:g.players?.[2]===u?2:0;
    if(!me){const saved=await archivedStatus(id,u);if(saved)return saved.match;throw Error('参加者ではありません');}g.me=me;
    if(window.RoomRules.hasSkills(roomRules))g.advanced=await advancedProtocol.snapshot(id,g,me);
@@ -182,7 +188,7 @@ const initialAccount = {
    if(s&&!terminal&&now()>=turnOpensAt(s,roomRules,g.advanced)){
     g.own=await read(path+'/moves/'+s.turn+'/'+me);let moves=null;
     try{moves=await read(path+'/moves/'+s.turn);}catch(e){if(!String(e.code||e.message).toLowerCase().includes('permission'))throw e;}
-    if(moves?.[1]!=null&&moves?.[2]!=null){if(await advanceTurn(id,s,moves,u,[2,3].includes(g.rulesVersion)?g.rulesVersion:1,roomRules,g.advanced))continue;}
+    if(moves?.[1]!=null&&moves?.[2]!=null){if(await advanceTurn(id,s,moves,u,[2,3].includes(g.rulesVersion)?g.rulesVersion:1,roomRules,g.advanced,g.foresightShield))continue;}
    }
    break;
   }
@@ -205,7 +211,7 @@ const initialAccount = {
   }
   // A match that expires before either loadout still needs player names for results.
   if(closed&&!s)for(const p of [1,2]){const account=await read('freeAccounts/'+g.players[p]);players[p]={name:account?.name||'プレイヤー'};}
-  const match={id,rulesVersion:g.rulesVersion,kind:g.kind||'random',roomId:g.room||null,roomRules:window.RoomRules.normalize(g.roomRules),you:me,...(window.RoomRules.hasSpecial(roomRules)?{special:g.special}:{}),...(advanced?{advanced:g.advanced,skillResult:board(skillResult),skillWindow:s?{startAt:skillEndsAt(s)-window.AdvancedRules.windowMs(s),endAt:skillEndsAt(s),confirmAt:confirmAt(s)}:null}:{}),players,ready:g.ready,loadouts,state,closed,phase:closed?'finished':s?'turn':'select',revision:now(),serverNow:now(),opensAt,deadline:s?opensAt+10000:g.createdAt+60000,graceDeadline:s?opensAt+40000:g.createdAt+90000,ownAction:g.own??null,reveal:g.transition?{turn:g.transition.turn-1,startedAt:s?.startedAt,countdownEndsAt:Number.isFinite(s?.previousDeadline)?countdownEndsAt(s):null,actions:{1:g.transition.action1,2:g.transition.action2},damage:{1:g.transition.damage1,2:g.transition.damage2}}:null,result:closed?{winner:g.settled.winner,rated:g.kind!=='friend',reason:g.resigned?'resigned':g.abandoned&&s?.hp1>0&&s?.hp2>0?'reconnect-timeout':!s?'selection-timeout':s.misses1>=2||s.misses2>=2?'idle-forfeit':s.turn>300?'turn-limit':'battle'}:null,rating:closed?{before:g.settled['before'+me],after:g.settled['after'+me],delta:g.settled['delta'+me]}:null};
+  const match={id,foresightShield:g.foresightShield===true,rulesVersion:g.rulesVersion,kind:g.kind||'random',roomId:g.room||null,roomRules:window.RoomRules.normalize(g.roomRules),you:me,...(window.RoomRules.hasSpecial(roomRules)?{special:g.special}:{}),...(advanced?{advanced:g.advanced,skillResult:board(skillResult),skillWindow:s?{startAt:skillEndsAt(s)-window.AdvancedRules.windowMs(s),endAt:skillEndsAt(s),confirmAt:confirmAt(s)}:null}:{}),players,ready:g.ready,loadouts,state,closed,phase:closed?'finished':s?'turn':'select',revision:now(),serverNow:now(),opensAt,deadline:s?opensAt+10000:g.createdAt+60000,graceDeadline:s?opensAt+40000:g.createdAt+90000,ownAction:g.own??null,reveal:g.transition?{turn:g.transition.turn-1,startedAt:s?.startedAt,countdownEndsAt:Number.isFinite(s?.previousDeadline)?countdownEndsAt(s):null,actions:{1:g.transition.action1,2:g.transition.action2},damage:{1:g.transition.damage1,2:g.transition.damage2}}:null,result:closed?{winner:g.settled.winner,rated:g.kind!=='friend',reason:g.resigned?'resigned':g.abandoned&&s?.hp1>0&&s?.hp2>0?'reconnect-timeout':!s?'selection-timeout':s.misses1>=2||s.misses2>=2?'idle-forfeit':s.turn>300?'turn-limit':'battle'}:null,rating:closed?{before:g.settled['before'+me],after:g.settled['after'+me],delta:g.settled['delta'+me]}:null};
   if(window.RoomRules.hasSkills(roomRules)&&state&&!closed)skillSnapshots.set(u+':'+id,match);else skillSnapshots.delete(u+':'+id);
   return match;
  }
@@ -256,7 +262,7 @@ const initialAccount = {
    if(window.RoomRules.hasSpecial(roomRules)&&roomRules.hp!==10&&!await advancedProtocol.supportsSpecialHp(roomRules.hp))throw Error('HP'+roomRules.hp+'のスペシャル対戦を利用するには、Firebaseの対戦ルールを更新・公開してください。');
    if(window.RoomRules.hasSpecial(roomRules)&&!await advancedProtocol.supportsSpecialMoves())throw Error('S技を利用するには、Firebaseの対戦ルールを更新・公開してください。');
    const id=push(ref(db,'freeGames')).key,versionPatch=window.RoomRules.hasSpecial(roomRules)?{['freeGames/'+id+'/rulesVersion']:3}:await supportsPunish()?{['freeGames/'+id+'/rulesVersion']:2}:{},roomPatch=roomRules.mode!=='standard'?{['freeGames/'+id+'/roomRules']:roomRules}:{};
-   try{await update(ref(db),{...versionPatch,...roomPatch,...(window.RoomRules.hasSpecial(roomRules)?{['freeGames/'+id+'/special']:window.SpecialRules.initial(window.SpecialRules.MOVE_VERSION)}:{}),['freeGames/'+id+'/players']:{1:u,2:lobby.host},['freeGames/'+id+'/createdAt']:serverTimestamp(),['freeGames/'+id+'/kind']:'friend',['freeGames/'+id+'/room']:d.roomId,['freeAccounts/'+u+'/active']:id,['freeAccounts/'+lobby.host+'/active']:id,['friendRooms/'+d.roomId+'/game']:id});}
+   try{await update(ref(db),{...(await supportsForesightShield()?{['freeGames/'+id+'/foresightShield']:true}:{}),...versionPatch,...roomPatch,...(window.RoomRules.hasSpecial(roomRules)?{['freeGames/'+id+'/special']:window.SpecialRules.initial(window.SpecialRules.MOVE_VERSION)}:{}),['freeGames/'+id+'/players']:{1:u,2:lobby.host},['freeGames/'+id+'/createdAt']:serverTimestamp(),['freeGames/'+id+'/kind']:'friend',['freeGames/'+id+'/room']:d.roomId,['freeAccounts/'+u+'/active']:id,['freeAccounts/'+lobby.host+'/active']:id,['friendRooms/'+d.roomId+'/game']:id});}
    catch(e){
     const fresh=await profile();if(fresh.active)return {match:await status(fresh.active)};
     const current=await read('friendRooms/'+d.roomId);
@@ -278,7 +284,7 @@ const initialAccount = {
    let q=await read(qp);try{await set(ref(db,qp),{joinedAt:q?.joinedAt??serverTimestamp(),heartbeat:serverTimestamp()});}catch(e){const fresh=await profile();if(fresh.active)return {match:await status(fresh.active)};throw e;}
    q=await read(qp);const all=await read('freeQueue')||{};
    for(const [other]of Object.entries(all).filter(([k,v])=>k!==u&&v.heartbeat>now()-15000).sort((a,b)=>a[1].joinedAt-b[1].joinedAt)){
-    const id=push(ref(db,'freeGames')).key,versionPatch=await supportsPunish()?{['freeGames/'+id+'/rulesVersion']:2}:{};try{await update(ref(db),{...versionPatch,['freeGames/'+id+'/players']:{1:u,2:other},['freeGames/'+id+'/createdAt']:serverTimestamp(),['freeGames/'+id+'/kind']:'random',['freeAccounts/'+u+'/active']:id,['freeAccounts/'+other+'/active']:id,[qp]:null,['freeQueue/'+other]:null});return {match:await status(id)};}catch(e){const fresh=await profile();if(fresh.active)return {match:await status(fresh.active)};}
+    const id=push(ref(db,'freeGames')).key,versionPatch=await supportsPunish()?{['freeGames/'+id+'/rulesVersion']:2}:{};try{await update(ref(db),{...(await supportsForesightShield()?{['freeGames/'+id+'/foresightShield']:true}:{}),...versionPatch,['freeGames/'+id+'/players']:{1:u,2:other},['freeGames/'+id+'/createdAt']:serverTimestamp(),['freeGames/'+id+'/kind']:'random',['freeAccounts/'+u+'/active']:id,['freeAccounts/'+other+'/active']:id,[qp]:null,['freeQueue/'+other]:null});return {match:await status(id)};}catch(e){const fresh=await profile();if(fresh.active)return {match:await status(fresh.active)};}
    }
    // Keep refreshing the queue heartbeat until another human joins or the user cancels.
    const waitedMs=Math.max(0,now()-(q?.joinedAt??now()));
