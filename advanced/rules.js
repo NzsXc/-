@@ -9,8 +9,8 @@
   {id:'stance',name:'攻撃態勢',limit:3,description:'このターンのみ、攻撃力＋1（エンハンスと重複可能）'}
  ].map(Object.freeze));
  const byId=Object.fromEntries(SKILLS.map(s=>[s.id,s]));
- const isAdvanced=rules=>rules?.mode==='advanced';
- const hasSkills=rules=>isAdvanced(rules)&&rules.skills!==false;
+ const isAdvanced=rules=>rules?.mode==='advanced'||rules?.mode==='custom'&&(rules.skills===true||rules.special===true);
+ const hasSkills=rules=>rules?.mode==='advanced'&&rules.skills!==false||rules?.mode==='custom'&&rules.skills===true;
  const exhausted=(advanced,rules)=>isAdvanced(rules)&&!hasSkills(rules)||[1,2].every(p=>{const skill=byId[advanced?.selected?.[p]];return !!skill&&(advanced?.current?.[p]?.used||0)>=skill.limit;});
  const windowMs=state=>state?.skillsExhausted===true?0:3000;
  const active=(selected,turn,p,id)=>selected?.[p]===id&&turn?.[p]?.id===id;

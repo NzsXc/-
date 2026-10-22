@@ -1,6 +1,6 @@
 // Read-only presentation data. Never changes the persisted game or its receipts.
 export function spectatorSkillMatch(id,raw,advanced,roomRules,players,closed,serverNow){
- if(roomRules?.mode!=='advanced')return null;
+ if(!window.AdvancedRules.isAdvanced(roomRules))return null;
  const rules=window.AdvancedRules,skillWindow=rules.skillWindowForState(raw);
  const opensAt=skillWindow.confirmAt+rules.presentationMs(advanced,raw.turn);
  const after=rules.preview(raw,advanced?.selected,rules.forTurn(advanced,raw.turn),roomRules);

@@ -1,5 +1,12 @@
-// Persistence for Advanced skills only; Standard/Custom never call these operations.
+// Persistence for Advanced and Custom skill/S-move options.
 export function createAdvancedProtocol({read,writeUpdate,now,serverTimestamp}){
+ let customSupported=null;
+ function supportsCustomOptions(){
+  if(!customSupported)customSupported=read('freeGames/_protocol/advanced/customOptionsV1').then(()=>true).catch(error=>{
+   if(/permission.?denied/i.test(String(error.code||'')+' '+error.message))return false;
+   customSupported=null;throw error;
+  });return customSupported;
+ }
  let specialMovesSupported=null;
  function supportsSpecialMoves(){
   if(!specialMovesSupported)specialMovesSupported=read('freeGames/_protocol/advanced/specialMovesV2').then(()=>true).catch(error=>{
@@ -58,7 +65,7 @@ export function createAdvancedProtocol({read,writeUpdate,now,serverTimestamp}){
   try{await writeUpdate(path,{['advanced/uses/'+me+'/'+(count+1)]:receipt,['advanced/current/'+me]:current});}
   catch(error){const accepted=await read(path+'/advanced/current/'+me);if(accepted?.id!==skill||accepted.turn!==turn)throw error;}
  }
- return {supportsSpecialMoves,supports,supportsOptions,supportsSpecialGauge,supportsSpecialHp,snapshot,loadoutPatch,activate};
+ return {supportsCustomOptions,supportsSpecialMoves,supports,supportsOptions,supportsSpecialGauge,supportsSpecialHp,snapshot,loadoutPatch,activate};
 }
 
 

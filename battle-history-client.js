@@ -1,7 +1,7 @@
-import {ACTION_NAMES,HISTORY_REASONS,historySide,replayHistory,slots} from './battle-history-core.js?v=foresight-shield-1';
+import {ACTION_NAMES,HISTORY_REASONS,historySide,replayHistory,slots} from './battle-history-core.js?v=custom-options-1';
 
 const element=(tag,className,text)=>{const node=document.createElement(tag);if(className)node.className=className;if(text!=null)node.textContent=String(text);return node;};
-const advanced=h=>h.roomRules?.mode==='advanced'&&h.roomRules.skills!==false;
+const advanced=h=>h.roomRules?.mode==='advanced'&&h.roomRules.skills!==false||h.roomRules?.mode==='custom'&&h.roomRules.skills===true;
 const skillFor=(h,p)=>window.AdvancedRules?.byId[h.advanced?.selected?.[p]];
 function turnSkill(h,p,turn){
  const receipt=window.AdvancedRules?.forTurn(h.advanced,turn)?.[p];
@@ -26,7 +26,7 @@ export function createHistoryScreen(history){
    const count=Math.max(Number(current?.used||0),...receipts.map(r=>Number(r?.used||0)));
    box.append(element('p','historyLoadout','スキル：'+(skill?skill.name+' / 使用 '+count+'/'+skill.limit+'回':recorded?'未選択':'未記録')));
   }
-  if(h.roomRules?.mode==='advanced'&&h.roomRules.special===true)box.append(element('p','historyLoadout','スペシャルゲージ：'+(h.special?.gauge?.[p]??0)+'/30'));
+  if(['advanced','custom'].includes(h.roomRules?.mode)&&h.roomRules.special===true)box.append(element('p','historyLoadout','スペシャルゲージ：'+(h.special?.gauge?.[p]??0)+'/30'));
   const titles=element('div','historyTitles');
   if(!player.snapshot)titles.append(element('span','historyNote','対戦時の称号は未記録'));
   else{

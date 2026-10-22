@@ -93,7 +93,7 @@ function rankedSyncTurnClock(m){
  const key=m.id+':'+m.state.turn;
  if(rankedTurnClockKey===key){
   // Only an Advanced receipt may extend this same turn by the shared presentation.
-  if(m.roomRules?.mode==='advanced'&&Number(m.opensAt)>Number(rankedSyncTurnClock.lastOpening||0)){
+  if(window.AdvancedRules.isAdvanced(m.roomRules)&&Number(m.opensAt)>Number(rankedSyncTurnClock.lastOpening||0)){
    const delta=Number(m.opensAt)-rankedSyncTurnClock.lastOpening;rankedTurnOpensAt+=delta;rankedTurnDeadline+=delta;rankedSyncTurnClock.lastOpening=Number(m.opensAt);rankedScheduleAuto(Math.max(0,rankedTurnDeadline-performance.now()));
   }return;
  }
@@ -114,7 +114,7 @@ function rankedScheduleAuto(delay){
 function rankedAutoSelect(){
  const m=rankedMatch,localNow=performance.now();
  if(!rankedActive||!m?.state||m.closed||m.ownAction!=null||rankedTurnClockKey!==m.id+':'+m.state.turn||localNow<rankedTurnDeadline)return;
- if(m.roomRules?.mode==='advanced'&&m.skillWindow&&m.serverNow<(m.skillWindow.confirmAt??m.skillWindow.endAt)){rankedScheduleAuto(1000);return;}
+ if(window.AdvancedRules.isAdvanced(m.roomRules)&&m.skillWindow&&m.serverNow<(m.skillWindow.confirmAt??m.skillWindow.endAt)){rankedScheduleAuto(1000);return;}
  if(rankedAnimating||rankedSending||localNow<rankedAutoRetryAt){rankedScheduleAuto(1000);return;}
  rankedAutoRetryAt=localNow+1000;
  rankedSubmitAction(m,m.state.gauge[m.you]>=(m.roomRules?.maxGauge??10)?1:0,true);
@@ -125,7 +125,7 @@ function rankedTick(){
  const now=rankedClockServer+performance.now()-rankedClockAt;
  const localNow=performance.now();
  const skillConfirmedAt=m.skillWindow?.confirmAt??m.skillWindow?.endAt;
- const skillConfirmed=m.roomRules?.mode!=='advanced'||!m.skillWindow||m.serverNow>=skillConfirmedAt;
+ const skillConfirmed=!window.AdvancedRules.isAdvanced(m.roomRules)||!m.skillWindow||m.serverNow>=skillConfirmedAt;
  if(skillConfirmed&&!rankedAnimating&&!m.closed&&m.skillResult&&now>=m.opensAt&&m.state!==m.skillResult){m.state=m.skillResult;rankedPaintState(m);}
  if(!skillConfirmed&&now>=skillConfirmedAt&&!rankedSending&&rankedTick.skillBoundary!==m.id+':'+m.state.turn){rankedTick.skillBoundary=m.id+':'+m.state.turn;rankedRefresh(rankedEpoch);}
  const turnOpen=skillConfirmed&&!!m.state&&rankedTurnClockKey===m.id+':'+m.state.turn&&localNow>=rankedTurnOpensAt;
@@ -245,9 +245,9 @@ function rankedApply(m,visualCommit=false){
  setPlayerNames(m.players[1].name,m.players[2].bot?botDisplayName():m.players[2].name);
  updateBattleUI();
  if(!m.closed&&m.state.turn===1){
-  PlayerIntro.start({key:'ranked:'+m.id,startAt:(m.roomRules?.mode==='advanced'?m.skillWindow.startAt:m.opensAt)-PlayerIntro.DURATION_MS,now:()=>rankedClockServer+performance.now()-rankedClockAt,players:m.players});
+  PlayerIntro.start({key:'ranked:'+m.id,startAt:(window.AdvancedRules.isAdvanced(m.roomRules)?m.skillWindow.startAt:m.opensAt)-PlayerIntro.DURATION_MS,now:()=>rankedClockServer+performance.now()-rankedClockAt,players:m.players});
  }else PlayerIntro.cancel();
- const localTurnOpen=(m.roomRules?.mode!=='advanced'||!m.skillWindow||m.serverNow>=(m.skillWindow.confirmAt??m.skillWindow.endAt))&&rankedTurnClockKey===m.id+':'+m.state.turn&&performance.now()>=rankedTurnOpensAt;
+ const localTurnOpen=(!window.AdvancedRules.isAdvanced(m.roomRules)||!m.skillWindow||m.serverNow>=(m.skillWindow.confirmAt??m.skillWindow.endAt))&&rankedTurnClockKey===m.id+':'+m.state.turn&&performance.now()>=rankedTurnOpensAt;
  locked[me]=m.ownAction!==null||rankedSending||m.closed||!localTurnOpen||performance.now()>=rankedTurnDeadline;locked[3-me]=true;
  for(const p of [1,2])document.getElementById('player'+p+'Area').classList.toggle('locked',locked[p]);
  document.getElementById('battleHomeButton').hidden=false;document.getElementById('battleHomeButton').textContent=m.closed?'ホームへ':'降参して戻る';

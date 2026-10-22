@@ -35,3 +35,8 @@
  #techScreen.advancedSelection .advancedSkillSelection{grid-column:1;grid-row:4;}
  #techScreen.advancedSelection #techConfirmButton{grid-row:5;}
 }
+
+/* Custom keeps its system switches compact and separate from numeric settings. */
+.friendCustomOptions{grid-column:1 / -1;display:flex;flex-wrap:wrap;gap:8px 20px;align-items:center}
+.friendCustomOptions label{display:inline-flex;align-items:center;gap:7px;min-height:32px;font-size:13px;cursor:pointer}
+.friendCustomFields .friendCustomOptions input{width:16px;height:16px;min-height:0;margin:0;padding:0;flex:none;accent-color:#82cfe8}

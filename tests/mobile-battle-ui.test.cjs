@@ -36,7 +36,7 @@ async function battle(page,{mode='standard',skills=false,you=1,hp=10}={}){
   rankedStop();rankedActive=true;rankedMatch=null;rankedSeenReveal=0;
   const pair=value=>[null,value,value],rules=mode==='standard'?{mode,hp:maxHp,initialGauge:8,maxGauge:10}:{mode,hp:maxHp,initialGauge:8,maxGauge:10,skills,special:true};
   const m={id:'mobile-'+mode+'-'+skills+'-'+you,kind:'friend',rulesVersion:mode==='standard'?2:3,roomRules:rules,you,players:{1:{name:'プレイヤー1',titles:[]},2:{name:'プレイヤー2',titles:[]}},ready:{1:true,2:true},loadouts:{1:[0,7,10],2:[0,7,10]},state:{turn:4,hp:pair(maxHp-2),gauge:pair(8),seal:pair(false),enhance:pair(0),momentum:pair(false),ruin:pair(0),last:pair(''),specialSeal:pair(0),specialRuin:pair(0),specialMomentum:pair(0)},closed:false,phase:'turn',revision:20000,serverNow:20000,opensAt:19000,deadline:29000,graceDeadline:59000,ownAction:null,reveal:null};
-  if(mode==='advanced'){m.special={version:3,max:30,gauge:{1:30,2:30}};m.advanced={selected:{1:'stance',2:'heal'}};m.skillWindow={startAt:15500,endAt:18500,confirmAt:19000};}
+  if(mode!=='standard'){m.special={version:3,max:30,gauge:{1:30,2:30}};m.advanced={selected:{1:'stance',2:'heal'}};m.skillWindow={startAt:15500,endAt:18500,confirmAt:19000};}
   rankedApply(m);window.mobileMatch=m;stopTurnCountdownSE();
  },{mode,skills,you,maxHp:hp});
  await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
@@ -46,9 +46,10 @@ async function battle(page,{mode='standard',skills=false,you=1,hp=10}={}){
  try{
   for(const [width,height,safe={}]of [[390,844],[430,932],[393,852,{top:47,bottom:34}],[375,667],[360,640,{top:20,bottom:20}],[320,568],[568,320],[667,375,{left:44,right:44,bottom:21}],[844,390,{left:44,right:44,bottom:21}]])for(const you of [1,2]){
    const page=await browser.newPage({viewport:{width,height},deviceScaleFactor:2}),errors=[];page.on('pageerror',e=>errors.push(e.message));await setup(page);
-   for(const [mode,skills]of [['standard',false],['advanced',false],['advanced',true]]){
+   for(const [mode,skills]of [['standard',false],['advanced',false],['advanced',true],['custom',true]]){
     await battle(page,{mode,skills,you,hp:10});
     await page.evaluate(safe=>{cancelAnimationFrame(rankedFrame);rankedFrame=0;document.body.classList.add('hasRoomCode');document.getElementById('roomCodeButton').hidden=false;document.getElementById('roomCodeText').textContent='123456';for(const [side,value]of Object.entries(safe))document.documentElement.style.setProperty('--safe-'+side,value+'px');AdvancedSkills.sync(mobileMatch,20000);SpecialGauge.paintBattle(mobileMatch);syncBattleInspector();},safe);
+    const center=await page.locator('#battleCenter').evaluate(n=>{const r=n.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2,w:innerWidth,h:innerHeight};});assert(Math.abs(center.x-center.w/2)<.1&&Math.abs(center.y-center.h/2)<.1,'arena center '+JSON.stringify(center));
     const initial=await measure(page);
     assert(initial.width<=width&&initial.height<=height,'battle fits viewport '+JSON.stringify({width,height,mode,skills,initial}));
     const clipped=await page.locator('#battleScreen .playerArea,#battleHomeButton,#specialSwitchDock:not([hidden]),.advancedSkillDock:not([hidden]),#battleInspectorToggle:not([hidden])').evaluateAll(nodes=>nodes.filter(n=>{const r=n.getBoundingClientRect();return r.width&&r.height&&(r.left<-.1||r.top<-.1||r.right>innerWidth+.1||r.bottom>innerHeight+.1);}).map(n=>n.id));
@@ -59,11 +60,14 @@ async function battle(page,{mode='standard',skills=false,you=1,hp=10}={}){
      stable(initial,await measure(page),'hidden controls '+width+' '+mode+' '+skills);
      await page.evaluate(()=>{rankedAnimating=false;syncBattleInspector();document.getElementById('battleHomeButton').hidden=false;document.getElementById('countdown').textContent='10';document.getElementById('resultMessage').textContent='相手の行動を待っています…';});
      stable(initial,await measure(page),'visible controls '+width+' '+mode+' '+skills);
+     const centered=await page.locator('#countdown,#resultMessage').evaluateAll(ns=>ns.map(n=>{const r=n.getBoundingClientRect();return {id:n.id,x:r.x+r.width/2,y:r.y+r.height/2,w:innerWidth,h:innerHeight};}));assert(centered.every(r=>Math.abs(r.x-r.w/2)<.1&&(r.id!=='countdown'||Math.abs(r.y-r.h/2)<.1)),'centered '+JSON.stringify({width,height,mode,skills,centered}));
+     await page.evaluate(()=>document.getElementById('countdown').textContent='');
+     const waiting=await page.locator('#resultMessage').evaluate(n=>{const r=n.getBoundingClientRect();return [Math.abs(r.x+r.width/2-innerWidth/2),Math.abs(r.y+r.height/2-innerHeight/2)];});assert(waiting.every(d=>d<.1),'waiting text alone centered');stable(initial,await measure(page),'waiting-only geometry');
     }
     await page.evaluate(()=>{setPlayerNames('とても長いプレイヤー名の表示テスト','とても長いプレイヤー名の表示テスト');for(const p of [1,2]){enhanceTurns[p]=2;blockSeal[p]=true;ruinTurns[p]=3;momentumBonus[p]=true;lastAction[p]={data:{type:'block'}};}updateBattleUI();});
     stable(initial,await measure(page),'status badges '+width+' '+mode+' '+skills);
     await page.evaluate(()=>{setPlayerNames('プレイヤー1','プレイヤー2');rankedPaintState(mobileMatch);});
-    if(mode==='advanced'){
+    if(mode!=='standard'){
      for(let group=0;group<4;group++){
       await page.evaluate(group=>{mobileMatch.loadouts[mobileMatch.you]=[group*3,group*3+1,group*3+2];SpecialGauge.paintBattle(mobileMatch);},group);
       await page.locator('#specialSwitchDock button').click();

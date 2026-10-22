@@ -65,3 +65,11 @@ not claim to be a live Firebase or Firebase Emulator integration test.
 
 確認: `node tests/foresight-shield.test.cjs`、`node tests/punish.test.cjs`。
 Firebase本番へのルール公開は、これらのローカルテストやGitHubへのコミットでは実行されません。
+
+## Customの追加モード（2026/10/22）
+
+Customに「スキルモード」「スペシャルモード」のチェックボックスを追加しました。両方の同時使用も可能です。HP・初期ゲージ・最大ゲージはCustomの設定を保ちます。
+
+オンラインで使うには、このコミットの `firebase-database.rules.json` 全体をRealtime Databaseの「ルール」に貼り付けて公開してください。`customOptionsV1` の読み取りで対応を確認し、公開前は追加モードの部屋作成・参加を案内付きで止めます。既存のStandard／Advanced／追加なしCustomの形式は維持しています。
+
+ルールの更新処理は `tests/upgrade-custom-options-rules.cjs` にあります。数値上限をCustom設定に合わせ、共通の計算検証をまとめて256 KiB以内に収めています。再生成時の式整形にはAcorn 8とAstring 1を使い、整形前後の構文木を比較します。

@@ -36,7 +36,7 @@ async function battle(page,{mode='standard',skills=false,you=1,hp=10}={}){
   rankedStop();rankedActive=true;rankedMatch=null;rankedSeenReveal=0;
   const pair=value=>[null,value,value],rules=mode==='standard'?{mode,hp:maxHp,initialGauge:8,maxGauge:10}:{mode,hp:maxHp,initialGauge:8,maxGauge:10,skills,special:true};
   const m={id:'mobile-'+mode+'-'+skills+'-'+you,kind:'friend',rulesVersion:mode==='standard'?2:3,roomRules:rules,you,players:{1:{name:'プレイヤー1',titles:[]},2:{name:'プレイヤー2',titles:[]}},ready:{1:true,2:true},loadouts:{1:[0,7,10],2:[0,7,10]},state:{turn:4,hp:pair(maxHp-2),gauge:pair(8),seal:pair(false),enhance:pair(0),momentum:pair(false),ruin:pair(0),last:pair(''),specialSeal:pair(0),specialRuin:pair(0),specialMomentum:pair(0)},closed:false,phase:'turn',revision:20000,serverNow:20000,opensAt:19000,deadline:29000,graceDeadline:59000,ownAction:null,reveal:null};
-  if(mode==='advanced'){m.special={version:3,max:30,gauge:{1:30,2:30}};m.advanced={selected:{1:'stance',2:'heal'}};m.skillWindow={startAt:15500,endAt:18500,confirmAt:19000};}
+  if(mode!=='standard'){m.special={version:3,max:30,gauge:{1:30,2:30}};m.advanced={selected:{1:'stance',2:'heal'}};m.skillWindow={startAt:15500,endAt:18500,confirmAt:19000};}
   rankedApply(m);window.mobileMatch=m;stopTurnCountdownSE();
  },{mode,skills,you,maxHp:hp});
  await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
@@ -46,16 +46,18 @@ async function battle(page,{mode='standard',skills=false,you=1,hp=10}={}){
  try{
   for(const [width,height]of [[1024,600],[1101,720],[1280,600],[1280,720],[1366,768],[1536,864],[1920,1080]])for(const you of [1,2]){
    const page=await browser.newPage({viewport:{width,height}}),errors=[];page.on('pageerror',e=>errors.push(e.message));await setup(page);
-   for(const [mode,skills]of [['standard',false],['advanced',false],['advanced',true]]){
+   for(const [mode,skills]of [['standard',false],['advanced',false],['advanced',true],['custom',true]]){
     await battle(page,{mode,skills,you});
     await page.evaluate(()=>{cancelAnimationFrame(rankedFrame);rankedFrame=0;document.body.classList.add('hasRoomCode');document.getElementById('roomCodeButton').hidden=false;AdvancedSkills.sync(mobileMatch,20000);SpecialGauge.paintBattle(mobileMatch);syncBattleInspector();});
+    const center=await page.locator('#battleCenter').evaluate(n=>{const r=n.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2,w:innerWidth,h:innerHeight};});assert(Math.abs(center.x-center.w/2)<.1&&Math.abs(center.y-center.h/2)<.1,'arena center '+JSON.stringify(center));
+    const digit=await page.locator('#countdown').evaluate(n=>{const r=n.getBoundingClientRect();return [Math.abs(r.x+r.width/2-innerWidth/2),Math.abs(r.y+r.height/2-innerHeight/2)];});assert(digit.every(d=>d<.1),'desktop countdown centered');
     const initial=await measure(page);assert(initial.width<=width&&initial.height<=height,'viewport fit '+[width,height,mode,you]);
     await controlsFit(page,'desktop controls '+[width,height,mode,you]);
     const buttons=await page.locator('#player'+you+'Area .action').evaluateAll(nodes=>nodes.map(n=>({height:n.getBoundingClientRect().height,width:n.getBoundingClientRect().width,font:parseFloat(getComputedStyle(n.querySelector('.actionName')).fontSize)})));
     assert(buttons.every(b=>b.height>=(height<=680?64:72)&&b.width>=100&&b.font>=14),'larger desktop buttons '+JSON.stringify(buttons));
     await page.evaluate(()=>{rankedAnimating=true;document.getElementById('battleHomeButton').hidden=true;document.getElementById('countdown').textContent='';});stable(initial,await measure(page),'desktop turn stability');
     await page.evaluate(()=>{rankedAnimating=false;document.getElementById('battleHomeButton').hidden=false;});
-    if(mode==='advanced'){
+    if(mode!=='standard'){
      await page.locator('#specialSwitchDock button').click();await controlsFit(page,'S desktop controls');stable(initial,await measure(page),'S desktop stability');
      await page.locator('#specialSwitchDock button').click();
     }

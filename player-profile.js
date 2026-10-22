@@ -1,4 +1,4 @@
-import {ACTION_NAMES,historySide} from './battle-history-core.js?v=foresight-shield-1';
+import {ACTION_NAMES,historySide} from './battle-history-core.js?v=custom-options-1';
 
 export function techniquesFromUsage(uses){
  const techniques=[];

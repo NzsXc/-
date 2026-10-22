@@ -10,7 +10,7 @@ class Element{
 const nodes=new Map(),node=(id,tag='div')=>{const el=new Element(tag);el.id=id;nodes.set(id,el);return el;};
 const body=node('body'),form=node('friendRuleForm','form');body.append(form);
 for(const id of ['friendAdvancedOptions','friendCustomRules','friendRuleStatus','friendStandardRules','friendAdvancedRules','friendCreateButton','friendLobbyBack','friendLobbyStatus','friendRoomList','battleScreen'])body.append(node(id));
-for(const id of ['friendRuleSkills','friendRuleSpecial','friendRuleHp','friendRuleInitialGauge','friendRuleMaxGauge'])form.append(node(id,'input'));
+for(const id of ['friendRuleSkills','friendRuleSpecial','friendRuleHp','friendRuleInitialGauge','friendRuleMaxGauge','friendCustomSkills','friendCustomSpecial'])form.append(node(id,'input'));
 nodes.get('friendRuleHp').value='10';nodes.get('friendRuleInitialGauge').value='8';nodes.get('friendRuleMaxGauge').value='10';
 const radio=node('advancedRadio','input');radio.value='advanced';form.append(radio);
 for(const side of [1,2]){const area=node('player'+side+'Area');area.append(node('actions'+side));body.append(area);}
@@ -34,10 +34,14 @@ vm.runInContext(read('lobby-client.js'),c);vm.runInContext(read('advanced/specia
  c.SpecialGauge.sync({roomRules:rules,special:{max:30,gauge:{1:30,2:99}}});assert.equal(document.getElementById('specialGauge1').querySelector('.specialGaugeFill').style.width,'100%');assert.equal(document.getElementById('specialGauge2').querySelector('.specialGaugeValue').textContent,'30/30');
  assert.deepEqual(ordinary,{1:8,2:7});c.SpecialGauge.sync({roomRules:{mode:'advanced'}});assert(document.getElementById('specialGauge1').hidden);assert(document.getElementById('specialGauge2').hidden);assert(!document.getElementById('battleScreen').classList.contains('specialMode'));
  c.SpecialGauge.sync({roomRules:rules});assert.equal(document.getElementById('specialGauge1').querySelector('.specialGaugeValue').textContent,'0/30');c.SpecialGauge.reset();assert(document.getElementById('specialGauge1').hidden);
- const html=read('index.html');assert(html.includes('advanced/special.js?v=special-compact-2'));assert(/id="friendRuleSkills" type="checkbox" checked/.test(html));assert(/id="friendRuleSpecial" type="checkbox" onchange/.test(html));
- assert(html.includes('lobby-client.js?v=special-hp10-3'));
- for(const file of ['room-rules.js','free-transport.js'])assert(html.includes(file+'?v=special-hp10-2'),file);
- assert(html.includes('advanced/rules.js?v=special-moves-1'));assert(html.includes('battle-history-client.js?v=special-balance-2'));assert(html.includes('advanced/cutin.js?v=special-gauge-1'));assert(html.includes('advanced/client.js?v=stable-turn-1'));
- assert(html.includes('protected-rooms.js?v=special-hp10-2'));assert(html.includes('battle-history.js?v=special-balance-2'));assert(html.includes('player-profile.js?v=special-balance-2'));
- console.log('PASS checkbox form submissions, both enabled, mode switching, default selection, independent 0/30 bars, clamping, accessibility and cleanup');
+ mode='custom';nodes.get('friendRuleHp').value='25';nodes.get('friendRuleInitialGauge').value='4';nodes.get('friendRuleMaxGauge').value='6';
+ for(const skills of [false,true])for(const special of [false,true]){
+  nodes.get('friendCustomSkills').checked=skills;nodes.get('friendCustomSpecial').checked=special;c.updateFriendRuleSettings();
+  assert.equal(nodes.get('friendCustomRules').hidden,false);assert.equal(nodes.get('friendAdvancedOptions').hidden,true);
+  await c.submitFriendRoom({preventDefault(){}});const saved=created.at(-1);assert.equal(saved.hp,25);assert.equal(saved.initialGauge,4);assert.equal(saved.maxGauge,6);assert.equal(RoomRules.hasSkills(saved),skills);assert.equal(RoomRules.hasSpecial(saved),special);vm.runInContext('protectedLobbyBusy=false',c);
+ }
+ const html=read('index.html');assert(/id="friendRuleSkills" type="checkbox" checked/.test(html));
+ for(const id of ['friendCustomSkills','friendCustomSpecial'])assert(new RegExp('id="'+id+'" type="checkbox"').test(html));
+ for(const file of ['room-rules.js','free-transport.js','lobby-client.js','advanced/rules.js','battle-history-client.js','protected-rooms.js','battle-history.js','player-profile.js'])assert(html.includes(file+'?v=custom-options-1'),file);
+ console.log('PASS Advanced/Custom independent checkbox submissions, custom numeric settings, mode switching, accessible independent special gauge and cache versions');
 })().catch(e=>{console.error(e);process.exitCode=1;});

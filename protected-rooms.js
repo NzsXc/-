@@ -1,16 +1,17 @@
 import {ref,get,set,update,remove,push,onValue,onDisconnect,serverTimestamp} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js';
 import {signInAnonymously} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js';
-import {spectatorSkillMatch} from './advanced/spectator.js?v=special-moves-1';
+import {spectatorSkillMatch} from './advanced/spectator.js?v=custom-options-1';
 export function createProtectedRooms(db,auth,transport,history){
  let offset=0,hostRoom=null,heartbeat=null,disconnect=null,stopHostWatch=null;onValue(ref(db,'.info/serverTimeOffset'),s=>offset=Number(s.val()||0));
  const now=()=>Date.now()+offset,read=async p=>(await get(ref(db,p))).val();
  async function ensure(){await auth.authStateReady();if(!auth.currentUser)await signInAnonymously(auth);await transport({op:'profile'});}
- async function create(options){const rules=window.RoomRules.normalize(options);if(window.RoomRules.hasSpecial(rules))rules.hp=10;await ensure();const who=auth.currentUser.uid;const account=await read('freeAccounts/'+who);if(account.active)throw Error('進行中の対戦を終了してください');
+ async function create(options){const rules=window.RoomRules.normalize(options);if(rules.mode==='advanced'&&window.RoomRules.hasSpecial(rules))rules.hp=10;await ensure();const who=auth.currentUser.uid;const account=await read('freeAccounts/'+who);if(account.active)throw Error('進行中の対戦を終了してください');
   if(rules.mode==='custom'&&!await transport.supportsRoomRules?.())throw Error('カスタム対戦はまだ利用できません。更新後にお試しください。');
-  if(rules.mode==='advanced'&&!await transport.supportsAdvanced?.())throw Error('Advancedはまだ利用できません。更新後にお試しください。');
+  if(rules.mode==='custom'&&window.AdvancedRules.isAdvanced(rules)&&!await transport.supportsCustomOptions?.())throw Error('Customの追加設定を利用するには、Firebaseの対戦ルールを更新・公開してください。');
+  if(window.AdvancedRules.isAdvanced(rules)&&!await transport.supportsAdvanced?.())throw Error('Advancedはまだ利用できません。更新後にお試しください。');
   if(window.RoomRules.needsAdvancedOptions(rules)&&!await transport.supportsAdvancedOptions?.())throw Error('Advancedの追加設定を利用するには、対戦ルールを更新してください。');
   if(window.RoomRules.hasSpecial(rules)&&!await transport.supportsSpecialGauge?.())throw Error('スペシャルゲージを利用するには、対戦ルールを更新してください。');
-  if(window.RoomRules.hasSpecial(rules)&&!await transport.supportsSpecialHp?.())throw Error('HP10のスペシャル対戦を利用するには、Firebaseの対戦ルールを更新・公開してください。');
+  if(rules.mode==='advanced'&&window.RoomRules.hasSpecial(rules)&&!await transport.supportsSpecialHp?.())throw Error('HP10のスペシャル対戦を利用するには、Firebaseの対戦ルールを更新・公開してください。');
   if(window.RoomRules.hasSpecial(rules)&&!await transport.supportsSpecialMoves?.())throw Error('S技を利用するには、Firebaseの対戦ルールを更新・公開してください。');
   const roomPatch=rules.mode!=='standard'?{roomRules:rules}:{};
   const id=push(ref(db,'friendRooms')).key;await set(ref(db,'friendRooms/'+id),{host:who,name:account.name,createdAt:serverTimestamp(),heartbeat:serverTimestamp(),game:'',...roomPatch});hostRoom=id;
@@ -45,7 +46,7 @@ export function createProtectedRooms(db,auth,transport,history){
  const specialStates=s=>Object.fromEntries(['specialSeal','specialRuin','specialMomentum'].map(k=>[k,{1:s[k+'1']||0,2:s[k+'2']||0}]));
  const observedGames=new Map();
  function archivedSnapshot(h){
-  const raw=h?.finalState;if(!raw)return null;const s=h.roomRules?.mode==='advanced'?window.AdvancedRules.preview(raw,h.advanced?.selected,window.AdvancedRules.forTurn(h.advanced,raw.turn),h.roomRules):raw,people={};
+  const raw=h?.finalState;if(!raw)return null;const s=window.AdvancedRules.isAdvanced(h.roomRules)?window.AdvancedRules.preview(raw,h.advanced?.selected,window.AdvancedRules.forTurn(h.advanced,raw.turn),h.roomRules):raw,people={};
   for(const p of [1,2])people[p]={name:h.players[p].name,joined:true,online:false,techniques:h.players[p].loadout?[0,1,2].map(i=>h.players[p].loadout[i]):[]};
   return {players:people,battle:{special:h.special||null,...specialStates(s),skillMatch:spectatorSkillMatch(h.id||'archive',raw,h.advanced,h.roomRules,people,true,now()),roomRules:h.roomRules||null,phase:'finished',turn:s.turn,updatedAt:now(),result:h.settled.winner?h.settled.winner+'P WIN':'DRAW',hp:{1:s.hp1,2:s.hp2},gauge:{1:s.gauge1,2:s.gauge2},enhanceTurns:{1:s.enhance1,2:s.enhance2},blockSeal:{1:s.seal1,2:s.seal2},ruinTurns:{1:s.ruin1||0,2:s.ruin2||0}}};
  }

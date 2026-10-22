@@ -11,7 +11,7 @@ class Element{
  querySelectorAll(s){const a=[];for(const c of this.children){if(c.matches(s))a.push(c);a.push(...c.querySelectorAll(s));}return a;}
  getBoundingClientRect(){return {left:100,right:400,top:100,bottom:300,width:300,height:200};}get offsetWidth(){return 56;}
 }
-const body=new Element('body'),document={body,createElement:t=>new Element(t),getElementById:id=>body.querySelector('#'+id)};
+const body=new Element('body'),document={body,querySelector:s=>body.querySelector(s),querySelectorAll:s=>body.querySelectorAll(s),createElement:t=>new Element(t),getElementById:id=>body.querySelector('#'+id)};
 for(const id of ['battleScreen','battleCenter','battleHomeButton','techScreen','player1Area','player2Area','spectatorLoadouts']){const el=new Element('div');el.id=id;body.append(el);}
 let clock=0,nextFrame=0;const frames=new Map();const c=vm.createContext({document,console,performance:{now:()=>clock},rankedAnimating:false,rankedSending:false,PlayerIntro:{cancel(){}},requestAnimationFrame:fn=>{frames.set(++nextFrame,fn);return nextFrame;},cancelAnimationFrame:id=>frames.delete(id)});c.window=c;c.addEventListener=()=>{};
 vm.runInContext(read('advanced/rules.js'),c);vm.runInContext(read('advanced/client.js'),c);

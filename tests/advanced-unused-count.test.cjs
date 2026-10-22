@@ -49,7 +49,7 @@ async function advance(f,match){
  const spent=await advance(both,bothUsed);assert.equal(spent.state.skillsExhausted,true);assert.equal(spent.skillWindow.startAt,spent.skillWindow.endAt);
  const fresh=await join(rules),before=fresh.h.copy(),after=fresh.h.copy();after.freeGames[fresh.id].state.skillsExhausted=true;
  assert.equal(fresh.h.evaluate(strictNullRules(rules).freeGames.$game.state.skillsExhausted['.validate'],before,after,'freeGames/'+fresh.id+'/state/skillsExhausted','p1',{$game:fresh.id}),false,'missing receipts cannot forge exhaustion');
- assert(Buffer.byteLength(JSON.stringify(rules,null,1)+'\n')<256*1024);
+ assert(fs.statSync(path.join(root,'firebase-database.rules.json')).size<256*1024);
  console.log('PASS: original first-turn denial reproduced with strict null semantics; 36 skill pairs across 3 unused turns, one-sided final use, both exhausted and forged flag rejection');
 })().catch(error=>{console.error(error);process.exitCode=1;});
 

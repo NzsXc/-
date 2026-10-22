@@ -2,7 +2,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 const root=path.resolve(__dirname,'..'),html=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const markup=html.slice(html.indexOf('<div id="friendLobbyScreen"'),html.indexOf('<div id="spectatorListScreen"'));
-const css=html.match(/<style>([\s\S]*?)<\/style>/)[1];
+const css=html.match(/<style>([\s\S]*?)<\/style>/)[1]+fs.readFileSync(path.join(root,'advanced/advanced.css'),'utf8');
 const fixture=`<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>${css}</style>${markup}<script>
 let gameMode=null,rankedActive=false,rankedMatch=null,rankedCancelled=false,rankedSeenReveal=0,onlineMatchType=null,selectedTechniques={},rankedEpoch=0;
 function stopBot(){}function resetOnlineMatchState(){}function rankedApply(m){window.enteredMatch=m;}function rankedPoll(){}
@@ -38,6 +38,10 @@ ${fs.readFileSync(path.join(root,'lobby-client.js'),'utf8')}
    await page.fill('#friendRuleHp','20');await page.fill('#friendRuleMaxGauge','3');await page.fill('#friendRuleInitialGauge','4');
    await page.click('#friendRuleSubmit');assert.equal(await page.evaluate(()=>window.creations.length),1);
    await page.fill('#friendRuleMaxGauge','15');await page.fill('#friendRuleInitialGauge','4');
+   assert.equal(await page.locator('#friendCustomSkills').isChecked(),false);assert.equal(await page.locator('#friendCustomSpecial').isChecked(),false);
+   await page.check('#friendCustomSkills');await page.check('#friendCustomSpecial');
+   const boxes=await page.locator('.friendCustomOptions input').evaluateAll(ns=>ns.map(n=>({width:n.getBoundingClientRect().width,height:n.getBoundingClientRect().height})));assert(boxes.every(b=>b.width===16&&b.height===16),'small Custom checkboxes');
+   assert.deepEqual(await page.locator('.friendCustomOptions label').allTextContents(),['スキルモード','スペシャルモード']);
    if(process.env.FRIEND_ROOM_SCREENSHOTS&&width===390)await page.screenshot({path:path.join(process.env.FRIEND_ROOM_SCREENSHOTS,'friend-room-custom-mobile.png')});
    assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'settings must fit the viewport');
    await page.evaluate(()=>window.failCreate=true);await page.click('#friendRuleSubmit');
@@ -46,7 +50,7 @@ ${fs.readFileSync(path.join(root,'lobby-client.js'),'utf8')}
    await page.evaluate(()=>window.failCreate=false);await page.dblclick('#friendRuleSubmit');
    await page.waitForFunction(()=>document.getElementById('friendLobbyScreen').classList.contains('active'));
    assert.equal(await page.evaluate(()=>window.creations.length),3,'double-click must issue one create');
-   assert.deepEqual(await page.evaluate(()=>window.creations.at(-1)),{mode:'custom',hp:20,initialGauge:4,maxGauge:15});
+   assert.deepEqual(await page.evaluate(()=>window.creations.at(-1)),{mode:'custom',hp:20,initialGauge:4,maxGauge:15,skills:true,special:true});
    await page.evaluate(()=>openFriendLobby());await page.locator('.friendRoomButton').filter({hasText:'Custom'}).click();
    assert.deepEqual(await page.evaluate(()=>window.joined),['custom']);assert.equal(await page.evaluate(()=>window.enteredMatch.roomRules.maxGauge),15);
    assert.deepEqual(errors,[]);await page.close();
