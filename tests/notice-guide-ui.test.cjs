@@ -36,16 +36,34 @@ const mime = {'.html':'text/html', '.css':'text/css', '.js':'text/javascript', '
       });
       await page.getByRole('button', {name:'お知らせを開く',exact:true}).click();
       assert.equal(await page.locator('#tipPage0 h1').innerText(), '目次');
+      assert.equal(await page.locator('.tipNavButton').count(), 5);
+      assert.deepEqual(await page.locator('.guideContents .guidePageNumber').allTextContents(), ['p1','p2','p3','p4']);
+      assert.equal(await page.locator('.guideContents button').first().locator('strong').innerText(), 'お知らせ');
+      const navWidths=await page.locator('.tipNavButton').evaluateAll(nodes=>nodes.map(n=>n.getBoundingClientRect().width));
+      assert(navWidths[0]<=64.1&&navWidths[0]>=43.9&&navWidths[0]<navWidths[1],JSON.stringify(navWidths));
+      assert(navWidths.slice(1).every(w=>Math.abs(w-navWidths[1])<.1),'P1-P4 divide the remaining width equally');
       await page.locator('.guideContents button').first().click();
       assert.equal(await page.locator('#tipNav1').getAttribute('aria-current'), 'page');
-      assert.equal(await page.locator('#tipPage1').evaluate(n => n.inert), false);
+      assert.equal(await page.locator('#tipPage1').evaluate(n=>n.inert), false);
+      assert.equal(await page.locator('#tipPage0').evaluate(n=>n.inert), true);
+      assert.equal(await page.locator('#tipPage1 .guideNotice').count(),1);
+      assert.equal(await page.locator('#tipPage1 time').innerText(),'2026/10/22');
+      assert.equal(await page.locator('#tipPage1 time').getAttribute('datetime'),'2026-10-22');
+      assert.equal(await page.locator('#foresightNoticeTitle').innerText(),'フォーサイト上方修正');
+      assert.equal(await page.locator('#tipPage1 .guideArt').getAttribute('src'),'assets/actions/foresight.png');
+      assert.deepEqual(await page.locator('#tipPage1 .guideNotice li').allTextContents(),['貫通攻撃を防げるようになった']);
+      assert.equal(await page.locator('.guideBuffArrow').evaluate(n=>getComputedStyle(n).color),'rgb(87, 220, 131)');
+      await page.locator('#tipNav0').click();
+      await page.locator('.guideContents button').nth(1).click();
+      assert.equal(await page.locator('#tipNav2').getAttribute('aria-current'), 'page');
+      assert.equal(await page.locator('#tipPage2').evaluate(n => n.inert), false);
       assert.equal(await page.locator('#tipPage0').evaluate(n => n.inert), true);
-      assert.equal(await page.locator('#tipPage1 .guideSteps li').count(), 4);
-      await page.locator('#tipNav2').click();
+      assert.equal(await page.locator('#tipPage2 .guideSteps li').count(), 4);
+      await page.locator('#tipNav3').click();
       const definitions = await page.evaluate(() => [
         ...Object.values(basicActions), ...techniquePool, ...AdvancedRules.SKILLS
       ].map(item => ({name:item.name,description:item.description})));
-      const cards = await page.locator('#tipPage2 .guideCard:not(.guideSpecialCard)').evaluateAll(nodes => nodes.map(n => ({name:n.querySelector('h3').textContent,description:n.querySelector('p').textContent})));
+      const cards = await page.locator('#tipPage3 .guideCard:not(.guideSpecialCard)').evaluateAll(nodes => nodes.map(n => ({name:n.querySelector('h3').textContent,description:n.querySelector('p').textContent})));
       assert.deepEqual(cards, definitions, 'every current game definition is shown exactly');
       assert.deepEqual(await page.locator('#guideSpecialTechniques h3').allTextContents(),await page.evaluate(()=>techniquePool.map(t=>'S'+t.name)));
       assert.equal(await page.locator('#guideSpecialTechniques .guideSpecialArt').count(),12);
@@ -56,14 +74,14 @@ const mime = {'.html':'text/html', '.css':'text/css', '.js':'text/javascript', '
       await page.waitForFunction(() => [...document.querySelectorAll('#tipScreen img')].every(img => img.complete && img.naturalWidth > 0));
       assert.equal(await page.locator('#guideSkills [data-skill="stance"] .stance-blade').count(), 2);
       assert.equal(await page.locator('#guideSkills [data-skill="invincible"] .invincible-star').count(), 1);
-      const scroll = page.locator('#tipPage2 .guidePage');
+      const scroll = page.locator('#tipPage3 .guidePage');
       await scroll.evaluate(n => n.scrollTop = n.scrollHeight);
       assert.equal(await scroll.evaluate(n => n.scrollTop + n.clientHeight >= n.scrollHeight - 1), true, 'last skill can be reached');
       assert(await page.locator('#guideSpecialTechniques .guideCard').last().isVisible());
       if(process.env.GUIDE_SCREENSHOTS&&[390,1365].includes(width)){await page.waitForTimeout(500);await page.screenshot({path:path.join(process.env.GUIDE_SCREENSHOTS,'notice-s-catalog-'+width+'.png')});}
-      await page.locator('#tipNav3').click();
+      await page.locator('#tipNav4').click();
       assert.equal(await page.locator('.guideDraft').count(),0);
-      assert.doesNotMatch(await page.locator('#tipPage2').innerText(), /各ターンの最初の3秒間に使用/);
+      assert.doesNotMatch(await page.locator('#tipPage3').innerText(), /各ターンの最初の3秒間に使用/);
       assert.equal(await page.locator('#guideTechniqueTiers [data-guide-id="tech1"] .guideTierScore').innerText(),'(9.00)');
       assert.equal(await page.locator('#guideTechniqueTiers [data-guide-id="charge"],#guideTechniqueTiers [data-guide-id="block"],#guideTechniqueTiers [data-guide-id="attack"]').count(),0);
       assert.equal(await page.locator('#guideVoteSpecialTechniques').isDisabled(),false);
@@ -77,7 +95,7 @@ const mime = {'.html':'text/html', '.css':'text/css', '.js':'text/javascript', '
         assert.equal(ids.length, expected);
         assert.equal(new Set(ids).size, expected, 'each action/skill appears once');
       }
-      for (const index of [0,1,2,3]) {
+      for (const index of [0,1,2,3,4]) {
         await page.locator('#tipNav' + index).click();
         await page.waitForTimeout(500);
         const layout = await page.evaluate(i => {
@@ -93,10 +111,10 @@ const mime = {'.html':'text/html', '.css':'text/css', '.js':'text/javascript', '
         if (process.env.GUIDE_SCREENSHOTS && [390,1365].includes(width)) {
           await page.locator('#tipPage' + index + ' .guidePage').evaluate(n => n.scrollTop = 0);
           fs.mkdirSync(process.env.GUIDE_SCREENSHOTS, {recursive:true});
-          await page.screenshot({path:path.join(process.env.GUIDE_SCREENSHOTS, `notice-p${index+1}-${width}.png`)});
+          await page.screenshot({path:path.join(process.env.GUIDE_SCREENSHOTS, `notice-page-${index}-${width}.png`)});
         }
       }
-      await page.locator('#tipNav3').click();
+      await page.locator('#tipNav4').click();
       await page.locator('#guideVoteSpecialTechniques').click();assert.equal(await page.locator('#guideVoteDialog select').count(),12);await page.locator('#guideVoteDialog select').first().selectOption('9');await page.locator('#guideVoteDialog button[type=submit]').click();assert.equal(await page.evaluate(()=>voteTest.saves.at(-1).category),'specialTechniques');await page.evaluate(()=>{voteTest.saves=[];});
       await page.locator('#guideVoteTechniques').click();
       assert.equal(await page.locator('#guideVoteDialog select').count(),12);
@@ -143,7 +161,7 @@ const mime = {'.html':'text/html', '.css':'text/css', '.js':'text/javascript', '
       await page.locator('.tipBackButton').click();
       assert.equal(await page.locator('#modeScreen').isVisible(), true);
       assert.deepEqual(errors, []);
-      console.log(`PASS ${width}x${height}: contents, navigation, 21 definitions, art, limits, SABC averages, editable ballots, auth changes, offline/failure/cancel, dialog layout and return`);
+      console.log(`PASS ${width}x${height}: contents, compact contents button, four equal page tabs, Foresight news, navigation, 21 definitions, art, limits, SABC averages, editable ballots, auth changes, offline/failure/cancel, dialog layout and return`);
       await page.close();
     }
   } finally { await browser.close(); }

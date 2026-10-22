@@ -1,7 +1,8 @@
-/* Four-page notice guide. All layout overrides stay inside the notice screen. */
+/* Contents and four-page notice guide. All layout overrides stay inside the notice screen. */
 #tipScreen{height:100vh;height:100dvh;min-height:0;padding:18px max(14px,var(--safe-right)) 72px max(14px,var(--safe-left));gap:14px;justify-content:flex-start;overflow:hidden}
-#tipScreen .tipNav{position:static;transform:none;width:min(1040px,100%);flex:none;gap:6px}
+#tipScreen .tipNav{position:static;transform:none;width:min(1040px,100%);flex:none;grid-template-columns:clamp(44px,6vw,64px) repeat(4,minmax(0,1fr));gap:6px}
 #tipScreen .tipNavButton{aspect-ratio:auto;min-height:58px;padding:8px 6px;font-size:14px;line-height:1.35;border-radius:5px;transform:none;background:#182e45;color:#b6cde0}
+#tipScreen .tipContentsButton{font-size:12px;padding:6px 2px;letter-spacing:0}
 #tipScreen .tipNavButton small{display:block;font-size:10px;letter-spacing:.14em;color:#92bad3;margin-bottom:3px}
 #tipScreen .tipNavButton.active{background:#315776;border-color:#acdfff;color:#fff;box-shadow:inset 0 -2px #84d8f6}
 #tipScreen .tipViewport{width:min(1040px,100%);height:auto;min-height:0;flex:1;margin:0;border-radius:6px}
@@ -56,9 +57,23 @@
 #tipScreen .guideTierTile figcaption{font-size:11px;line-height:1.5;text-align:center;overflow-wrap:anywhere;color:#dcecf6}
 #tipScreen .tipBackButton{position:absolute;margin:0;left:max(14px,var(--safe-left));bottom:max(14px,var(--safe-bottom));min-height:44px;padding:9px 24px;border-radius:5px}
 #tipScreen button:focus-visible{outline:2px solid #b3ebff;outline-offset:2px}
+#tipScreen .guideNotice{padding:22px;border:1px solid #89b8d656;border-radius:6px;background:#0e2337a8}
+#tipScreen .guideNoticeHeader{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;margin-bottom:20px}
+#tipScreen .guideNoticeHeader time{font-size:13px;color:#abc9da;font-variant-numeric:tabular-nums}
+#tipScreen .guideNotice h2{font-size:19px;margin:0;overflow-wrap:anywhere}
+#tipScreen .guideNoticeBody{display:flex;flex-wrap:wrap;align-items:center;gap:16px 24px}
+#tipScreen .guideNoticeVisual{display:flex;align-items:center;gap:14px;flex:none}
+#tipScreen .guideNoticeVisual .guideArt{width:80px;height:80px;object-fit:contain}
+#tipScreen .guideBuffArrow{display:block;width:32px;height:40px;color:#57dc83;flex:none}
+#tipScreen .guideNoticeBody ul{min-width:0;flex:1 1 240px;margin:0;padding-left:22px;font-size:15px;line-height:1.8;overflow-wrap:anywhere}
 @media(max-width:640px){
   #tipScreen{padding-top:max(10px,var(--safe-top));gap:10px}
   #tipScreen .tipNavButton{font-size:11px;min-width:0;min-height:54px;padding:7px 2px}
+  #tipScreen .tipContentsButton{font-size:10px}
+  #tipScreen .guideNotice{padding:16px 14px}
+  #tipScreen .guideNoticeHeader{margin-bottom:16px;gap:6px 12px}
+  #tipScreen .guideNotice h2{font-size:17px}
+  #tipScreen .guideNoticeBody ul{font-size:14px}
   #tipScreen .guidePage{padding:20px 14px;font-size:13px;scrollbar-gutter:auto}
   #tipScreen .guideCatalog{grid-template-columns:1fr}
   #tipScreen .guideHeader{margin-bottom:18px;padding-bottom:14px}
