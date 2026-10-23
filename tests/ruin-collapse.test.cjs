@@ -25,13 +25,13 @@ const root=path.resolve(__dirname,'..');
    const alphas=await page.locator('.ruinCardFragment').evaluateAll(nodes=>nodes.map(n=>Number(n.style.opacity)));
    assert(alphas.filter(a=>a>0&&a<1).length<=1,'only one fragment falls at a time');
    assert(alphas.slice(i+1).every(a=>a===1),'later fragments remain attached');
-   if(i<11)await page.clock.runFor(56);
+   if(i<11)await page.clock.runFor(90);
   }
   if(process.env.PREVIEW_SCREENSHOTS)await page.screenshot({path:path.join(process.env.PREVIEW_SCREENSHOTS,'ruin-falling.png'),fullPage:true});
   await page.clock.runFor(60);assert(Number(await page.locator('.ruinCardFragment').first().evaluate(n=>n.style.opacity))<.01,'falling fragments fade away');
   assert.match((await snapshot()).clip,/polygon/,'bottom stays absent until the effect completes');
   if(process.env.PREVIEW_SCREENSHOTS)await page.screenshot({path:path.join(process.env.PREVIEW_SCREENSHOTS,'ruin-vanished.png'),fullPage:true});
-  await page.clock.runFor(200);assert.equal(await page.locator('.ruinCollapse').count(),0);assert.deepEqual(await snapshot(),original,'end restores clipping and priority');assert(!(await page.locator('#fireSpecial').isDisabled()));
+  await page.clock.runFor(400);assert.equal(await page.locator('.ruinCollapse').count(),0);assert.deepEqual(await snapshot(),original,'end restores clipping and priority');assert(!(await page.locator('#fireSpecial').isDisabled()));
   async function direct(own,enemy){await page.evaluate(([own,enemy])=>{
    const pool=BattleAI.techniques,basic=BattleAI.ACTIONS.slice(0,3),actions=[own,enemy].map(id=>SpecialRules.actionData(id,pool,basic));
    BattleEffects.play({layer:document.getElementById('previewEffects'),elements:[document.getElementById('previewSelf'),document.getElementById('previewEnemy')],actions,damage:[0,0]});
@@ -39,11 +39,16 @@ const root=path.resolve(__dirname,'..');
   for(const elapsed of [200,650]){await direct(25,0);await page.clock.runFor(elapsed);await page.evaluate(()=>BattleEffects.cancel());assert.deepEqual(await snapshot(),original);assert.equal(await page.locator('.ruinCollapse').count(),0,'cancel cleans all copies');}
   await direct(25,25);await page.clock.runFor(650);assert.equal(await page.locator('.ruinCollapse').count(),2);await page.evaluate(()=>BattleEffects.cancel());assert.deepEqual(await snapshot(),original);assert.equal(await page.locator('#previewSelf').evaluate(n=>n.style.clipPath),'');
   await direct(14,25);await page.clock.runFor(650);assert.equal(await page.locator('.ruinCollapse').count(),2,'Mirror copies S Ruin collapse');await page.evaluate(()=>BattleEffects.cancel());
-  await direct(13,0);await page.clock.runFor(650);assert.equal(await page.locator('.ruinCollapse').count(),0,'normal Ruin retains its existing cracks');await page.evaluate(()=>BattleEffects.cancel());
+  await direct(13,0);await page.clock.runFor(650);assert.equal(await page.locator('.ruinCollapse').count(),0,'normal Ruin retains its existing cracks');assert.deepEqual(await snapshot(),original,'normal Ruin first completes its cracks');
+  await page.clock.runFor(850);assert.equal(await page.locator('.ruinCardHalf').count(),2);assert.equal((await snapshot()).clip,'inset(50%)');
+  const halves=await page.locator('.ruinCardHalf').evaluateAll(nodes=>nodes.map(n=>n.style.transform));assert.notEqual(halves[0],halves[1],'halves separate on opposite sides of the central crack');
+  if(process.env.PREVIEW_SCREENSHOTS)await page.screenshot({path:path.join(process.env.PREVIEW_SCREENSHOTS,'ruin-split-normal.png'),fullPage:true});
+  await page.clock.runFor(650);assert.deepEqual(await snapshot(),original);assert.equal(await page.locator('.ruinSplit').count(),0);
+  await direct(13,0);await page.clock.runFor(1500);await page.evaluate(()=>BattleEffects.cancel());assert.deepEqual(await snapshot(),original,'cancel also restores a card while its two halves are separated');assert.equal(await page.locator('.ruinSplit').count(),0);
   await page.setViewportSize({width:390,height:844});await direct(25,0);await page.clock.runFor(650);
   if(process.env.PREVIEW_SCREENSHOTS)await page.screenshot({path:path.join(process.env.PREVIEW_SCREENSHOTS,'ruin-falling-mobile.png'),fullPage:true});
-  await page.clock.runFor(700);assert.deepEqual(await snapshot(),original);
-  await page.emulateMedia({reducedMotion:'reduce'});await direct(25,0);assert.equal(await page.locator('.ruinCollapse').count(),0);assert.deepEqual(await snapshot(),original);await page.clock.runFor(1300);
+  await page.clock.runFor(1300);assert.deepEqual(await snapshot(),original);
+  await page.emulateMedia({reducedMotion:'reduce'});await direct(25,0);assert.equal(await page.locator('.ruinCollapse').count(),0);assert.deepEqual(await snapshot(),original);await page.clock.runFor(1900);
   await page.emulateMedia({reducedMotion:'no-preference'});await page.setViewportSize({width:1200,height:900});
   const html=fs.readFileSync(path.join(root,'index.html'),'utf8').replace(/<script\b[^>]*>[\s\S]*?<\/script>/g,'');
   await page.setContent(html);await page.addScriptTag({content:fs.readFileSync(path.join(root,'battle-effects.js'),'utf8')});

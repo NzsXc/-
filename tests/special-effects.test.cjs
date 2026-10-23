@@ -1,9 +1,9 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const {test}=require('node:test'),actions=require('../bot-engine.js').ACTIONS;
 function fixture(){
- const colors=[],frames=new Map(),shakes=[],blades=[];let next=0,canvas,translation=[0,0];
+ const colors=[],frames=new Map(),shakes=[],blades=[],circles=[];let next=0,canvas,translation=[0,0];
  const gradient=()=>({addColorStop:(_stop,color)=>colors.push(color)});
- const ctx=new Proxy({translate:(x,y)=>{translation=[x,y];},createLinearGradient:(...args)=>{blades.push({center:translation.slice(),args});return gradient();},createRadialGradient:gradient},{get:(obj,key)=>key==='canvas'?canvas:key in obj?obj[key]:()=>{},set:(obj,key,value)=>{if(['strokeStyle','fillStyle','shadowColor'].includes(key))colors.push(value);obj[key]=value;return true;}});
+ const ctx=new Proxy({translate:(x,y)=>{translation=[x,y];},arc:(...args)=>circles.push({center:translation.slice(),radius:args[2]}),createLinearGradient:(...args)=>{blades.push({center:translation.slice(),args});return gradient();},createRadialGradient:gradient},{get:(obj,key)=>key==='canvas'?canvas:key in obj?obj[key]:()=>{},set:(obj,key,value)=>{if(['strokeStyle','fillStyle','shadowColor'].includes(key))colors.push(value);obj[key]=value;return true;}});
  const rect=(x,y,width=280,height=180)=>({left:x,top:y,width,height});
  const areas=[{getBoundingClientRect:()=>rect(30,470)},{getBoundingClientRect:()=>rect(590,30)}],layer={getBoundingClientRect:()=>rect(0,0,900,700),replaceChildren(){}};
  const context=vm.createContext({console,window:{devicePixelRatio:1,matchMedia:()=>({matches:false})},performance:{now:()=>0},setTimeout:()=>1,clearTimeout(){},
@@ -12,7 +12,7 @@ function fixture(){
  });
  vm.runInContext(fs.readFileSync(path.join(__dirname,'..','battle-new-effects.js'),'utf8'),context);
  vm.runInContext(fs.readFileSync(path.join(__dirname,'..','battle-effects.js'),'utf8'),context);
- return {api:context.window.BattleEffects,colors,shakes,blades,play(a,b,ms=570,damage=[0,0]){context.window.BattleEffects.play({layer,actions:[a,b],rawActions:[a,b],damage});const [id,fn]=frames.entries().next().value;frames.delete(id);fn(ms);}};
+ return {api:context.window.BattleEffects,ctx,circles,colors,shakes,blades,play(a,b,ms=570,damage=[0,0]){context.window.BattleEffects.play({layer,actions:[a,b],rawActions:[a,b],damage});const [id,fn]=frames.entries().next().value;frames.delete(id);fn(ms);}};
 }
 test('all twelve S moves paint violet while normal Breach retains red',()=>{
  for(let i=0;i<12;i++){
@@ -54,4 +54,13 @@ test('seven new techniques render normally and as S effects on either side, incl
   const f=fixture(),own={...action,special},enemy=ms===900?actions[1]:actions[0],pair=side?[enemy,own]:[own,enemy];
   assert.doesNotThrow(()=>f.play(...pair,ms,side?[1,0]:[0,1]),action.kind+' special='+special+' side='+side+' ms='+ms);f.api.cancel();
  }
+});
+
+test('shared Siphon packet keeps its 550ms eased flight, white core and cyan ring',()=>{
+ const f=fixture();f.api.drawGaugeTransfer(f.ctx,275,{x:0,y:0},{x:100,y:0},1,{start:0});
+ const core=f.circles.find(c=>c.radius===9),ring=f.circles.find(c=>c.radius===14);
+ assert.deepEqual(core.center,[87.5,44]);assert.deepEqual(ring.center,core.center);assert(f.colors.includes('#fff6f0'));assert(f.colors.includes('#54caff'));
+ const plan=f.api.createPlan([{kind:'venom',skill:'tech18',type:'venom'},actions[0]]);assert.equal(plan.duration,2400);
+ const normal=f.api.createPlan([actions[13],actions[0]]);assert.equal(normal.duration,2000);
+ const special=f.api.createPlan([{...actions[13],special:true},actions[0]]);assert.equal(special.duration,1800);
 });

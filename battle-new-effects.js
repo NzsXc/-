@@ -27,9 +27,10 @@
   const gaugeTarget=gaugePoint(p.side-1),enemyGaugeTarget=gaugePoint(other.side-1),w=layout.bounds.width/layout.zoom,h=layout.bounds.height/layout.zoom;
   const self={},enemy={},label=()=>{},meter=()=>{};
   const impact=plan.duel?plan.clashAt+330:p.attack?p.impact:other.attack?other.impact:440;
-  if(plan.duel&&ms<impact)return;
-  if(plan.duel&&plan.winner!==p.side-1)return;
-  const time=reduced?def.hit+220:ms<impact?ms/impact*def.hit:def.hit+(ms-impact)/(1200-impact)*(def.duration-def.hit);
+  const beamDuel=plan.duel&&['blast','refund'].includes(p.kind);
+  if(plan.duel&&!beamDuel&&ms<impact)return;
+  if(plan.duel&&!beamDuel&&plan.winner!==p.side-1)return;
+  const time=p.kind==='venom'?(reduced?1100:ms):reduced?def.hit+220:ms<impact?ms/impact*def.hit:def.hit+(ms-impact)/(1200-impact)*(def.duration-def.hit);
   const c=p.special?'#bd75ff':def.color,ok=p.attack?other.damage>0&&!other.counter:p.kind==='focus'?p.damage===0:p.kind==='convert'?p.damage>0:true;
     function line(pts,c,width=2,op=1,glow=10){ctx.save();ctx.globalAlpha=clamp(op);ctx.strokeStyle=c;ctx.lineWidth=width;ctx.lineCap='round';ctx.lineJoin='round';ctx.shadowColor=c;ctx.shadowBlur=glow;ctx.beginPath();pts.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.stroke();ctx.restore()}
     function circle(x,y,r,c,op=1,width=2,fill=false){if(r<=0)return;ctx.save();ctx.globalAlpha=clamp(op);ctx.strokeStyle=c;ctx.fillStyle=c;ctx.lineWidth=width;ctx.shadowColor=c;ctx.shadowBlur=14;ctx.beginPath();ctx.arc(x,y,r,0,tau);fill?ctx.fill():ctx.stroke();ctx.restore()}
@@ -59,8 +60,6 @@
       if(ms>530){
         if(ok){
           number(b,'−1',C.enemy,ms-530);
-          const collected=siphonRecover(ms-690,1,b,gaugeTarget,cyan,Math.min(140,w*.3));
-          meter(2+collected,ms>=790?3:4);
           number(gaugeTarget,'+1',cyan,ms-1340);number(enemyGaugeTarget,'−1',cyan,ms-790);
         }
         shake(enemy,ok?ms-530:-1);label(ok?'命中 → 水色のゲージを吸収':'ブロック → 吸収なし');
@@ -117,18 +116,25 @@
         label(ms<gainStart?'コンバート':recovery<1600?'エネルギー変換':'5つの光球を順番にゲージへ');
       }else label(ms<1250?'コンバート':'ゲージ獲得なし');
     }
-    function venom(ms,c){orb(a,b,(ms-100)/440,c,7);if(ms<540){label('ヴェノム');return}const end=1-clamp((ms-3650)/550);haze(b.x,b.y+25,100,c,.18*end);for(let i=0;i<17;i++){const v=((ms-540)/1450+rand(i))%1,x=b.x+(rand(i+22)-.5)*b.width*.9,y=b.y+55-v*125;circle(x,y,2+Math.sin(v*Math.PI)*5,c,Math.sin(v*Math.PI)*.42*end,1,true)}let hit=-1;if(ms>1600)hit=ms-1600;if(ms>2900)hit=ms-2900;if(hit>=0){burst(b,hit,c,.5);number(b,'毒ダメージ',c,hit);shake(enemy,hit)}const n=ms<1600?2:ms<2900?1:0;label(ms<1600?'毒を付与':ms<2900?'次のターン開始：毒ダメージ':ms<3900?'2ターン目開始：毒ダメージ':'毒が解除される',ms<3900?'毒 '+n+'T':'')}
-    function drawBeam(ms,c,variant,impact=590){
+    function venom(ms,c){
+      orb(a,b,(ms-120)/680,c,7);if(ms<800)return;
+      const end=1-clamp((ms-2100)/300);haze(b.x,b.y+25,110,c,.22*end);
+      for(let i=0;i<17;i++){
+        const v=((ms-800)/3800+rand(i))%1,x=b.x+(rand(i+22)-.5)*b.width*.9+Math.sin(ms/1900+i)*8,y=b.y+55-v*125;
+        circle(x,y,2+Math.sin(v*Math.PI)*6,c,Math.sin(v*Math.PI)*.48*end,1,true);
+      }
+    }
+    function drawBeam(ms,c,variant,impact=590,opacity=1){
       const direction=Math.atan2(b.y-a.y,b.x-a.x),distance=Math.hypot(b.x-a.x,b.y-a.y);ctx.save();ctx.translate(a.x,a.y);ctx.rotate(direction);
-      const from={x:22,y:0},fire=impact-230,grow=clamp((ms-fire)/230),fade=1-clamp((ms-impact-590)/420),charge=clamp(ms/fire);
+      const from={x:22,y:0},fire=impact-230,grow=clamp((ms-fire)/230),fade=(1-clamp((ms-impact-590)/420))*opacity,charge=clamp(ms/fire);
       if(ms<fire){
         for(let i=0;i<8;i++){const off=(i-3.5)*9*(1-charge);line([{x:from.x-35*(1-charge),y:from.y+off},{x:from.x,y:from.y+off*.3}],c,1.5,charge*.8,15)}
         line([{x:from.x,y:from.y-27*charge},{x:from.x,y:from.y+27*charge}],c,4,charge,22);
       }else if(fade>0){
         const end={x:from.x+(distance+22-from.x)*grow,y:0},pulse=1+Math.sin(ms*.055)*.08;
         if(variant==='focused'){
-          line([from,end],c,23*pulse,fade*.25,28);
-          line([from,end],c,12*pulse,fade*.8,18);
+          line([from,end],c,(p.special?32:23)*pulse,fade*.25,28);
+          line([from,end],c,(p.special?18:12)*pulse,fade*.8,18);
           line([from,end],'#d8f3ff',6*pulse,fade,12);
           line([from,end],C.white,2.8*pulse,fade,7);
           for(let i=0;i<8;i++){const q=(ms/200+i/8)%1,x=from.x+(end.x-from.x)*q;line([{x:x-24,y:from.y+(i%2?11:-11)},{x:x+8,y:from.y+(i%2?11:-11)}],c,1,fade*.6,8)}
@@ -140,7 +146,7 @@
           for(let i=0;i<9;i++){const q=(ms/360+i/9)%1,x=from.x+(end.x-from.x)*q,reach=half*q;line([{x:x-14,y:from.y-reach},{x:x+14,y:from.y+reach}],c,1,fade*.27,7)}
         }else{
           line([from,end],c,15,fade*.35,24);line([from,end],'#e9f8ff',4,fade*.85,14);line([from,end],C.white,1.5,fade,7);
-          for(let strand=0;strand<2;strand++){
+          for(let strand=0;strand<(p.special?3:2);strand++){
             const pts=[],phase=strand*Math.PI;
             for(let i=0;i<=75;i++){const q=i/75,envelope=Math.sin(q*Math.PI)*18+4;pts.push({x:from.x+(end.x-from.x)*q,y:from.y+Math.sin(q*Math.PI*7-ms*.016+phase)*envelope})}
             line(pts,strand===0?c:'#c6edff',3,fade*.9,15);
@@ -199,18 +205,30 @@
         if(other.guard)breachShatter(b,contact,ms-impact,scale,'#69aaff');
         burst(b,ms-impact,c,1.1);
         number(b,'−1',C.enemy,ms-impact);shake(enemy,ms-impact);
-        const collected=siphonRecover(ms-860,3,b,gaugeTarget,'#54caff');meter(2+collected,4);number(gaugeTarget,'+3','#54caff',ms-1790);
       }
       label(ms<impact?'収束ビームでブロックを貫通':'シールド破壊 → 3つのゲージを回収');
     }
 
+  if(beamDuel){
+   const original={x:b.x,y:b.y},mid={x:(a.x+b.x)/2,y:(a.y+b.y)/2},won=plan.winner===p.side-1;
+   const advance=ease((ms-plan.clashAt-70)/260),alpha=ms<plan.clashAt?1:won?1-clamp((ms-impact-90)/300):1-clamp((ms-plan.clashAt-40)/330);
+   if(ms<plan.clashAt){b.x=mid.x;b.y=mid.y;drawBeam(ms/plan.clashAt*def.hit,c,p.kind==='blast'?'spiral':'focused',def.hit);}
+   else{
+    const endpoint=won?original:plan.winner===null?mid:a;
+    b.x=mid.x+(endpoint.x-mid.x)*advance;b.y=mid.y+(endpoint.y-mid.y)*advance;
+    drawBeam(def.hit+Math.max(0,ms-plan.clashAt),c,p.kind==='blast'?'spiral':'focused',def.hit,alpha);
+    if(won&&ms>=impact){burst(original,ms-impact,c,1.1);if(p.kind==='refund')window.BattleEffects.drawGaugeTransfer(ctx,ms,original,gaugeTarget,3,{start:impact+20});}
+   }
+   return;
+  }
   if(p.attack&&!ok&&p.kind!=='drain'){
    const angle=Math.atan2(b.y-a.y,b.x-a.x);b.x-=Math.cos(angle)*74;b.y-=Math.sin(angle)*74;
    if(p.kind==='blast'||p.kind==='refund')drawBeam(time,c,p.kind==='blast'?'spiral':'focused',def.hit);
    shield(b,'#87cfff',1-clamp((ms-850)/350));
   }else ({drain:()=>drain(time,ok,c),freeze:()=>ice(time,c),focus:()=>focus(time,ok,c),convert:()=>convert(time,ok,c),venom:()=>venom(time,c),blast:()=>blast(time,c),refund:()=>refund(time,c)})[p.kind]();
+  if(ok&&['drain','refund'].includes(p.kind)&&ms>=impact)window.BattleEffects.drawGaugeTransfer(ctx,ms,target,gaugeTarget,p.kind==='refund'?3:1,{start:impact+20});
   if(p.special){
-   const t=clamp((ms-320)/650),fade=Math.sin(t*Math.PI),center=['freeze','venom','blast','refund','drain'].includes(p.kind)?b:a;
+   const t=p.kind==='venom'?clamp((ms-650)/1700):clamp((ms-320)/650),fade=Math.sin(t*Math.PI),center=['freeze','venom','blast','refund','drain'].includes(p.kind)?b:a;
    if(p.attack&&!ok)return;
    haze(center.x,center.y,155,c,.2*fade);
    if(p.kind==='freeze'){
@@ -220,7 +238,7 @@
     const n=p.kind==='focus'?3:5;
     for(let j=0;j<2;j++){const points=Array.from({length:n+1},(_,i)=>{const angle=i*tau/n+ms/750*(j?-1:1);return{x:a.x+Math.cos(angle)*(60+j*22),y:a.y+Math.sin(angle)*(60+j*22)*.6}});line(points,j?C.white:c,2,fade*.8,20);}
    }else if(p.kind==='venom'){
-    for(let i=0;i<3;i++){const angle=ms/600+i*tau/3;circle(b.x+Math.cos(angle)*62,b.y+Math.sin(angle)*40,12,c,fade*.7,2);circle(b.x+Math.cos(angle)*62-3,b.y+Math.sin(angle)*40-3,3,C.white,fade*.7,1,true);}
+    for(let i=0;i<3;i++){const angle=ms/1800+i*tau/3;circle(b.x+Math.cos(angle)*62,b.y+Math.sin(angle)*40,12,c,fade*.7,2);circle(b.x+Math.cos(angle)*62-3,b.y+Math.sin(angle)*40-3,3,C.white,fade*.7,1,true);}
     const sigil=Array.from({length:6},(_,i)=>({x:b.x+Math.cos(i*tau/5)*83,y:b.y+Math.sin(i*tau/5)*53}));line(sigil,c,2,fade,22);
    }else{
     const angle=Math.atan2(b.y-a.y,b.x-a.x),dist=Math.hypot(b.x-a.x,b.y-a.y);

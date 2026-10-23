@@ -15,7 +15,7 @@ const {chromium}=require('playwright'),root=path.resolve(__dirname,'..');
     await page.locator('#fireSpecial').click();await page.clock.runFor(650);
     assert.deepEqual(errors,[],name+' paints without errors');
     if(process.env.PREVIEW_SCREENSHOTS&&[2,14,15,16,18].includes(i))await page.screenshot({path:path.join(process.env.PREVIEW_SCREENSHOTS,mode+'-tech-'+i+'.png'),fullPage:true});
-    await page.clock.runFor(650);assert(!(await page.locator('#fireSpecial').isDisabled()));assert.equal(await page.locator('canvas').count(),0);
+    await page.clock.runFor(1900);assert(!(await page.locator('#fireSpecial').isDisabled()));assert.equal(await page.locator('canvas').count(),0);
     if(i===12)assert.equal(await page.locator('#previewSelf .gaugeValue').innerText(),'5 / 10');
     if(i===13)assert.equal(await page.locator('#previewSelf .gaugeValue').innerText(),'6 / 10');
     if(i===14)assert.equal(await page.locator('#previewEnemy .hpValue').innerText(),'4 / 10');
@@ -29,13 +29,13 @@ const {chromium}=require('playwright'),root=path.resolve(__dirname,'..');
   }
   for(const i of [0,1,2]){await page.locator('#previewBasics button').nth(i).click();await page.locator('#fireSpecial').click();await page.clock.runFor(1300);assert(!(await page.locator('#fireSpecial').isDisabled()));}
   for(const [i,enemy]of [[12,1],[13,0],[18,2],[16,7],[14,1],[18,14]]){
-   await page.locator('#normalMode').click();await page.locator('.moveChoice').nth(i).click();await page.selectOption('#opponentAction',String(enemy));await page.locator('#fireSpecial').click();await page.clock.runFor(1300);
+   await page.locator('#normalMode').click();await page.locator('.moveChoice').nth(i).click();await page.selectOption('#opponentAction',String(enemy));await page.locator('#fireSpecial').click();await page.clock.runFor(2600);
    if(i===12)assert.equal(await page.locator('#previewSelf .gaugeValue').innerText(),'2 / 10','Focus fails when hit');
    if(i===13)assert.equal(await page.locator('#previewSelf .gaugeValue').innerText(),'1 / 10','Convert fails without a hit');
    if(i===18&&enemy===2)assert.equal(await page.locator('#previewSelf .gaugeValue').innerText(),'8 / 10','blocked Drain gains nothing');
    if(i===16)assert.equal(await page.locator('#previewEnemy .hpValue').innerText(),'7 / 10','Foresight blocks Refund');
   }
-  await page.locator('#specialMode').click();await page.locator('.moveChoice').nth(10).click();await page.selectOption('#opponentAction','0');await page.selectOption('#playbackRate','0.5');await page.locator('#fireSpecial').click();await page.clock.runFor(1300);assert(await page.locator('#fireSpecial').isDisabled(),'half speed lasts longer');await page.clock.runFor(1300);assert(!(await page.locator('#fireSpecial').isDisabled()));
+  await page.locator('#specialMode').click();await page.locator('.moveChoice').nth(10).click();await page.selectOption('#opponentAction','0');await page.selectOption('#playbackRate','0.5');await page.locator('#fireSpecial').click();await page.clock.runFor(1300);assert(await page.locator('#fireSpecial').isDisabled(),'half speed lasts longer');await page.clock.runFor(2500);assert(!(await page.locator('#fireSpecial').isDisabled()));
   await page.selectOption('#playbackRate','1');
   for(const [width,height]of [[1365,1050],[390,844],[320,640],[844,390]]){
    await page.setViewportSize({width,height});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no overflow '+width);
