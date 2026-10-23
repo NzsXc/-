@@ -187,7 +187,7 @@
             else{const a=1-clamp((ms-begin-350)/140);circle(gx,gy,3+(ms-begin-350)/12,color,1.5,a,10);}
           }
         }
-        if(kind==='seal'){
+        if(kind==='seal'&&!player.special){
           barrier(tx,ty,blue,.35*alive);haze(tx,ty,123,color,.22*alive);
           const locked=ease((ms-180)/250);blade(tx,ty,.8,140*locked,15,alive,color);blade(tx,ty,-.8,140*locked,15,alive,color);
         }
@@ -205,7 +205,7 @@
           for(let i=0;i<2;i++){const p=clamp((ms-100-i*90)/550),x=tx+(ox-tx)*ease(p),y=ty+(oy-ty)*ease(p)+Math.sin(p*Math.PI)*(i===0?44:-44);if(p<1&&ms>=100+i*90){haze(x,y,37,color,.3);circle(x,y,9,white,1,1,20,true);circle(x,y,14,color,2,1,16);line([[x+25,y-8],[x,y]],color,2,.45,12);}if(p>=1)circle(ox,oy,24+(ms-650-i*90)/5,color,2,(1-clamp((ms-650-i*90)/350))*alive,15);}
           if(ms>650)haze(ox,oy,80,color,.3*alive);
         }
-        if(kind==='ruin')drawCracks(ctx,ms,layout.boards[opponent.side-1],color);
+        if(kind==='ruin'&&!player.special)drawCracks(ctx,ms,layout.boards[opponent.side-1],color);
         if(kind==='mirror'){
           const mx=423,my=267;line([[mx-36,my-86],[mx+39,my-69],[mx+39,my+86],[mx-36,my+69],[mx-36,my-86]],color,2,alive,14);line([[mx-25,my+49],[mx+27,my-49]],white,1.5,.5*alive,8);haze(mx,my,105,color,.2*alive);
           if(incoming){const p=clamp((ms-120)/320),x=tx+(mx-tx)*p,y=ty+(my-ty)*p;const cx=ox+(mx-ox)*p,cy=oy+(my-oy)*p;if(ms<440){circle(x,y,12,red,1,1,15,true);circle(cx,cy,12,color,1,1,15,true);}else{circle(mx,my,10+hit*130,color,3,burst*alive,16);circle(mx,my,8+hit*96,white,1.5,burst*.6*alive,8);}}
@@ -343,7 +343,7 @@
   function drawSpecial(ctx, ms, p, other, layout, plan) {
     if (!p.special || p.disabled || !p.kind) return;
     const origin=layout.points[p.side-1],target=layout.points[other.side-1];
-    const {line,circle,haze,blade,hex}=painter(ctx,ms,violet,violetWhite);
+    const {line,circle,haze,blade}=painter(ctx,ms,violet,violetWhite);
     const fade=1-ease((ms-820)/380),charge=Math.sin(clamp(ms/440)*Math.PI),spin=ms/850+p.side;
     haze(origin.x,origin.y,130,violet,.22*charge);
     for(let ring=0;ring<3;ring++){
@@ -360,11 +360,15 @@
     const at=p.counter?other.impact+380:plan.duel?plan.clashAt+330:p.attack?p.impact:other.attack?other.impact:440;
     const q=clamp((ms-at)/600),burst=Math.sin(q*Math.PI)*fade;
     if(ms<at||burst<=0)return;
+    // A cancelled, blocked or reflected attack cannot produce a hit on the target.
+    if(p.attack&&(other.damage<=0||other.counter||(plan.duel&&plan.winner!==p.side-1)))return;
     const hostile=p.attack||['seal','ruin'].includes(p.kind),center=hostile?target:origin;
     const x=center.x,y=center.y,r=32+ease(q)*112;
     haze(x,y,170,violet,.22*burst);
-    circle(x,y,r,violet,2.5,burst,22,false,.64);
-    circle(x,y,r*.8,violetWhite,1,burst*.65,10,false,.64);
+    if(!['seal','ruin'].includes(p.kind)){
+      circle(x,y,r,violet,2.5,burst,22,false,.64);
+      circle(x,y,r*.8,violetWhite,1,burst*.65,10,false,.64);
+    }
     if(['breach','punish','momentum'].includes(p.kind)){
       const a=p.kind==='punish'?Math.PI/2:Math.atan2(target.y-origin.y,target.x-origin.x);
       blade(x,y,a,330,35,burst,violet);blade(x,y,a+.75,230,12,burst*.7,violetWhite);
@@ -378,9 +382,38 @@
         const t=(q+i/10)%1,px=target.x+(origin.x-target.x)*t,py=target.y+(origin.y-target.y)*t+Math.sin(t*Math.PI)*45;
         circle(px,py,3+i%3,violetWhite,1,burst,12,true);
       }
-    }else if(['seal','ruin'].includes(p.kind)){
-      line(hex(x,y,65+q*35),violetWhite,2,burst,18);
-      for(let i=0;i<6;i++){const a=i*Math.PI/3;line([[x+Math.cos(a)*35,y+Math.sin(a)*35],[x+Math.cos(a)*135,y+Math.sin(a)*135]],violet,3,burst,15);}
+    }else if(p.kind==='seal'){
+      // Four chains tighten around a central padlock, like a sealed action card.
+      const close=ease(q*3),spread=105-close*30;
+      for(let chain=0;chain<2;chain++)for(let i=-5;i<=5;i++){
+        const px=x+i*24,py=y+(chain?1:-1)*(spread-i*5),a=burst*(1-Math.abs(i)*.07);
+        line([[px-11,py],[px-3,py-6],[px+11,py],[px+3,py+6],[px-11,py]],chain?violetWhite:violet,2,a,12);
+      }
+      const size=close*.25+.75;
+      line([[x-22*size,y-8],[x-22*size,y-29],[x-13*size,y-43],[x+13*size,y-43],[x+22*size,y-29],[x+22*size,y-8]],violetWhite,5,burst,20);
+      line([[x-36,y-9],[x+36,y-9],[x+36,y+45],[x-36,y+45],[x-36,y-9]],'#251333',1,burst*.9,0,true);
+      line([[x-36,y-9],[x+36,y-9],[x+36,y+45],[x-36,y+45],[x-36,y-9]],violet,3,burst,20);
+      circle(x,y+11,6,violetWhite,1,burst,8,true);
+      line([[x,y+14],[x,y+29]],violetWhite,4,burst,8);
+      for(const side of [-1,1])line([[x+side*52,y-28],[x+side*64,y-40],[x+side*72,y-26]],violet,2,burst*.7,12);
+    }else if(p.kind==='ruin'){
+      // An eclipse pulls purple wisps inward; embers fall over the cursed card.
+      const radius=48+Math.sin(q*Math.PI)*12;
+      haze(x,y,125,'#7b31bd',burst*.55);
+      circle(x,y,radius+6,violet,3,burst,30);
+      circle(x,y,radius,'#100819',1,burst*.94,0,true);
+      for(let arm=0;arm<3;arm++){
+        const points=Array.from({length:28},(_,i)=>{
+          const t=i/27,a=arm*Math.PI*2/3+spin*1.4+t*3.6,d=radius+10+t*80;
+          return [x+Math.cos(a)*d,y+Math.sin(a)*d*.6];
+        });
+        line(points,arm===0?violetWhite:violet,2,burst*.65,14);
+      }
+      for(let i=0;i<16;i++){
+        const px=x+(random(i+31)-.5)*180,py=y-110+((q*170+i*19)%220),length=9+random(i+80)*17;
+        line([[px,py-length],[px,py]],violet,1.5,burst*.7,12);
+        circle(px,py,2,violetWhite,1,burst*.8,10,true);
+      }
     }else{
       for(let i=0;i<8;i++){
         const a=i*Math.PI/4+spin,px=x+Math.cos(a)*r,py=y+Math.sin(a)*r*.65;
