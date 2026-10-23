@@ -1,5 +1,9 @@
 /* Mode cards and compact solo setup. Battle and online controls keep their own styles. */
 #modeScreen .modeCards{width:min(550px,100%);display:grid;gap:14px}
+#modeScreen .modeCard.preview{--mode-accent:#d7a5ff;min-height:70px;align-items:center;text-decoration:none;background:linear-gradient(115deg,#342541,#211d37);border-color:#ad79cd77}
+#modeScreen .modeCard.preview .modeCardName{font-size:15px}
+#modeScreen .modeCard.preview .modeCardIcon{font-size:26px;line-height:1}
+#modeScreen .modeCard.preview .modeCardArrow{margin-left:auto;color:var(--mode-accent)}
 #modeScreen .modeCardsTop{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
 #modeScreen .modeCard{--mode-accent:#75e6ff;position:relative;min-width:0;padding:20px;display:flex;gap:15px;align-items:flex-start;border:1px solid #41627c;border-radius:12px;background:linear-gradient(120deg,#244760,#14273f);color:#ecf9ff;text-align:left;font:inherit;box-shadow:none}
 #modeScreen .modeCard.online{--mode-accent:#bda1ff}

@@ -111,15 +111,15 @@
     return {x:(r.left + r.width/2 - layerBounds.left)/zoom,y:(r.top + r.height/2 - layerBounds.top)/zoom};
   }
 
-  function geometry(layer, canvas, ctx) {
+  function geometry(layer, canvas, ctx, elements) {
     const bounds = layer.getBoundingClientRect(), w = Math.max(1,bounds.width), h = Math.max(1,bounds.height);
     const dpr = Math.min(window.devicePixelRatio || 1,2), zoom = Math.max(.3,Math.min(1,w/900,h/500));
     if (canvas.width !== Math.round(w*dpr) || canvas.height !== Math.round(h*dpr)) {canvas.width = Math.round(w*dpr);canvas.height = Math.round(h*dpr);}
     ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,canvas.width,canvas.height);ctx.setTransform(dpr*zoom,0,0,dpr*zoom,0,0);
-    const areas = [1,2].map(side => document.getElementById('player'+side+'Area'));
+    const areas = elements || [1,2].map(side => document.getElementById('player'+side+'Area'));
     const points = areas.map((el,i) => pointFor(el,bounds,zoom,{x:w/zoom*(i?.8:.2),y:h/zoom*(i?.25:.75)}));
     const boards = areas.map((el,i) => {const r = el?.getBoundingClientRect();return r ? {x:(r.left-bounds.left)/zoom,y:(r.top-bounds.top)/zoom,width:r.width/zoom,height:r.height/zoom} : {x:points[i].x-70,y:points[i].y-40,width:140,height:80};});
-    const gauges = [1,2].map(side => document.querySelector('#player'+side+'Area .gaugeBar'));
+    const gauges = areas.map(el => el?.querySelector ? el.querySelector('.gaugeBar') : document.querySelector('.gaugeBar'));
     return {bounds,dpr,zoom,points,boards,gauges};
   }
 
@@ -339,6 +339,56 @@
 
   }
 
+  // Extra S layers share the confirmed turn clock and never change game state.
+  function drawSpecial(ctx, ms, p, other, layout, plan) {
+    if (!p.special || p.disabled || !p.kind) return;
+    const origin=layout.points[p.side-1],target=layout.points[other.side-1];
+    const {line,circle,haze,blade,hex}=painter(ctx,ms,violet,violetWhite);
+    const fade=1-ease((ms-820)/380),charge=Math.sin(clamp(ms/440)*Math.PI),spin=ms/850+p.side;
+    haze(origin.x,origin.y,130,violet,.22*charge);
+    for(let ring=0;ring<3;ring++){
+      const r=38+ring*17+charge*16,points=Array.from({length:7},(_,i)=>{
+        const a=i*Math.PI/3+(ring%2?-spin:spin);return [origin.x+Math.cos(a)*r,origin.y+Math.sin(a)*r*.48];
+      });
+      line(points,ring===1?violetWhite:violet,ring===1?1:2,charge*.7,14);
+    }
+    for(let i=0;i<18;i++){
+      const a=i*Math.PI*2/18+spin*.3,r=28+(1-clamp(ms/440))*(90+random(i)*65);
+      const x=origin.x+Math.cos(a)*r,y=origin.y+Math.sin(a)*r*.65;
+      line([[x,y],[x+Math.cos(a)*9,y+Math.sin(a)*9]],i%3?violet:violetWhite,1.5,charge*.8,8);
+    }
+    const at=p.counter?other.impact+380:plan.duel?plan.clashAt+330:p.attack?p.impact:other.attack?other.impact:440;
+    const q=clamp((ms-at)/600),burst=Math.sin(q*Math.PI)*fade;
+    if(ms<at||burst<=0)return;
+    const hostile=p.attack||['seal','ruin'].includes(p.kind),center=hostile?target:origin;
+    const x=center.x,y=center.y,r=32+ease(q)*112;
+    haze(x,y,170,violet,.22*burst);
+    circle(x,y,r,violet,2.5,burst,22,false,.64);
+    circle(x,y,r*.8,violetWhite,1,burst*.65,10,false,.64);
+    if(['breach','punish','momentum'].includes(p.kind)){
+      const a=p.kind==='punish'?Math.PI/2:Math.atan2(target.y-origin.y,target.x-origin.x);
+      blade(x,y,a,330,35,burst,violet);blade(x,y,a+.75,230,12,burst*.7,violetWhite);
+      for(let i=0;i<22;i++){const a=i*2.4,d=40+q*(90+random(i)*100);blade(x+Math.cos(a)*d,y+Math.sin(a)*d,a,12+random(i+40)*26,3,burst,violet);}
+    }else if(['heal','enhance','rampage','siphon'].includes(p.kind)){
+      for(let i=0;i<12;i++){
+        const a=i*Math.PI/6+spin,d=52+q*48,px=x+Math.cos(a)*d,py=y+Math.sin(a)*d*.6-q*55;
+        line([[px-5,py],[px+5,py]],violetWhite,2,burst,12);line([[px,py-7],[px,py+7]],violet,2,burst,12);
+      }
+      if(p.kind==='siphon')for(let i=0;i<10;i++){
+        const t=(q+i/10)%1,px=target.x+(origin.x-target.x)*t,py=target.y+(origin.y-target.y)*t+Math.sin(t*Math.PI)*45;
+        circle(px,py,3+i%3,violetWhite,1,burst,12,true);
+      }
+    }else if(['seal','ruin'].includes(p.kind)){
+      line(hex(x,y,65+q*35),violetWhite,2,burst,18);
+      for(let i=0;i<6;i++){const a=i*Math.PI/3;line([[x+Math.cos(a)*35,y+Math.sin(a)*35],[x+Math.cos(a)*135,y+Math.sin(a)*135]],violet,3,burst,15);}
+    }else{
+      for(let i=0;i<8;i++){
+        const a=i*Math.PI/4+spin,px=x+Math.cos(a)*r,py=y+Math.sin(a)*r*.65;
+        line([[px-6,py],[px,py-10],[px+6,py],[px,py+10],[px-6,py]],violetWhite,1.5,burst,12);
+      }
+    }
+  }
+
   function render(ctx, ms, plan, layout) {
     for (const p of plan.players) if (p.mirror) {
       const self = layout.points[p.side-1], other = layout.points[2-p.side];
@@ -350,6 +400,7 @@
     }
     if (plan.duel) drawClash(ctx,ms,plan,layout);
     else for (let i=0;i<2;i++) drawSide(ctx,ms,plan.players[i],plan.players[1-i],layout);
+    for(let i=0;i<2;i++)drawSpecial(ctx,ms,plan.players[i],plan.players[1-i],layout,plan);
   }
 
   function cancel() {
@@ -383,11 +434,11 @@
     function frame(now) {
       if(active!==record)return;
       const ms=Math.min(duration,now-began);
-      render(ctx,ms,plan,geometry(options.layer,canvas,ctx));dispatch(ms);
+      render(ctx,ms,plan,geometry(options.layer,canvas,ctx,options.elements));dispatch(ms);
       if(ms<duration)record.raf=requestAnimationFrame(frame);
       else finish();
     }
-    if(reduced)render(ctx,570,plan,geometry(options.layer,canvas,ctx));
+    if(reduced)render(ctx,570,plan,geometry(options.layer,canvas,ctx,options.elements));
     else record.raf=requestAnimationFrame(frame);
     // Background tabs throttle RAF; complete the turn even when no frame is delivered.
     record.timer=setTimeout(finish,duration+60);

@@ -60,5 +60,5 @@
       button.setAttribute('aria-disabled', String(!privateChoice || button.classList.contains('disabled')));
     }
   }
-  window.BattleActionArt = Object.freeze({update, kindOf});
+  window.BattleActionArt = Object.freeze({update, kindOf, paint});
 })();
