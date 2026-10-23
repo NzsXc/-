@@ -42,7 +42,7 @@ test('S Momentum only slashes the target after a confirmed successful hit',()=>{
  }
 });
 
-test('S Anti Guard uses a padlock while S Ruin uses a dark eclipse',()=>{
+test('S Anti Guard uses a padlock while S Ruin retains cracks without an eclipse',()=>{
  const seal=fixture();seal.play({...actions[10],special:true},actions[0],650);assert(seal.colors.includes('#251333'));assert(!seal.colors.includes('#100819'));seal.api.cancel();
- const ruin=fixture();ruin.play({...actions[13],special:true},actions[0],650);assert(ruin.colors.includes('#100819'));assert(!ruin.colors.includes('#251333'));ruin.api.cancel();
+ const ruin=fixture();ruin.play({...actions[13],special:true},actions[0],650);assert(ruin.colors.includes('#bd75ff'));assert(!ruin.colors.includes('#100819'));assert(!ruin.colors.includes('#251333'));ruin.api.cancel();
 });

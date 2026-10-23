@@ -132,6 +132,24 @@
     ctx.restore();
   }
 
+  const ruinSeam=[[0,.54],[.16,.48],[.33,.57],[.5,.46],[.67,.55],[.84,.49],[1,.56]];
+  const ruinUpper=[[0,0],[1,0],...ruinSeam.slice().reverse()];
+  const polygon=points=>'polygon('+points.map(([x,y])=>`${x*100}% ${y*100}%`).join(',')+')';
+  const ruinPieces=ruinSeam.slice(0,-1).flatMap((a,i)=>{
+    const b=ruinSeam[i+1];return [[a,b,[b[0],1]],[a,[b[0],1],[a[0],1]]];
+  });
+  function drawRuinFracture(ctx,ms,board,color,collapse) {
+    ctx.save();
+    if(collapse&&ms>=380){
+      ctx.beginPath();ruinUpper.forEach(([x,y],i)=>i?ctx.lineTo(board.x+x*board.width,board.y+y*board.height):ctx.moveTo(board.x+x*board.width,board.y+y*board.height));ctx.closePath();ctx.clip();
+    }
+    drawCracks(ctx,ms,board,color);
+    const progress=ease((ms-150)/230),alpha=1-ease((ms-750)/450);
+    const {line}=painter(ctx,ms,color,violetWhite);
+    line(ruinSeam.slice(0,Math.ceil(progress*ruinSeam.length)).map(([x,y])=>[board.x+x*board.width,board.y+y*board.height]),color,2,alpha,9);
+    ctx.restore();
+  }
+
   function drawSide(ctx, ms, player, opponent, layout) {
     const red=player.special?violet:'#ff5266',blue=player.special?violet:'#69aaff';
     const kind = player.kind, spec = {role:!player.attack};
@@ -357,6 +375,10 @@
       const x=origin.x+Math.cos(a)*r,y=origin.y+Math.sin(a)*r*.65;
       line([[x,y],[x+Math.cos(a)*9,y+Math.sin(a)*9]],i%3?violet:violetWhite,1.5,charge*.8,8);
     }
+    if(p.kind==='ruin'){
+      drawRuinFracture(ctx,ms,layout.boards[other.side-1],violet,!plan.reducedMotion);
+      return;
+    }
     const at=p.counter?other.impact+380:plan.duel?plan.clashAt+330:p.attack?p.impact:other.attack?other.impact:440;
     const q=clamp((ms-at)/600),burst=Math.sin(q*Math.PI)*fade;
     if(ms<at||burst<=0)return;
@@ -396,24 +418,6 @@
       circle(x,y+11,6,violetWhite,1,burst,8,true);
       line([[x,y+14],[x,y+29]],violetWhite,4,burst,8);
       for(const side of [-1,1])line([[x+side*52,y-28],[x+side*64,y-40],[x+side*72,y-26]],violet,2,burst*.7,12);
-    }else if(p.kind==='ruin'){
-      // An eclipse pulls purple wisps inward; embers fall over the cursed card.
-      const radius=48+Math.sin(q*Math.PI)*12;
-      haze(x,y,125,'#7b31bd',burst*.55);
-      circle(x,y,radius+6,violet,3,burst,30);
-      circle(x,y,radius,'#100819',1,burst*.94,0,true);
-      for(let arm=0;arm<3;arm++){
-        const points=Array.from({length:28},(_,i)=>{
-          const t=i/27,a=arm*Math.PI*2/3+spin*1.4+t*3.6,d=radius+10+t*80;
-          return [x+Math.cos(a)*d,y+Math.sin(a)*d*.6];
-        });
-        line(points,arm===0?violetWhite:violet,2,burst*.65,14);
-      }
-      for(let i=0;i<16;i++){
-        const px=x+(random(i+31)-.5)*180,py=y-110+((q*170+i*19)%220),length=9+random(i+80)*17;
-        line([[px,py-length],[px,py]],violet,1.5,burst*.7,12);
-        circle(px,py,2,violetWhite,1,burst*.8,10,true);
-      }
     }else{
       for(let i=0;i<8;i++){
         const a=i*Math.PI/4+spin,px=x+Math.cos(a)*r,py=y+Math.sin(a)*r*.65;
@@ -436,10 +440,59 @@
     for(let i=0;i<2;i++)drawSpecial(ctx,ms,plan.players[i],plan.players[1-i],layout,plan);
   }
 
+  // Clip live cards only during the effect. Detached copies carry the actual card art.
+  function prepareRuinCollapse(plan,options) {
+    const areas=options.elements||[1,2].map(side=>document.getElementById('player'+side+'Area'));
+    return plan.players.filter(p=>p.special&&p.kind==='ruin'&&!p.disabled).flatMap(p=>{
+      const source=areas[2-p.side];
+      if(!source?.cloneNode||!source.style||!options.layer.insertBefore)return [];
+      const root=document.createElement('div');root.className='ruinCollapse';root.setAttribute('aria-hidden','true');root.inert=true;
+      root.style.cssText='position:absolute;inset:0;pointer-events:none;z-index:0;';root.hidden=true;
+      const original=['clip-path','-webkit-clip-path'].map(key=>[key,source.style.getPropertyValue(key),source.style.getPropertyPriority(key)]);
+      const pieces=ruinPieces.map((points,i)=>{
+        const piece=document.createElement('div');piece.className='ruinCardFragment';
+        const clone=source.cloneNode(true);clone.removeAttribute('id');clone.removeAttribute('style');
+        for(const node of clone.querySelectorAll('[id]'))node.removeAttribute('id');
+        for(const node of clone.querySelectorAll('button,input,select,textarea,a,[tabindex]')){node.tabIndex=-1;if('disabled' in node)node.disabled=true;node.removeAttribute('autofocus');}
+        // Preserve custom properties / inline presentation without copying live clipping.
+        clone.style.cssText=source.style.cssText;
+        Object.assign(clone.style,{position:'absolute',inset:'0',left:'0',top:'0',right:'auto',bottom:'auto',width:'100%',height:'100%',margin:'0',transform:'none',animation:'none',transition:'none'});
+        clone.style.setProperty('clip-path',polygon(points),'important');clone.style.setProperty('-webkit-clip-path',polygon(points),'important');
+        const center=points.reduce((sum,v)=>[sum[0]+v[0]/3,sum[1]+v[1]/3],[0,0]);
+        piece.style.cssText='position:absolute;pointer-events:none;filter:drop-shadow(0 0 1px #bd75ff);';piece.style.transformOrigin=`${center[0]*100}% ${center[1]*100}%`;
+        piece.appendChild(clone);root.appendChild(piece);return {node:piece,index:i};
+      });
+      options.layer.insertBefore(root,options.layer.firstChild);
+      return [{source,root,original,pieces,started:false}];
+    });
+  }
+  function updateRuinCollapse(shatters,ms,layer) {
+    const bounds=layer.getBoundingClientRect();
+    for(const effect of shatters){
+      if(ms<380)continue;
+      if(!effect.started){
+        effect.started=true;effect.root.hidden=false;
+        for(const [key]of effect.original)effect.source.style.setProperty(key,polygon(ruinUpper),'important');
+      }
+      const rect=effect.source.getBoundingClientRect();
+      for(const {node,index}of effect.pieces){
+        const q=clamp((ms-380-index%4*24)/620),drop=q*q*(rect.height*.65+80),drift=(random(index+91)-.5)*70*q;
+        Object.assign(node.style,{left:rect.left-bounds.left+'px',top:rect.top-bounds.top+'px',width:rect.width+'px',height:rect.height+'px',transform:`translate(${drift}px,${drop}px) rotate(${(random(index+151)-.5)*32*q}deg)`,opacity:String(1-ease((q-.12)/.88))});
+      }
+    }
+  }
+  function restoreRuinCollapse(shatters) {
+    for(const effect of shatters){
+      if(effect.started)for(const [key,value,priority]of effect.original){if(value)effect.source.style.setProperty(key,value,priority);else effect.source.style.removeProperty(key);}
+      effect.root.remove();
+    }
+  }
+
   function cancel() {
     if (!active) return;
     cancelAnimationFrame(active.raf);clearTimeout(active.timer);active.canvas.remove();
     for (const animation of active.shakes) animation.cancel();
+    restoreRuinCollapse(active.shatters);
     active=null;
   }
 
@@ -449,7 +502,8 @@
     const ctx=canvas.getContext('2d');if(!ctx)return false;
     options.layer.replaceChildren(canvas);
     const plan=createPlan(options.actions,options), reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const record={canvas,raf:0,timer:0,shakes:[],seen:new Set()};active=record;
+    plan.reducedMotion=reduced;
+    const record={canvas,raf:0,timer:0,shakes:[],seen:new Set(),shatters:reduced?[]:prepareRuinCollapse(plan,options)};active=record;
     const began=performance.now();
     function dispatch(ms) {
       for (const event of plan.events) if (ms>=event.at&&!record.seen.has(event.side)) {
@@ -467,6 +521,7 @@
     function frame(now) {
       if(active!==record)return;
       const ms=Math.min(duration,now-began);
+      updateRuinCollapse(record.shatters,ms,options.layer);
       render(ctx,ms,plan,geometry(options.layer,canvas,ctx,options.elements));dispatch(ms);
       if(ms<duration)record.raf=requestAnimationFrame(frame);
       else finish();
