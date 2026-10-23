@@ -69,7 +69,7 @@
       if(p.kind==='ruin'&&p.special)total=Math.max(total,1800);
       const other=plan.players[2-p.side];
       if(['drain','refund'].includes(p.kind)&&other.damage>0&&!other.counter&&(!plan.duel||plan.winner===p.side-1))total=Math.max(total,hitAt(p,plan)+20+(p.kind==='refund'?180:0)+550+80);
-      if(p.kind==='focus'&&p.damage===0||p.kind==='convert'&&p.damage>0)total=Math.max(total,(other.attack?other.impact:440)+20+(p.kind==='convert'?360:180)+550+80);
+      if(p.kind==='focus'&&p.damage===0||p.kind==='convert'&&p.damage>0)total=Math.max(total,(other.attack?other.impact:440)+20+700+80);
     }
     return total;
   }
@@ -132,16 +132,16 @@
     return {x:(r.left + r.width/2 - layerBounds.left)/zoom,y:(r.top + r.height/2 - layerBounds.top)/zoom};
   }
 
-  // All three techniques use the same packet, flight time and stagger.
-  function drawGaugeTransfer(ctx,ms,from,to,count=2,{start=100,color='#54caff',halos=true}={}){
+  // Shared packet art; short local collection paths can use a steady flight.
+  function drawGaugeTransfer(ctx,ms,from,to,count=2,{start=100,color='#54caff',halos=true,flight=550,linear=false}={}){
     const {line,circle,haze}=painter(ctx,ms,color,'#fff6f0');
-    const end=start+(count-1)*90+550,alive=1-clamp((ms-end)/180);
+    const end=start+(count-1)*90+flight,alive=1-clamp((ms-end)/180);
     if(halos){circle(from.x,from.y,49,color,1.5,.3*alive,9);circle(to.x,to.y,64,color,2,.4*alive,10);}
     for(let i=0;i<count;i++){
-      const begin=start+i*90,t=(ms-begin)/550;if(t<0)continue;
-      const p=clamp(t),x=from.x+(to.x-from.x)*ease(p),y=from.y+(to.y-from.y)*ease(p)+Math.sin(p*Math.PI)*(i%2?-44:44);
+      const begin=start+i*90,t=(ms-begin)/flight;if(t<0)continue;
+      const p=clamp(t),progress=linear?p:ease(p),x=from.x+(to.x-from.x)*progress,y=from.y+(to.y-from.y)*progress+Math.sin(p*Math.PI)*(i%2?-44:44);
       if(t<1){haze(x,y,37,color,.3);circle(x,y,9,'#fff6f0',1,1,20,true);circle(x,y,14,color,2,1,16);line([[x+25,y-8],[x,y]],color,2,.45,12);}
-      else{const a=1-clamp((ms-begin-550)/350);circle(to.x,to.y,24+(ms-begin-550)/5,color,2,a*alive,15);}
+      else{const a=1-clamp((ms-begin-flight)/350);circle(to.x,to.y,24+(ms-begin-flight)/5,color,2,a*alive,15);}
     }
     if(halos&&ms>end)haze(to.x,to.y,80,color,.3*alive);
   }

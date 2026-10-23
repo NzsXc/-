@@ -8,7 +8,7 @@ const root=path.resolve(__dirname,'..');
   await page.goto('https://timing.test/battle-preview.html');await page.locator('.moveChoice').last().waitFor();await page.clock.install();await page.clock.pauseAt(await page.evaluate(()=>Date.now()+1000));
   await page.evaluate(()=>{
    const api=BattleEffects,transfer=api.drawGaugeTransfer;window.transfers=[];
-   window.BattleEffects={...api,drawGaugeTransfer(...args){transfers.push({ms:args[1],count:args[4],start:args[5]?.start??100});return transfer(...args);}};
+   window.BattleEffects={...api,drawGaugeTransfer(...args){transfers.push({ms:args[1],count:args[4],start:args[5]?.start??100,flight:args[5]?.flight??550,linear:args[5]?.linear??false});return transfer(...args);}};
   });
   async function cast(index,enemy,mode='normal'){
    await page.locator('#'+mode+'Mode').click();await page.locator('.moveChoice').nth(index).click();await page.selectOption('#opponentAction',String(enemy));await page.locator('#fireSpecial').click();
@@ -28,7 +28,10 @@ const root=path.resolve(__dirname,'..');
   }
   for(const mode of ['normal','special'])for(const [index,enemy,count]of [[12,0,3],[13,1,5]]){
    await page.evaluate(()=>transfers.length=0);await cast(index,enemy,mode);await page.clock.runFor(600);
-   const starts=await page.evaluate(()=>[...new Set(transfers.map(c=>c.start))]);assert.deepEqual(starts,Array.from({length:count},(_,i)=>460+i*90),'Focus/Convert use Siphon packet timing on the real animation clock');
+   const calls=await page.evaluate(()=>transfers),starts=[...new Set(calls.map(c=>c.start))];
+   assert.deepEqual(starts,Array.from({length:count},(_,i)=>460+i*(count===3?50:25)));
+   assert(calls.every(c=>c.flight===600&&c.linear),'local collection stays visible throughout a steady flight');
+   assert.equal(starts.at(-1)+calls[0].flight-starts[0],700,'all Focus/Convert packets arrive over 0.7 seconds');
    await page.clock.runFor(2100);assert(!(await page.locator('#fireSpecial').isDisabled()));
   }
   for(const [index,enemy]of [[12,1],[13,0]]){

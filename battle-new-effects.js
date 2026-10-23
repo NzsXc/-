@@ -91,7 +91,7 @@
       else{
         for(let i=0;i<3;i++){
           const from={x:gaugeTarget.x+(i%2?-1:1)*Math.min(70,a.width*.3),y:gaugeTarget.y-100};
-          if(sceneMs>=impact)window.BattleEffects.drawGaugeTransfer(ctx,sceneMs,from,gaugeTarget,1,{start:impact+20+i*90,halos:false});
+          if(sceneMs>=impact)window.BattleEffects.drawGaugeTransfer(ctx,sceneMs,from,gaugeTarget,1,{start:impact+20+i*50,halos:false,flight:600,linear:true});
         }
       }
     }
@@ -101,9 +101,9 @@
         burst(a,ms-hit,C.enemy,.7);shake(self,ms-hit);
         if(sceneMs>=impact){
           for(let i=0;i<5;i++){
-            const begin=impact+20+i*90,from=pentagon[i];
+            const begin=impact+20+i*25,from=pentagon[i];
             if(sceneMs<begin)siphonMote(from.x,from.y,clamp((sceneMs-impact)/80));
-            window.BattleEffects.drawGaugeTransfer(ctx,sceneMs,from,gaugeTarget,1,{start:begin,halos:false});
+            window.BattleEffects.drawGaugeTransfer(ctx,sceneMs,from,gaugeTarget,1,{start:begin,halos:false,flight:600,linear:true});
           }
         }
       }else label(ms<1250?'コンバート':'ゲージ獲得なし');

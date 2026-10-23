@@ -64,3 +64,12 @@ test('shared Siphon packet keeps its 550ms eased flight, white core and cyan rin
  const normal=f.api.createPlan([actions[13],actions[0]]);assert.equal(normal.duration,1200);
  const special=f.api.createPlan([{...actions[13],special:true},actions[0]]);assert.equal(special.duration,1800);
 });
+
+test('local collection keeps moving evenly instead of rushing to the gauge',()=>{
+ for(const [ms,x]of [[150,25],[300,50],[450,75]]){
+  const f=fixture();f.api.drawGaugeTransfer(f.ctx,ms,{x:0,y:0},{x:100,y:0},1,{start:0,flight:600,linear:true,halos:false});
+  assert.equal(f.circles.find(c=>c.radius===9).center[0],x);
+ }
+ const f=fixture();f.api.drawGaugeTransfer(f.ctx,600,{x:0,y:0},{x:100,y:0},1,{start:0,flight:600,linear:true,halos:false});
+ assert(!f.circles.some(c=>c.radius===9),'packet enters the gauge at the end of its full flight');
+});
