@@ -26,9 +26,17 @@ const root=path.resolve(__dirname,'..');
    if(index!==9){const calls=await page.evaluate(()=>transfers);assert(calls.some(c=>c.count===(index===16?3:1)&&c.start===460),'new technique uses shared Siphon packet and real clock');}
    await page.clock.runFor(2100);
   }
+  for(const mode of ['normal','special'])for(const [index,enemy,count]of [[12,0,3],[13,1,5]]){
+   await page.evaluate(()=>transfers.length=0);await cast(index,enemy,mode);await page.clock.runFor(600);
+   const starts=await page.evaluate(()=>[...new Set(transfers.map(c=>c.start))]);assert.deepEqual(starts,Array.from({length:count},(_,i)=>460+i*90),'Focus/Convert use Siphon packet timing on the real animation clock');
+   await page.clock.runFor(2100);assert(!(await page.locator('#fireSpecial').isDisabled()));
+  }
+  for(const [index,enemy]of [[12,1],[13,0]]){
+   await page.evaluate(()=>transfers.length=0);await cast(index,enemy);await page.clock.runFor(1400);assert.equal(await page.evaluate(()=>transfers.length),0,'failed condition produces no collection packets');
+  }
   await cast(17,0);await page.clock.runFor(1400);assert(await page.locator('#fireSpecial').isDisabled(),'Venom is slower than the old compressed reveal');
   if(process.env.PREVIEW_SCREENSHOTS)await page.screenshot({path:path.join(process.env.PREVIEW_SCREENSHOTS,'venom-slow.png'),fullPage:true});
   await page.clock.runFor(1100);assert(!(await page.locator('#fireSpecial').isDisabled()));
-  assert.deepEqual(errors,[]);console.log('PASS beam win/tie/loss and S beam, shared gauge transfer, slower Venom, all callbacks finish');
+  assert.deepEqual(errors,[]);console.log('PASS beams, shared Siphon/Drain/Refund/Focus/Convert packets, conditional collection, slow Venom, completion');
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

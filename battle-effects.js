@@ -66,9 +66,10 @@
     let total=duration;
     for(const p of plan.players){
       if(p.kind==='venom')total=Math.max(total,2400);
-      if(p.kind==='ruin')total=Math.max(total,p.special?1800:2000);
+      if(p.kind==='ruin'&&p.special)total=Math.max(total,1800);
       const other=plan.players[2-p.side];
       if(['drain','refund'].includes(p.kind)&&other.damage>0&&!other.counter&&(!plan.duel||plan.winner===p.side-1))total=Math.max(total,hitAt(p,plan)+20+(p.kind==='refund'?180:0)+550+80);
+      if(p.kind==='focus'&&p.damage===0||p.kind==='convert'&&p.damage>0)total=Math.max(total,(other.attack?other.impact:440)+20+(p.kind==='convert'?360:180)+550+80);
     }
     return total;
   }
@@ -132,17 +133,17 @@
   }
 
   // All three techniques use the same packet, flight time and stagger.
-  function drawGaugeTransfer(ctx,ms,from,to,count=2,{start=100,color='#54caff'}={}){
+  function drawGaugeTransfer(ctx,ms,from,to,count=2,{start=100,color='#54caff',halos=true}={}){
     const {line,circle,haze}=painter(ctx,ms,color,'#fff6f0');
     const end=start+(count-1)*90+550,alive=1-clamp((ms-end)/180);
-    circle(from.x,from.y,49,color,1.5,.3*alive,9);circle(to.x,to.y,64,color,2,.4*alive,10);
+    if(halos){circle(from.x,from.y,49,color,1.5,.3*alive,9);circle(to.x,to.y,64,color,2,.4*alive,10);}
     for(let i=0;i<count;i++){
       const begin=start+i*90,t=(ms-begin)/550;if(t<0)continue;
       const p=clamp(t),x=from.x+(to.x-from.x)*ease(p),y=from.y+(to.y-from.y)*ease(p)+Math.sin(p*Math.PI)*(i%2?-44:44);
       if(t<1){haze(x,y,37,color,.3);circle(x,y,9,'#fff6f0',1,1,20,true);circle(x,y,14,color,2,1,16);line([[x+25,y-8],[x,y]],color,2,.45,12);}
       else{const a=1-clamp((ms-begin-550)/350);circle(to.x,to.y,24+(ms-begin-550)/5,color,2,a*alive,15);}
     }
-    if(ms>end)haze(to.x,to.y,80,color,.3*alive);
+    if(halos&&ms>end)haze(to.x,to.y,80,color,.3*alive);
   }
 
   function geometry(layer, canvas, ctx, elements) {
@@ -178,8 +179,6 @@
     const center=vertices.reduce((v,p)=>[v[0]+p[0]/4,v[1]+p[1]/4],[0,0]);
     return vertices.flatMap((a,j)=>{const b=vertices[(j+1)%4],mid=[(a[0]+b[0])/2,(a[1]+b[1])/2];return [a,[mid[0]+(center[0]-mid[0])*.1,mid[1]+(center[1]-mid[1])*.1]];});
   }).reverse();
-  const splitSeam=[[0,.8],[.22,.6],[.35,.45],[.49,.53],[.61,.32],[.75,.24],[.94,0]];
-  const ruinHalves=[[[0,0],...splitSeam.slice().reverse()],[...splitSeam,[1,0],[1,1],[0,1]]];
   function drawRuinFracture(ctx,ms,board,color,collapse) {
     ctx.save();
     if(collapse&&ms>=380){
@@ -520,14 +519,14 @@
   // Clip live cards only during the effect. Detached copies carry the actual card art.
   function prepareRuinCollapse(plan,options) {
     const areas=options.elements||[1,2].map(side=>document.getElementById('player'+side+'Area'));
-    return plan.players.filter(p=>p.kind==='ruin'&&!p.disabled).flatMap(p=>{
+    return plan.players.filter(p=>p.special&&p.kind==='ruin'&&!p.disabled).flatMap(p=>{
       const source=areas[2-p.side];
       if(!source?.cloneNode||!source.style||!options.layer.insertBefore)return [];
-      const root=document.createElement('div');root.className=p.special?'ruinCollapse':'ruinSplit';root.setAttribute('aria-hidden','true');root.inert=true;
+      const root=document.createElement('div');root.className='ruinCollapse';root.setAttribute('aria-hidden','true');root.inert=true;
       root.style.cssText='position:absolute;inset:0;pointer-events:none;z-index:0;';root.hidden=true;
       const original=['clip-path','-webkit-clip-path'].map(key=>[key,source.style.getPropertyValue(key),source.style.getPropertyPriority(key)]);
-      const pieces=(p.special?ruinPieces:ruinHalves).map((points,i)=>{
-        const piece=document.createElement('div');piece.className=p.special?'ruinCardFragment':'ruinCardHalf';
+      const pieces=ruinPieces.map((points,i)=>{
+        const piece=document.createElement('div');piece.className='ruinCardFragment';
         const clone=source.cloneNode(true);clone.removeAttribute('id');clone.removeAttribute('style');
         for(const node of clone.querySelectorAll('[id]'))node.removeAttribute('id');
         for(const node of clone.querySelectorAll('button,input,select,textarea,a,[tabindex]')){node.tabIndex=-1;if('disabled' in node)node.disabled=true;node.removeAttribute('autofocus');}
@@ -552,15 +551,14 @@
   function updateRuinCollapse(shatters,ms,layer) {
     const bounds=layer.getBoundingClientRect();
     for(const effect of shatters){
-      const start=effect.special?380:1200;if(ms<start)continue;
+      if(ms<380)continue;
       if(!effect.started){
         effect.started=true;effect.root.hidden=false;
-        for(const [key]of effect.original)effect.source.style.setProperty(key,effect.special?polygon(ruinUpper):'inset(50%)','important');
+        for(const [key]of effect.original)effect.source.style.setProperty(key,polygon(ruinUpper),'important');
       }
       const rect=effect.source.getBoundingClientRect();
       for(const {node,clone,masks,index}of effect.pieces){
         Object.assign(node.style,{left:rect.left-bounds.left+'px',top:rect.top-bounds.top+'px',width:rect.width+'px',height:rect.height+'px'});
-        if(!effect.special){const separation=ease((ms-1200)/320),side=index?1:-1;node.style.transform=`translate(${side*7*separation}px,${side*9*separation}px)`;continue;}
         const q=clamp((ms-380-index*90)/90),decay=clamp((ms-300)/500),drop=q*q*(rect.height*.24+30),drift=(random(index+91)-.5)*16*q;
         Object.assign(node.style,{transform:`translate(${drift}px,${drop}px) rotate(${(random(index+151)-.5)*12*q}deg) skewX(${(random(index+211)-.5)*14*q}deg) scale(${1-q*.12},${1-q*.32})`,opacity:String(1-ease((q-.15)/.85)),filter:`drop-shadow(0 1px 1px #27301b88) blur(${q*.8}px)`});
         clone.style.filter=`saturate(${1-decay*.6}) sepia(${decay*.8}) hue-rotate(${decay*35}deg) brightness(${1-decay*.4})`;

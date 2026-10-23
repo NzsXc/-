@@ -61,6 +61,6 @@ test('shared Siphon packet keeps its 550ms eased flight, white core and cyan rin
  const core=f.circles.find(c=>c.radius===9),ring=f.circles.find(c=>c.radius===14);
  assert.deepEqual(core.center,[87.5,44]);assert.deepEqual(ring.center,core.center);assert(f.colors.includes('#fff6f0'));assert(f.colors.includes('#54caff'));
  const plan=f.api.createPlan([{kind:'venom',skill:'tech18',type:'venom'},actions[0]]);assert.equal(plan.duration,2400);
- const normal=f.api.createPlan([actions[13],actions[0]]);assert.equal(normal.duration,2000);
+ const normal=f.api.createPlan([actions[13],actions[0]]);assert.equal(normal.duration,1200);
  const special=f.api.createPlan([{...actions[13],special:true},actions[0]]);assert.equal(special.duration,1800);
 });

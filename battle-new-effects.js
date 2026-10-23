@@ -26,6 +26,7 @@
   const gaugePoint=i=>{const el=layout.gauges[i];if(!el)return layout.points[i];const g=el.getBoundingClientRect();return {x:(g.left+g.width/2-layout.bounds.left)/layout.zoom,y:(g.top+g.height/2-layout.bounds.top)/layout.zoom}};
   const gaugeTarget=gaugePoint(p.side-1),enemyGaugeTarget=gaugePoint(other.side-1),w=layout.bounds.width/layout.zoom,h=layout.bounds.height/layout.zoom;
   const self={},enemy={},label=()=>{},meter=()=>{};
+  const sceneMs=ms;
   const impact=plan.duel?plan.clashAt+330:p.attack?p.impact:other.attack?other.impact:440;
   const beamDuel=plan.duel&&['blast','refund'].includes(p.kind);
   if(plan.duel&&!beamDuel&&ms<impact)return;
@@ -88,32 +89,23 @@
       }
       if(!ok){burst(a,ms-750,C.enemy,.7);shake(self,ms-750);label(ms>750?'被弾 → ゲージ獲得なし':'集中中');if(ms>750){const op=1-clamp((ms-750)/450);line([{x:a.x-22,y:a.y-22},{x:a.x+22,y:a.y+22}],C.enemy,2,op);line([{x:a.x+22,y:a.y-22},{x:a.x-22,y:a.y+22}],C.enemy,2,op)}}
       else{
-        let collected=0;
         for(let i=0;i<3;i++){
-          const speed=2.6,begin=850+i*340/speed,duration=760/speed,age=ms-begin,t=age/duration,side=i%2?-1:1;
-          const path=p=>({x:gaugeTarget.x+Math.sin(p*Math.PI)*Math.min(76,a.width*.35)*side,y:gaugeTarget.y-100+100*p});
-          curveMote(path,t,c,6);if(t>=1)collected++;
-          gaugeFlash(gaugeTarget,age-duration,c);
+          const from={x:gaugeTarget.x+(i%2?-1:1)*Math.min(70,a.width*.3),y:gaugeTarget.y-100};
+          if(sceneMs>=impact)window.BattleEffects.drawGaugeTransfer(ctx,sceneMs,from,gaugeTarget,1,{start:impact+20+i*90,halos:false});
         }
-        meter(2+collected,4);number(gaugeTarget,'+3',c,ms-(850+1440/2.6));label(ms<850?'集中中':'被弾なし → 右・左・右からゲージを回収');
       }
     }
     function convert(ms,ok,c){
-      const hit=620,gainStart=980,speed=3.38,recovery=ms<gainStart?ms:gainStart+(ms-gainStart)*speed,pentagon=Array.from({length:5},(_,i)=>({x:a.x+Math.cos(-Math.PI/2+i*tau/5)*57,y:a.y+Math.sin(-Math.PI/2+i*tau/5)*57}));
+      const hit=620,pentagon=Array.from({length:5},(_,i)=>({x:a.x+Math.cos(-Math.PI/2+i*tau/5)*57,y:a.y+Math.sin(-Math.PI/2+i*tau/5)*57}));
       if(ok){
         burst(a,ms-hit,C.enemy,.7);shake(self,ms-hit);
-        if(ms>=gainStart){
-          let collected=0;
+        if(sceneMs>=impact){
           for(let i=0;i<5;i++){
-            const begin=1600+i*430,duration=600,age=recovery-begin,t=age/duration,from=pentagon[i];
-            if(t<0){const op=clamp((recovery-gainStart-180)/200);siphonMote(from.x,from.y,op)}
-            else if(t<1)curveMote(p=>{const e=ease(p);return{x:from.x+(gaugeTarget.x-from.x)*e+Math.sin(p*Math.PI)*(i<3?20:-20),y:from.y+(gaugeTarget.y-from.y)*e}},t,c,7);
-            else collected++;
-            gaugeFlash(gaugeTarget,(age-duration)/speed,c);
+            const begin=impact+20+i*90,from=pentagon[i];
+            if(sceneMs<begin)siphonMote(from.x,from.y,clamp((sceneMs-impact)/80));
+            window.BattleEffects.drawGaugeTransfer(ctx,sceneMs,from,gaugeTarget,1,{start:begin,halos:false});
           }
-          meter(2+collected,4);number(gaugeTarget,'+5',c,ms-(gainStart+(3920-gainStart)/speed));
         }
-        label(ms<gainStart?'コンバート':recovery<1600?'エネルギー変換':'5つの光球を順番にゲージへ');
       }else label(ms<1250?'コンバート':'ゲージ獲得なし');
     }
     function venom(ms,c){
