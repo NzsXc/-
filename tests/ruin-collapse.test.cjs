@@ -17,12 +17,18 @@ const root=path.resolve(__dirname,'..');
   assert.equal(await page.locator('.ruinCardFragment').count(),12);assert.equal(await page.locator('#previewEnemy').count(),1,'copies have no duplicate IDs');
   await page.clock.runFor(340);assert.deepEqual(await snapshot(),original,'first show cracks on the intact card');
   if(process.env.PREVIEW_SCREENSHOTS)await page.screenshot({path:path.join(process.env.PREVIEW_SCREENSHOTS,'ruin-cracked.png'),fullPage:true});
-  await page.clock.runFor(310);
+  await page.clock.runFor(70);
   assert.match((await snapshot()).clip,/polygon/);
   const falling=await page.locator('.ruinCardFragment').first().evaluate(n=>({transform:n.style.transform,alpha:Number(n.style.opacity),hasArt:!!n.querySelector('img'),text:n.textContent}));
   assert.match(falling.transform,/translate/);assert(falling.alpha>0&&falling.alpha<1);assert(falling.hasArt&&falling.text.includes('相手'),'fragments carry the original card content');
+  for(let i=0;i<12;i++){
+   const alphas=await page.locator('.ruinCardFragment').evaluateAll(nodes=>nodes.map(n=>Number(n.style.opacity)));
+   assert(alphas.filter(a=>a>0&&a<1).length<=1,'only one fragment falls at a time');
+   assert(alphas.slice(i+1).every(a=>a===1),'later fragments remain attached');
+   if(i<11)await page.clock.runFor(56);
+  }
   if(process.env.PREVIEW_SCREENSHOTS)await page.screenshot({path:path.join(process.env.PREVIEW_SCREENSHOTS,'ruin-falling.png'),fullPage:true});
-  await page.clock.runFor(440);assert(Number(await page.locator('.ruinCardFragment').first().evaluate(n=>n.style.opacity))<.01,'falling fragments fade away');
+  await page.clock.runFor(60);assert(Number(await page.locator('.ruinCardFragment').first().evaluate(n=>n.style.opacity))<.01,'falling fragments fade away');
   assert.match((await snapshot()).clip,/polygon/,'bottom stays absent until the effect completes');
   if(process.env.PREVIEW_SCREENSHOTS)await page.screenshot({path:path.join(process.env.PREVIEW_SCREENSHOTS,'ruin-vanished.png'),fullPage:true});
   await page.clock.runFor(200);assert.equal(await page.locator('.ruinCollapse').count(),0);assert.deepEqual(await snapshot(),original,'end restores clipping and priority');assert(!(await page.locator('#fireSpecial').isDisabled()));

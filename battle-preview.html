@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#100f20">
-  <title>S技・バトルカードプレビュー | 心理バトル</title>
+  <title>通常技・S技 バトルカードプレビュー | 心理バトル</title>
   <link rel="stylesheet" href="battle-action-art.css?v=hp-grid-1">
-  <link rel="stylesheet" href="battle-preview.css?v=1">
+  <link rel="stylesheet" href="battle-preview.css?v=19-moves-1">
 </head>
 <body>
   <main>
@@ -16,16 +16,18 @@
       <span class="previewBadge">PREVIEW</span>
     </header>
     <section class="studioIntro">
-      <div><p class="eyebrow">SPECIAL TECHNIQUES</p><h1>一撃を、見届ける。</h1><p>バトルカードから、12種類のS技を試そう。</p></div>
-      <p class="studioNote">通常ゲージ10・Sゲージ30から毎回お試し。<br>対戦成績やデータには保存されません。</p>
+      <div><p class="eyebrow">NORMAL / SPECIAL TECHNIQUES</p><h1>一撃を、見届ける。</h1><p>19種類の技を、通常とSで試そう。</p></div>
+      <p class="studioNote">ゲージは技の条件に合わせて毎回補充。<br>対戦成績やデータには保存されません。</p>
     </section>
     <div class="studioLayout">
       <aside class="library" aria-labelledby="libraryTitle">
-        <div class="sectionHeading"><h2 id="libraryTitle">S技を選択</h2><span>12 MOVES</span></div>
+        <div class="sectionHeading"><h2 id="libraryTitle">技を選択</h2><span>19 MOVES</span></div>
+        <div class="libraryModes" aria-label="演出の種類"><button id="normalMode" type="button" aria-pressed="false">通常技</button><button id="specialMode" type="button" aria-pressed="true">S技</button></div>
         <div id="moveLibrary" class="moveLibrary"></div>
+        <p class="basicHeading">基本行動</p><div id="previewBasics" class="previewBasics"></div>
       </aside>
       <section class="previewPanel" aria-label="バトルカードプレビュー">
-        <div class="previewToolbar"><span class="liveDot">BATTLE PREVIEW</span><label>相手の行動 <select id="opponentAction"></select></label></div>
+        <div class="previewToolbar"><span class="liveDot">BATTLE PREVIEW</span><label>再生速度 <select id="playbackRate"><option value="1">1×</option><option value="0.5">0.5×</option><option value="0.25">0.25×</option></select></label><label>相手の行動 <select id="opponentAction"></select></label></div>
         <div id="previewArena" class="previewArena">
           <div class="arenaGrid" aria-hidden="true"></div><span class="arenaVs" aria-hidden="true">VS</span>
           <article id="previewEnemy" class="battleCard enemyCard">
@@ -33,7 +35,7 @@
             <div class="resourceRow"><span>HP</span><div class="hpBar"><i></i></div><output class="hpValue">7 / 10</output></div>
             <div class="resourceRow"><span>GAUGE</span><div class="gaugeBar"><i></i></div><output class="gaugeValue">10 / 10</output></div>
             <div class="enemyAction action"><span class="actionName">チャージ</span></div>
-            <span class="cardFoot">OPPONENT ACTION</span>
+            <span class="cardFoot">OPPONENT ACTION</span><span class="previewCardStatus"></span>
           </article>
           <article id="previewSelf" class="battleCard selfCard">
             <div class="cardHeading"><span>01 / PLAYER</span><strong>あなた</strong><span class="sTag">SPECIAL</span></div>
@@ -41,20 +43,22 @@
             <div class="resourceRow"><span>GAUGE</span><div class="gaugeBar"><i></i></div><output class="gaugeValue">10 / 10</output></div>
             <div class="resourceRow specialResource"><span>S</span><div class="sBar"><i></i></div><output class="sValue">30 / 30</output></div>
             <button id="fireSpecial" class="action specialTechniqueAction" type="button"><span class="actionName">Sブリーチ</span><span class="fireHint">タップして発動 ↗</span></button>
-            <span class="cardFoot">SPECIAL TECHNIQUE / READY</span>
+            <span class="cardFoot">SPECIAL TECHNIQUE / READY</span><span class="previewCardStatus"></span>
           </article>
           <div id="previewEffects" aria-hidden="true"></div>
           <div id="moveAnnouncement" class="moveAnnouncement" aria-hidden="true"></div>
         </div>
-        <div class="moveDetail"><div><span class="eyebrow">SELECTED SPECIAL</span><h2 id="moveTitle">Sブリーチ</h2></div><span id="moveCost" class="costBadge"></span><p id="moveDescription"></p></div>
+        <div class="moveDetail"><div><span id="selectedVariant" class="eyebrow">SELECTED SPECIAL</span><h2 id="moveTitle">Sブリーチ</h2></div><span id="moveCost" class="costBadge"></span><p id="moveDescription"></p></div>
         <div class="previewFooter"><p id="previewStatus" role="status" aria-live="polite">カードをタップするとS技が発動します。</p><button id="replaySpecial" type="button">S技を発動 <span>↗</span></button></div>
       </section>
     </div>
   </main>
   <script src="bot-engine.js"></script>
   <script src="advanced/special-rules.js"></script>
+  <script src="battle-preview-catalog.js?v=1"></script>
   <script src="battle-action-art.js"></script>
-  <script src="battle-effects.js?v=special-luxe-3"></script>
-  <script type="module" src="battle-preview.js?v=1"></script>
+  <script src="battle-new-effects.js?v=1"></script>
+  <script src="battle-effects.js?v=all-techniques-1"></script>
+  <script type="module" src="battle-preview.js?v=19-moves-1"></script>
 </body>
 </html>

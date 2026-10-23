@@ -14,7 +14,7 @@ const root=path.join(__dirname,'..');
   });
   await page.goto('https://preview.test/battle-preview.html');
   await page.locator('.moveChoice').last().waitFor();
-  assert.equal(await page.locator('.moveChoice').count(),12);assert.equal(await page.locator('#opponentAction option').count(),27);
+  assert.equal(await page.locator('.moveChoice').count(),19);assert.equal(await page.locator('#opponentAction option').count(),41);
   for(let i=0;i<12;i++){
    await page.locator('.moveChoice').nth(i).click();
    await page.selectOption('#opponentAction',String(i===1?1:i===11?15:0));

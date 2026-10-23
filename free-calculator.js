@@ -20,12 +20,12 @@ const S_COSTS=[12,8,8,12,12,8,12,12,16,8,6,6];
 ACTIONS.push(...ACTIONS.slice(3).map((a,i)=>({...a,special:true,specialCost:S_COSTS[i]})));
 const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
 const chosen=(s,moves,p,maxGauge)=>Number.isInteger(moves?.[p])?moves[p]:(s['gauge'+p]>=maxGauge?1:0);
-export function calculate(s,moves,rulesVersion=2,roomRules={},powerBonus={},foresightShield=false){
+export function calculate(s,moves,rulesVersion=2,roomRules={},powerBonus={},foresightShield=false,actionCatalog=ACTIONS){
  const maxHp=roomRules.hp??10,maxGauge=roomRules.maxGauge??10;
  const out={},modern=rulesVersion===3;
  out.action1=chosen(s,moves,1,maxGauge);out.misses1=Number.isInteger(moves?.[1])?0:s.misses1+1;
  out.action2=chosen(s,moves,2,maxGauge);out.misses2=Number.isInteger(moves?.[2])?0:s.misses2+1;
- const raw1=ACTIONS[out.action1]||ACTIONS[0],raw2=ACTIONS[out.action2]||ACTIONS[0];
+ const raw1=actionCatalog[out.action1]||actionCatalog[0],raw2=actionCatalog[out.action2]||actionCatalog[0];
  const none={cost:0,type:'',skill:'',power:0,pierce:false};
  const e1=raw1.skill==='tech12'?(raw2.skill==='tech12'?none:raw2):raw1;
  const e2=raw2.skill==='tech12'?(raw1.skill==='tech12'?none:raw1):raw2;

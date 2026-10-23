@@ -10,6 +10,7 @@ function fixture(){
   requestAnimationFrame:fn=>{frames.set(++next,fn);return next;},cancelAnimationFrame:id=>frames.delete(id),
   document:{createElement:()=>canvas={width:0,height:0,setAttribute(){},getContext:()=>ctx,getBoundingClientRect:()=>rect(0,0,900,700),remove(){},animate(){shakes.push('canvas');return {cancel(){}};}},getElementById:id=>id==='player1Area'?areas[0]:id==='player2Area'?areas[1]:id==='battleScreen'?{animate(){shakes.push('screen');return {cancel(){}};}}:null,querySelector:()=>({getBoundingClientRect:()=>rect(80,550,220,12)})}
  });
+ vm.runInContext(fs.readFileSync(path.join(__dirname,'..','battle-new-effects.js'),'utf8'),context);
  vm.runInContext(fs.readFileSync(path.join(__dirname,'..','battle-effects.js'),'utf8'),context);
  return {api:context.window.BattleEffects,colors,shakes,blades,play(a,b,ms=570,damage=[0,0]){context.window.BattleEffects.play({layer,actions:[a,b],rawActions:[a,b],damage});const [id,fn]=frames.entries().next().value;frames.delete(id);fn(ms);}};
 }
@@ -45,4 +46,12 @@ test('S Momentum only slashes the target after a confirmed successful hit',()=>{
 test('S Anti Guard uses a padlock while S Ruin retains cracks without an eclipse',()=>{
  const seal=fixture();seal.play({...actions[10],special:true},actions[0],650);assert(seal.colors.includes('#251333'));assert(!seal.colors.includes('#100819'));seal.api.cancel();
  const ruin=fixture();ruin.play({...actions[13],special:true},actions[0],650);assert(ruin.colors.includes('#bd75ff'));assert(!ruin.colors.includes('#100819'));assert(!ruin.colors.includes('#251333'));ruin.api.cancel();
+});
+
+test('seven new techniques render normally and as S effects on either side, including clashes',()=>{
+ const newActions=['focus','convert','blast','freeze','refund','venom','drain'].map((kind,i)=>({kind,skill:'tech'+(i+13),type:[2,4,6].includes(i)?'attack':kind,power:i===2?3:[4,6].includes(i)?1:0,pierce:i===4}));
+ for(const action of newActions)for(const special of [false,true])for(const side of [0,1])for(const ms of [200,650,900]){
+  const f=fixture(),own={...action,special},enemy=ms===900?actions[1]:actions[0],pair=side?[enemy,own]:[own,enemy];
+  assert.doesNotThrow(()=>f.play(...pair,ms,side?[1,0]:[0,1]),action.kind+' special='+special+' side='+side+' ms='+ms);f.api.cancel();
+ }
 });

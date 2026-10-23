@@ -7,8 +7,9 @@
   const ease = v => 1 - Math.pow(1 - clamp(v), 3);
   const rgba = (hex, a) => {const n = parseInt(hex.slice(1), 16); return `rgba(${n >> 16},${n >> 8 & 255},${n & 255},${clamp(a)})`;};
   const random = i => {const v = Math.sin(i * 127.1 + 311.7) * 43758.5453; return v - Math.floor(v);};
-  const skillKinds = ['breach','counter','punish','heal','foresight','momentum','rampage','seal','enhance','siphon','ruin','mirror'];
+  const skillKinds = ['breach','counter','punish','heal','foresight','momentum','rampage','seal','enhance','siphon','ruin','mirror','focus','convert','blast','freeze','refund','venom','drain'];
   const colors = {orb:red,breach:red,punish:'#ffc65b',momentum:'#e5edff',counter:'#dce5ff',heal:'#65efac',foresight:'#69bfff',rampage:'#ff254b',seal:'#bc83ff',enhance:'#ff6179',siphon:'#54caff',ruin:'#ce3258',mirror:'#c0a9ff',charge:'#79cfff',block:blue};
+  Object.assign(colors,{focus:'#f5d77c',convert:'#ffa766',blast:'#7acfff',freeze:'#93dfff',refund:'#7acfff',venom:'#c38bfa',drain:'#bd75ff'});
   const noEffect = {type:'',skill:'',power:0};
   let active = null;
     // Irregular Voronoi fragments keep the original hexagonal outline only before breaking.
@@ -93,6 +94,11 @@
           for(let i=7;i>=1;i--)circle(-i*14,0,Math.max(1,13-i*1.4),c,1,.5-i*.05,8,true);
           haze(0,0,50,c,.3);circle(0,0,14,c,1,1,22,true);circle(0,0,7,white,1,1,10,true);
         }
+        if(['blast','refund','drain'].includes(type)){
+          const r=type==='blast'?19:type==='refund'?9:12;
+          haze(0,0,r*3,c,.35);circle(0,0,r,c,2,1,20,true);circle(0,0,r*.4,white,1,1,10,true);
+          for(let i=0;i<3;i++){const points=Array.from({length:20},(_,j)=>{const q=j/19;return [-q*105,Math.sin(q*8+ms/35+i*2.1)*(1-q)*17];});line(points,c,2,1-i*.2,12);}
+        }
         if(type==='breach')for(let i=2;i>=0;i--)blade(-i*26,0,-.2,180*settings.breachSize,21*settings.breachSize,1-i*.3,c);
         if(type==='punish')blade(0,0,0,235,31,.95,c);
         if(type==='momentum'){
@@ -151,6 +157,7 @@
   }
 
   function drawSide(ctx, ms, player, opponent, layout) {
+    if(window.NewTechniqueEffects?.supports(player.kind))return window.NewTechniqueEffects.draw(ctx,ms,player,opponent,layout,{duel:false,reducedMotion:active?.reduced});
     const red=player.special?violet:'#ff5266',blue=player.special?violet:'#69aaff';
     const kind = player.kind, spec = {role:!player.attack};
     if (!kind || player.disabled) return;
@@ -379,6 +386,7 @@
       drawRuinFracture(ctx,ms,layout.boards[other.side-1],violet,!plan.reducedMotion);
       return;
     }
+    if(window.NewTechniqueEffects?.supports(p.kind))return;
     const at=p.counter?other.impact+380:plan.duel?plan.clashAt+330:p.attack?p.impact:other.attack?other.impact:440;
     const q=clamp((ms-at)/600),burst=Math.sin(q*Math.PI)*fade;
     if(ms<at||burst<=0)return;
@@ -426,6 +434,30 @@
     }
   }
 
+  function drawNormalAccent(ctx,ms,p,other,layout,plan){
+    if(p.special||p.disabled||!p.kind||window.NewTechniqueEffects?.supports(p.kind))return;
+    const color=colors[p.kind],white='#fff6f0',origin=layout.points[p.side-1],target=layout.points[other.side-1];
+    const {line,circle,haze}=painter(ctx,ms,color,white),charge=Math.sin(clamp(ms/440)*Math.PI),fade=1-ease((ms-850)/350);
+    if(ms<440){
+      const spin=ms/600,r=32+(1-ease(ms/440))*42;
+      for(let arc=0;arc<3;arc++){
+        const points=Array.from({length:14},(_,i)=>{const a=spin+arc*Math.PI*2/3+i/13*1.1;return [origin.x+Math.cos(a)*r,origin.y+Math.sin(a)*r*.65];});
+        line(points,color,1.5,charge*.6,10);
+      }
+    }
+    const at=plan.duel?plan.clashAt+330:p.counter?p.counterHit:p.attack?p.impact:440,t=clamp((ms-at)/500),alpha=Math.sin(t*Math.PI)*fade;
+    if(ms<at||alpha<=0)return;
+    if(p.attack&&(other.damage<=0||other.counter||(plan.duel&&plan.winner!==p.side-1)))return;
+    const center=p.attack||['seal','ruin'].includes(p.kind)?target:origin;
+    haze(center.x,center.y,105,color,alpha*.12);
+    for(let i=0;i<8;i++){
+      const a=i*Math.PI/4+ms/1100,r=38+ease(t)*50,x=center.x+Math.cos(a)*r,y=center.y+Math.sin(a)*r*.7;
+      if(p.attack)line([[x,y],[x+Math.cos(a)*12,y+Math.sin(a)*12]],i%3?color:white,1.4,alpha*.7,9);
+      else if(['heal','enhance','charge','rampage','siphon'].includes(p.kind))circle(x,y-t*24,2+i%2,color,1,alpha*.65,10,true);
+      else line([[x-4,y],[x,y-6],[x+4,y]],color,1.3,alpha*.6,8);
+    }
+  }
+
   function render(ctx, ms, plan, layout) {
     for (const p of plan.players) if (p.mirror) {
       const self = layout.points[p.side-1], other = layout.points[2-p.side];
@@ -437,6 +469,8 @@
     }
     if (plan.duel) drawClash(ctx,ms,plan,layout);
     else for (let i=0;i<2;i++) drawSide(ctx,ms,plan.players[i],plan.players[1-i],layout);
+    if(plan.duel)for(let i=0;i<2;i++)if(window.NewTechniqueEffects?.supports(plan.players[i].kind))window.NewTechniqueEffects.draw(ctx,ms,plan.players[i],plan.players[1-i],layout,plan);
+    for(let i=0;i<2;i++)drawNormalAccent(ctx,ms,plan.players[i],plan.players[1-i],layout,plan);
     for(let i=0;i<2;i++)drawSpecial(ctx,ms,plan.players[i],plan.players[1-i],layout,plan);
   }
 
@@ -476,7 +510,7 @@
       }
       const rect=effect.source.getBoundingClientRect();
       for(const {node,index}of effect.pieces){
-        const q=clamp((ms-380-index%4*24)/620),drop=q*q*(rect.height*.65+80),drift=(random(index+91)-.5)*70*q;
+        const q=clamp((ms-380-index*56)/56),drop=q*q*(rect.height*.65+80),drift=(random(index+91)-.5)*70*q;
         Object.assign(node.style,{left:rect.left-bounds.left+'px',top:rect.top-bounds.top+'px',width:rect.width+'px',height:rect.height+'px',transform:`translate(${drift}px,${drop}px) rotate(${(random(index+151)-.5)*32*q}deg)`,opacity:String(1-ease((q-.12)/.88))});
       }
     }
@@ -503,7 +537,8 @@
     options.layer.replaceChildren(canvas);
     const plan=createPlan(options.actions,options), reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     plan.reducedMotion=reduced;
-    const record={canvas,raf:0,timer:0,shakes:[],seen:new Set(),shatters:reduced?[]:prepareRuinCollapse(plan,options)};active=record;
+    const rate=Math.max(.25,Math.min(2,Number(options.playbackRate)||1));
+    const record={canvas,raf:0,timer:0,shakes:[],seen:new Set(),reduced,shatters:reduced?[]:prepareRuinCollapse(plan,options)};active=record;
     const began=performance.now();
     function dispatch(ms) {
       for (const event of plan.events) if (ms>=event.at&&!record.seen.has(event.side)) {
@@ -520,7 +555,7 @@
     }
     function frame(now) {
       if(active!==record)return;
-      const ms=Math.min(duration,now-began);
+      const ms=Math.min(duration,(now-began)*rate);
       updateRuinCollapse(record.shatters,ms,options.layer);
       render(ctx,ms,plan,geometry(options.layer,canvas,ctx,options.elements));dispatch(ms);
       if(ms<duration)record.raf=requestAnimationFrame(frame);
@@ -529,7 +564,7 @@
     if(reduced)render(ctx,570,plan,geometry(options.layer,canvas,ctx,options.elements));
     else record.raf=requestAnimationFrame(frame);
     // Background tabs throttle RAF; complete the turn even when no frame is delivered.
-    record.timer=setTimeout(finish,duration+60);
+    record.timer=setTimeout(finish,duration/rate+60);
     return true;
   }
   window.BattleEffects=Object.freeze({createPlan,play,cancel,kindOf,duration});
