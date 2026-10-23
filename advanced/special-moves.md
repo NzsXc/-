@@ -54,6 +54,15 @@ S技は通常技のゲージ消費・効果に下表の追加効果が乗る。S
 
 ## 検証
 
+`battle-timeline.js` は演出中の表示値だけを保持する。発動時に技のコスト、命中フレームにHP、チャージ発動・サイフォンの各玉の到着にゲージを更新し、終了時に確定結果へ引き渡す。勝敗計算・保存・通信の確定値を演出中に再加算／再減算しない。Sゲージの消費・チャージ・被弾も同じ表示経路を使い、ターン終了分だけ終了時に反映する。
+
+通信が遅れても未表示の3・2・1を各1秒表示する。既に表示した残り秒数は引き継ぎ、サーバーの入力締切は変更しない。演出中はそのターンの攻撃態勢を保持し、次ターンのスナップショットは演出完了後に表示する。画面退出時はカウント・演出・表示値を破棄する。
+
+- `node tests/battle-timeline.test.cjs`：2862組の通常／S技、HP命中時刻、回復、チャージ、同時サイフォン、上限、二重更新、キャンセル、遅延カウント
+- `node tests/battle-timeline-ui.test.cjs`：本体DOMでHP／通常・Sゲージ、スキル回復・補給、反射・ミラー、終了時の一致、途中退出、動きを減らす設定
+- `node tests/online-reveal-latency.test.cjs`：ランク・ルーム・観戦で遅延、端末時計差、停止したイベントループ、次ターンの先着、退出
+- `node tests/advanced-skill-display.test.cjs`：攻撃態勢の継続表示と次ターンでの失効
+
 - `node tests/special-moves.test.cjs`：945組の通常/S技・スキル併用、ゲージ不足、装備制約、2T封印、履歴
 - `node tests/advanced-skills.test.cjs`：既存Advanced 2916組
 - `node tests/advanced-options.test.cjs`：4種類の設定で作成→参加→対戦→観戦→履歴

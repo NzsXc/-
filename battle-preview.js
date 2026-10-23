@@ -49,9 +49,13 @@ function fire(){
  const own=current(),enemy=catalog.action(Number($('opponentAction').value)),before=initial();
  const result=catalog.resolve(calculate,before,{1:currentId(),2:Number($('opponentAction').value)},rules);
  const special=SpecialRules.advance({...SpecialRules.initial(3),gauge:{1:30,2:30}},result);
+ const board=s=>({hp:{1:s.hp1,2:s.hp2},gauge:{1:s.gauge1,2:s.gauge2}}),actions=[own,enemy],damage=[result.damage1,result.damage2];
+ const plan=BattleEffects.createPlan(actions,{damage});
+ const view=BattleResources.begin({before:{...board(before),special:{1:30,2:30}},after:{...board(result),special:special.gauge},actions:plan.players.map(p=>p.action),rawActions:actions,damage,impacts:plan.events,outcome:result});
  paintResources(before);setBusy(true);$('moveAnnouncement').textContent=own.name+' / 発動';$('previewStatus').textContent=own.name+'を発動中…';
- const finish=()=>{paintResources(result,special.gauge[1]);setBusy(false);$('moveAnnouncement').textContent='';$('previewStatus').textContent='相手に'+result.damage2+'ダメージ / 自分に'+result.damage1+'ダメージ。もう一度試せます。';};
- try{if(!BattleEffects.play({layer:$('previewEffects'),elements:cards,actions:[own,enemy],rawActions:[own,enemy],damage:[result.damage1,result.damage2],sealed:[result.sealed1,result.sealed2],playbackRate:Number($('playbackRate').value),onComplete:finish}))finish();}
+ const finish=()=>{view.finish();paintResources(result,special.gauge[1]);setBusy(false);$('moveAnnouncement').textContent='';$('previewStatus').textContent='相手に'+result.damage2+'ダメージ / 自分に'+result.damage1+'ダメージ。もう一度試せます。';};
+ const onFrame=ms=>{view.tick(ms);const shown=view.current();if(shown)paintResources({...before,hp1:shown.hp[1],hp2:shown.hp[2],gauge1:shown.gauge[1],gauge2:shown.gauge[2]},shown.special[1]);};
+ try{if(!BattleEffects.play({layer:$('previewEffects'),elements:cards,actions,rawActions:actions,damage,sealed:[result.sealed1,result.sealed2],playbackRate:Number($('playbackRate').value),onFrame,onCancel:()=>view.cancel(),onComplete:finish}))finish();}
  catch(error){BattleEffects.cancel();setBusy(false);$('moveAnnouncement').textContent='';$('previewStatus').textContent='演出を再生できませんでした。もう一度お試しください。';console.error(error);}
 }
 techniques.forEach((move,i)=>{

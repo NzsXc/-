@@ -575,10 +575,12 @@
 
   function cancel() {
     if (!active) return;
+    const record=active;
     cancelAnimationFrame(active.raf);clearTimeout(active.timer);active.canvas.remove();
     for (const animation of active.shakes) animation.cancel();
     restoreRuinCollapse(active.shatters);
     active=null;
+    record.onCancel?.();
   }
 
   function play(options) {
@@ -589,7 +591,7 @@
     const plan=createPlan(options.actions,options), reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     plan.reducedMotion=reduced;
     const rate=Math.max(.25,Math.min(2,Number(options.playbackRate)||1));
-    const record={canvas,raf:0,timer:0,shakes:[],seen:new Set(),reduced,plan,shatters:reduced?[]:prepareRuinCollapse(plan,options)};active=record;
+    const record={canvas,raf:0,timer:0,shakes:[],seen:new Set(),reduced,plan,onCancel:options.onCancel,shatters:reduced?[]:prepareRuinCollapse(plan,options)};active=record;
     const began=performance.now();
     function dispatch(ms) {
       for (const event of plan.events) if (ms>=event.at&&!record.seen.has(event.side)) {
@@ -602,17 +604,18 @@
     }
     function finish() {
       if(active!==record)return;
-      dispatch(plan.duration);cancel();options.onComplete?.();
+      options.onFrame?.(plan.duration,plan);dispatch(plan.duration);record.onCancel=null;cancel();options.onComplete?.();
     }
     function frame(now) {
       if(active!==record)return;
       const ms=Math.min(plan.duration,(now-began)*rate);
       updateRuinCollapse(record.shatters,ms,options.layer);
-      render(ctx,ms,plan,geometry(options.layer,canvas,ctx,options.elements));dispatch(ms);
+      render(ctx,ms,plan,geometry(options.layer,canvas,ctx,options.elements));options.onFrame?.(ms,plan);dispatch(ms);
       if(ms<plan.duration)record.raf=requestAnimationFrame(frame);
       else finish();
     }
-    if(reduced)render(ctx,570,plan,geometry(options.layer,canvas,ctx,options.elements));
+    options.onFrame?.(0,plan);
+    if(reduced){render(ctx,570,plan,geometry(options.layer,canvas,ctx,options.elements));options.onFrame?.(570,plan);dispatch(570);}
     else record.raf=requestAnimationFrame(frame);
     // Background tabs throttle RAF; complete the turn even when no frame is delivered.
     record.timer=setTimeout(finish,plan.duration/rate+60);

@@ -42,7 +42,7 @@ assert.equal(current(initial,{1:5,2:14}).gauge1,2);assert.equal(current(initial,
 assert.match(ai.techniques[2].description,/2ダメージ、相手のゲージ-1/);assert.match(ai.techniques[2].description,/追加1ダメージ/);
 assert(offlineSource.includes(ai.techniques[2].description));
 // History format is unchanged; only new games carry a calculator version.
-const historyContext=vm.createContext({calculateV1:legacy,calculateV2:current,stateFields:Object.keys(initial)});
+const historyContext=vm.createContext({window:{AdvancedRules:require('../advanced/rules.js')},calculateV1:legacy,calculateV2:current,stateFields:Object.keys(initial)});
 vm.runInContext(source('battle-history-core.js').replace(/^import[^\n]*\n/gm,'').replaceAll('export ',''),historyContext);
 const replay=vm.runInContext('replayHistory',historyContext),build=vm.runInContext('buildHistory',historyContext);
 for(const version of [1,2]){
