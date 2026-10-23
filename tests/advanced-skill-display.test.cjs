@@ -12,7 +12,7 @@ class Element{
  getBoundingClientRect(){return {left:100,right:400,top:100,bottom:300,width:300,height:200};}get offsetWidth(){return 56;}
 }
 const body=new Element('body'),document={body,querySelector:s=>body.querySelector(s),querySelectorAll:s=>body.querySelectorAll(s),createElement:t=>new Element(t),getElementById:id=>body.querySelector('#'+id)};
-for(const id of ['battleScreen','battleCenter','battleHomeButton','techScreen','player1Area','player2Area','spectatorLoadouts']){const el=new Element('div');el.id=id;body.append(el);}
+for(const id of ['battleScreen','battleCenter','battleHomeButton','techScreen','player1Area','player2Area','player1Statuses','player2Statuses','spectatorLoadouts']){const el=new Element('div');el.id=id;body.append(el);}
 let clock=0,nextFrame=0;const frames=new Map();const c=vm.createContext({document,console,performance:{now:()=>clock},rankedAnimating:false,rankedSending:false,PlayerIntro:{cancel(){}},requestAnimationFrame:fn=>{frames.set(++nextFrame,fn);return nextFrame;},cancelAnimationFrame:id=>frames.delete(id)});c.window=c;c.addEventListener=()=>{};
 vm.runInContext(read('advanced/rules.js'),c);vm.runInContext(read('advanced/client.js'),c);
 const R=c.AdvancedRules,client=c.AdvancedSkills;
@@ -33,6 +33,14 @@ m.serverNow=100;assert.equal(JSON.stringify(m),original);assert.equal(document.g
 m.advanced.current[2].turn=3;assert.equal(R.visibleUses(m,2,100),1);
 m.closed=true;assert.equal(R.visibleUses(m,1,100),2);
 console.log('PASS counts, exhaustion, use marker, accessibility text, exact animation end, stale snapshot, prior turn and immutable receipts');
+
+const stance=fixture();stance.advanced.selected[1]='stance';stance.advanced.current[1]={id:'stance',turn:5,used:3};stance.advanced.uses={1:{2:{id:'stance',turn:4,used:2}}};stance.state.turn=5;stance.visualTurn=4;
+client.sync(stance,10000);assert.equal(document.getElementById('p1Stance').hidden,false,'a newer snapshot must retain the stance of the turn still on screen');
+assert.equal(document.getElementById('p2Stance').hidden,true);
+delete stance.visualTurn;client.sync(stance,10000);assert.equal(document.getElementById('p1Stance').hidden,true,'the next skill is hidden until its own presentation completes');
+stance.serverNow=3500;client.sync(stance,6600);assert.equal(document.getElementById('p1Stance').hidden,false,'the new turn shows its own confirmed stance');
+stance.state.turn=6;client.sync(stance,6600);assert.equal(document.getElementById('p1Stance').hidden,true,'the previous turn bonus expires');
+console.log('PASS stance: retained during previous-turn playback, isolated from future receipts, shown after confirmation, expired next turn');
 
 const spectatorCode=read('advanced/spectator.js').replace('export function','function');vm.runInContext(spectatorCode,c);
 const raw={turn:1,startedAt:1000,hp1:8,hp2:10,gauge1:5,gauge2:3,last1:'block',last2:'',seal1:false,seal2:true,ruin1:0,ruin2:2,enhance1:0,enhance2:0};

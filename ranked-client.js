@@ -81,9 +81,9 @@ function rankedRefresh(epoch){
  });
  rankedStatusFlight=job;return job;
 }
-let rankedFrame=0,rankedClockAt=0,rankedClockServer=0,rankedAnimating=false,rankedEffectTimer=0,rankedVisualToken=0,rankedVisualCountdownEnd=0,rankedVisualRevealAt=0;
+let rankedFrame=0,rankedClockAt=0,rankedClockServer=0,rankedAnimating=false,rankedEffectTimer=0,rankedVisualToken=0,rankedVisualCountdownEnd=0,rankedVisualRevealAt=0,rankedVisualMatch=null,rankedPresentationTurn=0;
 let rankedTurnClockKey='',rankedTurnOpensAt=0,rankedTurnDeadline=0;
-function rankedVisualStop(){window.AdvancedCutin?.cancel();window.BattleEffects?.cancel();PlayerIntro.reset();cancelAnimationFrame(rankedFrame);rankedFrame=0;clearTimeout(rankedEffectTimer);clearTimeout(rankedAutoTimer);rankedAutoTimer=0;rankedVisualToken++;rankedAnimating=false;rankedVisualCountdownEnd=0;rankedTurnClockKey='';rankedTurnOpensAt=0;rankedTurnDeadline=0;stopCountdownRing();stopTurnCountdownSE();clearTimeout(window._techniqueRevealCleanupTimeout);document.getElementById('battleEffectLayer')?.replaceChildren();}
+function rankedVisualStop(){window.BattleCountdown?.cancel();window.BattleResources?.cancel();rankedVisualMatch=null;window.AdvancedCutin?.cancel();window.BattleEffects?.cancel();PlayerIntro.reset();cancelAnimationFrame(rankedFrame);rankedFrame=0;clearTimeout(rankedEffectTimer);clearTimeout(rankedAutoTimer);rankedAutoTimer=0;rankedVisualToken++;rankedAnimating=false;rankedVisualCountdownEnd=0;rankedTurnClockKey='';rankedTurnOpensAt=0;rankedTurnDeadline=0;stopCountdownRing();stopTurnCountdownSE();clearTimeout(window._techniqueRevealCleanupTimeout);document.getElementById('battleEffectLayer')?.replaceChildren();}
 function rankedClockStart(m){
  rankedClockAt=performance.now();rankedClockServer=m.serverNow;
  if(!rankedFrame){rankedTick();}
@@ -138,28 +138,31 @@ function rankedTick(){
  if(m.closed||rankedAnimating||!m.state||!turnOpen){stopCountdownRing();
   if(rankedAnimating&&rankedVisualCountdownEnd>localNow)startTurnCountdownSE();else stopTurnCountdownSE();
   if(!m.closed&&m.phase==='select')put('techTitle',rankedSending?'技を送信中…':grace?'復帰猶予：あと'+remaining+'秒（未確定側は期限後に敗北）':m.ready[m.you]?'技を確定しました。相手を待っています…':(m.kind==='friend'?window.RoomRules.label(m.roomRules)+' ルーム対戦':'ランダム対戦')+'：技選択（残り'+remaining+'秒）');
-  else if(rankedAnimating){
+  else if(rankedAnimating&&!window.BattleCountdown?.running('ranked:'+m.id+':'+rankedPresentationTurn)){
    const left=rankedVisualCountdownEnd-performance.now();
    const text=left>0?String(Math.min(3,Math.ceil(left/1000))):performance.now()<rankedVisualRevealAt?'BATTLE!':'';
    const el=document.getElementById('countdown');
    if(el&&el.textContent!==text){el.className='';void el.offsetWidth;el.className=left>0?'countPulse':text?'battleCall':'';el.textContent=text;}
-  }else if(!m.closed)put('countdown','');
+  }else if(!m.closed&&!rankedAnimating)put('countdown','');
  }else{
   const countdownEl=document.getElementById('countdown');
   const reconnectExpired=now>=m.deadline+5000;
   const text=inputExpired?(reconnectExpired?'復帰猶予 '+remaining+'秒':'確定待ち'):String(turnRemaining);
   if(countdownEl&&countdownEl.textContent!==text){countdownEl.className='';void countdownEl.offsetWidth;countdownEl.className=inputExpired?(localNow<rankedTurnDeadline+500?'battleCall':''):'countPulse';countdownEl.textContent=text;}
+  if(!inputExpired)window.BattleCountdown?.observe('ranked:'+m.id+':'+m.state.turn,turnRemaining,localNow);
   const ring=document.getElementById('countdownRing');
   if(inputExpired){stopCountdownRing();stopTurnCountdownSE();put('resultMessage',rankedSending?'自動選択を送信中…':m.ownAction!=null?(reconnectExpired?'相手の復帰を待っています':'相手の行動を待っています…'):'自動選択を再送しています…');}
   else{ring?.classList.add('active','step');setCountdownRingStep(10-turnRemaining);startTurnCountdownSE();}
  }
  if(m.state){locked[m.you]=rankedAnimating||m.closed||rankedSending||m.ownAction!==null||!turnOpen||inputExpired;document.getElementById('player'+m.you+'Area').classList.toggle('locked',locked[m.you]);}
- window.AdvancedSkills?.sync(m,now);
+ window.AdvancedSkills?.sync(rankedVisualMatch||m,now);
  window.SpecialGauge?.place(m);
  if(!m.closed||rankedAnimating)rankedFrame=requestAnimationFrame(rankedTick);
 }
-function rankedReveal(m){
+function rankedReveal(m,previous){
  rankedSeenReveal=m.reveal.turn;rankedAnimating=true;const token=++rankedVisualToken;
+ rankedPresentationTurn=m.reveal.turn;
+ rankedVisualMatch=previous?.state?{...previous,advanced:m.advanced||previous.advanced,visualTurn:m.reveal.turn}:null;
  const transitionAt=Number(m.reveal.startedAt??(m.opensAt-(window.rankedTransport?.transitionMs||6100)));
  const localNow=performance.now();
  const fullCountdownEnd=localNow+transitionAt-m.serverNow+3000;
@@ -178,7 +181,7 @@ function rankedReveal(m){
  locked[1]=true;locked[2]=true;
  rankedClockStart(m);
  rankedSyncTurnClock(m);
- rankedEffectTimer=setTimeout(()=>{
+ const reveal=()=>{
   if(!valid())return;
   document.getElementById('countdown').textContent='';
   showTechniqueReveal(a1,a2);
@@ -190,15 +193,19 @@ function rankedReveal(m){
    playBattleEffect(a1,a2,()=>{
     if(!valid())return;
     const latest=rankedMatch;
-    rankedAnimating=false;rankedVisualCountdownEnd=0;rankedVisualRevealAt=0;
+    rankedAnimating=false;rankedVisualMatch=null;rankedVisualCountdownEnd=0;rankedVisualRevealAt=0;
     // Commit this turn only after the effect's completion callback.
     rankedApply(m,true);
     if(latest!==m)rankedApply(latest);
-   },d1,d2);
+   },d1,d2,false,{before:{hp:{...hp},gauge:{...gauge},special:rankedVisualMatch?.special?.gauge},after:m.reveal.resources?.after||{hp:m.state.hp,gauge:m.state.gauge,special:m.special?.gauge},outcome:m.reveal.resources?.outcome});
   // A late snapshot or a busy event loop must still show the technique names.
   // Only presentation waits here; the shared turn/input deadlines stay unchanged.
   },typeof ONLINE_REVEAL_MS==='number'?ONLINE_REVEAL_MS:1300);
- },Math.max(0,revealAt-performance.now()));
+ };
+ if(window.BattleCountdown){
+  rankedVisualCountdownEnd=Infinity;
+  window.BattleCountdown.start('ranked:'+m.id+':'+m.reveal.turn,{show(digit){if(!valid())return;const el=document.getElementById('countdown');el.textContent=String(digit);el.className='countPulse';startTurnCountdownSE();},onComplete(){if(!valid())return;rankedVisualCountdownEnd=0;rankedVisualRevealAt=performance.now()+500;stopTurnCountdownSE();document.getElementById('countdown').textContent='BATTLE!';document.getElementById('countdown').className='battleCall';rankedEffectTimer=setTimeout(reveal,500);}});
+ }else rankedEffectTimer=setTimeout(reveal,Math.max(0,revealAt-performance.now()));
 }
 function rankedPaintState(m,paint=true){
  for(const p of [1,2]){
@@ -215,10 +222,10 @@ function rankedApply(m,visualCommit=false){
   if(m.state?.turn===rankedMatch.state?.turn&&rankedMatch.ownAction!=null&&m.ownAction==null)m={...m,ownAction:rankedMatch.ownAction};
  }
  if(!visualCommit&&rankedMatch?.id===m.id&&(m.revision<rankedMatch.revision||m.serverNow<rankedMatch.serverNow))return;
- const entering=!rankedMatch,wasPhase=rankedMatch?.phase;if(!visualCommit)rankedMatch=m;gameMode='ranked';
+ const previous=rankedMatch,entering=!rankedMatch,wasPhase=rankedMatch?.phase;if(!visualCommit)rankedMatch=m;gameMode='ranked';
  // Polling may receive newer snapshots while a previous turn is on screen.
  if(rankedAnimating&&!visualCommit)return;
- if(!entering&&!visualCommit&&m.reveal&&rankedSeenReveal<m.reveal.turn){rankedReveal(m);return;}
+ if(!entering&&!visualCommit&&m.reveal&&rankedSeenReveal<m.reveal.turn){rankedReveal(m,previous);return;}
  // Initial snapshots restore the board; only subsequent turns play effects.
  if(entering&&m.reveal)rankedSeenReveal=m.reveal.turn;
  rankedClockStart(m);

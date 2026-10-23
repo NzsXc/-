@@ -7,8 +7,9 @@
   const ease = v => 1 - Math.pow(1 - clamp(v), 3);
   const rgba = (hex, a) => {const n = parseInt(hex.slice(1), 16); return `rgba(${n >> 16},${n >> 8 & 255},${n & 255},${clamp(a)})`;};
   const random = i => {const v = Math.sin(i * 127.1 + 311.7) * 43758.5453; return v - Math.floor(v);};
-  const skillKinds = ['breach','counter','punish','heal','foresight','momentum','rampage','seal','enhance','siphon','ruin','mirror'];
+  const skillKinds = ['breach','counter','punish','heal','foresight','momentum','rampage','seal','enhance','siphon','ruin','mirror','focus','convert','blast','freeze','refund','venom','drain'];
   const colors = {orb:red,breach:red,punish:'#ffc65b',momentum:'#e5edff',counter:'#dce5ff',heal:'#65efac',foresight:'#69bfff',rampage:'#ff254b',seal:'#bc83ff',enhance:'#ff6179',siphon:'#54caff',ruin:'#ce3258',mirror:'#c0a9ff',charge:'#79cfff',block:blue};
+  Object.assign(colors,{focus:'#f5d77c',convert:'#ffa766',blast:'#7acfff',freeze:'#93dfff',refund:'#7acfff',venom:'#c38bfa',drain:'#bd75ff'});
   const noEffect = {type:'',skill:'',power:0};
   let active = null;
     // Irregular Voronoi fragments keep the original hexagonal outline only before breaking.
@@ -55,7 +56,22 @@
       return {side:p.side, damage:p.damage, shake:!!hit,
         at:other.counter ? other.counterHit : duel ? clashAt + 330 : other.attack ? other.impact : 440};
     });
-    return {players, damage, duel, clashAt, winner, events};
+    const plan={players, damage, duel, clashAt, winner, events};
+    plan.duration=durationFor(plan);return plan;
+  }
+
+  const isBeam=p=>['blast','refund'].includes(p.kind);
+  const hitAt=(p,plan)=>plan.duel?plan.clashAt+330:p.impact;
+  function durationFor(plan){
+    let total=duration;
+    for(const p of plan.players){
+      if(p.kind==='venom')total=Math.max(total,2400);
+      if(p.kind==='ruin'&&p.special)total=Math.max(total,1800);
+      const other=plan.players[2-p.side];
+      if(['drain','refund'].includes(p.kind)&&other.damage>0&&!other.counter&&(!plan.duel||plan.winner===p.side-1))total=Math.max(total,hitAt(p,plan)+20+(p.kind==='refund'?180:0)+550+80);
+      if(p.kind==='focus'&&p.damage===0||p.kind==='convert'&&p.damage>0)total=Math.max(total,(other.attack?other.impact:440)+20+700+80);
+    }
+    return total;
   }
 
   function painter(ctx, ms, color, white) {
@@ -93,6 +109,11 @@
           for(let i=7;i>=1;i--)circle(-i*14,0,Math.max(1,13-i*1.4),c,1,.5-i*.05,8,true);
           haze(0,0,50,c,.3);circle(0,0,14,c,1,1,22,true);circle(0,0,7,white,1,1,10,true);
         }
+        if(['blast','refund','drain'].includes(type)){
+          const r=type==='blast'?19:type==='refund'?9:12;
+          haze(0,0,r*3,c,.35);circle(0,0,r,c,2,1,20,true);circle(0,0,r*.4,white,1,1,10,true);
+          for(let i=0;i<3;i++){const points=Array.from({length:20},(_,j)=>{const q=j/19;return [-q*105,Math.sin(q*8+ms/35+i*2.1)*(1-q)*17];});line(points,c,2,1-i*.2,12);}
+        }
         if(type==='breach')for(let i=2;i>=0;i--)blade(-i*26,0,-.2,180*settings.breachSize,21*settings.breachSize,1-i*.3,c);
         if(type==='punish')blade(0,0,0,235,31,.95,c);
         if(type==='momentum'){
@@ -111,15 +132,29 @@
     return {x:(r.left + r.width/2 - layerBounds.left)/zoom,y:(r.top + r.height/2 - layerBounds.top)/zoom};
   }
 
-  function geometry(layer, canvas, ctx) {
+  // Shared packet art; short local collection paths can use a steady flight.
+  function drawGaugeTransfer(ctx,ms,from,to,count=2,{start=100,color='#54caff',halos=true,flight=550,linear=false}={}){
+    const {line,circle,haze}=painter(ctx,ms,color,'#fff6f0');
+    const end=start+(count-1)*90+flight,alive=1-clamp((ms-end)/180);
+    if(halos){circle(from.x,from.y,49,color,1.5,.3*alive,9);circle(to.x,to.y,64,color,2,.4*alive,10);}
+    for(let i=0;i<count;i++){
+      const begin=start+i*90,t=(ms-begin)/flight;if(t<0)continue;
+      const p=clamp(t),progress=linear?p:ease(p),x=from.x+(to.x-from.x)*progress,y=from.y+(to.y-from.y)*progress+Math.sin(p*Math.PI)*(i%2?-44:44);
+      if(t<1){haze(x,y,37,color,.3);circle(x,y,9,'#fff6f0',1,1,20,true);circle(x,y,14,color,2,1,16);line([[x+25,y-8],[x,y]],color,2,.45,12);}
+      else{const a=1-clamp((ms-begin-flight)/350);circle(to.x,to.y,24+(ms-begin-flight)/5,color,2,a*alive,15);}
+    }
+    if(halos&&ms>end)haze(to.x,to.y,80,color,.3*alive);
+  }
+
+  function geometry(layer, canvas, ctx, elements) {
     const bounds = layer.getBoundingClientRect(), w = Math.max(1,bounds.width), h = Math.max(1,bounds.height);
     const dpr = Math.min(window.devicePixelRatio || 1,2), zoom = Math.max(.3,Math.min(1,w/900,h/500));
     if (canvas.width !== Math.round(w*dpr) || canvas.height !== Math.round(h*dpr)) {canvas.width = Math.round(w*dpr);canvas.height = Math.round(h*dpr);}
     ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,canvas.width,canvas.height);ctx.setTransform(dpr*zoom,0,0,dpr*zoom,0,0);
-    const areas = [1,2].map(side => document.getElementById('player'+side+'Area'));
+    const areas = elements || [1,2].map(side => document.getElementById('player'+side+'Area'));
     const points = areas.map((el,i) => pointFor(el,bounds,zoom,{x:w/zoom*(i?.8:.2),y:h/zoom*(i?.25:.75)}));
     const boards = areas.map((el,i) => {const r = el?.getBoundingClientRect();return r ? {x:(r.left-bounds.left)/zoom,y:(r.top-bounds.top)/zoom,width:r.width/zoom,height:r.height/zoom} : {x:points[i].x-70,y:points[i].y-40,width:140,height:80};});
-    const gauges = [1,2].map(side => document.querySelector('#player'+side+'Area .gaugeBar'));
+    const gauges = areas.map(el => el?.querySelector ? el.querySelector('.gaugeBar') : document.querySelector('.gaugeBar'));
     return {bounds,dpr,zoom,points,boards,gauges};
   }
 
@@ -132,7 +167,39 @@
     ctx.restore();
   }
 
+  const ruinSeam=[[0,.54],[.16,.48],[.33,.57],[.5,.46],[.67,.55],[.84,.49],[1,.56]];
+  const ruinUpper=[[0,0],[1,0],...ruinSeam.slice().reverse()];
+  const polygon=points=>'polygon('+points.map(([x,y])=>`${x*100}% ${y*100}%`).join(',')+')';
+  const rotVertex=(row,col)=>{
+    const seam=ruinSeam[col],x=row===1&&col>0&&col<6?seam[0]+(random(col+270)-.5)*.045:seam[0];
+    return [x,row===0?seam[1]:row===2?1:(seam[1]+1)/2+(random(col+310)-.5)*.05];
+  };
+  const ruinPieces=Array.from({length:12},(_,i)=>{
+    const row=Math.floor(i/6),col=i%6,vertices=[rotVertex(row,col),rotVertex(row,col+1),rotVertex(row+1,col+1),rotVertex(row+1,col)];
+    const center=vertices.reduce((v,p)=>[v[0]+p[0]/4,v[1]+p[1]/4],[0,0]);
+    return vertices.flatMap((a,j)=>{const b=vertices[(j+1)%4],mid=[(a[0]+b[0])/2,(a[1]+b[1])/2];return [a,[mid[0]+(center[0]-mid[0])*.1,mid[1]+(center[1]-mid[1])*.1]];});
+  }).reverse();
+  function drawRuinFracture(ctx,ms,board,color,collapse) {
+    ctx.save();
+    if(collapse&&ms>=380){
+      ctx.beginPath();ruinUpper.forEach(([x,y],i)=>i?ctx.lineTo(board.x+x*board.width,board.y+y*board.height):ctx.moveTo(board.x+x*board.width,board.y+y*board.height));ctx.closePath();ctx.clip();
+    }
+    drawCracks(ctx,ms,board,color);
+    const progress=ease((ms-150)/230),alpha=1-ease((ms-750)/450);
+    const {line}=painter(ctx,ms,color,violetWhite);
+    line(ruinSeam.slice(0,Math.ceil(progress*ruinSeam.length)).map(([x,y])=>[board.x+x*board.width,board.y+y*board.height]),color,2,alpha,9);
+    ctx.restore();
+    if(collapse&&ms>=380&&ms<1520){
+      const index=Math.min(11,Math.floor((ms-380)/90)),q=clamp((ms-380-index*90)/90),points=ruinPieces[index];
+      const center=points.reduce((sum,p)=>[sum[0]+p[0]/points.length,sum[1]+p[1]/points.length],[0,0]);
+      const {circle,haze}=painter(ctx,ms,color,violetWhite),x=board.x+center[0]*board.width,y=board.y+center[1]*board.height;
+      haze(x,y,24,'#6c704b',Math.sin(q*Math.PI)*.14);
+      for(let i=0;i<9;i++){const d=q*(13+random(i+index)*20);circle(x+(random(i+23)-.5)*d,y+q*q*35+random(i+72)*d,1+random(i+62)*2,'#8f9161',1,(1-q)*.45,0,true);}
+    }
+  }
+
   function drawSide(ctx, ms, player, opponent, layout) {
+    if(window.NewTechniqueEffects?.supports(player.kind))return window.NewTechniqueEffects.draw(ctx,ms,player,opponent,layout,active?.plan||{duel:false,reducedMotion:active?.reduced});
     const red=player.special?violet:'#ff5266',blue=player.special?violet:'#69aaff';
     const kind = player.kind, spec = {role:!player.attack};
     if (!kind || player.disabled) return;
@@ -187,7 +254,7 @@
             else{const a=1-clamp((ms-begin-350)/140);circle(gx,gy,3+(ms-begin-350)/12,color,1.5,a,10);}
           }
         }
-        if(kind==='seal'){
+        if(kind==='seal'&&!player.special){
           barrier(tx,ty,blue,.35*alive);haze(tx,ty,123,color,.22*alive);
           const locked=ease((ms-180)/250);blade(tx,ty,.8,140*locked,15,alive,color);blade(tx,ty,-.8,140*locked,15,alive,color);
         }
@@ -201,11 +268,9 @@
           }
         }
         if(kind==='siphon'){
-          circle(tx,ty,49,color,1.5,.3*alive,9);circle(ox,oy,64,color,2,.4*alive,10);
-          for(let i=0;i<2;i++){const p=clamp((ms-100-i*90)/550),x=tx+(ox-tx)*ease(p),y=ty+(oy-ty)*ease(p)+Math.sin(p*Math.PI)*(i===0?44:-44);if(p<1&&ms>=100+i*90){haze(x,y,37,color,.3);circle(x,y,9,white,1,1,20,true);circle(x,y,14,color,2,1,16);line([[x+25,y-8],[x,y]],color,2,.45,12);}if(p>=1)circle(ox,oy,24+(ms-650-i*90)/5,color,2,(1-clamp((ms-650-i*90)/350))*alive,15);}
-          if(ms>650)haze(ox,oy,80,color,.3*alive);
+          drawGaugeTransfer(ctx,ms,target,origin,player.special?3:2,{color});
         }
-        if(kind==='ruin')drawCracks(ctx,ms,layout.boards[opponent.side-1],color);
+        if(kind==='ruin'&&!player.special)drawCracks(ctx,ms,layout.boards[opponent.side-1],color);
         if(kind==='mirror'){
           const mx=423,my=267;line([[mx-36,my-86],[mx+39,my-69],[mx+39,my+86],[mx-36,my+69],[mx-36,my-86]],color,2,alive,14);line([[mx-25,my+49],[mx+27,my-49]],white,1.5,.5*alive,8);haze(mx,my,105,color,.2*alive);
           if(incoming){const p=clamp((ms-120)/320),x=tx+(mx-tx)*p,y=ty+(my-ty)*p;const cx=ox+(mx-ox)*p,cy=oy+(my-oy)*p;if(ms<440){circle(x,y,12,red,1,1,15,true);circle(cx,cy,12,color,1,1,15,true);}else{circle(mx,my,10+hit*130,color,3,burst*alive,16);circle(mx,my,8+hit*96,white,1.5,burst*.6*alive,8);}}
@@ -317,15 +382,17 @@
           if(duel){
         const mx=(origin.x+target.x)/2,my=(origin.y+target.y)/2;
         if(ms>=120&&ms<impact){
-          const p=fly*fly;weapon(kind,origin.x+(mx-origin.x)*p,origin.y+(my-origin.y)*p,angle,color,1,boost);
-          weapon(enemy.kind,target.x+(mx-target.x)*p,target.y+(my-target.y)*p,angle+Math.PI,enemyColor,1,plan.players[1].boost);
+          const p=fly*fly;if(!isBeam(plan.players[0]))weapon(kind,origin.x+(mx-origin.x)*p,origin.y+(my-origin.y)*p,angle,color,1,boost);
+          if(!isBeam(plan.players[1]))weapon(enemy.kind,target.x+(mx-target.x)*p,target.y+(my-target.y)*p,angle+Math.PI,enemyColor,1,plan.players[1].boost);
         }
         if(ms>=impact){
           const q=clamp((ms-impact)/380),a=1-q;
           circle(mx,my,8+ease(q)*133,white,2.5,a,14);circle(mx,my,4+ease(q)*94,plan.players.some(p=>p.special)?violet:blue,1.5,a*.65,10);haze(mx,my,45+q*65,white,.2*a);
           if(ownPower!==enemy.power){
             const wins=ownPower>enemy.power,dest=wins?target:origin,c=wins?color:enemyColor,type=wins?kind:enemy.kind,difference=Math.abs(ownPower-enemy.power),p=clamp((ms-impact-70)/260);
-            if(ms<arrival){const x=mx+(dest.x-mx)*ease(p),y=my+(dest.y-my)*ease(p);weapon(type,x,y,wins?angle:angle+Math.PI,c,.7+.3*difference/Math.max(ownPower,enemy.power),wins&&boost);}
+            if(ms<arrival){const x=mx+(dest.x-mx)*ease(p),y=my+(dest.y-my)*ease(p);if(!['blast','refund'].includes(type))weapon(type,x,y,wins?angle:angle+Math.PI,c,.7+.3*difference/Math.max(ownPower,enemy.power),wins&&boost);
+              else{const losing=wins?plan.players[1]:plan.players[0],shrink=1-clamp((ms-impact)/330);if(!isBeam(losing)&&shrink>0)weapon(losing.kind,mx,my,wins?angle+Math.PI:angle,wins?enemyColor:color,shrink*.9,false);}
+            }
             else{
               const h=clamp((ms-arrival)/300),f=1-h;haze(dest.x,dest.y,95,c,.35*f);circle(dest.x,dest.y,12+ease(h)*86,c,2.3,f,14);
               if(type==='breach'){blade(dest.x,dest.y,-.8,250,21,f,c);blade(dest.x,dest.y,.8,250,21,f,c);}
@@ -339,6 +406,100 @@
 
   }
 
+  // Extra S layers share the confirmed turn clock and never change game state.
+  function drawSpecial(ctx, ms, p, other, layout, plan) {
+    if (!p.special || p.disabled || !p.kind) return;
+    const origin=layout.points[p.side-1],target=layout.points[other.side-1];
+    const {line,circle,haze,blade}=painter(ctx,ms,violet,violetWhite);
+    const fade=1-ease((ms-820)/380),charge=Math.sin(clamp(ms/440)*Math.PI),spin=ms/850+p.side;
+    haze(origin.x,origin.y,130,violet,.22*charge);
+    for(let ring=0;ring<3;ring++){
+      const r=38+ring*17+charge*16,points=Array.from({length:7},(_,i)=>{
+        const a=i*Math.PI/3+(ring%2?-spin:spin);return [origin.x+Math.cos(a)*r,origin.y+Math.sin(a)*r*.48];
+      });
+      line(points,ring===1?violetWhite:violet,ring===1?1:2,charge*.7,14);
+    }
+    for(let i=0;i<18;i++){
+      const a=i*Math.PI*2/18+spin*.3,r=28+(1-clamp(ms/440))*(90+random(i)*65);
+      const x=origin.x+Math.cos(a)*r,y=origin.y+Math.sin(a)*r*.65;
+      line([[x,y],[x+Math.cos(a)*9,y+Math.sin(a)*9]],i%3?violet:violetWhite,1.5,charge*.8,8);
+    }
+    if(p.kind==='ruin'){
+      drawRuinFracture(ctx,ms,layout.boards[other.side-1],violet,!plan.reducedMotion);
+      return;
+    }
+    if(window.NewTechniqueEffects?.supports(p.kind))return;
+    const at=p.counter?other.impact+380:plan.duel?plan.clashAt+330:p.attack?p.impact:other.attack?other.impact:440;
+    const q=clamp((ms-at)/600),burst=Math.sin(q*Math.PI)*fade;
+    if(ms<at||burst<=0)return;
+    // A cancelled, blocked or reflected attack cannot produce a hit on the target.
+    if(p.attack&&(other.damage<=0||other.counter||(plan.duel&&plan.winner!==p.side-1)))return;
+    const hostile=p.attack||['seal','ruin'].includes(p.kind),center=hostile?target:origin;
+    const x=center.x,y=center.y,r=32+ease(q)*112;
+    haze(x,y,170,violet,.22*burst);
+    if(!['seal','ruin'].includes(p.kind)){
+      circle(x,y,r,violet,2.5,burst,22,false,.64);
+      circle(x,y,r*.8,violetWhite,1,burst*.65,10,false,.64);
+    }
+    if(['breach','punish','momentum'].includes(p.kind)){
+      const a=p.kind==='punish'?Math.PI/2:Math.atan2(target.y-origin.y,target.x-origin.x);
+      blade(x,y,a,330,35,burst,violet);blade(x,y,a+.75,230,12,burst*.7,violetWhite);
+      for(let i=0;i<22;i++){const a=i*2.4,d=40+q*(90+random(i)*100);blade(x+Math.cos(a)*d,y+Math.sin(a)*d,a,12+random(i+40)*26,3,burst,violet);}
+    }else if(['heal','enhance','rampage','siphon'].includes(p.kind)){
+      for(let i=0;i<12;i++){
+        const a=i*Math.PI/6+spin,d=52+q*48,px=x+Math.cos(a)*d,py=y+Math.sin(a)*d*.6-q*55;
+        line([[px-5,py],[px+5,py]],violetWhite,2,burst,12);line([[px,py-7],[px,py+7]],violet,2,burst,12);
+      }
+      if(p.kind==='siphon')for(let i=0;i<10;i++){
+        const t=(q+i/10)%1,px=target.x+(origin.x-target.x)*t,py=target.y+(origin.y-target.y)*t+Math.sin(t*Math.PI)*45;
+        circle(px,py,3+i%3,violetWhite,1,burst,12,true);
+      }
+    }else if(p.kind==='seal'){
+      // Four chains tighten around a central padlock, like a sealed action card.
+      const close=ease(q*3),spread=105-close*30;
+      for(let chain=0;chain<2;chain++)for(let i=-5;i<=5;i++){
+        const px=x+i*24,py=y+(chain?1:-1)*(spread-i*5),a=burst*(1-Math.abs(i)*.07);
+        line([[px-11,py],[px-3,py-6],[px+11,py],[px+3,py+6],[px-11,py]],chain?violetWhite:violet,2,a,12);
+      }
+      const size=close*.25+.75;
+      line([[x-22*size,y-8],[x-22*size,y-29],[x-13*size,y-43],[x+13*size,y-43],[x+22*size,y-29],[x+22*size,y-8]],violetWhite,5,burst,20);
+      line([[x-36,y-9],[x+36,y-9],[x+36,y+45],[x-36,y+45],[x-36,y-9]],'#251333',1,burst*.9,0,true);
+      line([[x-36,y-9],[x+36,y-9],[x+36,y+45],[x-36,y+45],[x-36,y-9]],violet,3,burst,20);
+      circle(x,y+11,6,violetWhite,1,burst,8,true);
+      line([[x,y+14],[x,y+29]],violetWhite,4,burst,8);
+      for(const side of [-1,1])line([[x+side*52,y-28],[x+side*64,y-40],[x+side*72,y-26]],violet,2,burst*.7,12);
+    }else{
+      for(let i=0;i<8;i++){
+        const a=i*Math.PI/4+spin,px=x+Math.cos(a)*r,py=y+Math.sin(a)*r*.65;
+        line([[px-6,py],[px,py-10],[px+6,py],[px,py+10],[px-6,py]],violetWhite,1.5,burst,12);
+      }
+    }
+  }
+
+  function drawNormalAccent(ctx,ms,p,other,layout,plan){
+    if(p.special||p.disabled||!p.kind||window.NewTechniqueEffects?.supports(p.kind))return;
+    const color=colors[p.kind],white='#fff6f0',origin=layout.points[p.side-1],target=layout.points[other.side-1];
+    const {line,circle,haze}=painter(ctx,ms,color,white),charge=Math.sin(clamp(ms/440)*Math.PI),fade=1-ease((ms-850)/350);
+    if(ms<440){
+      const spin=ms/600,r=32+(1-ease(ms/440))*42;
+      for(let arc=0;arc<3;arc++){
+        const points=Array.from({length:14},(_,i)=>{const a=spin+arc*Math.PI*2/3+i/13*1.1;return [origin.x+Math.cos(a)*r,origin.y+Math.sin(a)*r*.65];});
+        line(points,color,1.5,charge*.6,10);
+      }
+    }
+    const at=plan.duel?plan.clashAt+330:p.counter?p.counterHit:p.attack?p.impact:440,t=clamp((ms-at)/500),alpha=Math.sin(t*Math.PI)*fade;
+    if(ms<at||alpha<=0)return;
+    if(p.attack&&(other.damage<=0||other.counter||(plan.duel&&plan.winner!==p.side-1)))return;
+    const center=p.attack||['seal','ruin'].includes(p.kind)?target:origin;
+    haze(center.x,center.y,105,color,alpha*.12);
+    for(let i=0;i<8;i++){
+      const a=i*Math.PI/4+ms/1100,r=38+ease(t)*50,x=center.x+Math.cos(a)*r,y=center.y+Math.sin(a)*r*.7;
+      if(p.attack)line([[x,y],[x+Math.cos(a)*12,y+Math.sin(a)*12]],i%3?color:white,1.4,alpha*.7,9);
+      else if(['heal','enhance','charge','rampage','siphon'].includes(p.kind))circle(x,y-t*24,2+i%2,color,1,alpha*.65,10,true);
+      else line([[x-4,y],[x,y-6],[x+4,y]],color,1.3,alpha*.6,8);
+    }
+  }
+
   function render(ctx, ms, plan, layout) {
     for (const p of plan.players) if (p.mirror) {
       const self = layout.points[p.side-1], other = layout.points[2-p.side];
@@ -350,13 +511,76 @@
     }
     if (plan.duel) drawClash(ctx,ms,plan,layout);
     else for (let i=0;i<2;i++) drawSide(ctx,ms,plan.players[i],plan.players[1-i],layout);
+    if(plan.duel)for(let i=0;i<2;i++)if(window.NewTechniqueEffects?.supports(plan.players[i].kind))window.NewTechniqueEffects.draw(ctx,ms,plan.players[i],plan.players[1-i],layout,plan);
+    for(let i=0;i<2;i++)drawNormalAccent(ctx,ms,plan.players[i],plan.players[1-i],layout,plan);
+    for(let i=0;i<2;i++)drawSpecial(ctx,ms,plan.players[i],plan.players[1-i],layout,plan);
+  }
+
+  // Clip live cards only during the effect. Detached copies carry the actual card art.
+  function prepareRuinCollapse(plan,options) {
+    const areas=options.elements||[1,2].map(side=>document.getElementById('player'+side+'Area'));
+    return plan.players.filter(p=>p.special&&p.kind==='ruin'&&!p.disabled).flatMap(p=>{
+      const source=areas[2-p.side];
+      if(!source?.cloneNode||!source.style||!options.layer.insertBefore)return [];
+      const root=document.createElement('div');root.className='ruinCollapse';root.setAttribute('aria-hidden','true');root.inert=true;
+      root.style.cssText='position:absolute;inset:0;pointer-events:none;z-index:0;';root.hidden=true;
+      const original=['clip-path','-webkit-clip-path'].map(key=>[key,source.style.getPropertyValue(key),source.style.getPropertyPriority(key)]);
+      const pieces=ruinPieces.map((points,i)=>{
+        const piece=document.createElement('div');piece.className='ruinCardFragment';
+        const clone=source.cloneNode(true);clone.removeAttribute('id');clone.removeAttribute('style');
+        for(const node of clone.querySelectorAll('[id]'))node.removeAttribute('id');
+        for(const node of clone.querySelectorAll('button,input,select,textarea,a,[tabindex]')){node.tabIndex=-1;if('disabled' in node)node.disabled=true;node.removeAttribute('autofocus');}
+        // Preserve custom properties / inline presentation without copying live clipping.
+        clone.style.cssText=source.style.cssText;
+        Object.assign(clone.style,{position:'absolute',inset:'0',left:'0',top:'0',right:'auto',bottom:'auto',width:'100%',height:'100%',margin:'0',transform:'none',animation:'none',transition:'none'});
+        clone.style.setProperty('clip-path',polygon(points),'important');clone.style.setProperty('-webkit-clip-path',polygon(points),'important');
+        const center=points.reduce((sum,v)=>[sum[0]+v[0]/points.length,sum[1]+v[1]/points.length],[0,0]);
+        piece.style.cssText='position:absolute;pointer-events:none;filter:drop-shadow(0 0 1px #674d77);';piece.style.transformOrigin=`${center[0]*100}% ${center[1]*100}%`;
+        piece.appendChild(clone);
+        if(p.special){
+          const stain=document.createElement('div');stain.className='ruinRotTexture';
+          stain.style.cssText='position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 30% 45%,#5a4f2299,transparent 55%),radial-gradient(#77814988 0 1px,transparent 3px) 0 0/11px 13px;mix-blend-mode:color;';stain.style.clipPath=polygon(points);piece.appendChild(stain);
+        }
+        const masks=p.special?Array.from({length:7},(_,step)=>'url("data:image/svg+xml,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="180" height="120"><filter id="rot"><feTurbulence type="fractalNoise" baseFrequency=".12" numOctaves="3" seed="${i+17}"/><feColorMatrix type="matrix" values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 3 0 0 0 ${1-step/2}"/></filter><rect width="100%" height="100%" filter="url(#rot)"/></svg>`)+ '")'):null;
+        clone.style.maskSize='100% 100%';root.appendChild(piece);return {node:piece,clone,center,masks,index:i};
+      });
+      options.layer.insertBefore(root,options.layer.firstChild);
+      return [{source,root,original,pieces,special:p.special,started:false}];
+    });
+  }
+  function updateRuinCollapse(shatters,ms,layer) {
+    const bounds=layer.getBoundingClientRect();
+    for(const effect of shatters){
+      if(ms<380)continue;
+      if(!effect.started){
+        effect.started=true;effect.root.hidden=false;
+        for(const [key]of effect.original)effect.source.style.setProperty(key,polygon(ruinUpper),'important');
+      }
+      const rect=effect.source.getBoundingClientRect();
+      for(const {node,clone,masks,index}of effect.pieces){
+        Object.assign(node.style,{left:rect.left-bounds.left+'px',top:rect.top-bounds.top+'px',width:rect.width+'px',height:rect.height+'px'});
+        const q=clamp((ms-380-index*90)/90),decay=clamp((ms-300)/500),drop=q*q*(rect.height*.24+30),drift=(random(index+91)-.5)*16*q;
+        Object.assign(node.style,{transform:`translate(${drift}px,${drop}px) rotate(${(random(index+151)-.5)*12*q}deg) skewX(${(random(index+211)-.5)*14*q}deg) scale(${1-q*.12},${1-q*.32})`,opacity:String(1-ease((q-.15)/.85)),filter:`drop-shadow(0 1px 1px #27301b88) blur(${q*.8}px)`});
+        clone.style.filter=`saturate(${1-decay*.6}) sepia(${decay*.8}) hue-rotate(${decay*35}deg) brightness(${1-decay*.4})`;
+        clone.style.maskImage=masks[Math.min(6,Math.floor(q*6))];
+      }
+    }
+  }
+  function restoreRuinCollapse(shatters) {
+    for(const effect of shatters){
+      if(effect.started)for(const [key,value,priority]of effect.original){if(value)effect.source.style.setProperty(key,value,priority);else effect.source.style.removeProperty(key);}
+      effect.root.remove();
+    }
   }
 
   function cancel() {
     if (!active) return;
+    const record=active;
     cancelAnimationFrame(active.raf);clearTimeout(active.timer);active.canvas.remove();
     for (const animation of active.shakes) animation.cancel();
+    restoreRuinCollapse(active.shatters);
     active=null;
+    record.onCancel?.();
   }
 
   function play(options) {
@@ -365,7 +589,9 @@
     const ctx=canvas.getContext('2d');if(!ctx)return false;
     options.layer.replaceChildren(canvas);
     const plan=createPlan(options.actions,options), reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const record={canvas,raf:0,timer:0,shakes:[],seen:new Set()};active=record;
+    plan.reducedMotion=reduced;
+    const rate=Math.max(.25,Math.min(2,Number(options.playbackRate)||1));
+    const record={canvas,raf:0,timer:0,shakes:[],seen:new Set(),reduced,plan,onCancel:options.onCancel,shatters:reduced?[]:prepareRuinCollapse(plan,options)};active=record;
     const began=performance.now();
     function dispatch(ms) {
       for (const event of plan.events) if (ms>=event.at&&!record.seen.has(event.side)) {
@@ -378,20 +604,22 @@
     }
     function finish() {
       if(active!==record)return;
-      dispatch(duration);cancel();options.onComplete?.();
+      options.onFrame?.(plan.duration,plan);dispatch(plan.duration);record.onCancel=null;cancel();options.onComplete?.();
     }
     function frame(now) {
       if(active!==record)return;
-      const ms=Math.min(duration,now-began);
-      render(ctx,ms,plan,geometry(options.layer,canvas,ctx));dispatch(ms);
-      if(ms<duration)record.raf=requestAnimationFrame(frame);
+      const ms=Math.min(plan.duration,(now-began)*rate);
+      updateRuinCollapse(record.shatters,ms,options.layer);
+      render(ctx,ms,plan,geometry(options.layer,canvas,ctx,options.elements));options.onFrame?.(ms,plan);dispatch(ms);
+      if(ms<plan.duration)record.raf=requestAnimationFrame(frame);
       else finish();
     }
-    if(reduced)render(ctx,570,plan,geometry(options.layer,canvas,ctx));
+    options.onFrame?.(0,plan);
+    if(reduced){render(ctx,570,plan,geometry(options.layer,canvas,ctx,options.elements));options.onFrame?.(570,plan);dispatch(570);}
     else record.raf=requestAnimationFrame(frame);
     // Background tabs throttle RAF; complete the turn even when no frame is delivered.
-    record.timer=setTimeout(finish,duration+60);
+    record.timer=setTimeout(finish,plan.duration/rate+60);
     return true;
   }
-  window.BattleEffects=Object.freeze({createPlan,play,cancel,kindOf,duration});
+  window.BattleEffects=Object.freeze({createPlan,play,cancel,kindOf,duration,drawGaugeTransfer});
 })();

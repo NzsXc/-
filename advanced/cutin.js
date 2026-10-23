@@ -28,7 +28,7 @@
   }
   layer.style.animationDelay=-elapsed+'ms';
  }
- function drawEffects(used){
+ function drawEffects(used,m){
   const extra=root.querySelector('.extra-effect-layer'),bounds=root.getBoundingClientRect();extra.replaceChildren();
   for(const skill of used){
    const area=document.getElementById('player'+skill.player+'Area');if(!area)continue;const r=area.getBoundingClientRect(),x=r.left+r.width/2-bounds.left,y=r.top+r.height/2-bounds.top;
@@ -40,8 +40,14 @@
    const label=node('div','post-skill-label',labels[skill.id]);label.style.left=Math.max(110,Math.min(bounds.width-110,x))+'px';label.style.top=Math.max(22,r.top-bounds.top-12)+'px';label.style.setProperty('--accent',colors[skill.id]);extra.append(label);
   }
   const actions=[1,2].map(player=>{const id=used.find(s=>s.player===player)?.id;return id==='boost'||id==='cleanse'?{type:'charge'}:id==='heal'?{type:'heal',skill:'tech4'}:{type:''};});
+  const before=m.state,after=m.skillResult,outcome={};
+  if(after)for(const p of [1,2]){outcome['paid'+p]=before.gauge[p];outcome['charged'+p]=after.gauge[p];outcome['healed'+p]=after.hp[p];}
+  const view=after&&window.BattleResources?.begin({before,after,outcome,actions,damage:[0,0],maxGauge:m.roomRules?.maxGauge??10});
+  let signature='';
+  const onFrame=ms=>{if(!view?.current())return;view.tick(ms);const next=JSON.stringify(view.current());if(next!==signature){signature=next;if(typeof updateBattleUI==='function')updateBattleUI();}};
   if(typeof playBattleSituationSE==='function')playBattleSituationSE(actions[0],actions[1],0,0);
-  ownsEffect=!!window.BattleEffects?.play({layer:root.querySelector('.game-effect-layer'),actions,rawActions:actions,damage:[0,0],sealed:[false,false],onComplete(){ownsEffect=false;}});
+  ownsEffect=!!window.BattleEffects?.play({layer:root.querySelector('.game-effect-layer'),actions,rawActions:actions,damage:[0,0],sealed:[false,false],onFrame,onCancel(){view?.cancel();ownsEffect=false;},onComplete(){view?.finish();ownsEffect=false;}});
+  if(!ownsEffect)view?.cancel();
  }
  function sync(m,now,{blocked=false}={}){
   if(!window.AdvancedRules.hasSkills(m?.roomRules)||!m.state||m.closed||blocked||!m.skillWindow){if(key)cancel();return;}
@@ -55,7 +61,7 @@
   if(phase==='cutin'){
    if(changed||updated)drawPanels(used,m,now-start);
    if(!sounded.has(key)){sounded.add(key);if(typeof playBattleSE==='function')playBattleSE('seAdvancedCutin');}
-  }else if(changed||updated){stopEffect();drawEffects(used);}
+  }else if(changed||updated){stopEffect();drawEffects(used,m);}
  }
  window.AdvancedCutin={sync,cancel,reset};
 })();

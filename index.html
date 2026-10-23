@@ -2065,7 +2065,7 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
 <link rel="stylesheet" href="battle-action-art.css?v=hp-grid-1">
 <link rel="stylesheet" href="battle-compact.css?v=custom-options-1">
 <link rel="stylesheet" href="neon-controls.css?v=neon-menu-1">
-<link rel="stylesheet" href="mode-menu.css?v=mode-cards-1">
+<link rel="stylesheet" href="mode-menu.css?v=special-preview-1">
 <link rel="stylesheet" href="notice-guide.css?v=news-p1-1">
 </head>
 
@@ -2139,6 +2139,7 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
       <span class="modeCardCopy"><span class="modeCardName">2人で</span><span class="modeCardNote">同じ端末で対戦</span></span>
       <span class="modeCardArrow" aria-hidden="true">→</span>
     </button>
+    <a class="modeCard preview" href="battle-preview.html"><span class="modeCardIcon" aria-hidden="true">✦</span><span class="modeCardCopy"><span class="modeCardName">バトルカード・技プレビュー</span><span class="modeCardNote">19種類の通常技・S技を試す</span></span><span class="modeCardArrow" aria-hidden="true">↗</span></a>
   </div>
 
   <button class="modeBottomButton modeUtility" aria-label="お知らせを開く" onclick="showScreen('tipScreen')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="m14 5 5-2v18l-5-2H5V5h9ZM5 9H2v6h3m3 4 1 3h4l-1-3M14 5v14"/></svg><span>お知らせ</span></button>
@@ -2770,19 +2771,21 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
 <script src="bot-client.js?v=mode-cards-1"></script>
 <script src="advanced/rules.js?v=custom-options-1"></script>
 <script src="advanced/special-rules.js?v=special-balance-2"></script>
-<script src="advanced/special.js?v=special-compact-2"></script>
+<script src="advanced/special.js?v=turn-timeline-1"></script>
 <script src="room-rules.js?v=custom-options-1"></script>
-<script src="ranked-client.js?v=custom-options-1"></script>
-<script src="advanced/client.js?v=stable-turn-1"></script>
-<script src="advanced/cutin.js?v=special-gauge-1"></script>
+<script src="battle-timeline.js?v=turn-timeline-1"></script>
+<script src="ranked-client.js?v=turn-timeline-1"></script>
+<script src="advanced/client.js?v=turn-timeline-1"></script>
+<script src="advanced/cutin.js?v=turn-timeline-1"></script>
 <script src="battle-inspector.js?v=battle-layout-1"></script>
 <script src="lobby-client.js?v=custom-options-1"></script>
-<script src="battle-action-art.js?v=confirmed-1"></script>
-<script src="battle-effects.js?v=special-purple-1"></script>
+<script src="battle-action-art.js?v=19-moves-1"></script>
+<script src="battle-new-effects.js?v=collection-4"></script>
+<script src="battle-effects.js?v=turn-timeline-1"></script>
 <script type="module">
   import {createTitleService} from "./title-service.js?v=crown-prestige-1";
-  import {createProtectedRooms} from "./protected-rooms.js?v=custom-options-1";
-  import {createFreeTransport} from "./free-transport.js?v=custom-options-1";
+  import {createProtectedRooms} from "./protected-rooms.js?v=turn-timeline-1";
+  import {createFreeTransport} from "./free-transport.js?v=turn-timeline-1";
   import {createBattleHistory} from "./battle-history.js?v=custom-options-1";
   import {createPlayerProfile} from "./player-profile.js?v=custom-options-1";
   import {createHistoryScreen} from "./battle-history-client.js?v=custom-options-1";
@@ -3450,7 +3453,7 @@ function showScreen(id){
   const techBack=document.getElementById('techBackButton');
   if(techBack)techBack.hidden=id!=='techScreen'||gameMode!=='offline'||rankedActive;
   if(id!=="battleScreen")window.BattleInspector?.close();
-  if(id!=="battleScreen"){window.AdvancedCutin?.cancel();window.BattleEffects?.cancel();}
+  if(id!=="battleScreen"){window.BattleCountdown?.cancel();window.BattleResources?.cancel();window.AdvancedCutin?.cancel();window.BattleEffects?.cancel();}
   if(id!=="battleScreen")PlayerIntro.cancel();
 
   document.documentElement.classList.toggle("titles-open",id==="titlesScreen");
@@ -3495,6 +3498,7 @@ let spectatorCountdownKey="";
 let spectatorVisualTurn=0,spectatorPendingBattleState=null;
 
 function clearSpectatorTimers(){
+  window.BattleCountdown?.cancel();
   ["_spectatorStartTimer","_spectatorCountdownTimer","_spectatorTechniqueRevealTimer","_spectatorEffectStartTimer"]
     .forEach(key=>clearTimeout(window[key]));
   spectatorCountdownKey="";
@@ -3685,7 +3689,7 @@ function applySpectatorState(state){
 function receiveSpectatorBattleState(state,roomData){
   if(!spectatorActive || !state)return;
   const turn=Number(state.turn||0);
-  if(spectatorVisualTurn && (turn>spectatorVisualTurn || turn===spectatorVisualTurn && state.phase==="finished")){
+  if(spectatorVisualTurn && (turn>spectatorVisualTurn || turn===spectatorVisualTurn && state.phase!=="effect")){
     if(turn>=Number(spectatorPendingBattleState?.turn||0))spectatorPendingBattleState=state;
     return;
   }
@@ -3709,7 +3713,7 @@ function receiveSpectatorBattleState(state,roomData){
     if(effectTurn<=Number(window._lastSpectatorEffectTurn||0))return;
     window._lastSpectatorEffectTurn=effectTurn;
     clearSpectatorTimers();
-    if(Number(state.countdownEndsAt)>onlineNow())beginSpectatorCountdown(state.countdownEndsAt);
+    if(!window.BattleCountdown&&Number(state.countdownEndsAt)>onlineNow())beginSpectatorCountdown(state.countdownEndsAt);
     const a1=state.actions?.[1]?.data,a2=state.actions?.[2]?.data;
     if(!a1 || !a2){applySpectatorState(state);return;}
     selectedAction={1:{id:state.actions[1].id,data:a1},2:{id:state.actions[2].id,data:a2}};
@@ -3720,7 +3724,7 @@ function receiveSpectatorBattleState(state,roomData){
     if(effectStartAt+1800<now){applySpectatorState(state);return;}
     spectatorVisualTurn=turn;
     const scheduledReveal=effectStartAt<=now?now+30:revealAt;
-    window._spectatorTechniqueRevealTimer=setTimeout(()=>{
+    const reveal=()=>{
       if(session!==spectatorSession || !spectatorActive || onlineTurnNumber!==turn)return;
       showTechniqueReveal(a1,a2);
       window._spectatorEffectStartTimer=setTimeout(()=>{
@@ -3736,9 +3740,11 @@ function receiveSpectatorBattleState(state,roomData){
         spectatorVisualTurn=0;
         const pending=spectatorPendingBattleState;spectatorPendingBattleState=null;
         if(pending)receiveSpectatorBattleState(pending,roomData);
-      },Number(state.damageTo1||0),Number(state.damageTo2||0),true);
+      },Number(state.damageTo1||0),Number(state.damageTo2||0),true,state.resources);
       },Math.max(ONLINE_REVEAL_MS,effectStartAt-onlineNow()));
-    },Math.max(0,scheduledReveal-onlineNow()));
+    };
+    if(window.BattleCountdown)window.BattleCountdown.start('spectator:'+session+':'+effectTurn,{show(digit){const el=document.getElementById('countdown');el.textContent=String(digit);el.className='countPulse';startTurnCountdownSE();},onComplete(){if(session!==spectatorSession||!spectatorActive)return;stopTurnCountdownSE();const el=document.getElementById('countdown');el.textContent='BATTLE!';el.className='battleCall';window._spectatorTechniqueRevealTimer=setTimeout(reveal,500);}});
+    else window._spectatorTechniqueRevealTimer=setTimeout(reveal,Math.max(0,scheduledReveal-onlineNow()));
     return;
   }
   if(state.phase==="finished"){
@@ -3760,6 +3766,7 @@ function beginSpectatorCountdown(startAt){
     const ms=Number(startAt)-onlineNow();
     el.textContent=ms>0?String(Math.min(3,Math.ceil(ms/1000))):"BATTLE!";
     el.className=ms>0?"countPulse":"battleCall";
+    if(ms>0)window.BattleCountdown?.observe("spectator:"+session+":"+onlineTurnNumber,Math.min(3,Math.ceil(ms/1000)));
     if(ms>0)startTurnCountdownSE();else stopTurnCountdownSE();
     if(ms>0)window._spectatorCountdownTimer=setTimeout(tick,Math.min(1000,ms));
   };
@@ -3973,6 +3980,7 @@ function onlineNow(){
 }
 
 function resetOnlineMatchState(){
+  window.BattleCountdown?.cancel();window.BattleResources?.cancel();
   window.BattleEffects?.cancel();
   window.confirmedRevealedActions=null;
   PlayerIntro.reset();
@@ -4177,6 +4185,7 @@ function beginOnlineBattleCountdown(startAt){
       countdown=Math.min(3,Math.ceil(remainingMs/1000));
       startTurnCountdownSE();
       show(countdown);
+      window.BattleCountdown?.observe("online:"+onlineMatchSession+":"+onlineTurnNumber,countdown);
       countdownTimer = setTimeout(tick, Math.max(50, remainingMs % 1000 || 50));
       return;
     }
@@ -4345,7 +4354,7 @@ function receiveOnlineBattleState(state){
     clearTimeout(window._onlineTechniqueRevealTimeout);
     clearTimeout(window._onlineEffectStartTimeout);
 
-    window._onlineTechniqueRevealTimeout=setTimeout(()=>{
+    const reveal=()=>{
       if(session!==onlineMatchSession || gameMode!=="online" || Number(onlineTurnNumber)!==Number(state.turn))return;
       showTechniqueReveal(a1.data,a2.data);
       window._onlineEffectStartTimeout=setTimeout(()=>{
@@ -4431,10 +4440,12 @@ if(resolved2.skill === "tech6"){
           }
         },
         Number(state.damageTo1||0),
-        Number(state.damageTo2||0)
+        Number(state.damageTo2||0),false,state.resources
       );
       },Math.max(ONLINE_REVEAL_MS,effectStartAt-onlineNow()));
-    },Math.max(0,scheduleRevealAt-onlineNow()));
+    };
+    if(window.BattleCountdown)window.BattleCountdown.start('online:'+session+':'+effectTurn,{show(digit){const el=document.getElementById('countdown');el.textContent=String(digit);el.className='countPulse';startTurnCountdownSE();},onComplete(){if(session!==onlineMatchSession)return;stopTurnCountdownSE();const el=document.getElementById('countdown');el.textContent='BATTLE!';el.className='battleCall';window._onlineTechniqueRevealTimeout=setTimeout(reveal,500);}});
+    else window._onlineTechniqueRevealTimeout=setTimeout(reveal,Math.max(0,scheduleRevealAt-onlineNow()));
     return;
   }
 
@@ -4539,7 +4550,7 @@ if(resolved2.skill === "tech6"){
           effectA2,
           apply,
           Number(state.damageTo1 || 0),
-          Number(state.damageTo2 || 0)
+          Number(state.damageTo2 || 0),false,state.resources
         );
       }
     }else{
@@ -4933,6 +4944,7 @@ function startTurnCore(){
     const remaining=Math.max(0,inputDeadline-inputNow());
     const next=Math.ceil(remaining/1000);
     if(next>0){
+      if(gameMode==="online")window.BattleCountdown?.observe("online:"+timerSession+":"+timerTurn,next);
       if(next!==countdown){
         countdown=next;
         el.className="";void el.offsetWidth;el.className="countPulse";el.textContent=String(next);
@@ -5433,6 +5445,7 @@ function finishTurn(){
 ========================= */
 
 function resolveBattle(){
+  const resourceBefore={hp:{...hp},gauge:{...gauge}},resourceOutcome={};
   const a1 = selectedAction[1]?.data;
   const a2 = selectedAction[2]?.data;
   if(!a1 || !a2) return;
@@ -5450,6 +5463,8 @@ function resolveBattle(){
   // 先に技のコストを消費
   gauge[1] = Math.max(0, gauge[1] - Number(a1.cost || 0));
   gauge[2] = Math.max(0, gauge[2] - Number(a2.cost || 0));
+
+  resourceOutcome.paid1=gauge[1];resourceOutcome.paid2=gauge[2];
 
   // ミラーは表示と消費だけ元の技を保ち、効果判定では相手の行動になる。
   // ミラー同士は循環を避けるため効果なし。
@@ -5477,6 +5492,8 @@ function resolveBattle(){
   if(e1.type === "charge") gauge[1] = Math.min(10, gauge[1] + 2);
   if(e2.type === "charge") gauge[2] = Math.min(10, gauge[2] + 2);
 
+  resourceOutcome.charged1=gauge[1];resourceOutcome.charged2=gauge[2];
+
   // 既に付与されていたルインだけがこのターンに発動する。
   if(ruinTurns[1] > 0 && e1.type === "charge") damageTo1 += 1;
   if(ruinTurns[2] > 0 && e2.type === "charge") damageTo2 += 1;
@@ -5485,9 +5502,13 @@ function resolveBattle(){
   if(e1.skill === "tech5" && e2.type === "charge") gauge[1] = Math.min(10, gauge[1] + 3);
   if(e2.skill === "tech5" && e1.type === "charge") gauge[2] = Math.min(10, gauge[2] + 3);
 
+  resourceOutcome.foresight1=gauge[1];resourceOutcome.foresight2=gauge[2];
+
   // 技4：HP+1
   if(e1.skill === "tech4") hp[1] = Math.min(10, hp[1] + 1);
   if(e2.skill === "tech4") hp[2] = Math.min(10, hp[2] + 1);
+
+  resourceOutcome.healed1=hp[1];resourceOutcome.healed2=hp[2];
 
   // 強化はこのターンの開始時点の残数で判定する。
   // モーメンタムを含む全攻撃技の実威力を先に求め、衝突時にも同じ値を使う。
@@ -5519,11 +5540,14 @@ function resolveBattle(){
     gauge[2] = Math.min(10, gauge[2] + 8);
   }
 
+  resourceOutcome.rampage1=gauge[1];resourceOutcome.rampage2=gauge[2];
+
   // サイフォン：双方の消費・ゲージ獲得後に、同じ時点の残量から奪う量を決める。
   // 同時使用でも処理順で結果が変わらず、相手が0ならゲージを生み出さない。
   const siphonGauge = {1:gauge[1],2:gauge[2]};
   const stolenBy1 = e1.skill === "tech10" ? Math.min(2,siphonGauge[2]) : 0;
   const stolenBy2 = e2.skill === "tech10" ? Math.min(2,siphonGauge[1]) : 0;
+  resourceOutcome.stolen1=stolenBy1;resourceOutcome.stolen2=stolenBy2;
   gauge[1] = Math.min(10,Math.max(0,siphonGauge[1] + stolenBy1 - stolenBy2));
   gauge[2] = Math.min(10,Math.max(0,siphonGauge[2] + stolenBy2 - stolenBy1));
 
@@ -5566,10 +5590,12 @@ function resolveBattle(){
     1:Math.max(0, Number(hp[1]) - Number(damageTo1 || 0)),
     2:Math.max(0, Number(hp[2]) - Number(damageTo2 || 0))
   };
+  const resources={before:resourceBefore,after:{hp:effectHp,gauge:{...gauge}},outcome:resourceOutcome};
   if(gameMode === "online"){
     window._onlineLocalEffectTurn = onlineEffectTurn;
     const effectState = {
       phase: "effect",
+      resources,
       turn: onlineEffectTurn,
       resolvedTurn: onlineEffectTurn,
       revealAt,
@@ -5658,7 +5684,7 @@ if(e2.skill === "tech6"){
     }
 
     setTimeout(()=>startTurn(),250);
-  }, damageTo1, damageTo2);
+  }, damageTo1, damageTo2,false,resources);
   },1000);
 }
 
@@ -5916,7 +5942,14 @@ function playBattleSituationSE(a1,a2,damageTo1=0,damageTo2=0){
   if(momentum2 && Number(damageTo1)>0) playBattleSE("seMomentum");
 }
 
-function playBattleEffect(a1,a2,callback,damageTo1=0,damageTo2=0,isSpectator=false){
+function playBattleEffect(a1,a2,callback,damageTo1=0,damageTo2=0,isSpectator=false,resources=null){
+  const raw=window.confirmedRevealedActions||[a1,a2];
+  const resourcePlan=window.BattleEffects?.createPlan([a1,a2],{rawActions:raw,damage:[damageTo1,damageTo2]});
+  const view=resources&&window.BattleResources?.begin({...resources,actions:resourcePlan?.players.map(p=>p.action)||[a1,a2],rawActions:raw,damage:[damageTo1,damageTo2],impacts:resourcePlan?.events,maxGauge:battleLimits().maxGauge});
+  let resourceSignature="";
+  const paintFrame=ms=>{if(!view?.current())return;view.tick(ms);const next=JSON.stringify(view.current());if(next!==resourceSignature){resourceSignature=next;updateBattleUI();}};
+  const complete=()=>{view?.finish();callback();};
+  paintFrame(0);
   if(window.BattleEffects){
     let confirmedLayer=document.getElementById("battleEffectLayer");
     if(!confirmedLayer){confirmedLayer=document.createElement("div");confirmedLayer.id="battleEffectLayer";document.getElementById("battleScreen").appendChild(confirmedLayer);}
@@ -5926,7 +5959,7 @@ function playBattleEffect(a1,a2,callback,damageTo1=0,damageTo2=0,isSpectator=fal
       layer:confirmedLayer,actions:[a1,a2],rawActions,damage:[damageTo1,damageTo2],
       sealed:[blockSeal[1],blockSeal[2]],momentum:[momentumBonus[1],momentumBonus[2]],
       onImpact(player,damage){createDamageNumber(document.getElementById("battleScreen"),player,damage);flashHitPlayer(player,isSpectator);},
-      onComplete:callback
+      onFrame:paintFrame,onCancel:()=>view?.cancel(),onComplete:complete
     });
     if(played)return;
   }
@@ -5946,7 +5979,7 @@ function playBattleEffect(a1,a2,callback,damageTo1=0,damageTo2=0,isSpectator=fal
     if(Number(damageTo2)>0) createDamageNumber(damageLayer,2,Number(damageTo2));
     if(Number(damageTo1)>0) flashHitPlayer(1,isSpectator);
     if(Number(damageTo2)>0) flashHitPlayer(2,isSpectator);
-    setTimeout(()=>callback(),120);
+    paintFrame(Infinity);setTimeout(complete,120);
   };
 
   const attack1=a1.type==="attack";
@@ -6741,24 +6774,25 @@ function battleLimits(){
 }
 
 function updateBattleUI(){
-  window.SpecialGauge?.sync(rankedActive?rankedMatch:gameMode==="spectator"?window._spectatorSpecialMatch:null);
+  const shown=window.BattleResources?.current(),shownHp=shown?.hp||hp,shownGauge=shown?.gauge||gauge;
+  window.SpecialGauge?.sync(rankedActive?(rankedVisualMatch||rankedMatch):gameMode==="spectator"?window._spectatorSpecialMatch:null);
   const limits=battleLimits();
   updateBlockSealIndicators();
   updateRuinIndicators();
   updateEnhanceIndicators();
   updateActionChainIndicators();
-  window.SpecialGauge?.paintStatuses(rankedActive?rankedMatch:gameMode==='spectator'?window._spectatorSpecialMatch:null);
+  window.SpecialGauge?.paintStatuses(rankedActive?(rankedVisualMatch||rankedMatch):gameMode==='spectator'?window._spectatorSpecialMatch:null);
   [1,2].forEach(player=>{
     const hpText=document.getElementById("hp"+player+"Text");
     const hpFill=document.getElementById("hp"+player+"Fill");
     const gaugeText=document.getElementById("gauge"+player+"Text");
     const gaugeFill=document.getElementById("gauge"+player+"Fill");
 
-    hpText.textContent=hp[player]+"/"+limits.hp;
+    hpText.textContent=shownHp[player]+"/"+limits.hp;
     hpFill.parentElement.style.setProperty('--hp-max',String(limits.hp));
-    hpFill.style.width=(Math.max(0,Math.min(1,hp[player]/limits.hp))*100)+"%";
+    hpFill.style.width=(Math.max(0,Math.min(1,shownHp[player]/limits.hp))*100)+"%";
 
-    if(hp[player] < displayedHp[player]){
+    if(shownHp[player] < displayedHp[player]){
       hpFill.classList.remove("hpDamage");
       void hpFill.offsetWidth;
       hpFill.classList.add("hpDamage");
@@ -6767,12 +6801,12 @@ function updateBattleUI(){
       hpText.classList.add("hpDamage");
     }
 
-    gaugeText.textContent=gauge[player]+"/"+limits.maxGauge;
-    gaugeFill.style.width=(Math.max(0,Math.min(1,gauge[player]/limits.maxGauge))*100)+"%";
-    gaugeFill.classList.toggle("gaugeReady",gauge[player]>=7);
-    gaugeFill.classList.toggle("gaugeMax",gauge[player]>=limits.maxGauge);
+    gaugeText.textContent=shownGauge[player]+"/"+limits.maxGauge;
+    gaugeFill.style.width=(Math.max(0,Math.min(1,shownGauge[player]/limits.maxGauge))*100)+"%";
+    gaugeFill.classList.toggle("gaugeReady",shownGauge[player]>=7);
+    gaugeFill.classList.toggle("gaugeMax",shownGauge[player]>=limits.maxGauge);
 
-    if(gauge[player] > displayedGauge[player]){
+    if(shownGauge[player] > displayedGauge[player]){
       gaugeFill.animate([
         {filter:"brightness(1)",transform:"scaleY(1)"},
         {filter:"brightness(2)",transform:"scaleY(1.6)"},
@@ -6780,8 +6814,8 @@ function updateBattleUI(){
       ],{duration:380,easing:"ease-out"});
     }
 
-    displayedHp[player]=hp[player];
-    displayedGauge[player]=gauge[player];
+    displayedHp[player]=shownHp[player];
+    displayedGauge[player]=shownGauge[player];
   });
 
   updateDisabledActions();

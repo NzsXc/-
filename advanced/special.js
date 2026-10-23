@@ -58,7 +58,7 @@
   screen?.style.setProperty('--special-hp-max',String(match.roomRules.hp??10));
   for(const side of [1,2]){
    const panel=ensure(side);if(!panel)continue;panel.hidden=false;
-   const raw=Number(match.special?.gauge?.[side]??0),amount=Number.isFinite(raw)?Math.max(0,Math.min(MAX,Math.floor(raw))):0;
+   const raw=Number(window.BattleResources?.current()?.special?.[side]??match.special?.gauge?.[side]??0),amount=Number.isFinite(raw)?Math.max(0,Math.min(MAX,Math.floor(raw))):0;
    panel.querySelector('.specialGaugeValue').textContent=amount+'/'+MAX;panel.querySelector('.specialGaugeFill').style.width=(amount/MAX*100)+'%';
    const track=panel.querySelector('[role="progressbar"]');track.setAttribute('aria-valuenow',String(amount));track.setAttribute('aria-valuetext',amount+' / '+MAX);
   }

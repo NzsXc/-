@@ -1,17 +1,18 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const {test}=require('node:test'),actions=require('../bot-engine.js').ACTIONS;
 function fixture(){
- const colors=[],frames=new Map(),shakes=[];let next=0,canvas;
+ const colors=[],frames=new Map(),shakes=[],blades=[],circles=[];let next=0,canvas,translation=[0,0];
  const gradient=()=>({addColorStop:(_stop,color)=>colors.push(color)});
- const ctx=new Proxy({createLinearGradient:gradient,createRadialGradient:gradient},{get:(obj,key)=>key==='canvas'?canvas:key in obj?obj[key]:()=>{},set:(obj,key,value)=>{if(['strokeStyle','fillStyle','shadowColor'].includes(key))colors.push(value);obj[key]=value;return true;}});
+ const ctx=new Proxy({translate:(x,y)=>{translation=[x,y];},arc:(...args)=>circles.push({center:translation.slice(),radius:args[2]}),createLinearGradient:(...args)=>{blades.push({center:translation.slice(),args});return gradient();},createRadialGradient:gradient},{get:(obj,key)=>key==='canvas'?canvas:key in obj?obj[key]:()=>{},set:(obj,key,value)=>{if(['strokeStyle','fillStyle','shadowColor'].includes(key))colors.push(value);obj[key]=value;return true;}});
  const rect=(x,y,width=280,height=180)=>({left:x,top:y,width,height});
  const areas=[{getBoundingClientRect:()=>rect(30,470)},{getBoundingClientRect:()=>rect(590,30)}],layer={getBoundingClientRect:()=>rect(0,0,900,700),replaceChildren(){}};
  const context=vm.createContext({console,window:{devicePixelRatio:1,matchMedia:()=>({matches:false})},performance:{now:()=>0},setTimeout:()=>1,clearTimeout(){},
   requestAnimationFrame:fn=>{frames.set(++next,fn);return next;},cancelAnimationFrame:id=>frames.delete(id),
   document:{createElement:()=>canvas={width:0,height:0,setAttribute(){},getContext:()=>ctx,getBoundingClientRect:()=>rect(0,0,900,700),remove(){},animate(){shakes.push('canvas');return {cancel(){}};}},getElementById:id=>id==='player1Area'?areas[0]:id==='player2Area'?areas[1]:id==='battleScreen'?{animate(){shakes.push('screen');return {cancel(){}};}}:null,querySelector:()=>({getBoundingClientRect:()=>rect(80,550,220,12)})}
  });
+ vm.runInContext(fs.readFileSync(path.join(__dirname,'..','battle-new-effects.js'),'utf8'),context);
  vm.runInContext(fs.readFileSync(path.join(__dirname,'..','battle-effects.js'),'utf8'),context);
- return {api:context.window.BattleEffects,colors,shakes,play(a,b,ms=570,damage=[0,0]){context.window.BattleEffects.play({layer,actions:[a,b],rawActions:[a,b],damage});const [id,fn]=frames.entries().next().value;frames.delete(id);fn(ms);}};
+ return {api:context.window.BattleEffects,ctx,circles,colors,shakes,blades,play(a,b,ms=570,damage=[0,0]){context.window.BattleEffects.play({layer,actions:[a,b],rawActions:[a,b],damage});const [id,fn]=frames.entries().next().value;frames.delete(id);fn(ms);}};
 }
 test('all twelve S moves paint violet while normal Breach retains red',()=>{
  for(let i=0;i<12;i++){
@@ -28,4 +29,47 @@ test('mixed clashes and copied S moves retain the correct per-player palette',()
 });
 test('damage moves only the effect canvas, preserving the battle controls and HP geometry',()=>{
  const f=fixture();f.play(actions[1],actions[0],500,[0,1]);assert.deepEqual(f.shakes,['canvas']);f.api.cancel();
+});
+
+test('S Momentum only slashes the target after a confirmed successful hit',()=>{
+ const momentum={...actions[8],special:true};
+ for(const [enemy,damage]of [[actions[8],[0,0]],[actions[3],[1,0]],[actions[2],[0,0]],[actions[4],[1,0]]]){
+  const f=fixture();f.play(momentum,enemy,900,damage);
+  assert.equal(f.blades.filter(b=>b.args[2]-b.args[0]===330).length,0,'no S impact blade after tie, loss, block or reflection');f.api.cancel();
+ }
+ for(const [enemy,damage]of [[actions[0],[0,1]],[actions[1],[0,1]]]){
+  const f=fixture();f.play(momentum,enemy,900,damage);
+  assert(f.blades.some(b=>b.args[2]-b.args[0]===330),'successful S hit retains its impact slash');f.api.cancel();
+ }
+});
+
+test('S Anti Guard uses a padlock while S Ruin retains cracks without an eclipse',()=>{
+ const seal=fixture();seal.play({...actions[10],special:true},actions[0],650);assert(seal.colors.includes('#251333'));assert(!seal.colors.includes('#100819'));seal.api.cancel();
+ const ruin=fixture();ruin.play({...actions[13],special:true},actions[0],650);assert(ruin.colors.includes('#bd75ff'));assert(!ruin.colors.includes('#100819'));assert(!ruin.colors.includes('#251333'));ruin.api.cancel();
+});
+
+test('seven new techniques render normally and as S effects on either side, including clashes',()=>{
+ const newActions=['focus','convert','blast','freeze','refund','venom','drain'].map((kind,i)=>({kind,skill:'tech'+(i+13),type:[2,4,6].includes(i)?'attack':kind,power:i===2?3:[4,6].includes(i)?1:0,pierce:i===4}));
+ for(const action of newActions)for(const special of [false,true])for(const side of [0,1])for(const ms of [200,650,900]){
+  const f=fixture(),own={...action,special},enemy=ms===900?actions[1]:actions[0],pair=side?[enemy,own]:[own,enemy];
+  assert.doesNotThrow(()=>f.play(...pair,ms,side?[1,0]:[0,1]),action.kind+' special='+special+' side='+side+' ms='+ms);f.api.cancel();
+ }
+});
+
+test('shared Siphon packet keeps its 550ms eased flight, white core and cyan ring',()=>{
+ const f=fixture();f.api.drawGaugeTransfer(f.ctx,275,{x:0,y:0},{x:100,y:0},1,{start:0});
+ const core=f.circles.find(c=>c.radius===9),ring=f.circles.find(c=>c.radius===14);
+ assert.deepEqual(core.center,[87.5,44]);assert.deepEqual(ring.center,core.center);assert(f.colors.includes('#fff6f0'));assert(f.colors.includes('#54caff'));
+ const plan=f.api.createPlan([{kind:'venom',skill:'tech18',type:'venom'},actions[0]]);assert.equal(plan.duration,2400);
+ const normal=f.api.createPlan([actions[13],actions[0]]);assert.equal(normal.duration,1200);
+ const special=f.api.createPlan([{...actions[13],special:true},actions[0]]);assert.equal(special.duration,1800);
+});
+
+test('local collection keeps moving evenly instead of rushing to the gauge',()=>{
+ for(const [ms,x]of [[150,25],[300,50],[450,75]]){
+  const f=fixture();f.api.drawGaugeTransfer(f.ctx,ms,{x:0,y:0},{x:100,y:0},1,{start:0,flight:600,linear:true,halos:false});
+  assert.equal(f.circles.find(c=>c.radius===9).center[0],x);
+ }
+ const f=fixture();f.api.drawGaugeTransfer(f.ctx,600,{x:0,y:0},{x:100,y:0},1,{start:0,flight:600,linear:true,halos:false});
+ assert(!f.circles.some(c=>c.radius===9),'packet enters the gauge at the end of its full flight');
 });

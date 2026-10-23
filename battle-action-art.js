@@ -1,12 +1,16 @@
 /* Confirmed action art. Match input and remote action privacy stay in index.html. */
 (function () {
   'use strict';
-  const skills = ['breach', 'counter', 'punish', 'heal', 'foresight', 'momentum', 'rampage', 'seal', 'enhance', 'siphon', 'ruin', 'mirror'];
+  const skills = ['breach', 'counter', 'punish', 'heal', 'foresight', 'momentum', 'rampage', 'seal', 'enhance', 'siphon', 'ruin', 'mirror','focus','convert','blast','freeze','refund','venom','drain'];
   const colors = {charge:'#56bcf2',orb:'#ed425d',block:'#a0e6ff',breach:'#f0f4fb',counter:'#b5ccdf',punish:'#c9a75a',heal:'#49d5a1',foresight:'#6a9ae7',momentum:'#d6e3ed',rampage:'#e63f57',seal:'#dfa9ff',enhance:'#bc729a',siphon:'#43b5e1',ruin:'#9d73d8',mirror:'#b5a0d8'};
   const angles = {charge:0,orb:-18,block:90,breach:-30,counter:90,punish:90,heal:0,foresight:0,momentum:-18,rampage:-45,seal:45,enhance:-45,siphon:-40,ruin:0,mirror:90};
   const corners = new Set(['charge', 'heal', 'foresight', 'ruin']);
   const lines = new Set(['breach', 'momentum', 'siphon', 'enhance', 'rampage', 'seal', 'orb']);
   const assetBase = new URL('./assets/actions/', document.currentScript.src);
+  const newKinds=new Set(skills.slice(12));
+  Object.assign(colors,{focus:'#f5d77c',convert:'#ffa766',blast:'#7acfff',freeze:'#93dfff',refund:'#7acfff',venom:'#c38bfa',drain:'#bd75ff'});
+  Object.assign(angles,{focus:0,convert:45,blast:-18,freeze:0,refund:-18,venom:0,drain:-40});
+  const imageSource=kind=>new URL(kind+(newKinds.has(kind)?'.svg':'.png'),assetBase).href;
 
   function kindOf(action) {
     if (action?.skill) return skills[Number(action.skill.replace('tech', '')) - 1] || null;
@@ -22,7 +26,7 @@
     art.setAttribute('aria-hidden', 'true');
     art.style.setProperty('--mp-symbol', colors[kind]);
     const image = document.createElement('img');
-    image.src = new URL(kind + '.png', assetBase).href;
+    image.src = imageSource(kind);
     image.alt = '';
     image.draggable = false;
     art.appendChild(image);
@@ -60,5 +64,5 @@
       button.setAttribute('aria-disabled', String(!privateChoice || button.classList.contains('disabled')));
     }
   }
-  window.BattleActionArt = Object.freeze({update, kindOf});
+  window.BattleActionArt = Object.freeze({update, kindOf, paint, imageSource});
 })();

@@ -70,7 +70,8 @@
  }
  window.addEventListener('resize',place);window.addEventListener('scroll',place,{passive:true});
  function sync(m,now){
-  for(const side of [1,2]){const name=document.getElementById('player'+side+'Statuses')||document.querySelector('#player'+side+'Area .playerName');let badge=document.getElementById('p'+side+'Stance');if(!badge&&name){badge=document.createElement('span');badge.id='p'+side+'Stance';badge.className='enhanceIndicator';badge.setAttribute('role','status');name.append(badge);}if(badge){badge.hidden=!(advanced(m)&&m.state&&window.AdvancedRules.presentationComplete(m,now)&&window.AdvancedRules.forTurn(m.advanced,m.state.turn)[side]?.id==='stance');badge.textContent='↑ 攻撃態勢+1';badge.title='攻撃態勢：このターンの攻撃力+1';}}
+  const shownTurn=m?.visualTurn??m?.state?.turn;
+  for(const side of [1,2]){const name=document.getElementById('player'+side+'Statuses')||document.querySelector('#player'+side+'Area .playerName');let badge=document.getElementById('p'+side+'Stance');if(!badge&&name){badge=document.createElement('span');badge.id='p'+side+'Stance';badge.className='enhanceIndicator';badge.setAttribute('role','status');name.append(badge);}if(badge){badge.hidden=!(advanced(m)&&m.state&&(m.visualTurn!=null||window.AdvancedRules.presentationComplete(m,now))&&window.AdvancedRules.forTurn(m.advanced,shownTurn)[side]?.id==='stance');badge.textContent='↑ 攻撃態勢+1';badge.title='攻撃態勢：このターンの攻撃力+1';}}
   const enabled=advanced(m)&&!!m.state,screen=document.getElementById('battleScreen');
   screen?.classList.toggle('advancedMode',enabled);
   if(!enabled){screen?.classList.remove('advancedSkillChoosing');window.AdvancedCutin?.cancel();current=null;if(dock)dock.hidden=true;if(enemyDock)enemyDock.hidden=true;if(windowPanel)windowPanel.hidden=true;if(!advanced(m)&&selection){selection.hidden=true;document.getElementById('techScreen')?.classList.remove('advancedSelection');}return;}
