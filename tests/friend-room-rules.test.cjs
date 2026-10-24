@@ -2,13 +2,13 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
 const {harness,evaluate}=require('./rules-harness.cjs'),RoomRules=require('../room-rules.js');
 const root=path.resolve(__dirname,'..'),source=file=>fs.readFileSync(path.join(root,file),'utf8'),plain=v=>JSON.parse(JSON.stringify(v));
 const rules=JSON.parse(source('firebase-database.rules.json')).rules;
-const calc=vm.runInNewContext(source('free-calculator.js').replaceAll('export ','')+'\ncalculate');
+const calc=vm.runInNewContext(source('free-calculator.js').replaceAll('export ','')+'\ncalculate',{window:{BattleV4:require('../combat-v4.js')}});
 const custom={mode:'custom',hp:20,initialGauge:14,maxGauge:20};
 function protectedApi(h,{supported=true}={}){
  const reads=[],writes=[],jobs=new Map();let timer=0;
  const get=async r=>{reads.push(r.p);assert(h.allowed('.read',r.p,'p2'));return {val:()=>structuredClone(h.get(r.p))};};
  const transport=data=>h.transports[1](data);transport.supportsRoomRules=async()=>supported;
- const context=vm.createContext({window:{RoomRules,BattleAI:require('../bot-engine.js')},console,Date:{now:h.now},
+ const context=vm.createContext({window:{BattleV4:require('../combat-v4.js'),SpecialRules:require('../advanced/special-rules.js'),AdvancedRules:require('../advanced/rules.js'),RoomRules,BattleAI:require('../bot-engine.js')},console,Date:{now:h.now},
   ref:(_db,p)=>({p}),get,push:()=>({key:'testRoom'}),serverTimestamp:h.now,signInAnonymously:()=>assert.fail('already signed in'),
   set:async(r,v)=>{writes.push(r.p);h.commit({[r.p]:v},'p2');},
   update:async(r,patch)=>h.commit(Object.fromEntries(Object.entries(patch).map(([k,v])=>[r.p+'/'+k,v])),'p2'),
@@ -26,7 +26,7 @@ function protectedApi(h,{supported=true}={}){
 }
 function fresh(){const h=harness();for(const p of [1,2])h.put('freeAccounts/p'+p,{name:p===1?'A':'B',rating:1000,guest:false,games:0,active:'',lastSettled:''});return h;}
 function historyApi(){
- const ctx=vm.createContext({calculateV1:calc,calculateV2:calc,stateFields:vm.runInNewContext(source('free-calculator.js').replaceAll('export ','')+'\nstateFields')});
+ const ctx=vm.createContext({window:{BattleV4:require('../combat-v4.js'),SpecialRules:require('../advanced/special-rules.js'),AdvancedRules:require('../advanced/rules.js')},calculateV1:calc,calculateV2:calc,stateFields:vm.runInNewContext(source('free-calculator.js').replaceAll('export ','')+'\nstateFields')});
  vm.runInContext(source('battle-history-core.js').replace(/^import[^\n]*\n/gm,'').replaceAll('export ',''),ctx);
  return {build:vm.runInContext('buildHistory',ctx),replay:vm.runInContext('replayHistory',ctx),match:vm.runInContext('historyMatch',ctx)};
 }
@@ -80,7 +80,7 @@ function historyApi(){
  // Input and timeout defaults follow the selected gauge cap, including caps above/below 10.
  const html=source('index.html'),limits=html.slice(html.indexOf('function battleLimits(){'),html.indexOf('function updateBattleUI(){'));
  const available=html.slice(html.indexOf('function isBattleActionAvailable('),html.indexOf('function chooseAction('));
- const input=vm.createContext({window:{},rankedActive:true,rankedMatch:{roomRules:custom},gameMode:'ranked',gauge:{1:14,2:14},blockSeal:{},lastAction:{}});
+ const input=vm.createContext({window:{BattleV4:require('../combat-v4.js'),SpecialRules:require('../advanced/special-rules.js'),AdvancedRules:require('../advanced/rules.js'),},rankedActive:true,rankedMatch:{roomRules:custom},gameMode:'ranked',gauge:{1:14,2:14},blockSeal:{},lastAction:{}});
  vm.runInContext(limits+available,input);assert(vm.runInContext('isBattleActionAvailable(1,"charge",{type:"charge",cost:0})',input));
  input.gauge[1]=20;assert(!vm.runInContext('isBattleActionAvailable(1,"charge",{type:"charge",cost:0})',input));
  const ranked=source('ranked-client.js'),autoSource=ranked.slice(ranked.indexOf('function rankedAutoSelect(){'),ranked.indexOf('function rankedTick(){'));

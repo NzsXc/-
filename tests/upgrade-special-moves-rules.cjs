@@ -1,9 +1,9 @@
 // Preserve legacy formulas; independently validate every new S move and its state.
 const fs=require('node:fs'),assert=require('node:assert/strict');
 const SPECIAL=require('../advanced/special-rules.js');
-function upgradeSpecialMoves(input){
+function upgradeSpecialMoves(input,{formulasOnly=false}={}){
  const out=structuredClone(input),r=out.rules,g=r.freeGames.$game,h=r.battleHistory.$game;
- assert(!g.advanced.specialMovesV1,'Apply once');
+ if(!formulasOnly)assert(!g.advanced.specialMovesV1,'Apply once');
  const G="root.child('freeGames/'+$game)",S=G+".child('state')",V=G+".child('rulesVersion').val()===3";
  const sv=(k,p)=>`${S}.child('${k}${p}').val()`,t=k=>`newData.child('${k}').val()`;
  const active=(p,id)=>`(${G}.child('roomRules/skills').val()!==false&&${G}.child('advanced/current/${p}/id').val()==='${id}'&&${G}.child('advanced/current/${p}/turn').val()===${sv('turn','')})`;
@@ -61,6 +61,7 @@ function upgradeSpecialMoves(input){
  }
  for(const k of Object.keys(formulas))for(const p of [1,2])for(const b of ['attack','sealed','reflect','blocking','pierce'])formulas[k]=formulas[k].replaceAll(t(b+p),'('+t(b+p)+'===true)');
  put('turn',sv('turn','')+'+1');
+ if(formulasOnly)return formulas;
  // Express legacy calculations using their existing intermediates rather than
  // duplicating complete Standard and Advanced expression trees.
  const legacy=structuredClone(formulas),oldKeys=Object.keys(g.transition).filter(k=>!k.startsWith('.')&&!k.startsWith('$'));

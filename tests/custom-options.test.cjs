@@ -3,7 +3,7 @@ const {harness}=require('./rules-harness.cjs'),R=require('../room-rules.js'),A=r
 const root=path.resolve(__dirname,'..'),read=f=>fs.readFileSync(path.join(root,f),'utf8'),plain=x=>JSON.parse(JSON.stringify(x));
 function protectedApi(h,supported=true){
  const transport=async data=>h.transports[1](data);transport.supportsCustomOptions=async()=>supported;transport.supportsRoomRules=async()=>true;transport.supportsAdvanced=async()=>true;transport.supportsAdvancedOptions=async()=>supported;transport.supportsSpecialGauge=async()=>true;transport.supportsSpecialHp=async()=>supported;transport.supportsSpecialMoves=async()=>supported;
- const ctx=vm.createContext({window:{RoomRules:R,AdvancedRules:A,BattleAI:require('../bot-engine.js')},console,Date:{now:h.now},
+ const ctx=vm.createContext({window:{BattleV4:require('../combat-v4.js'),SpecialRules:require('../advanced/special-rules.js'),AdvancedRules:require('../advanced/rules.js'),RoomRules:R,AdvancedRules:A,BattleAI:require('../bot-engine.js')},console,Date:{now:h.now},
   ref:(_db,p)=>({p}),get:async r=>{assert(h.allowed('.read',r.p,'p2'));return {val:()=>structuredClone(h.get(r.p))};},
   set:async(r,v)=>h.commit({[r.p]:v},'p2'),update:async(r,p)=>h.commit(Object.fromEntries(Object.entries(p).map(([k,v])=>[r.p+'/'+k,v])),'p2'),
   remove:async()=>{},push:()=>({key:'optionsRoom'}),serverTimestamp:h.now,onValue:()=>()=>{},onDisconnect:()=>({remove:async()=>{},cancel:async()=>{}}),signInAnonymously:async()=>{},
@@ -16,7 +16,7 @@ function protectedApi(h,supported=true){
 }
 function fresh(){const h=harness();for(const p of [1,2])h.put('freeAccounts/p'+p,{name:p===1?'A':'B',rating:1000,guest:false,games:0,active:'',lastSettled:''});return h;}
 function archiveFunctions(h){
- const calc=vm.runInContext('calculate',h.ctx),stateFields=vm.runInContext('stateFields',h.ctx),ctx=vm.createContext({window:{AdvancedRules:A,SpecialRules:require('../advanced/special-rules.js')},calculateV1:calc,calculateV2:calc,stateFields});
+ const calc=vm.runInContext('calculate',h.ctx),stateFields=vm.runInContext('stateFields',h.ctx),ctx=vm.createContext({window:{BattleV4:require('../combat-v4.js'),SpecialRules:require('../advanced/special-rules.js'),AdvancedRules:require('../advanced/rules.js'),AdvancedRules:A,SpecialRules:require('../advanced/special-rules.js')},calculateV1:calc,calculateV2:calc,stateFields});
  vm.runInContext(read('battle-history-core.js').replace(/^import[^\n]*\n/gm,'').replaceAll('export ',''),ctx);return {build:vm.runInContext('buildHistory',ctx),replay:vm.runInContext('replayHistory',ctx),match:vm.runInContext('historyMatch',ctx)};
 }
 (async()=>{

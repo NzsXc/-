@@ -15,7 +15,7 @@
  function card(side,profile){
   const el=node('section','intro-card intro-p'+side);el.setAttribute('aria-label',side+'P プレイヤーカード');
   const header=node('div','intro-card-header');
-  const name=node('div','intro-name',String(profile?.name||'プレイヤー'+side));name.title=name.textContent;
+  const name=node('div','intro-name',String(profile?.name||'プレイヤー'+side));name.title=name.textContent;window.NameStyles?.apply(name,profile?.nameStyle);
   const rating=node('div','intro-rating');rating.append(node('span','intro-rating-label','RATE'),node('strong','intro-rating-value',ratingText(profile?.rating)));
   header.append(name,rating);
   const titles=node('div','intro-titles');

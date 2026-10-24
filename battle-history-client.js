@@ -1,4 +1,4 @@
-import {ACTION_NAMES,HISTORY_REASONS,historySide,replayHistory,slots} from './battle-history-core.js?v=custom-options-1';
+import {ACTION_NAMES,HISTORY_REASONS,historySide,replayHistory,slots} from './battle-history-core.js?v=account-update-20261024';
 
 const element=(tag,className,text)=>{const node=document.createElement(tag);if(className)node.className=className;if(text!=null)node.textContent=String(text);return node;};
 const advanced=h=>h.roomRules?.mode==='advanced'&&h.roomRules.skills!==false||h.roomRules?.mode==='custom'&&h.roomRules.skills===true;
@@ -17,8 +17,8 @@ export function createHistoryScreen(history){
  back.onclick=()=>{generation++;window.showScreen('playerCardScreen');document.getElementById('playerCardHistoryButton')?.focus();};
  function playerInfo(h,p){
   const player=h.players[p],box=element('section','historyPlayer'),name=element('h3',null,player.name),rate=element('span','historyRate','レート '+h.settled['before'+p]+' → '+h.settled['after'+p]);
-  box.append(name,rate);
-  const loadout=player.loadout?slots(player.loadout).map(i=>ACTION_NAMES[i+3]||'不明').join(' / '):'技選択前';
+  window.NameStyles?.paint(name,player.uid);box.append(name,rate);
+  const loadout=player.loadout?slots(player.loadout).map(i=>ACTION_NAMES[window.BattleV4.normalId(i)]||'不明').join(' / '):'技選択前';
   box.append(element('p','historyLoadout','技構成：'+loadout));
   if(advanced(h)){
    const skill=skillFor(h,p),current=h.advanced?.current?.[p];

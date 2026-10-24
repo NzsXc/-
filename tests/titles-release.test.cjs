@@ -7,17 +7,17 @@ function node(){return {className:'',dataset:{},children:[],setAttribute(){},app
 const context=vm.createContext({window:{},document:{createElement:node},console});
 vm.runInContext(fs.readFileSync(path.join(root,'titles-catalog.js'),'utf8'),context);
 const catalog=context.window.TitleCatalog;
-assert.equal(catalog.items.filter(t=>t.kind==='skill-prestige').length,12);
-assert.equal(catalog.items.filter(t=>t.kind==='tech').length,12);
-assert.equal(catalog.items.filter(t=>t.kind==='skill-name').length,12);
+assert.equal(catalog.items.filter(t=>t.kind==='skill-prestige').length,19);
+assert.equal(catalog.items.filter(t=>t.kind==='tech').length,0);
+assert.equal(catalog.items.filter(t=>t.kind==='skill-name').length,19);
 assert.equal(catalog.items.some(t=>t.threshold===15),false);
-for(let skill=1;skill<=12;skill++){
+for(let skill=1;skill<=19;skill++){
  const t=catalog.byId['skill_prestige_'+skill];
  assert.equal(t.threshold,50);
  for(const count of [0,1,15,29,30,49,50,51,100])assert.equal(catalog.unlocked(t,{uses:{[skill]:{count}}}),count>=50);
- assert.equal(catalog.unlocked(t,{uses:{[skill===12?1:skill+1]:{count:100}}}),false);
+ assert.equal(catalog.unlocked(t,{uses:{[skill===19?1:skill+1]:{count:100}}}),false);
  assert.equal(catalog.byId['tech'+skill+'_30'],undefined);
- assert.equal(catalog.unlocked(catalog.byId['tech'+skill+'_1'],{uses:{[skill]:{count:1}}}),true);
+ assert.equal(catalog.byId['tech'+skill+'_1'],undefined);
  assert.equal(catalog.unlocked(catalog.byId['skill_name_'+skill],{uses:{[skill]:{count:30}}}),true);
  const badge=catalog.badge(t.id);assert.match(badge.className,/tier-prestige compact-prestige/);
  assert.equal(badge.children.find(n=>n.className.includes('title-badge')).textContent,t.name);

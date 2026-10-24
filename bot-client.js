@@ -24,9 +24,10 @@ function botState(){
   state.enhance[p]=enhanceTurns[p];state.momentum[p]=momentumBonus[p];state.ruin[p]=ruinTurns[p];
   state.last[p]=lastAction[p]?.data?.type||'';
  }
- state.turn=botTurn+1;return state;
+ state.frozen=[0,window.localExtraState?.frozen1||0,window.localExtraState?.frozen2||0];state.poison=[0,window.localExtraState?.poison1||0,window.localExtraState?.poison2||0];state.turn=botTurn+1;return state;
 }
 function botActionId(id){
+ if(id===-1)return 'frozen';
  if(id<3)return ['charge','attack','block'][id];
  const slot=selectedTechniques[2].indexOf(id-3);
  if(slot<0)throw Error('Botの装備技にない行動です');return 'tech'+slot;
@@ -55,7 +56,7 @@ async function startBotTurn(){
  const state=botState();
  try{
   const id=await new Promise((resolve,reject)=>{
-    const worker=new Worker('bot-worker.js?v=tech12-fix-1');botWorker=worker;
+    const worker=new Worker('bot-worker.js?v=account-update-20261024');botWorker=worker;
    const timer=setTimeout(()=>{worker.terminate();reject(Error('Botの思考が時間内に完了しませんでした'));},15000);
    worker.onmessage=({data})=>{clearTimeout(timer);worker.terminate();data.ok?resolve(data.action):reject(Error(data.error));};
    worker.onerror=()=>{clearTimeout(timer);worker.terminate();reject(Error('Botの思考ファイルを読み込めません'));};
@@ -116,7 +117,7 @@ function openBotTechniquePicker(){
   };
   const art=document.createElement('span');art.className='botTechniqueArt';art.setAttribute('aria-hidden','true');
   const kind=window.BattleActionArt?.kindOf(tech);
-  if(kind){const image=document.createElement('img');image.src='assets/actions/'+kind+'.png';image.alt='';image.draggable=false;art.append(image);}
+  if(kind){const image=document.createElement('img');image.src=window.BattleActionArt.imageSource(kind);image.alt='';image.draggable=false;art.append(image);}
   const name=document.createElement('span');name.className='botTechniqueName';name.textContent=tech.name;
   label.append(checkbox,art,name);area.append(label);
  });

@@ -4,11 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>心理バトル</title>
-<link rel="stylesheet" href="battle-history.css?v=history-skills-2">
-<link rel="stylesheet" href="advanced/advanced.css?v=custom-options-1">
-<link rel="stylesheet" href="advanced/special.css?v=special-compact-2">
-<link rel="stylesheet" href="advanced/button-art.css?v=attack-stance-1">
-<link rel="stylesheet" href="advanced/cutin.css?v=attack-stance-1">
+<link rel="stylesheet" href="battle-history.css?v=account-update-20261024">
+<link rel="stylesheet" href="advanced/advanced.css?v=account-update-20261024">
+<link rel="stylesheet" href="advanced/special.css?v=account-update-20261024">
+<link rel="stylesheet" href="advanced/button-art.css?v=account-update-20261024">
+<link rel="stylesheet" href="advanced/cutin.css?v=account-update-20261024">
 
 <style>
 
@@ -2053,20 +2053,21 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
 <meta name="apple-mobile-web-app-title" content="心理バトル">
 <link rel="apple-touch-icon" href="./icons/icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
-<link rel="stylesheet" href="player-intro.css?v=2">
-<link rel="stylesheet" href="titles.css?v=2">
-<link rel="stylesheet" href="titles-design.css?v=4">
-<link rel="stylesheet" href="player-profile.css?v=profile-5">
-<link rel="stylesheet" href="tournament-preview.css?v=diamond-frame-3">
-<link rel="stylesheet" href="titles-champion-crown.css?v=ribbon-size-2">
-<link rel="stylesheet" href="titles-prestige.css?v=ribbon-size-2">
-<link rel="stylesheet" href="titles-season2.css?v=season2-fit-2">
-<link rel="stylesheet" href="battle-inspector.css?v=stable-turn-1">
-<link rel="stylesheet" href="battle-action-art.css?v=hp-grid-1">
-<link rel="stylesheet" href="battle-compact.css?v=custom-options-1">
-<link rel="stylesheet" href="neon-controls.css?v=neon-menu-1">
-<link rel="stylesheet" href="mode-menu.css?v=special-preview-1">
-<link rel="stylesheet" href="notice-guide.css?v=news-p1-1">
+<link rel="stylesheet" href="player-intro.css?v=account-update-20261024">
+<link rel="stylesheet" href="titles.css?v=account-update-20261024">
+<link rel="stylesheet" href="titles-design.css?v=account-update-20261024">
+<link rel="stylesheet" href="player-profile.css?v=account-update-20261024">
+<link rel="stylesheet" href="tournament-preview.css?v=account-update-20261024">
+<link rel="stylesheet" href="titles-champion-crown.css?v=account-update-20261024">
+<link rel="stylesheet" href="titles-prestige.css?v=account-update-20261024">
+<link rel="stylesheet" href="titles-season2.css?v=account-update-20261024">
+<link rel="stylesheet" href="battle-inspector.css?v=account-update-20261024">
+<link rel="stylesheet" href="battle-action-art.css?v=account-update-20261024">
+<link rel="stylesheet" href="battle-compact.css?v=account-update-20261024">
+<link rel="stylesheet" href="neon-controls.css?v=account-update-20261024">
+<link rel="stylesheet" href="mode-menu.css?v=account-update-20261024">
+<link rel="stylesheet" href="notice-guide.css?v=account-update-20261024">
+<link rel="stylesheet" href="account-update.css?v=account-update-20261024">
 </head>
 
 
@@ -2139,7 +2140,7 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
       <span class="modeCardCopy"><span class="modeCardName">2人で</span><span class="modeCardNote">同じ端末で対戦</span></span>
       <span class="modeCardArrow" aria-hidden="true">→</span>
     </button>
-    <a class="modeCard preview" href="battle-preview.html"><span class="modeCardIcon" aria-hidden="true">✦</span><span class="modeCardCopy"><span class="modeCardName">バトルカード・技プレビュー</span><span class="modeCardNote">19種類の通常技・S技を試す</span></span><span class="modeCardArrow" aria-hidden="true">↗</span></a>
+    <div class="modeTools"><button onclick="showHelpPage(1);showScreen('helpScreen')">詳しい遊び方</button><button onclick="showScreen('creditsScreen')">クレジット</button><button onclick="showScreen('audioSettingsScreen')" aria-label="設定">⚙<span>設定</span></button></div>
   </div>
 
   <button class="modeBottomButton modeUtility" aria-label="お知らせを開く" onclick="showScreen('tipScreen')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="m14 5 5-2v18l-5-2H5V5h9ZM5 9H2v6h3m3 4 1 3h4l-1-3M14 5v14"/></svg><span>お知らせ</span></button>
@@ -2152,14 +2153,33 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
      オンラインメニュー
 ========================= -->
 
+<div id="helpScreen" class="screen utilityScreen"><div class="utilityPanel"><nav class="helpNav"><button onclick="showHelpPage(1)" id="helpTab1" aria-pressed="true">p1 遊び方</button><button onclick="showHelpPage(2)" id="helpTab2" aria-pressed="false">p2 技・スキル効果</button></nav><section id="helpPage1" class="helpPage"><header class="guideHeader"><h1>詳しい遊び方</h1></header><div id="helpTopics"><button type="button" class="helpTopic" data-topic="0" ><span>01</span><strong>基本の遊び方</strong><span>→</span></button><button type="button" class="helpTopic" data-topic="1" aria-disabled="true"><span>02</span><strong>準備中</strong><span>—</span></button><button type="button" class="helpTopic" data-topic="2" aria-disabled="true"><span>03</span><strong>準備中</strong><span>—</span></button><button type="button" class="helpTopic" data-topic="3" aria-disabled="true"><span>04</span><strong>準備中</strong><span>—</span></button><button type="button" class="helpTopic" data-topic="4" aria-disabled="true"><span>05</span><strong>準備中</strong><span>—</span></button><button type="button" class="helpTopic" data-topic="5" aria-disabled="true"><span>06</span><strong>準備中</strong><span>—</span></button><button type="button" class="helpTopic" data-topic="6" aria-disabled="true"><span>07</span><strong>準備中</strong><span>—</span></button><button type="button" class="helpTopic" data-topic="7" aria-disabled="true"><span>08</span><strong>準備中</strong><span>—</span></button><button type="button" class="helpTopic" data-topic="8" aria-disabled="true"><span>09</span><strong>準備中</strong><span>—</span></button><button type="button" class="helpTopic" data-topic="9" aria-disabled="true"><span>10</span><strong>準備中</strong><span>—</span></button></div><section id="helpArticle" class="helpArticle" hidden><div class="tipPageInner guidePage">
+        <header class="guideHeader"><span class="guideEyebrow">HOW TO PLAY</span><h1>遊び方</h1><p>相手の行動を読み、HPを0にしたら勝利。</p></header>
+        <ol class="guideSteps">
+          <li><h2>対戦モードを選ぶ</h2><p>ひとりでCPUと練習するほか、オンライン対戦や、1台の端末で2人対戦ができます。友達対戦ではStandard・Custom・Advancedを選べます。</p></li>
+          <li><h2>使う技を3つ選ぶ</h2><p>19種類の選択技から3つを装備します。基本行動の「チャージ」「アタック」「ブロック」は、いつでも使えます。</p></li>
+          <li><h2>毎ターン、行動を選ぶ</h2><p>10秒以内に行動を選択。お互いの行動が公開され、効果が発動します。ゲージが足りない技や、連続使用が禁止された技は選べません。</p></li>
+          <li><h2>チャージ・攻撃・防御を使い分ける</h2><p>チャージでゲージをため、アタックや選択技で攻撃。相手の攻撃はブロックで防ぎます。ブロックを貫く技や相手のチャージを狙う技もあるので、読み合いが勝負の鍵です。</p></li>
+        </ol>
+        <div class="guideBasics" id="guideBasicPreview"></div>
+        <aside class="guideCallout"><h2>Standardの初期設定</h2><p>HP 10 / 初期ゲージ 8 / 最大ゲージ 10。Customでは部屋の設定によって変わります。</p></aside>
+        <aside class="guideCallout"><h2>Advanced：スキルを1つ追加</h2><p>技3つに加えて、6種類からスキルを1つ選択。各ターンの行動選択前にある3秒間に発動できます。ゲージ消費はなく、1ターン1回まで。スキルごとに1試合の使用回数が決まっています。両者が使い切ると、3秒間の受付は省かれます。</p></aside>
+        <button class="guideTextLink" onclick="showHelpPage(2)">絵柄とすべての効果を確認する →</button>
+      </div></section><button id="helpContentsBack" hidden type="button">目次に戻る</button></section><section id="helpPage2" class="helpPage" hidden><div class="tipPageInner guidePage">
+        <header class="guideHeader"><span class="guideEyebrow">TECHNIQUES &amp; SKILLS</span><h1>技・スキル効果</h1><p>ゲーム内と同じ絵柄で、消費ゲージと効果をチェック。</p></header>
+        <h2 class="guideSectionTitle">基本行動 <small>3種類 / 共通</small></h2><div id="guideBasicActions" class="guideCatalog"></div>
+        <h2 class="guideSectionTitle">選択技 <small>19種類から3つを装備</small></h2><div id="guideTechniques" class="guideCatalog"></div>
+        <h2 class="guideSectionTitle">スキル <small>Advanced専用 / 6種類から1つ</small></h2><div id="guideSkills" class="guideCatalog"></div>
+        <h2 class="guideSectionTitle">S技 <small>スペシャル専用 / 通常技の効果に追加</small></h2><div id="guideSpecialTechniques" class="guideCatalog"></div>
+      </div></section><button class="titles-button" onclick="showScreen('modeScreen')">戻る</button></div></div><div id="creditsScreen" class="screen utilityScreen"><div class="utilityPanel"><h1>クレジット</h1><div id="creditsContent"></div><button onclick="showScreen('modeScreen')">戻る</button></div></div><div id="audioSettingsScreen" class="screen utilityScreen"><div class="utilityPanel"><h1>設定</h1><label class="volumeField">効果音 <output id="seVolumeValue">100%</output><input id="seVolume" type="range" min="0" max="100" step="1" aria-label="効果音の音量"></label><label class="volumeField">音楽 <output id="musicVolumeValue">100%</output><input id="musicVolume" type="range" min="0" max="100" step="1" aria-label="音楽の音量"></label><button onclick="showScreen('modeScreen')">戻る</button></div></div>
 <div id="titlesScreen" class="screen">
  <div class="titles-layout">
   <div class="titles-heading"><h1>称号の付け替え</h1><button id="titleBack" class="titles-button" onclick="closeTitles()">戻る</button></div>
   <p>最大3つ装備できます。選んだ称号はオンライン対戦のプレイヤーカードに表示されます。</p>
-  <div id="titleSlots" class="title-slots" aria-label="称号の装備枠"></div>
+  <div class="compactIdentity"><button id="titlePlayerName" type="button" aria-label="名前色を変更"></button><div id="titleSlots" class="title-slots" aria-label="称号の装備枠"></div></div><div id="nameColorPanel" hidden></div><p id="coinBalance" role="status"></p>
   <div class="titles-actions"><button id="titleClear" class="titles-button" onclick="clearTitleSlot()">この枠を外す</button><button id="titleSave" class="titles-button" onclick="saveTitles()">保存する</button></div>
   <div id="titlesStatus" class="titles-status" role="status"></div>
-  <div id="titleCollection"></div>
+  <div id="titleCollection" hidden></div>
  </div>
 </div>
 <div id="onlineScreen" class="screen">
@@ -2310,28 +2330,8 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
      TIP画面
 ========================= -->
 
-<div id="tipScreen" class="screen">
-  <nav class="tipNav" aria-label="お知らせのページ">
-    <button id="tipNav0" class="tipNavButton tipContentsButton active" data-page="0" aria-current="page" aria-controls="tipPage0" onclick="showTipPage(0)">目次</button>
-    <button id="tipNav1" class="tipNavButton" data-page="1" aria-controls="tipPage1" onclick="showTipPage(1)"><small>p1</small>お知らせ</button>
-    <button id="tipNav2" class="tipNavButton" data-page="2" aria-controls="tipPage2" onclick="showTipPage(2)"><small>p2</small>遊び方</button>
-    <button id="tipNav3" class="tipNavButton" data-page="3" aria-controls="tipPage3" onclick="showTipPage(3)"><small>p3</small>技・スキル効果</button>
-    <button id="tipNav4" class="tipNavButton" data-page="4" aria-controls="tipPage4" onclick="showTipPage(4)"><small>p4</small>みんなの評価</button>
-  </nav>
-  <div class="tipViewport" aria-label="お知らせの内容">
-    <div class="tipPages" id="tipPages">
-      <section id="tipPage0" class="tipPage" aria-labelledby="tipNav0"><div class="tipPageInner guidePage">
-        <header class="guideHeader"><span class="guideEyebrow">心理バトル / GUIDE</span><h1>目次</h1><p>遊び方を覚えて、自分だけの戦術を見つけよう。</p></header>
-        <div class="guideContents">
-          <button onclick="showTipPage(1)"><span class="guidePageNumber">p1</span><span><strong>お知らせ</strong><small>更新情報・技の調整</small></span><span aria-hidden="true">→</span></button>
-          <button onclick="showTipPage(2)"><span class="guidePageNumber">p2</span><span><strong>遊び方</strong><small>対戦の流れ・基本行動・Advancedのスキル</small></span><span aria-hidden="true">→</span></button>
-          <button onclick="showTipPage(3)"><span class="guidePageNumber">p3</span><span><strong>技・スキル効果</strong><small>すべての技とスキルを、絵柄と効果で確認</small></span><span aria-hidden="true">→</span></button>
-          <button onclick="showTipPage(4)"><span class="guidePageNumber">p4</span><span><strong>みんなの技・スキル評価</strong><small>S / A / B / C のティア表を見る</small></span><span aria-hidden="true">→</span></button>
-        </div>
-        <p class="guideNote">上のページボタンからも、いつでも切り替えられます。</p>
-      </div></section>
-      <section id="tipPage1" class="tipPage" aria-labelledby="tipNav1" aria-hidden="true" inert><div class="tipPageInner guidePage">
-        <header class="guideHeader"><span class="guideEyebrow">NEWS</span><h1>お知らせ</h1></header>
+<div id="tipScreen" class="screen"><nav class="tipNav" aria-label="お知らせのページ"><button id="tipNav0" class="tipNavButton tipContentsButton active" onclick="showTipPage(0)">目次</button><button id="tipNav1" class="tipNavButton" onclick="showTipPage(1)"><small>p1</small>お知らせ</button><button id="tipNav2" class="tipNavButton" onclick="showTipPage(2)"><small>p2</small>みんなの評価</button></nav><div class="tipViewport"><div class="tipPages" id="tipPages"><section id="tipPage0" class="tipPage"><div class="tipPageInner guidePage"><header class="guideHeader"><span class="guideEyebrow">NEWS</span><h1>目次</h1></header><div class="guideContents"><button onclick="showTipPage(1)"><span class="guidePageNumber">p1</span><strong>お知らせ</strong><span>→</span></button><button onclick="showTipPage(2)"><span class="guidePageNumber">p2</span><strong>みんなの評価</strong><span>→</span></button></div></div></section><section id="tipPage1" class="tipPage" aria-labelledby="tipNav1" aria-hidden="true" inert><div class="tipPageInner guidePage">
+        <header class="guideHeader"><span class="guideEyebrow">NEWS</span><h1>お知らせ</h1></header><article class="guideNotice"><header class="guideNoticeHeader"><time datetime="2026-10-24">2026/10/24</time><h2>新しい技を7種類追加</h2></header><p>フォーカス・コンバート・ブラスト・フリーズ・リファンド・ヴェノム・ドレインが登場。詳しい遊び方のp2で効果を確認できます。</p></article><article class="guideNotice"><header class="guideNoticeHeader"><time datetime="2026-10-24">2026/10/24</time><h2>ブリーチ下方修正</h2></header><p>ブロックを貫通したときの基本ダメージを2から1に変更しました。防御していない相手への基本ダメージは2のままです。フォーサイトは引き続き貫通攻撃を防ぎます。</p></article>
         <article class="guideNotice" aria-labelledby="foresightNoticeTitle">
           <header class="guideNoticeHeader"><time datetime="2026-10-22">2026/10/22</time><h2 id="foresightNoticeTitle">フォーサイト上方修正</h2></header>
           <div class="guideNoticeBody">
@@ -2339,40 +2339,15 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
             <ul><li>貫通攻撃を防げるようになった</li></ul>
           </div>
         </article>
-      </div></section>
-      <section id="tipPage2" class="tipPage" aria-labelledby="tipNav2" aria-hidden="true" inert><div class="tipPageInner guidePage">
-        <header class="guideHeader"><span class="guideEyebrow">HOW TO PLAY</span><h1>遊び方</h1><p>相手の行動を読み、HPを0にしたら勝利。</p></header>
-        <ol class="guideSteps">
-          <li><h2>対戦モードを選ぶ</h2><p>ひとりでCPUと練習するほか、オンライン対戦や、1台の端末で2人対戦ができます。友達対戦ではStandard・Custom・Advancedを選べます。</p></li>
-          <li><h2>使う技を3つ選ぶ</h2><p>12種類の選択技から3つを装備します。基本行動の「チャージ」「アタック」「ブロック」は、いつでも使えます。</p></li>
-          <li><h2>毎ターン、行動を選ぶ</h2><p>10秒以内に行動を選択。お互いの行動が公開され、効果が発動します。ゲージが足りない技や、連続使用が禁止された技は選べません。</p></li>
-          <li><h2>チャージ・攻撃・防御を使い分ける</h2><p>チャージでゲージをため、アタックや選択技で攻撃。相手の攻撃はブロックで防ぎます。ブロックを貫く技や相手のチャージを狙う技もあるので、読み合いが勝負の鍵です。</p></li>
-        </ol>
-        <div class="guideBasics" id="guideBasicPreview"></div>
-        <aside class="guideCallout"><h2>Standardの初期設定</h2><p>HP 10 / 初期ゲージ 8 / 最大ゲージ 10。Customでは部屋の設定によって変わります。</p></aside>
-        <aside class="guideCallout"><h2>Advanced：スキルを1つ追加</h2><p>技3つに加えて、6種類からスキルを1つ選択。各ターンの行動選択前にある3秒間に発動できます。ゲージ消費はなく、1ターン1回まで。スキルごとに1試合の使用回数が決まっています。両者が使い切ると、3秒間の受付は省かれます。</p></aside>
-        <button class="guideTextLink" onclick="showTipPage(3)">絵柄とすべての効果を確認する →</button>
-      </div></section>
-      <section id="tipPage3" class="tipPage" aria-labelledby="tipNav3" aria-hidden="true" inert><div class="tipPageInner guidePage">
-        <header class="guideHeader"><span class="guideEyebrow">TECHNIQUES &amp; SKILLS</span><h1>技・スキル効果</h1><p>ゲーム内と同じ絵柄で、消費ゲージと効果をチェック。</p></header>
-        <h2 class="guideSectionTitle">基本行動 <small>3種類 / 共通</small></h2><div id="guideBasicActions" class="guideCatalog"></div>
-        <h2 class="guideSectionTitle">選択技 <small>12種類から3つを装備</small></h2><div id="guideTechniques" class="guideCatalog"></div>
-        <h2 class="guideSectionTitle">スキル <small>Advanced専用 / 6種類から1つ</small></h2><div id="guideSkills" class="guideCatalog"></div>
-        <h2 class="guideSectionTitle">S技 <small>スペシャル専用 / 通常技の効果に追加</small></h2><div id="guideSpecialTechniques" class="guideCatalog"></div>
-      </div></section>
-      <section id="tipPage4" class="tipPage" aria-labelledby="tipNav4" aria-hidden="true" inert><div class="tipPageInner guidePage">
+      </div></section><section id="tipPage2" class="tipPage" aria-labelledby="tipNav2" aria-hidden="true" inert><div class="tipPageInner guidePage">
         <header class="guideHeader"><span class="guideEyebrow">COMMUNITY TIER LIST</span><h1>みんなの技・スキル評価</h1><p>S / A / B / C の4段階で、絵柄から探せるティア表。</p></header>
         <p class="guideNote">1アカウントにつき各項目1票。1〜10点で評価でき、あとから変更できます。全プレイヤーの平均で S：9以上 / A：8以上 / B：7以上 / C：7未満 に分かれます。</p><p id="guideRatingsStatus" class="guideNote" role="status" aria-live="polite"></p>
-        <div class="guideTierHeading"><h2 class="guideSectionTitle">技のティア表 <small>選択技12種類</small></h2><button id="guideVoteTechniques" class="guideVoteButton" type="button">技に投票</button></div><div id="guideTechniqueTiers" class="guideTierTable" role="table" aria-label="技の平均評価ティア表"></div>
+        <div class="guideTierHeading"><h2 class="guideSectionTitle">技のティア表 <small>選択技19種類</small></h2><button id="guideVoteTechniques" class="guideVoteButton" type="button">技に投票</button></div><div id="guideTechniqueTiers" class="guideTierTable" role="table" aria-label="技の平均評価ティア表"></div>
         <div class="guideTierHeading"><h2 class="guideSectionTitle">スキルのティア表 <small>Advanced専用</small></h2><button id="guideVoteSkills" class="guideVoteButton" type="button">スキルに投票</button></div><div id="guideSkillTiers" class="guideTierTable" role="table" aria-label="スキルの平均評価ティア表"></div>
         <div class="guideTierHeading"><h2 class="guideSectionTitle">S技のティア表 <small>スペシャル専用</small></h2><button id="guideVoteSpecialTechniques" class="guideVoteButton" type="button">S技に投票</button></div><p class="guideNote">通常技とは別にS技を1〜10点で評価できます。</p><div id="guideSpecialTechniqueTiers" class="guideTierTable" role="table" aria-label="S技の評価ティア表"></div>
         <p class="guideNote">平均点は小数第2位まで表示します。投票のない項目は未評価です。相手の構成や使うタイミングによって強さは変わります。</p>
-        <button class="guideTextLink" onclick="showTipPage(3)">技・スキルの効果を見る →</button>
-      </div></section>
-    </div>
-  </div>
-  <button class="tipBackButton" onclick="showScreen('modeScreen')">戻る</button>
-</div>
+        <button class="guideTextLink" onclick="showHelpPage(2);showScreen('helpScreen')">技・スキルの効果を見る →</button>
+      </div></section></div></div><button class="tipBackButton" onclick="showScreen('modeScreen')">戻る</button></div>
 
 <!-- =========================
      画面3：技選択
@@ -2760,36 +2735,38 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
 </div>
 
 
-<script src="titles-catalog.js?v=season2-1"></script>
-<script src="titles-prestige-effects.js?v=profile-scale-2"></script>
-<script src="titles-season2-art.js?v=season2-1"></script>
-<script src="titles-season2-effects.js?v=season2-fit-2"></script>
-<script src="player-intro.js?v=1"></script>
-<script src="titles-client.js?v=crown-prestige-1"></script>
-<script src="player-lightning.js?v=2"></script>
-<script src="bot-engine.js?v=foresight-shield-1"></script>
-<script src="bot-client.js?v=mode-cards-1"></script>
-<script src="advanced/rules.js?v=custom-options-1"></script>
-<script src="advanced/special-rules.js?v=special-balance-2"></script>
-<script src="advanced/special.js?v=turn-timeline-1"></script>
-<script src="room-rules.js?v=custom-options-1"></script>
-<script src="battle-timeline.js?v=turn-timeline-1"></script>
-<script src="ranked-client.js?v=turn-timeline-1"></script>
-<script src="advanced/client.js?v=turn-timeline-1"></script>
-<script src="advanced/cutin.js?v=turn-timeline-1"></script>
-<script src="battle-inspector.js?v=battle-layout-1"></script>
-<script src="lobby-client.js?v=custom-options-1"></script>
-<script src="battle-action-art.js?v=19-moves-1"></script>
-<script src="battle-new-effects.js?v=collection-4"></script>
-<script src="battle-effects.js?v=turn-timeline-1"></script>
+<script src="titles-catalog.js?v=account-update-20261024"></script>
+<script src="titles-prestige-effects.js?v=account-update-20261024"></script>
+<script src="titles-season2-art.js?v=account-update-20261024"></script>
+<script src="titles-season2-effects.js?v=account-update-20261024"></script>
+<script src="player-intro.js?v=account-update-20261024"></script>
+<script src="titles-client.js?v=account-update-20261024"></script>
+<script src="player-lightning.js?v=account-update-20261024"></script>
+<script src="combat-v4.js?v=account-update-20261024"></script>
+<script src="bot-engine.js?v=account-update-20261024"></script>
+<script src="bot-client.js?v=account-update-20261024"></script>
+<script src="advanced/rules.js?v=account-update-20261024"></script>
+<script src="advanced/special-rules.js?v=account-update-20261024"></script>
+<script src="advanced/special.js?v=account-update-20261024"></script>
+<script src="room-rules.js?v=account-update-20261024"></script>
+<script src="battle-timeline.js?v=account-update-20261024"></script>
+<script src="ranked-client.js?v=account-update-20261024"></script>
+<script src="advanced/client.js?v=account-update-20261024"></script>
+<script src="advanced/cutin.js?v=account-update-20261024"></script>
+<script src="battle-inspector.js?v=account-update-20261024"></script>
+<script src="lobby-client.js?v=account-update-20261024"></script>
+<script src="battle-action-art.js?v=account-update-20261024"></script>
+<script src="battle-new-effects.js?v=account-update-20261024"></script>
+<script src="battle-effects.js?v=account-update-20261024"></script>
 <script type="module">
-  import {createTitleService} from "./title-service.js?v=crown-prestige-1";
-  import {createProtectedRooms} from "./protected-rooms.js?v=turn-timeline-1";
-  import {createFreeTransport} from "./free-transport.js?v=skill-server-time-1";
-  import {createBattleHistory} from "./battle-history.js?v=custom-options-1";
-  import {createPlayerProfile} from "./player-profile.js?v=custom-options-1";
-  import {createHistoryScreen} from "./battle-history-client.js?v=custom-options-1";
-  import {createCommunityRatings} from "./community-ratings.js?v=special-moves-1";
+  import {createTitleService} from "./title-service.js?v=account-update-20261024";
+  import {createProtectedRooms} from "./protected-rooms.js?v=account-update-20261024";
+  import {createFreeTransport} from "./free-transport.js?v=account-update-20261024";
+  import {createBattleHistory} from "./battle-history.js?v=account-update-20261024";
+  import {createPlayerProfile} from "./player-profile.js?v=account-update-20261024";
+  import {createHistoryScreen} from "./battle-history-client.js?v=account-update-20261024";
+  import {createCommunityRatings} from "./community-ratings.js?v=account-update-20261024";
+  import {createEconomyService} from "./economy-service.js?v=account-update-20261024";
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
   import {
     getAuth,
@@ -2825,6 +2802,7 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
   const auth = getAuth(app);
+  window.gameAuth=auth;window.economyService=createEconomyService(db,auth);window.dispatchEvent(new Event('economy-ready'));
   window.communityRatings=createCommunityRatings(db,auth);
   window.dispatchEvent(new Event("community-ratings-ready"));
   window.battleHistory=createBattleHistory(db,auth);
@@ -2992,7 +2970,7 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
         identity.className="rankingIdentity";
         const name=document.createElement("span");
         name.className="rankingName";
-        name.textContent=player.name;
+        name.textContent=player.name;window.NameStyles?.paint(name,player.uid);
         identity.append(name);
         if(auth.currentUser?.uid===player.uid){
           const you=document.createElement("span");
@@ -3373,7 +3351,7 @@ const techniquePool = [
     type:"attack",
     skill:"tech1",
     description:
-      "ゲージ4消費 / 2ダメージ / ブロック無視"
+      "ゲージ4消費 / 2ダメージ / ブロック貫通時は1ダメージ"
   },
 
   {
@@ -3420,6 +3398,7 @@ const techniquePool = [
 
 ];
 
+techniquePool.push(...BattleV4.additions);
 window.techniquePoolForOnline = techniquePool;
 
 
@@ -3428,8 +3407,8 @@ window.techniquePoolForOnline = techniquePool;
 ========================= */
 
 function showTipPage(page){
-  const index=Math.max(0,Math.min(4,Math.trunc(Number(page)||0)));
-  if(index===4)window.NoticeGuide?.loadRatings();
+  const index=Math.max(0,Math.min(2,Math.trunc(Number(page)||0)));
+  if(index===2)window.NoticeGuide?.loadRatings();
   const pages=document.getElementById("tipPages");
   if(pages)pages.style.transform=`translateX(-${index*100}%)`;
   document.querySelectorAll(".tipNavButton").forEach((button,i)=>{
@@ -4696,6 +4675,7 @@ function confirmTech(){
 ========================= */
 
 function setupBattle(){
+ window.localExtraState=BattleV4.extraState();
   document.getElementById("battleHomeButton").hidden=true;
   document.getElementById("resultMessage").className="";
   setPlayerNames();
@@ -4839,9 +4819,9 @@ function startTurnCountdownSE(){
       if(!valid())return;
       if(context.state!=="running")throw Error("カウント音声が停止中です");
       const source=context.createBufferSource(),gain=context.createGain();
-      source.buffer=buffer;source.loop=true;gain.gain.value=.28;
+      source.buffer=buffer;source.loop=true;window.GameAudio?GameAudio.track(gain,.28):gain.gain.value=.28;
       source.connect(gain);gain.connect(context.destination);
-      source.onended=()=>{source.disconnect();gain.disconnect();if(countdownSESource===source)countdownSESource=null;};
+      source.onended=()=>{source.disconnect();gain.disconnect();window.GameAudio?.untrack(gain);if(countdownSESource===source)countdownSESource=null;};
       source.start(0);countdownSESource=source;
     }).catch(fallback):Promise.resolve().then(fallback);
   job.catch(error=>{
@@ -4905,6 +4885,7 @@ function startTurnCore(){
   locked[1] = false;
   locked[2] = false;
 
+  if(gameMode==='offline')for(const p of [1,2])if(window.localExtraState?.['frozen'+p]>0){selectedAction[p]={id:'frozen',data:getActionData(p,'frozen')};locked[p]=true;}
   // 新しいターンなので二重処理ロックを解除
   turnResolving = false;
 
@@ -5207,6 +5188,7 @@ function clearOnlineTechniqueDescription(){
 ========================= */
 
 function isBattleActionAvailable(player,action,data){
+ if((rankedActive?rankedMatch?.state?.frozen?.[player]:window.localExtraState?.['frozen'+player])>0)return false;
   if((player!==1&&player!==2)||typeof action!=="string")return false;
   data=data||getActionData(player,action);
   if(rankedActive&&window.SpecialGauge?.isSpecialView(rankedMatch)&&['charge','attack','block'].includes(action))return false;
@@ -5352,6 +5334,7 @@ function chooseAction(player,action){
 ========================= */
 
 function getActionData(player,action){
+ if(action==='frozen')return {name:'凍結',cost:0,power:0,type:'',skill:'',pierce:false};
 
   if(
     action === "charge" ||
@@ -5450,8 +5433,18 @@ function resolveBattle(){
   const a2 = selectedAction[2]?.data;
   if(!a1 || !a2) return;
 
-  let damageTo1 = 0;
-  let damageTo2 = 0;
+  let damageTo1=0,damageTo2=0;
+  if(window.BattleV4){
+   const s={turn:1,startedAt:0,misses1:0,misses2:0,...BattleV4.extraState(),...window.localExtraState};
+   for(const p of [1,2])for(const [k,v]of Object.entries({hp:hp[p],gauge:gauge[p],seal:blockSeal[p],enhance:enhanceTurns[p],momentum:momentumBonus[p],ruin:ruinTurns[p],last:lastAction[p]?.data?.type||'',specialSeal:0,specialRuin:0,specialMomentum:0}))s[k+p]=v;
+   const ids={},cat={};[a1,a2].forEach((a,i)=>{ids[i+1]=i;cat[i]=a;});cat[-1]={cost:0,power:0,type:'',skill:'',pierce:false};
+   const result=BattleV4.calculate(s,ids,4,{}, {},true,cat);
+   damageTo1=result.damage1;damageTo2=result.damage2;Object.assign(resourceOutcome,result);
+   window.localExtraState=Object.fromEntries(BattleV4.fields.map(k=>[k,result[k]]));
+   for(const p of [1,2]){gauge[p]=result['gauge'+p];hp[p]=result['healed'+p];blockSeal[p]=result['seal'+p];enhanceTurns[p]=result['enhance'+p];ruinTurns[p]=result['ruin'+p];}
+  }else{
+
+
 
   // アンチガードの条件は技選択時点の相手ゲージで判定する。
   // ヒール等のコスト消費後のゲージを使うと誤判定になる。
@@ -5579,6 +5572,10 @@ function resolveBattle(){
     blockSeal[1] = false;
   }
 
+
+  }
+  const noEffect={name:'凍結',cost:0,power:0,type:'',skill:''};
+  const e1=a1.skill==='tech12'?(a2.skill==='tech12'?noEffect:a2):a1,e2=a2.skill==='tech12'?(a1.skill==='tech12'?noEffect:a1):a2;
   // 技公開：オフライン/オンライン共通。
   // オンラインはFirebaseへ「技公開時刻」と「演出開始時刻」を送り、
   // 1P/2PともFirebase受信側の同じ処理で再生する。
@@ -5733,7 +5730,7 @@ function ensureBattleSEContext(context){
 
 function playBattleSEElement(el,volume,loop=false){
   try{
-    el.muted=false;el.volume=volume;el.loop=loop;el.currentTime=0;
+    el.muted=false;window.GameAudio?GameAudio.element(el,volume):el.volume=volume;el.loop=loop;el.currentTime=0;
     return Promise.resolve(el.play());
   }catch(error){return Promise.reject(error);}
 }
@@ -5802,7 +5799,7 @@ function playBattleSE(id){
         const source=context.createBufferSource();
         const gain=context.createGain();
         source.buffer=buffer;
-        gain.gain.value=0.75;
+        window.GameAudio?GameAudio.track(gain,.75):gain.gain.value=.75;
         source.connect(gain);
         gain.connect(context.destination);
         source.onended=()=>{source.disconnect();gain.disconnect();};
@@ -6774,6 +6771,7 @@ function battleLimits(){
 }
 
 function updateBattleUI(){
+ window.renderV4Statuses?.(rankedActive?rankedMatch?.state:null);
   const shown=window.BattleResources?.current(),shownHp=shown?.hp||hp,shownGauge=shown?.gauge||gauge;
   window.SpecialGauge?.sync(rankedActive?(rankedVisualMatch||rankedMatch):gameMode==="spectator"?window._spectatorSpecialMatch:null);
   const limits=battleLimits();
@@ -6833,7 +6831,7 @@ function syncConfirmedActionArt(){
     const selected={};
     if(rankedActive&&rankedMatch?.ownAction!=null){
       const id=Number(rankedMatch.ownAction),loadout=rankedMatch.loadouts?.[localPlayer]||[];
-      selected[localPlayer]=id<3?["charge","attack","block"][id]:"tech"+loadout.indexOf(id-(id>=15?15:3));
+      selected[localPlayer]=id===-1?null:id<3?["charge","attack","block"][id]:"tech"+loadout.indexOf(BattleV4.indexOf(id));
     }else if(!rankedActive){for(const player of [1,2])if(!localPlayer||player===localPlayer)selected[player]=selectedAction[player]?.id;}
     window.BattleActionArt.update({loadouts:{1:player1Techs,2:player2Techs},selected,localPlayer,spectator:gameMode==="spectator"});
   }catch(error){console.warn("技ボタンの表示更新に失敗しました",error);}
@@ -6844,7 +6842,7 @@ function syncBattleInspector(){
   const enabled=document.getElementById("battleScreen")?.classList.contains("active") && !PlayerIntro.isActive() &&
     (rankedActive ? !!rankedMatch?.state && !rankedMatch.closed && !rankedAnimating : gameMode==="online" && onlineInputOpen && onlineTurnPhase==="input");
   const inspectorLoadouts={1:player1Techs,2:player2Techs};
-  if(rankedActive&&window.SpecialGauge?.isSpecialView(rankedMatch))for(const p of [1,2])inspectorLoadouts[p]=rankedMatch.loadouts[p].map(index=>{const action=window.SpecialRules.actionData(index+15,techniquePool,null,rankedMatch.special?.version);return {...action,description:'Sゲージ追加消費+'+action.specialCost+' / '+action.description};});
+  if(rankedActive&&window.SpecialGauge?.isSpecialView(rankedMatch))for(const p of [1,2])inspectorLoadouts[p]=rankedMatch.loadouts[p].map(index=>{const action=window.SpecialRules.actionData(BattleV4.specialId(index),techniquePool,null,rankedMatch.special?.version);return {...action,description:'Sゲージ追加消費+'+action.specialCost+' / '+action.description};});
   window.BattleInspector.update({enabled,side,loadouts:inspectorLoadouts,names:{1:getBattlePlayerName(1),2:getBattlePlayerName(2)}});
 }
 document.addEventListener("DOMContentLoaded",()=>syncConfirmedActionArt());
@@ -6905,7 +6903,7 @@ function startMenuBGM(){
   const audio=document.getElementById("menuBGM");
   if(!audio || document.getElementById("battleScreen")?.classList.contains("active"))return;
   audio.loop=true;
-  audio.volume=0.208;
+  window.GameAudio?GameAudio.element(audio,.208,'music'):audio.volume=.208;
   if(!audio.paused)return;
   const promise=audio.play();
   if(promise && typeof promise.catch==="function")promise.catch(()=>{});
@@ -6922,7 +6920,7 @@ function startBattleBGM(){
   if(!audio)return;
 
   audio.loop=true;
-  audio.volume=0.24;
+  window.GameAudio?GameAudio.element(audio,.24,'music'):audio.volume=.24;
 
   // すでに再生中なら頭出しせず、そのまま続ける
   if(!audio.paused)return;
@@ -7096,8 +7094,9 @@ updateTechniqueDisplay();
   requestAnimationFrame(()=>{opening.classList.add('playing');setTimeout(()=>opening.classList.add('finished'),1450);});
 })();
 </script>
-<script src="community-rating-core.js?v=special-moves-1"></script>
-<script src="notice-guide.js?v=special-balance-2"></script>
+<script src="community-rating-core.js?v=account-update-20261024"></script>
+<script src="account-ui.js?v=account-update-20261024"></script>
+<script src="notice-guide.js?v=account-update-20261024"></script>
 <!-- PWA registration -->
 <script src="./pwa-register.js" defer></script>
 </body>

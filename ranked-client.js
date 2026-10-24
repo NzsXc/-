@@ -175,7 +175,7 @@ function rankedReveal(m,previous){
  rankedVisualCountdownEnd=countdownEnd;
  rankedVisualRevealAt=revealAt;
  const valid=()=>rankedActive&&token===rankedVisualToken;
- const action=p=>m.reveal.actions[p]<3?basicActions[['charge','attack','block'][m.reveal.actions[p]]]:window.SpecialRules.actionData(m.reveal.actions[p],techniquePool);
+ const action=p=>m.reveal.actions[p]===-1?{name:'凍結',type:'',cost:0,power:0,skill:''}:m.reveal.actions[p]<3?basicActions[['charge','attack','block'][m.reveal.actions[p]]]:window.SpecialRules.actionData(m.reveal.actions[p],techniquePool);
  const a1=action(1),a2=action(2);
  document.getElementById('resultMessage').textContent='';
  locked[1]=true;locked[2]=true;
@@ -242,14 +242,14 @@ function rankedApply(m,visualCommit=false){
   const button=document.getElementById('techConfirmButton');button.disabled=m.ready[me]||rankedSending||window.AdvancedSkills?.ready(m)===false;button.textContent=m.ready[me]?'確定済み':rankedSending?'送信中…':'決定';return;
  }
  if(!m.state){
-  showScreen('battleScreen');setPlayerNames(m.players[1].name,m.players[2].name);showBattleResult(m.result.winner===0?'DRAW':m.result.winner+'P WIN');rankedResult(m);return;
+  showScreen('battleScreen');setPlayerNames(m.players[1].name,m.players[2].name);for(const p of [1,2])window.NameStyles?.apply(document.querySelector('#player'+p+'Area .playerNameText'),m.players[p].nameStyle);showBattleResult(m.result.winner===0?'DRAW':m.result.winner+'P WIN');rankedResult(m);return;
  }
  selectedTechniques={1:m.loadouts[1].slice(),2:m.loadouts[2].slice()};
  player1Techs=m.loadouts[1].map(i=>techniquePool[i]);player2Techs=m.loadouts[2].map(i=>techniquePool[i]);
  if(m.skillResult&&m.serverNow>=m.opensAt)m.state=m.skillResult;
  rankedPaintState(m,false);
  if(entering||wasPhase==='select'){showScreen('battleScreen');setupActionNames();}
- setPlayerNames(m.players[1].name,m.players[2].bot?botDisplayName():m.players[2].name);
+ setPlayerNames(m.players[1].name,m.players[2].bot?botDisplayName():m.players[2].name);for(const p of [1,2])window.NameStyles?.apply(document.querySelector('#player'+p+'Area .playerNameText'),m.players[p].nameStyle);
  updateBattleUI();
  if(!m.closed&&m.state.turn===1){
   PlayerIntro.start({key:'ranked:'+m.id,startAt:(window.AdvancedRules.isAdvanced(m.roomRules)?m.skillWindow.startAt:m.opensAt)-PlayerIntro.DURATION_MS,now:()=>rankedClockServer+performance.now()-rankedClockAt,players:m.players});
@@ -260,7 +260,7 @@ function rankedApply(m,visualCommit=false){
  document.getElementById('battleHomeButton').hidden=false;document.getElementById('battleHomeButton').textContent=m.closed?'ホームへ':'降参して戻る';
  if(m.closed||rankedAnimating||m.serverNow<m.opensAt)document.getElementById('countdown').textContent='';
  if(!m.closed){document.getElementById('resultMessage').textContent=inGrace?(m.ownAction!==null?'相手の復帰を待っています':'復帰しました。期限内に行動を確定してください'):m.ownAction!==null?'行動を確定しました':'';}
- 
+
  if(m.closed&&!rankedAnimating){rankedWatchStop?.();rankedWatchStop=null;showBattleResult(m.result.winner===0?'DRAW':m.result.winner+'P WIN');rankedResult(m);}
 
 }
@@ -298,7 +298,7 @@ async function rankedChoose(player,action){
  const inputNow=performance.now();
  if(rankedTurnDeadline>0&&(inputNow<rankedTurnOpensAt||inputNow>=rankedTurnDeadline))return;
  if(!isBattleActionAvailable(player,action))return;
- const id=['charge','attack','block'].includes(action)?['charge','attack','block'].indexOf(action):m.loadouts[player][Number(action.replace('tech',''))]+(window.SpecialGauge?.isSpecialView(m)?15:3);
+ const id=['charge','attack','block'].includes(action)?['charge','attack','block'].indexOf(action):(window.SpecialGauge?.isSpecialView(m)?BattleV4.specialId(m.loadouts[player][Number(action.replace('tech',''))]):BattleV4.normalId(m.loadouts[player][Number(action.replace('tech',''))]));
  return rankedSubmitAction(m,id);
 }
 async function rankedSubmitAction(m,id,automatic=false){

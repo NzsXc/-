@@ -1,29 +1,29 @@
-import {ACTION_NAMES,historySide} from './battle-history-core.js?v=custom-options-1';
+import {ACTION_NAMES,historySide} from './battle-history-core.js?v=account-update-20261024';
 
 export function techniquesFromUsage(uses){
  const techniques=[];
- for(let skill=1;skill<=12;skill++){
+ for(let skill=1;skill<=19;skill++){
   const entry=uses?.[skill];if(entry==null)continue;
   const count=entry.count;if(!Number.isSafeInteger(count)||count<0)throw Error('技使用回数の記録が不正です');
-  if(count)techniques.push({action:skill+2,name:ACTION_NAMES[skill+2],count});
+  if(count)techniques.push({action:skill<=12?skill+2:skill+14,name:ACTION_NAMES[skill<=12?skill+2:skill+14],count});
  }
  return techniques.sort((a,b)=>b.count-a.count||a.action-b.action).slice(0,3);
 }
 
 export function summarizePlayerHistories(histories,uid,currentRating){
- const counts=Array(12).fill(0);let peakRating=Math.max(1000,Number(currentRating)||1000),matches=0;
+ const counts=Array(19).fill(0);let peakRating=Math.max(1000,Number(currentRating)||1000),matches=0;
  const seen=new Set();
  for(const h of histories){
   const side=historySide(h,uid);if(!side||seen.has(h.id))continue;seen.add(h.id);matches++;
   for(const value of [h.settled?.['before'+side],h.settled?.['after'+side]])if(Number.isFinite(value))peakRating=Math.max(peakRating,value);
   for(let turn=1;turn<=h.turnCount;turn++){
    const action=h.moves?.[turn]?.[side];
-   if(!Number.isInteger(action)||action<0||action>(h.rulesVersion===3?26:14))throw Error('使用回数を集計できない対戦データがあります');
+   if(!Number.isInteger(action)||action<(h.rulesVersion===4?-1:0)||action>(h.rulesVersion===4?40:h.rulesVersion===3?26:14))throw Error('使用回数を集計できない対戦データがあります');
    // S moves are valid history, but normal-technique usage has its own counter.
-   if(action>=3&&action<=14)counts[action-3]++;
+   if(action>=3&&action<=14)counts[action-3]++;else if(action>=27&&action<=33)counts[action-15]++;
   }
  }
- const techniques=counts.map((count,index)=>({action:index+3,name:ACTION_NAMES[index+3],count})).filter(t=>t.count>0).sort((a,b)=>b.count-a.count||a.action-b.action).slice(0,3);
+ const techniques=counts.map((count,index)=>({action:index<12?index+3:index+15,name:ACTION_NAMES[index<12?index+3:index+15],count})).filter(t=>t.count>0).sort((a,b)=>b.count-a.count||a.action-b.action).slice(0,3);
  return {peakRating,techniques,matches};
 }
 
@@ -42,7 +42,7 @@ export function createPlayerProfile({history,loadTitles,showScreen,playSound=()=
  }
  async function open(player){
   if(!player?.uid)return;
-  const current=++request;byId('playerCardName').textContent=player.name;
+  const current=++request;byId('playerCardName').textContent=player.name;window.NameStyles?.paint(byId('playerCardName'),player.uid);
   byId('playerCardRate').textContent=String(Math.max(1000,Number(player.rating)||1000));
   const winCount=value=>value!=null&&Number.isFinite(Number(value))?Math.max(0,Math.trunc(Number(value))):null;
   const onlineWins=winCount(player.onlineWins),friendWins=winCount(player.friendWins);
@@ -60,7 +60,7 @@ export function createPlayerProfile({history,loadTitles,showScreen,playSound=()=
     try{
      const stats=await history.profileStats(player.uid,player.rating);if(current!==request)return;
      renderTechniques(stats.techniques);byId('playerCardPeakRate').textContent=stats.peakRating.toLocaleString('ja-JP');
-     status.textContent='技は既存の使用記録を引き継ぎ、上限解除後から加算（旧上限到達時の記録は30回）。最高レートは保存済み履歴から集計。';
+     status.textContent='';
     }catch(error){
      if(current!==request)return;renderTechniques([],'error');status.textContent='対戦履歴の集計を取得できませんでした。';console.warn('プロフィールの集計を取得できませんでした',error);
     }

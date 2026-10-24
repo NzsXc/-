@@ -2,10 +2,9 @@
  const skills=[
   ['ブリーチ','Bleach','blue'],['カウンター','Counter','cyan'],['パニッシュ','Punish','orange'],['ヒール','Heal','lime'],
   ['フォーサイト','Foresight','cyan'],['モーメンタム','Momentum','orange'],['ランページ','Rampage','red'],['アンチガード','Anti-Guard','purple'],
-  ['エンハンス','Enhance','red'],['サイフォン','Siphon','navy'],['ルイン','Ruin','purple'],['ミラー','Mirror','cyan']
+  ['エンハンス','Enhance','red'],['サイフォン','Siphon','navy'],['ルイン','Ruin','purple'],['ミラー','Mirror','cyan'],['フォーカス','Focus','gold'],['コンバート','Convert','orange'],['ブラスト','Blast','cyan'],['フリーズ','Freeze','cyan'],['リファンド','Refund','blue'],['ヴェノム','Venom','purple'],['ドレイン','Drain','purple']
  ];
  const items=skills.flatMap(([name,english,color],i)=>[
-  {id:'tech'+(i+1)+'_1',name:name+'使い',color,kind:'tech',skill:i+1,threshold:1,description:'ランダム・ルーム対戦で'+name+'を1回使う'},
   {id:'skill_name_'+(i+1),name:english,color,kind:'skill-name',skill:i+1,threshold:30,description:name+'を30回使う'},
   {id:'skill_prestige_'+(i+1),name:english.toUpperCase(),color,kind:'skill-prestige',skill:i+1,threshold:50,description:'ランダム・ルーム対戦で'+name+'を50回使う'}
  ]);
