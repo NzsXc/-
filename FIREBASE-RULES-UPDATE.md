@@ -1,5 +1,19 @@
 # Turn synchronization rules update
 
+## スキル発動時の permission_denied（2026/10/24）
+
+スキルの保存時刻を端末の `Date.now() + serverTimeOffset` からFirebaseの `serverTimestamp()` に変更しました。従来は推定時刻がサーバーより少し未来になったり、通信で500ms以上経過したりすると、受付中に押してもルールに拒否される場合がありました。[Firebase公式説明](https://firebase.google.com/docs/database/web/offline-capabilities#handling_latency)でも、時刻オフセットは通信遅延の影響を受ける推定値とされています。
+
+画面の受付は3秒、受信確認の猶予は500msです。DB側はサーバーの `now` で共通の受信確認時刻より前に届いたことを判定します。未来時刻・古い時刻の拒否、所有者、1ターン1回、使用上限、履歴との同時保存は維持します。確認時刻以降の遅延送信は引き続き拒否します。
+
+1. 進行中の対戦を終了します。
+2. 先に、この変更の `firebase-database.rules.json` 全文をRealtime Databaseの「ルール」で公開します。既存のクライアントも従来の受付条件で利用できます。
+3. この変更のクライアントコードをGitHub Pagesに反映し、両端末でページを再読み込みして新しい部屋を作成します。
+
+GitHub側への反映だけではFirebaseルールは公開されません。クライアントだけ先に更新すると、締切直前にサーバー受信時刻で送った記録が旧ルールに拒否されるため、上記の順で反映してください。保存済みの試合や履歴の書き換えは不要です。
+
+検証は `tests/skill-timestamp.test.cjs`、`tests/advanced-latency.test.cjs` と既存のスキル・時計・進行・観戦・履歴テストで実際のルール式を評価します。公式エミュレーターや本番Firebaseでの2端末試験とは別のローカル検証です。
+
 ## 公開方法
 
 1. Firebase Console の `psy-5d3d1` → Realtime Database →「ルール」を開きます。
