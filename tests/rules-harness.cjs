@@ -36,7 +36,9 @@ function harness(rules=JSON.parse(fs.readFileSync(path.join(root,'firebase-datab
   return !value||typeof value!=='object'||Object.keys(value).every(k=>validate(p+'/'+k,uid,after));
  }
  function commit(paths,uid){
-  const after=structuredClone(storage);for(const [p,v]of Object.entries(paths))write(after,p,v);
+  // Resolve RTDB server values at commit time, including values nested in updates.
+  const resolve=v=>v&&typeof v==='object'?(v['.sv']==='timestamp'?clock:Array.isArray(v)?v.map(resolve):Object.fromEntries(Object.entries(v).map(([k,x])=>[k,resolve(x)]))):v;
+  const after=structuredClone(storage);for(const [p,v]of Object.entries(paths))write(after,p,resolve(v));
   const failed=Object.keys(paths).find(p=>!allowed('.write',p,uid,after)||!validate(p,uid,after));
   if(failed){denials.push(failed);throw Object.assign(Error('permission_denied: '+failed),{code:'PERMISSION_DENIED'});}
   storage=after;
@@ -44,7 +46,7 @@ function harness(rules=JSON.parse(fs.readFileSync(path.join(root,'firebase-datab
  const ctx=vm.createContext({window:{RoomRules:require('../room-rules.js'),AdvancedRules:require('../advanced/rules.js'),SpecialRules:require('../advanced/special-rules.js')},console,Date:{now:()=>clock},setTimeout,clearTimeout,Promise,
   ref:(db,p='')=>({uid:db.uid,p}),get:async r=>{if(!allowed('.read',r.p,r.uid))throw Object.assign(Error('permission_denied'),{code:'PERMISSION_DENIED'});return{val:()=>structuredClone(get(r.p))};},
   set:async(r,v)=>commit({[r.p]:v},r.uid),update:async(r,v)=>{commit(Object.fromEntries(Object.entries(v).map(([k,value])=>[[r.p,k].filter(Boolean).join('/'),value])),r.uid);if(v.state)updates.push({turn:v.state.turn,uid:r.uid});},
-  serverTimestamp:()=>clock,onValue:()=>()=>{},push:()=>({key:'unused'}),historyMatch:()=>null,
+  serverTimestamp:()=>({'.sv':'timestamp'}),onValue:()=>()=>{},push:()=>({key:'unused'}),historyMatch:()=>null,
   runTransaction:async(r,fn)=>{
    // Real RTDB retries the callback against the latest value on conflict.
    // Each fake commit is atomic and sees the latest tree, including claims.

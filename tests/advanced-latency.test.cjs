@@ -15,7 +15,7 @@ async function setup(){
   const clicked=start.skillWindow.endAt-1;h.setClock(clicked);
   const m=(await h.transports[0]({op:'advancedSkill',matchId:id,turn:1})).match;
   assert.equal(events[0],'write','the displayed snapshot sends before profile/participant/status reads');
-  assert.equal(h.get('freeGames/'+id+'/advanced/current/1/at'),clicked,'the receipt retains the click time');
+  assert.equal(h.get('freeGames/'+id+'/advanced/current/1/at'),clicked+delay,'RTDB assigns the receive time');
   assert.equal(m.advanced.current[1].used,1);assert.equal(m.state.gauge[1],8,'late acceptance still waits for effects');
   assert.equal(m.opensAt,start.skillWindow.confirmAt+A.CUTIN_MS+A.EFFECT_MS);
   assert.equal(m.deadline-m.opensAt,10000);assert.deepEqual(h.denials,[],'valid delayed clicks never hit permission_denied');
