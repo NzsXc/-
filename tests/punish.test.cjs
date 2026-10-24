@@ -9,17 +9,17 @@ const plain=v=>JSON.parse(JSON.stringify(v));
 function arrayState(s){return{hp:[0,s.hp1,s.hp2],gauge:[0,s.gauge1,s.gauge2],seal:[false,s.seal1,s.seal2],enhance:[0,s.enhance1,s.enhance2],momentum:[false,s.momentum1,s.momentum2],ruin:[0,s.ruin1,s.ruin2],last:['',s.last1,s.last2],loadouts:[null,[2,9,11],[2,9,11]],turn:s.turn};}
 const offlineSource=source('index.html'),offlineStart=offlineSource.indexOf('function resolveBattle(){'),offlineEnd=offlineSource.indexOf('  // 技公開：オフライン/オンライン共通。',offlineStart);
 assert(offlineStart>=0&&offlineEnd>offlineStart);
-const offline=vm.createContext({});
+const offline=vm.createContext({window:{BattleV4:require('../combat-v4.js')},BattleV4:require('../combat-v4.js')});
 vm.runInContext(offlineSource.slice(offlineStart,offlineEnd)+'return {hp1:Math.max(0,hp[1]-damageTo1),hp2:Math.max(0,hp[2]-damageTo2),gauge1:gauge[1],gauge2:gauge[2]};}',offline);
 let cases=0;
 const states=[initial,{...initial,gauge1:5,gauge2:0},{...initial,gauge1:10,gauge2:9,hp1:4,hp2:6,enhance1:2,ruin2:2},{...initial,seal1:true,seal2:true,momentum1:true,enhance2:1}];
 for(const s of states)for(let a=0;a<=14;a++)for(let b=0;b<=14;b++){
  const moves={1:a,2:b},result=current(s,moves,2,{}, {},true),old=current(s,moves,1);
- assert.deepEqual(plain(old),plain(legacy(s,moves)),'legacy '+a+','+b);
+ assert.deepEqual(Object.fromEntries(Object.keys(legacy(s,moves)).map(k=>[k,old[k]])),plain(legacy(s,moves)),'legacy '+a+','+b);const now=require('../combat-v4.js').calculate({...s,...require('../advanced/special-rules.js').extraState(),...require('../combat-v4.js').extraState()},moves,4,{}, {},true);
  const bot=ai.resolve(arrayState(s),ai.ACTIONS[a],ai.ACTIONS[b]);
- for(const [field,arr]of [['hp','hp'],['gauge','gauge'],['seal','seal'],['enhance','enhance'],['momentum','momentum'],['ruin','ruin'],['last','last']])for(const p of [1,2])assert.equal(bot[arr][p],result[field+p],`bot ${a},${b}: ${field}${p}`);
- const arrays=arrayState(s);Object.assign(offline,{selectedAction:{1:{data:ai.ACTIONS[a]},2:{data:ai.ACTIONS[b]}},hp:arrays.hp,gauge:arrays.gauge,blockSeal:arrays.seal,enhanceTurns:arrays.enhance,momentumBonus:arrays.momentum,ruinTurns:arrays.ruin});
- const actual=vm.runInContext('resolveBattle()',offline);for(const field of ['hp1','hp2','gauge1','gauge2'])assert.equal(actual[field],result[field],'offline '+a+','+b+': '+field);
+ for(const [field,arr]of [['hp','hp'],['gauge','gauge'],['seal','seal'],['enhance','enhance'],['momentum','momentum'],['ruin','ruin'],['last','last']])for(const p of [1,2])assert.equal(bot[arr][p],now[field+p],`bot ${a},${b}: ${field}${p}`);
+ const arrays=arrayState(s);offline.window.localExtraState={frozen1:0,frozen2:0,poison1:0,poison2:0};Object.assign(offline,{lastAction:{1:{data:{type:s.last1}},2:{data:{type:s.last2}}}});Object.assign(offline,{selectedAction:{1:{data:ai.ACTIONS[a]},2:{data:ai.ACTIONS[b]}},hp:arrays.hp,gauge:arrays.gauge,blockSeal:arrays.seal,enhanceTurns:arrays.enhance,momentumBonus:arrays.momentum,ruinTurns:arrays.ruin});
+ const actual=vm.runInContext('resolveBattle()',offline);for(const field of ['hp1','hp2','gauge1','gauge2'])assert.equal(actual[field],now[field],'offline '+a+','+b+': '+field);
  // Evaluate the exact deterministic rule clause, including mirror and effects.
  const before={freeGames:{match:{foresightShield:true,rulesVersion:2,state:s,moves:{1:moves}}}},after=structuredClone(before);
  after.freeGames.match.transition=plain(result);after.freeGames.match.state={...s,...plain(result)};
@@ -62,7 +62,7 @@ for(const version of [1,2]){
  const joined=harness();
  for(const p of [1,2]){joined.put('freeAccounts/p'+p,{name:p===1?'A':'B',rating:1000,active:'',guest:false,games:0,lastSettled:''});joined.put('freeQueue/p'+p,{joinedAt:joined.now(),heartbeat:joined.now()});}
  const match=(await joined.transports[0]({op:'join'})).match;
- assert.equal(joined.get('freeGames/'+match.id+'/rulesVersion'),2);
+ assert.equal(joined.get('freeGames/'+match.id+'/rulesVersion'),4);
  await joined.transports[0]({op:'loadout',matchId:match.id,loadout:[2,9,11]});
  const started=(await joined.transports[1]({op:'loadout',matchId:match.id,loadout:[2,9,11]})).match;
  joined.setClock(started.opensAt);

@@ -9,7 +9,7 @@
   };
   const basics = Object.entries(basicActions).map(([id, action]) => ({...action, id}));
   const techniques = techniquePool.map(action => ({...action, id: action.skill}));
-  const specialTechniques = techniques.map((item,index) => ({...window.SpecialRules.actionData(index+15,techniquePool), id:'s-' + item.id}));
+  const specialTechniques = techniques.map((item,index) => ({...window.SpecialRules.actionData(BattleV4.specialId(index),techniquePool), id:'s-' + item.id}));
   const skills = window.AdvancedRules.SKILLS;
 
   function illustration(item, skill = false) {
@@ -21,7 +21,7 @@
       window.AdvancedSkills.paintArt(art, item.id);
     } else {
       const img = node('img');
-      img.src = 'assets/actions/' + window.BattleActionArt.kindOf(item) + '.png';
+      img.src = window.BattleActionArt.imageSource(window.BattleActionArt.kindOf(item));
       img.alt = '';
       img.draggable = false;
       art.append(img);
@@ -36,7 +36,7 @@
     copy.append(node('h3', '', item.name));
     copy.append(node('span', 'guideBadge', item.special ? `Sゲージ追加消費+${item.specialCost}` : skill ? `1試合 ${item.limit}回` : `消費ゲージ ${item.cost}`));
     copy.append(node('p', '', item.description));
-    article.append(illustration(item, skill), copy);
+    const more=node('button','guideTextLink','詳しく見る');more.type='button';more.dataset.detail=item.id;more.addEventListener('click',()=>{});copy.append(more);article.append(illustration(item, skill), copy);
     return article;
   }
 

@@ -21,6 +21,7 @@ ACTIONS.push(...ACTIONS.slice(3).map((a,i)=>({...a,special:true,specialCost:S_CO
 const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
 const chosen=(s,moves,p,maxGauge)=>Number.isInteger(moves?.[p])?moves[p]:(s['gauge'+p]>=maxGauge?1:0);
 export function calculate(s,moves,rulesVersion=2,roomRules={},powerBonus={},foresightShield=false,actionCatalog=ACTIONS){
+ if(rulesVersion>=4)return window.BattleV4.calculate(s,moves,rulesVersion,roomRules,powerBonus,foresightShield);
  const maxHp=roomRules.hp??10,maxGauge=roomRules.maxGauge??10;
  const out={},modern=rulesVersion===3;
  out.action1=chosen(s,moves,1,maxGauge);out.misses1=Number.isInteger(moves?.[1])?0:s.misses1+1;
@@ -81,6 +82,7 @@ export function calculate(s,moves,rulesVersion=2,roomRules={},powerBonus={},fore
  out.momentum1=e1.skill==='tech6'?!s.momentum1:false;out.momentum2=e2.skill==='tech6'?!s.momentum2:false;
  out.ruin1=e2.skill==='tech11'?3:Math.max(0,Number(s.ruin1||0)-1);out.ruin2=e1.skill==='tech11'?3:Math.max(0,Number(s.ruin2||0)-1);
  out.last1=e1.type;out.last2=e2.type;out.turn=s.turn+1;
+ if(!modern)for(const p of [1,2]){const raw=p===1?raw1:raw2;for(const k of ['gauge','hp','seal','ruin','last'])out['input'+k[0].toUpperCase()+k.slice(1)+p]=s[k+p];out['inputSpecialSeal'+p]=0;out['inputSpecialRuin'+p]=0;out['stance'+p]=powerBonus[p]===1?1:0;out['effective'+p]=raw.skill==='tech12'?((p===1?raw2:raw1).skill==='tech12'?-1:out['action'+(3-p)]):out['action'+p];out['baseAction'+p]=out['action'+p];out['effectBase'+p]=out['effective'+p];out['specialCost'+p]=0;out['specialGain'+p]=0;out['normalGauge'+p]=out['gauge'+p];out['specialSeal'+p]=0;out['specialRuin'+p]=0;out['specialMomentum'+p]=0;}
  return out;
 }
 export const stateFields=['turn','startedAt','hp1','hp2','gauge1','gauge2','seal1','seal2','enhance1','enhance2','momentum1','momentum2','ruin1','ruin2','last1','last2','misses1','misses2'];

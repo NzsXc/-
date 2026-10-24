@@ -34,9 +34,9 @@
   return s;
  }
  function resolve(state,moves,selected,turn,calculate,rules={}){
-  if(isAdvanced(rules)&&!hasSkills(rules))return calculate(state,moves,state.specialSeal1!=null?3:2,rules);
-  const s=preview(state,selected,turn,rules),powerBonus={1:active(selected,turn,1,'stance')?1:0,2:active(selected,turn,2,'stance')?1:0};
-  const out=calculate(s,moves,s.specialSeal1!=null?3:2,rules,powerBonus);
+  if(isAdvanced(rules)&&!hasSkills(rules))return calculate(state,moves,state.frozen1!=null?4:state.specialSeal1!=null?3:2,rules);
+  const s=preview(state,selected,turn,rules),powerBonus={1:active(selected,turn,1,'stance')?1:0,2:active(selected,turn,2,'stance')?1:0,invincible1:active(selected,turn,1,'invincible'),invincible2:active(selected,turn,2,'invincible')};
+  const out=calculate(s,moves,s.frozen1!=null?4:s.specialSeal1!=null?3:2,rules,powerBonus);
   for(const p of [1,2])if(active(selected,turn,p,'invincible')){
    out['damage'+p]=out['skill'+p]==='tech7'?2:0;
    out['hp'+p]=out['misses'+p]>=2?0:Math.max(0,out['healed'+p]-out['damage'+p]);

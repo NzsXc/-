@@ -1,4 +1,4 @@
-importScripts('bot-engine.js?v=foresight-shield-1');
+importScripts('combat-v4.js?v=account-update-20261024','bot-engine.js?v=account-update-20261024');
 self.onmessage=({data})=>{
  try{
   const {state,model,difficulty='normal'}=data;

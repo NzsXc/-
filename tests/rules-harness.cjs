@@ -43,7 +43,7 @@ function harness(rules=JSON.parse(fs.readFileSync(path.join(root,'firebase-datab
   if(failed){denials.push(failed);throw Object.assign(Error('permission_denied: '+failed),{code:'PERMISSION_DENIED'});}
   storage=after;
  }
- const ctx=vm.createContext({window:{RoomRules:require('../room-rules.js'),AdvancedRules:require('../advanced/rules.js'),SpecialRules:require('../advanced/special-rules.js')},console,Date:{now:()=>clock},setTimeout,clearTimeout,Promise,
+ const ctx=vm.createContext({window:{BattleV4:require('../combat-v4.js'),RoomRules:require('../room-rules.js'),AdvancedRules:require('../advanced/rules.js'),SpecialRules:require('../advanced/special-rules.js')},console,Date:{now:()=>clock},setTimeout,clearTimeout,Promise,
   ref:(db,p='')=>({uid:db.uid,p}),get:async r=>{if(!allowed('.read',r.p,r.uid))throw Object.assign(Error('permission_denied'),{code:'PERMISSION_DENIED'});return{val:()=>structuredClone(get(r.p))};},
   set:async(r,v)=>commit({[r.p]:v},r.uid),update:async(r,v)=>{commit(Object.fromEntries(Object.entries(v).map(([k,value])=>[[r.p,k].filter(Boolean).join('/'),value])),r.uid);if(v.state)updates.push({turn:v.state.turn,uid:r.uid});},
   serverTimestamp:()=>({'.sv':'timestamp'}),onValue:()=>()=>{},push:()=>({key:'unused'}),historyMatch:()=>null,

@@ -1,7 +1,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const {harness,evaluate}=require('./rules-harness.cjs'),A=require('../advanced/rules.js');
 const root=path.resolve(__dirname,'..'),read=file=>fs.readFileSync(path.join(root,file),'utf8');
-const calc=vm.runInNewContext(read('free-calculator.js').replaceAll('export ','')+'\ncalculate');
+const calc=vm.runInNewContext(read('free-calculator.js').replaceAll('export ','')+'\ncalculate',{window:{BattleV4:require('../combat-v4.js')}});
 const settings={mode:'advanced',hp:10,initialGauge:8,maxGauge:10},rules=JSON.parse(read('firebase-database.rules.json')).rules;
 const base={turn:1,startedAt:0,hp1:10,hp2:10,gauge1:8,gauge2:8,seal1:false,seal2:false,enhance1:0,enhance2:0,momentum1:false,momentum2:false,ruin1:0,ruin2:0,last1:'',last2:'',misses1:0,misses2:0};
 const advanced=(turn=1)=>({selected:{1:'stance',2:'heal'},current:{1:{id:'stance',turn,used:1,at:6000}},uses:{1:{1:{id:'stance',turn,used:1,at:6000}}}});
@@ -37,7 +37,7 @@ async function join(a='stance',b='heal'){
  assert.equal(following.state.hp[2],7);assert.equal(f.h.get('freeGames/'+f.id+'/transition/power1'),1);
  assert.equal(f.h.get('freeGames/'+f.id+'/state/powerBonus'),null,'the one-turn bonus is not persisted');
  await f.h.transports[0]({op:'resign',matchId:f.id});
- const context=vm.createContext({window:{AdvancedRules:A},calculateV1:calc,calculateV2:calc,stateFields:Object.keys(base)});
+ const context=vm.createContext({window:{SpecialRules:require('../advanced/special-rules.js'),BattleV4:require('../combat-v4.js'),AdvancedRules:A},calculateV1:calc,calculateV2:calc,stateFields:Object.keys(base)});
  vm.runInContext(read('battle-history-core.js').replace(/^import[^\n]*\n/gm,'').replaceAll('export ',''),context);
  const history=JSON.parse(JSON.stringify(vm.runInContext('buildHistory',context)(f.id,f.h.get('freeGames/'+f.id),{1:f.h.get('freeAccounts/p1'),2:f.h.get('freeAccounts/p2')})));
  const replay=vm.runInContext('replayHistory',context)(history);
