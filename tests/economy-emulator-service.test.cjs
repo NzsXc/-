@@ -1,9 +1,9 @@
 /* Runs the real economy service against the official Realtime Database emulator. */
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
 const base=process.env.FIREBASE_DATABASE_EMULATOR_URL||'http://127.0.0.1:19000',ns='demo-economy-service';
-function token(uid){const now=Math.floor(Date.now()/1000),enc=x=>Buffer.from(JSON.stringify(x)).toString('base64url');return enc({alg:'none',typ:'JWT'})+'.'+enc({iss:'https://securetoken.google.com/'+ns,aud:ns,sub:uid,user_id:uid,iat:now,exp:now+3600,auth_time:now,firebase:{sign_in_provider:'password',identities:{}}})+'.';}
-async function request(path,method='GET',value,uid='owner'){
- const r=await fetch(base+'/'+path+'.json?ns='+ns+(uid==='owner'?'':'&auth='+token(uid)),{method,headers:{'Content-Type':'application/json',...(uid==='owner'?{Authorization:'Bearer owner'}:{})},...(value===undefined?{}:{body:JSON.stringify(value)})});
+function token(uid,provider='password'){const now=Math.floor(Date.now()/1000),enc=x=>Buffer.from(JSON.stringify(x)).toString('base64url');return enc({alg:'none',typ:'JWT'})+'.'+enc({iss:'https://securetoken.google.com/'+ns,aud:ns,sub:uid,user_id:uid,iat:now,exp:now+3600,auth_time:now,firebase:{sign_in_provider:provider,identities:{}}})+'.';}
+async function request(path,method='GET',value,uid='owner',provider='password'){
+ const r=await fetch(base+'/'+path+'.json?ns='+ns+(uid==='owner'?'':'&auth='+token(uid,provider)),{method,headers:{'Content-Type':'application/json',...(uid==='owner'?{Authorization:'Bearer owner'}:{})},...(value===undefined?{}:{body:JSON.stringify(value)})});
  const data=await r.json();if(!r.ok){const e=Error(data.error||String(r.status));e.code=r.status===401?'PERMISSION_DENIED':'HTTP_'+r.status;throw e;}return data;
 }
 let writes=0;
@@ -26,5 +26,29 @@ function service(uid){
  await request('.settings/rules','PUT',old);writes=0;
  await assert.rejects(()=>service('p3').start(),e=>e.code==='PERMISSION_DENIED');assert.equal(writes,1,'a permanent rules rejection is sent only once');
  await request('.settings/rules','PUT',rules);result=await service('p3').start();assert.equal(result.own,50);assert.equal(result.balance,70,'publishing the full rules restores receipt of pending coins');
+
+ const legacy=account('Legacy');delete legacy.guest;
+ await request('users/legacy','PUT',{name:'Legacy'});
+ await request('freeAccounts/legacy','PUT',legacy);
+ const oldService=service('legacy'),earned=await oldService.start();
+ assert.equal(earned.own,50);assert.equal(earned.balance,90);
+ await oldService.acknowledge(earned.receipts);
+ assert.equal((await oldService.start()).own,0);
+ assert.equal(await request('freeAccounts/legacy/guest'),null,'do not rewrite the old account');
+ await request('users/blocked','PUT',{name:'Guest'});
+ await request('freeAccounts/blocked','PUT',{...account('Guest'),guest:true});
+ await assert.rejects(()=>service('blocked').start(),e=>e.code==='PERMISSION_DENIED');
+ const unclaimed={...legacy,name:'Unauthenticated'};
+ await request('freeAccounts/anonymous','PUT',unclaimed);
+ await request('users/anonymous','PUT',{name:unclaimed.name});
+ const forged={
+  ['coinWallets/anonymous']:{balance:50,claimDay:d,claimFrom:'anonymous',colorUnlocked:false,glossUnlocked:false,color:'white',gloss:false},
+  ['coinClaims/anonymous/'+d+'/anonymous']:true,
+  ['coinEvents/'+d+'/anonymous']:{at:{'.sv':'timestamp'},name:unclaimed.name}
+ };
+ await assert.rejects(()=>request('','PATCH',forged,'anonymous','anonymous'),e=>e.code==='PERMISSION_DENIED');
+ await request('freeAccounts/unregistered','PUT',unclaimed);
+ await assert.rejects(()=>service('unregistered').start(),e=>e.code==='PERMISSION_DENIED');
+ console.log('PASS legacy accounts, pending gifts, acknowledgements, replay prevention, guest/anonymous/unregistered rejection');
  console.log('PASS official emulator + real economy service: daily/pending gifts, duplicate claims, tampering, old-rule permission rejection (one attempt) and recovery after rule publication');
 })().catch(e=>{console.error(e);process.exitCode=1;});
