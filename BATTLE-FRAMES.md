@@ -27,3 +27,5 @@
 ## 検証
 
 `node tests/battle-frames.test.cjs` で解放境界・保存・DBルールを、`node tests/foresight-effects.test.cjs` でフォーサイトの演出条件を確認できます。DBルールのテストはリポジトリ内の評価ハーネスで実行します。実際のFirebase環境での公開・疎通確認は別途必要です。
+
+`FIREBASE_DATABASE_EMULATOR_JAR=/path/to/database.jar node tests/battle-frames-emulator.test.cjs` は公式Realtime Databaseエミュレーターで完全版ルールをコンパイルし、保存を検証します。白銀・青紅蓮は、未使用の技の記録がなくても、条件を満たす5種類の記録だけで保存できることを確認します。Firebaseでは存在しない値を数値と直接比較すると判定が失敗するため、各カウントを `isNumber()` で確認してから比較します。未記録・数値以外のカウントは0回として数えます。
