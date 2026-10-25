@@ -74,15 +74,22 @@
 @keyframes bf-diamond-radiance{0%,100%{opacity:.78;filter:brightness(1.08) drop-shadow(0 0 3px #bde8ff)}50%{opacity:1;filter:brightness(1.65) drop-shadow(0 0 7px #eafaff)}}
 @keyframes bf-diamond-sparkle{0%,100%{opacity:.25;transform:translate(-50%,-50%) scale(.72);filter:drop-shadow(0 0 1px #c4e7ff)}50%{opacity:1;transform:translate(-50%,-50%) scale(1.12);filter:drop-shadow(0 0 4px #ffffff)}}
 
-/* Keep the live game's dimensions, team colours and action layout intact. */
-#battleScreen .playerArea.bf-surface{isolation:isolate;overflow:hidden}
+/* Reserve a border band so ornament and gloss never sit beneath battle text.
+   Match the skin selectors' specificity, including diamond/silver overrides. */
+#battleScreen .playerArea.bf-surface[data-battle-frame]{isolation:isolate;overflow:hidden;padding:28px 22px 22px}
 #battleScreen .playerArea.bf-surface>.playerHeader,#battleScreen .playerArea.bf-surface>.statusTitle,#battleScreen .playerArea.bf-surface>.statusBarRow,#battleScreen .playerArea.bf-surface>.actionList,#battleScreen .playerArea.bf-surface>.specialGaugePanel{position:relative;z-index:2}
-#battleScreen .playerArea.bf-surface .bf-emblem{right:17px;top:7px;width:58px;height:23px}
-#battleScreen .playerArea.bf-surface[data-battle-frame="gold"] .bf-emblem{width:40px;height:24px}
-#battleScreen .playerArea.bf-surface .bf-corner{width:48px;height:33px}
-#battleScreen .playerArea.bf-surface .bf-frame-reflection{padding:6px}
+#battleScreen .playerArea.bf-surface[data-battle-frame] .bf-emblem{right:22px;top:6px;width:48px;height:16px}
+#battleScreen .playerArea.bf-surface[data-battle-frame="gold"] .bf-emblem{width:30px;height:16px}
+#battleScreen .playerArea.bf-surface[data-battle-frame] .bf-corner{width:48px;height:24px}
+#battleScreen .playerArea.bf-surface[data-battle-frame] .bf-frame-reflection{padding:6px}
 #battleScreen .playerArea.bf-surface>.bf-frame-emission,#battleScreen .playerArea.bf-surface>.bf-frame-reflection,#battleScreen .playerArea.bf-surface>.bf-sparkle{z-index:1}
+#battleScreen .playerArea.bf-surface[data-battle-frame] .bf-sparkle{max-width:18px;max-height:18px}
+#battleScreen .playerArea.bf-surface[data-battle-frame]>.bf-sparkle:last-child{top:12px}
 #battleScreen .playerArea.bf-surface .bf-emblem-gem{display:none}
+@media(max-width:639px),(min-width:640px) and (max-height:680px),(orientation:landscape) and (max-height:500px){
+ #battleScreen .playerArea.bf-surface[data-battle-frame]{padding:22px 20px 20px}
+ #battleScreen .playerArea.bf-surface[data-battle-frame] .bf-emblem{top:5px;height:12px}
+}
 #battleScreen:not(.active) .bf-surface *{animation-play-state:paused!important}
 .battleFrameGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
 .battleFrameChoice{min-width:0;padding:10px;display:grid;gap:8px;text-align:left;color:#eaf5ff;border:1px solid #476178;background:#111f30;border-radius:10px;font:inherit}
