@@ -147,7 +147,7 @@ const initialAccount = {
   if(data)return data;
   const entries=await Promise.all([1,2].map(async p=>{
    const [account,titles,loadout,snapshot]=await Promise.all([read('freeAccounts/'+g.players[p]),loadTitles(g.players[p]),read('freeGames/'+id+'/loadouts/'+p),read('freeGames/'+id+'/profiles/'+p).catch(()=>null)]);
-   return [p,{profile:{name:snapshot?.name||account?.name||'プレイヤー',rating:account?.guest?null:snapshot?.rating??(Number.isFinite(account?.rating)?account.rating:null),bot:false,nameStyle:await window.economyService?.styleFor(g.players[p]).catch(()=>({})),titles:snapshot?Object.values(snapshot.titles):titles},loadout}];
+   return [p,{profile:{uid:g.players[p],name:snapshot?.name||account?.name||'プレイヤー',rating:account?.guest?null:snapshot?.rating??(Number.isFinite(account?.rating)?account.rating:null),bot:false,nameStyle:await window.economyService?.styleFor(g.players[p]).catch(()=>({})),titles:snapshot?Object.values(snapshot.titles):titles},loadout}];
   }));
   data={players:{},loadouts:{}};
   for(const [p,value]of entries){data.players[p]=value.profile;data.loadouts[p]=value.loadout;}

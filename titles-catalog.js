@@ -30,7 +30,8 @@
   const prestige=t.kind==='skill-prestige';
   const tier=t.kind==='tech'?' tier-use':prestige?' tier-prestige compact-prestige gloss-charge-title skill-charge':'';
   const skillClass=t.skill?' skill-'+t.skill:'';
-  const wrap=document.createElement('span');wrap.className='badge-item badge-'+t.color+' kind-'+(prestige?'skill-name':t.kind)+tier+skillClass+(t.finish?' finish-'+t.finish:'')+(t.id==='s1_champion'?' badge-champion':'');
+  const badgeColor=t.kind==='skill-name'&&t.skill===13?'focus':t.color;
+  const wrap=document.createElement('span');wrap.className='badge-item badge-'+badgeColor+' kind-'+(prestige?'skill-name':t.kind)+tier+skillClass+(t.finish?' finish-'+t.finish:'')+(t.id==='s1_champion'?' badge-champion':'');
   wrap.dataset.titleId=t.id;
   const text=document.createElement('span');text.className='title-badge title-'+t.color;text.dataset.text=t.name;text.textContent=t.name;text.title=t.description;
   if(t.season===2){

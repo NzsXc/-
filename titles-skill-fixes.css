@@ -1,0 +1,5 @@
+/* Focus's 30-use ribbon must not inherit the tournament .badge-gold shape. */
+.badge-item.kind-skill-name.badge-focus{--accent:#cf9e35;--accent-light:#ffe6a0;--surface:#241906;--surface2:#6a4b13}
+/* Keep both the 30- and 50-use ribbons and their effects in the same palette. */
+.badge-item.kind-skill-name.skill-18{--accent:#9848c9;--accent-light:#d5a0fa;--surface:#200b2e;--surface2:#54236e;--tech-color:#ac67dd;--tech-light:#ead1ff}
+.badge-item.kind-skill-name.skill-19{--accent:#b49bdc;--accent-light:#eee3ff;--surface:#1e162d;--surface2:#514064;--tech-color:#c8b1ed;--tech-light:#f0e5ff}
