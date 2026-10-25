@@ -18,7 +18,7 @@
   await window.gameAuth?.authStateReady();const user=window.gameAuth?.currentUser;const who=user&&!user.isAnonymous?user.uid:'guest';
   if(who!=='guest'){
    try{const result=await window.economyService.start();if(window.gameAuth?.currentUser?.uid!==who)continue;if(result.own||result.gifts.length){const grouped=new Map();for(const gift of result.gifts){const old=grouped.get(gift.from)||{name:gift.name,amount:0};old.amount+=gift.amount;grouped.set(gift.from,old);}const lines=[...(result.own?['ログインボーナスで'+result.own+'コイン獲得']:[]),...[...grouped.values()].map(g=>g.name+'さんのログインで'+g.amount+'コイン獲得'),'所持コイン '+result.balance];await notice('コイン獲得',lines);await window.economyService.acknowledge(result.receipts,who);}}
-   catch(e){console.warn('コインの受取に失敗しました',e);await notice('コインを受け取れませんでした',['通信を確認して、スタート画面から再度お試しください。']);}
+   catch(e){console.warn('コインの受取に失敗しました',e);await notice('コインを受け取れませんでした',[/permission[ _-]?denied/i.test(String(e.code||'')+' '+e.message)?'Firebaseのルールで保存が拒否されました。管理者がコイン対応ルールを公開した後、再読み込みしてください。':'通信を確認して、スタート画面から再度お試しください。']);}
   }
   const key='psy-news-seen-'+who;if(safely.get(key)!==VERSION){await notice('お知らせが更新されました。',['7種類の技追加・ブリーチ調整などの更新内容をご確認ください。']);safely.set(key,VERSION);}
  }while(pending);}finally{startupBusy=false;}}

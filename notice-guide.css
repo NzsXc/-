@@ -150,3 +150,12 @@
 @media(prefers-reduced-motion:reduce){:is(#tipScreen,#helpScreen) .guideSpecialArt::after{animation:none;--special-edge-angle:45deg}}
 
 #tipScreen .guideNerfArrow{color:#ff6b7f}
+
+/* Small change notices keep the icon, arrow and explanation on the same row. */
+#tipScreen .guideNotice:has(.guideNoticeVisual){padding:14px}
+#tipScreen .guideNotice:has(.guideNoticeVisual) .guideNoticeHeader{margin-bottom:10px;gap:4px 12px}
+#tipScreen .guideNoticeBody{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:12px;align-items:center}
+#tipScreen .guideNoticeVisual{gap:6px}
+#tipScreen .guideNoticeVisual .guideArt{width:44px;height:44px;border-radius:5px}
+#tipScreen :is(.guideBuffArrow,.guideNerfArrow){width:16px;height:22px}
+#tipScreen .guideNoticeBody ul{min-width:0;margin:0;padding:0;list-style:none;font-size:13px;line-height:1.5}

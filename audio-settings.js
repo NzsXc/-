@@ -15,9 +15,9 @@
     el.muted = volume === 0;
     if (!record.gain) {
       el.volume = volume;
-      // iOS ignores HTMLMediaElement.volume. Use the unlocked game context
-      // when the element cannot apply the requested volume itself.
-      if (Math.abs(el.volume - volume) > .000001 && context?.state === 'running') {
+      // Route all media through Web Audio once unlocked. Some mobile browsers
+      // report assigned HTML volume values while ignoring the actual change.
+      if (context?.state === 'running') {
         try {
           const gain = context.createGain();
           gain.gain.value = volume;

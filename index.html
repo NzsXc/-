@@ -2066,8 +2066,8 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
 <link rel="stylesheet" href="battle-compact.css?v=account-update-20261024">
 <link rel="stylesheet" href="neon-controls.css?v=account-update-20261024">
 <link rel="stylesheet" href="mode-menu.css?v=account-update-20261024">
-<link rel="stylesheet" href="notice-guide.css?v=fix-20261025">
-<link rel="stylesheet" href="account-update.css?v=fix-20261025">
+<link rel="stylesheet" href="notice-guide.css?v=mobile-controls-20261025">
+<link rel="stylesheet" href="account-update.css?v=mobile-controls-20261025">
 </head>
 
 
@@ -2171,7 +2171,7 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
         <h2 class="guideSectionTitle">選択技 <small>19種類から3つを装備</small></h2><div id="guideTechniques" class="guideCatalog"></div>
         <h2 class="guideSectionTitle">スキル <small>Advanced専用 / 6種類から1つ</small></h2><div id="guideSkills" class="guideCatalog"></div>
         <h2 class="guideSectionTitle">S技 <small>スペシャル専用 / 通常技の効果に追加</small></h2><div id="guideSpecialTechniques" class="guideCatalog"></div>
-      </div></section><button class="titles-button" onclick="showScreen('modeScreen')">戻る</button></div></div><div id="creditsScreen" class="screen utilityScreen"><div class="utilityPanel"><h1>クレジット</h1><div id="creditsContent"></div><button onclick="showScreen('modeScreen')">戻る</button></div></div><div id="audioSettingsScreen" class="screen utilityScreen"><div class="utilityPanel"><h1>設定</h1><label class="volumeField">効果音 <output id="seVolumeValue">100%</output><input id="seVolume" type="range" min="0" max="100" step="1" aria-label="効果音の音量"></label><label class="volumeField">音楽 <output id="musicVolumeValue">100%</output><input id="musicVolume" type="range" min="0" max="100" step="1" aria-label="音楽の音量"></label><button onclick="showScreen('modeScreen')">戻る</button></div></div>
+      </div></section><button class="tipBackButton helpBackButton" onclick="showScreen('modeScreen')">戻る</button></div></div><div id="creditsScreen" class="screen utilityScreen"><div class="utilityPanel"><h1>クレジット</h1><div id="creditsContent"></div><button onclick="showScreen('modeScreen')">戻る</button></div></div><div id="audioSettingsScreen" class="screen utilityScreen"><div class="utilityPanel"><h1>設定</h1><label class="volumeField">効果音 <output id="seVolumeValue">100%</output><input id="seVolume" type="range" min="0" max="100" step="1" aria-label="効果音の音量"></label><label class="volumeField">音楽 <output id="musicVolumeValue">100%</output><input id="musicVolume" type="range" min="0" max="100" step="1" aria-label="音楽の音量"></label><button onclick="showScreen('modeScreen')">戻る</button></div></div>
 <div id="titlesScreen" class="screen">
  <div class="titles-layout">
   <div class="titles-heading"><h1>称号の付け替え</h1><button id="titleBack" class="titles-button" onclick="closeTitles()">戻る</button></div>
@@ -2766,7 +2766,7 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
   import {createPlayerProfile} from "./player-profile.js?v=account-update-20261024";
   import {createHistoryScreen} from "./battle-history-client.js?v=account-update-20261024";
   import {createCommunityRatings} from "./community-ratings.js?v=account-update-20261024";
-  import {createEconomyService} from "./economy-service.js?v=fix-20261025";
+  import {createEconomyService} from "./economy-service.js?v=mobile-controls-20261025";
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
   import {
     getAuth,
@@ -7097,8 +7097,8 @@ updateTechniqueDisplay();
 })();
 </script>
 <script src="community-rating-core.js?v=account-update-20261024"></script>
-<script src="audio-settings.js?v=fix-20261025"></script>
-<script src="account-ui.js?v=fix-20261025"></script>
+<script src="audio-settings.js?v=mobile-controls-20261025"></script>
+<script src="account-ui.js?v=mobile-controls-20261025"></script>
 <script src="notice-guide.js?v=account-update-20261024"></script>
 <!-- PWA registration -->
 <script src="./pwa-register.js" defer></script>
