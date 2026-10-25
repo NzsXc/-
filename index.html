@@ -1844,6 +1844,7 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
   background:rgba(18,39,61,.96);
   z-index:12;
 }
+@media(min-width:1101px) and (min-height:681px){#spectatorLoadouts{width:min(400px,calc(32% - 40px));}}
 .spectatorLoadout{min-width:0;}
 .spectatorLoadoutTitle{display:block;font-size:13px;font-weight:800;margin-bottom:6px;overflow-wrap:anywhere;color:#dcefff;}
 .spectatorLoadout:first-child .spectatorLoadoutTitle{color:#ff91a0;}
@@ -2766,7 +2767,7 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
 <script type="module">
   import {createTitleService} from "./title-service.js?v=account-update-20261024";
   import {createBattleFrameService} from "./battle-frame-service.js?v=battle-frames-20261025";
-  import {createProtectedRooms} from "./protected-rooms.js?v=account-update-20261024";
+  import {createProtectedRooms} from "./protected-rooms.js?v=spectator-special-skills-20261025";
   import {createFreeTransport} from "./free-transport.js?v=battle-frames-20261025";
   import {createBattleHistory} from "./battle-history.js?v=account-update-20261024";
   import {createPlayerProfile} from "./player-profile.js?v=account-update-20261024";
@@ -3575,6 +3576,15 @@ function renderSpectatorLoadouts(room){
       description.textContent=tech.description;
       item.append(summary,description);
       section.appendChild(item);
+      if(window.RoomRules?.hasSpecial(room.battle?.roomRules)&&[2,3].includes(room.battle?.special?.version)){
+        const special=window.SpecialRules.actionData(window.BattleV4.specialId(Number(indices[index])),techniquePool,null,room.battle?.special?.version);
+        if(special){
+          const detail=document.createElement("details");detail.className="spectatorTechnique";
+          const title=document.createElement("summary");title.textContent=`${special.name} · 通常ゲージ${special.cost} + Sゲージ${special.specialCost}`;
+          const text=document.createElement("p");text.textContent=`Sゲージ追加消費+${special.specialCost} / ${special.description}`;
+          detail.append(title,text);section.appendChild(detail);
+        }
+      }
       const actionName=document.querySelector(`#p${side}tech${index} .actionName`);
       if(actionName)actionName.textContent=tech.name;
     });
@@ -3600,6 +3610,8 @@ async function enterSpectator(code,p1,p2){
   if(spectatorListener){spectatorListener();spectatorListener=null;}
   if(spectatorRoomsListener){spectatorRoomsListener();spectatorRoomsListener=null;}
   resetOnlineMatchState();
+  window.AdvancedSkills?.reset();window.SpecialGauge?.reset();
+  window._spectatorRoomRules=null;window._spectatorSpecialMatch=null;
   clearSpectatorTimers();
   window._lastSpectatorEffectTurn=0;
   window._lastSpectatorStateTurn=0;
@@ -3642,7 +3654,7 @@ async function enterSpectator(code,p1,p2){
     const name2=data.players?.[2]?.name || "プレイヤー2";
     setPlayerNames(name1,name2);
     badge.querySelector("span").textContent=`観戦：${name1} VS ${name2}`;
-    const nextKey=JSON.stringify([data.players || {},data.battle?.skillMatch?.advanced?.selected||{},data.battle?.roomRules?.mode]);
+    const nextKey=JSON.stringify([data.players || {},data.battle?.skillMatch?.advanced?.selected||{},data.battle?.roomRules,data.battle?.special?.version]);
     if(loadoutKey!==nextKey){renderSpectatorLoadouts(data);loadoutKey=nextKey;}
     if(data.battle)receiveSpectatorBattleState(data.battle,data);
   },error=>{
@@ -3654,7 +3666,7 @@ async function enterSpectator(code,p1,p2){
 
 function applySpectatorState(state){
   window._spectatorRoomRules=state.roomRules||null;
-  window._spectatorSpecialMatch={roomRules:state.roomRules,special:state.special,state};
+  window._spectatorSpecialMatch={id:state.matchId,spectator:true,roomRules:state.roomRules,special:state.special,state};
   for(const side of [1,2]){
     if(state.hp?.[side]!=null)hp[side]=Number(state.hp[side]);
     if(state.gauge?.[side]!=null)gauge[side]=Number(state.gauge[side]);
@@ -3663,6 +3675,7 @@ function applySpectatorState(state){
     if(state.ruinTurns?.[side]!=null)ruinTurns[side]=Number(state.ruinTurns[side]);
   }
   if(state.lastAction)lastAction=state.lastAction;
+  if(state.momentumBonus)momentumBonus=state.momentumBonus;
   updateSpectatorBattleUI();
   window.AdvancedSkills?.observe(state.skillMatch,after=>{
     if(!spectatorActive || onlineTurnNumber!==state.turn || !after)return;
@@ -3670,8 +3683,21 @@ function applySpectatorState(state){
       hp[side]=after.hp[side];gauge[side]=after.gauge[side];
       enhanceTurns[side]=after.enhanceTurns[side];blockSeal[side]=after.blockSeal[side];ruinTurns[side]=after.ruinTurns[side];
     }
-    window._spectatorSpecialMatch.state=after;lastAction=after.lastAction;updateSpectatorBattleUI();
+    window._spectatorSpecialMatch.state=after;lastAction=after.lastAction;momentumBonus=after.momentumBonus;updateSpectatorBattleUI();
   });
+}
+
+// Use confirmed transition inputs, or the last observed turn, for resource animation.
+function prepareSpectatorEffect(state){
+  const previous=window._spectatorSpecialMatch;
+  const known=previous?.id===state.matchId && previous?.state?.turn===state.resolvedTurn;
+  const candidate=state.resources?.before || (known?{hp:{...hp},gauge:{...gauge}}:null);
+  const before=candidate&&[1,2].every(p=>Number.isFinite(candidate.hp?.[p])&&Number.isFinite(candidate.gauge?.[p]))?{hp:{...candidate.hp},gauge:{...candidate.gauge}}:null;
+  if(before&&known&&previous.special?.gauge)before.special={...previous.special.gauge};
+  const initial=state.before || (known?previous.state:state);
+  applySpectatorState({...state,...initial,roomRules:state.roomRules,special:known?previous.special:state.special,skillMatch:null});
+  // An old match may not expose the previous values. Show its confirmed totals.
+  return before&&state.resources?{...state.resources,before}:null;
 }
 
 function receiveSpectatorBattleState(state,roomData){
@@ -3710,6 +3736,7 @@ function receiveSpectatorBattleState(state,roomData){
     const effectStartAt=Number(state.effectStartAt||revealAt+ONLINE_REVEAL_MS);
     // 演出途中から入室した場合は現在の確定値を表示する。
     if(effectStartAt+1800<now){applySpectatorState(state);return;}
+    const resources=prepareSpectatorEffect(state);
     spectatorVisualTurn=turn;
     const scheduledReveal=effectStartAt<=now?now+30:revealAt;
     const reveal=()=>{
@@ -3720,7 +3747,7 @@ function receiveSpectatorBattleState(state,roomData){
       clearOnlineTechniqueDescription();
       const effectA1=state.resolvedActions?.[1] || a1;
       const effectA2=state.resolvedActions?.[2] || a2;
-      playBattleSituationSE(effectA1,effectA2,Number(state.damageTo1||0),Number(state.damageTo2||0));
+      playBattleSituationSE(effectA1,effectA2,Number(state.damageTo1||0),Number(state.damageTo2||0),state.foresightShield);
       playBattleEffect(effectA1,effectA2,()=>{
         if(session!==spectatorSession || !spectatorActive || onlineTurnNumber!==turn)return;
         applySpectatorState(state);
@@ -3728,7 +3755,7 @@ function receiveSpectatorBattleState(state,roomData){
         spectatorVisualTurn=0;
         const pending=spectatorPendingBattleState;spectatorPendingBattleState=null;
         if(pending)receiveSpectatorBattleState(pending,roomData);
-      },Number(state.damageTo1||0),Number(state.damageTo2||0),true,state.resources);
+      },Number(state.damageTo1||0),Number(state.damageTo2||0),true,resources);
       },Math.max(ONLINE_REVEAL_MS,effectStartAt-onlineNow()));
     };
     if(window.BattleCountdown)window.BattleCountdown.start('spectator:'+session+':'+effectTurn,{show(digit){const el=document.getElementById('countdown');el.textContent=String(digit);el.className='countPulse';startTurnCountdownSE();},onComplete(){if(session!==spectatorSession||!spectatorActive)return;stopTurnCountdownSE();const el=document.getElementById('countdown');el.textContent='BATTLE!';el.className='battleCall';window._spectatorTechniqueRevealTimer=setTimeout(reveal,500);}});
@@ -3770,7 +3797,7 @@ function updateSpectatorBattleUI(){
 }
 
 function stopSpectating(){
-  window._spectatorSpecialMatch=null;window.SpecialGauge?.reset();
+  window._spectatorRoomRules=null;window._spectatorSpecialMatch=null;window.SpecialGauge?.reset();
   window.AdvancedSkills?.reset();
   ++spectatorSession;
   spectatorActive=false;
@@ -6735,10 +6762,10 @@ function updateRuinIndicators(){
     const turns=Math.max(0,Number(ruinTurns[player]) || 0);
     indicator.classList.add("enhanceIndicator","ruinIndicator");
     indicator.setAttribute("role","status");
-    indicator.hidden=turns===0;
-    const special=rankedActive?rankedMatch?.state?.specialRuin?.[player]:gameMode==='spectator'?window._spectatorSpecialMatch?.state?.specialRuin?.[player]:0;
-    indicator.textContent=`${special?'Sルイン':'ルイン'} ${turns}T`;
-    indicator.title=`${special?'Sルイン':'ルイン'}：チャージするたび1ダメージ${special?'、通常ゲージ−1':''}（残り${turns}ターン）`;
+    const special=Math.max(0,Number(rankedActive?rankedMatch?.state?.specialRuin?.[player]:gameMode==='spectator'?window._spectatorSpecialMatch?.state?.specialRuin?.[player]:0)||0);
+    indicator.hidden=turns===0&&special===0;
+    indicator.textContent=[turns?`ルイン ${turns}T`:"",special?`Sルイン ${special}T`:""].filter(Boolean).join(" / ");
+    indicator.title=[turns?`ルイン：チャージするたび1ダメージ（残り${turns}ターン）`:"",special?`Sルイン：チャージするたび通常ゲージ−1（残り${special}ターン）`:""].filter(Boolean).join(" / ");
     indicator.setAttribute("aria-label",indicator.title);
   });
 }
@@ -6783,7 +6810,7 @@ function battleLimits(){
 }
 
 function updateBattleUI(){
- window.renderV4Statuses?.(rankedActive?rankedMatch?.state:null);
+ window.renderV4Statuses?.(rankedActive?rankedMatch?.state:gameMode==='spectator'?window._spectatorSpecialMatch?.state:null);
   const shown=window.BattleResources?.current(),shownHp=shown?.hp||hp,shownGauge=shown?.gauge||gauge;
   window.SpecialGauge?.sync(rankedActive?(rankedVisualMatch||rankedMatch):gameMode==="spectator"?window._spectatorSpecialMatch:null);
   const limits=battleLimits();

@@ -10,7 +10,7 @@ function setup(){
   if(!h.allowed('.read',r.path,'viewer'))throw Error('permission_denied: '+r.path);
   const value=structuredClone(h.get(r.path));return {val:()=>value};
  };
- const ctx=vm.createContext({window:{AdvancedRules:require('../advanced/rules.js'),BattleAI:require('../bot-engine.js'),RoomRules:require('../room-rules.js')},console:{...console,error:(...args)=>renderErrors.push(args)},Date:{now:h.now},
+ const ctx=vm.createContext({window:{AdvancedRules:require('../advanced/rules.js'),BattleAI:require('../bot-engine.js'),BattleV4:require('../combat-v4.js'),SpecialRules:require('../advanced/special-rules.js'),RoomRules:require('../room-rules.js')},console:{...console,error:(...args)=>renderErrors.push(args)},Date:{now:h.now},
   ref:(db,path)=>({path}),get,
   set(){assert.fail('Spectators must not write');},update(){assert.fail('Spectators must not write');},remove(){assert.fail('Spectators must not write');},
   onValue(r,callback,onError){const sub={path:r.path,callback,onError,active:true};subscriptions.push(sub);queueMicrotask(()=>{
@@ -21,6 +21,7 @@ function setup(){
   db,auth,transport:async data=>{operations.push(data.op);assert.equal(data.op,'profile');return {};},
   history:{find:async id=>{const value=(await get({path:'battleHistory/'+id})).val();return value?{...value,id}:null;}}
  });
+ ctx.transport.supportsRoomRules=async()=>true;
  vm.runInContext(source,ctx);const api=vm.runInContext('createProtectedRooms(db,auth,transport,history)',ctx);
  async function flush(){for(let i=0;i<20;i++)await new Promise(setImmediate);}
  async function tick(){const item=[...timers].find(([,timer])=>timer.delay===1200);assert(item,'poll is scheduled');timers.delete(item[0]);await item[1].callback();await flush();}
@@ -82,6 +83,29 @@ function setup(){
  // Cancelling before authentication completes must not attach late listeners.
  const c=setup();let release;c.auth.authStateReady=()=>new Promise(resolve=>{release=resolve;});
  const cancel=c.api.watchAllRooms(()=>assert.fail('cancelled callback'),()=>assert.fail('cancelled error'));cancel();release();await c.flush();assert.equal(c.subscriptions.length,1);assert.equal(c.timers.size,0);
+ // Advanced + S and Custom combinations use public data on the observer path.
+ const v=setup(),initial=v.h.get('freeGames/match/state');
+ const rules={mode:'custom',hp:20,initialGauge:14,maxGauge:20,skills:true,special:true};
+ const raw={...initial,turn:2,startedAt:10000,previousDeadline:11200,hp1:6,hp2:17,gauge1:8,gauge2:9,frozen1:1,frozen2:0,poison1:2,poison2:0,specialSeal1:2,specialSeal2:0,specialRuin1:0,specialRuin2:1,specialMomentum1:1,specialMomentum2:0};
+ v.h.put('freeGames/match/roomRules',rules);v.h.put('freeGames/match/rulesVersion',4);v.h.put('freeGames/match/foresightShield',true);
+ v.h.put('freeGames/match/state',raw);v.h.put('freeGames/match/special',{version:2,max:30,gauge:{1:14,2:21}});
+ v.h.put('freeGames/match/advanced',{selected:{1:'heal',2:'cleanse'},current:{1:{id:'heal',turn:2,used:1},2:{id:'cleanse',turn:2,used:1}}});
+ v.h.put('freeGames/match/transition',{turn:2,action1:15,action2:40,damage1:0,damage2:3,hp1:6,hp2:17,gauge1:8,gauge2:9,inputHp1:6,inputHp2:20,inputGauge1:12,inputGauge2:11,inputSeal1:false,inputSeal2:false,inputFrozen1:0,inputFrozen2:0,inputPoison1:2,inputPoison2:0});
+ v.h.setClock(10100);const specialViews=[],specialErrors=[];const stopSpecial=v.api.watchRoom('random:match',x=>specialViews.push(plain(x)),e=>specialErrors.push(e));await v.flush();
+ let b=specialViews.at(-1).battle;
+ assert.equal(b.actions[1].data.name,'Sブリーチ');assert.equal(b.actions[1].data.specialCost,8,'preserve version 2 S cost');assert.equal(b.actions[2].data.name,'Sドレイン');assert(b.actions[2].data.special);
+ assert.equal(b.foresightShield,true);assert.equal(b.resources.foresightShield,true);assert.deepEqual(b.resources.before,{hp:{1:6,2:20},gauge:{1:12,2:11}});
+ assert.deepEqual(b.frozen,{1:1,2:0});assert.deepEqual(b.poison,{1:2,2:0});assert.equal(b.specialSeal[1],2);assert.equal(b.special.gauge[2],21);assert.equal(b.before.frozen[1],0);
+ // Every new normal/S ID, all classic S IDs, and the frozen pass decode correctly.
+ for(const id of [-1,3,14,...Array.from({length:26},(_,i)=>i+15)]){
+  v.h.put('freeGames/match/transition/action1',id);await v.tick();b=specialViews.at(-1).battle;
+   assert(b.actions[1].data,'confirmed action '+id);assert.equal(b.actions[1].data.special===true,id>=15&&id<=26||id>=34,'S classification '+id);
+ }
+ // Skill changes wait until the public cutin finishes, then update all statuses.
+ v.h.setClock(17801);await v.tick();b=specialViews.at(-1).battle;assert.equal(b.hp[1],6);assert.equal(b.skillMatch.skillResult.hp[1],7);assert.equal(b.skillMatch.skillResult.specialRuin[2],0);assert.equal(b.skillMatch.skillResult.poison[1],2);
+ v.h.setClock(20901);await v.tick();b=specialViews.at(-1).battle;assert.equal(b.hp[1],7);assert.equal(b.gauge[2],13);assert.equal(b.specialRuin[2],0);assert.equal(b.skillMatch.displayState.frozen[1],1);
+ v.h.put('freeGames/match/roomRules',{...rules,skills:false});v.reads.length=0;await v.tick();b=specialViews.at(-1).battle;assert.equal(b.skillMatch,undefined);assert(!v.reads.some(p=>p.endsWith('/advanced')),'S-only viewing does not read skills');
+ assert.deepEqual(specialErrors,[]);assert.deepEqual(v.renderErrors,[]);assert(!v.reads.some(p=>/\/(moves|advance)(?:\/|$)/.test(p)));stopSpecial();
  console.log('PASS: random discovery, actual rules/UI filter, deduplication, dynamic lists, friend regression, hidden loadouts/moves, transition timing, archive races, error isolation and cancellation');
 })().catch(error=>{console.error(error);process.exitCode=1;});
 
