@@ -189,7 +189,7 @@ function rankedReveal(m,previous){
    if(!valid())return;
    clearTimeout(window._techniqueRevealCleanupTimeout);
    const d1=m.reveal.damage?.[1]||0,d2=m.reveal.damage?.[2]||0;
-   playBattleSituationSE(a1,a2,d1,d2);
+   playBattleSituationSE(a1,a2,d1,d2,m.foresightShield===true);
    playBattleEffect(a1,a2,()=>{
     if(!valid())return;
     const latest=rankedMatch;
@@ -197,7 +197,7 @@ function rankedReveal(m,previous){
     // Commit this turn only after the effect's completion callback.
     rankedApply(m,true);
     if(latest!==m)rankedApply(latest);
-   },d1,d2,false,{before:{hp:{...hp},gauge:{...gauge},special:rankedVisualMatch?.special?.gauge},after:m.reveal.resources?.after||{hp:m.state.hp,gauge:m.state.gauge,special:m.special?.gauge},outcome:m.reveal.resources?.outcome});
+   },d1,d2,false,{foresightShield:m.foresightShield===true,before:{hp:{...hp},gauge:{...gauge},special:rankedVisualMatch?.special?.gauge},after:m.reveal.resources?.after||{hp:m.state.hp,gauge:m.state.gauge,special:m.special?.gauge},outcome:m.reveal.resources?.outcome});
   // A late snapshot or a busy event loop must still show the technique names.
   // Only presentation waits here; the shared turn/input deadlines stay unchanged.
   },typeof ONLINE_REVEAL_MS==='number'?ONLINE_REVEAL_MS:1300);

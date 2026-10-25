@@ -48,7 +48,9 @@
       p.counterStart = other.impact + 100;
       p.counterHit = p.counterStart + 280;
       p.guard = !p.disabled && (p.action.type === 'block' || p.counter);
-      p.breakAt = p.action.type === 'block' && other.attack && other.action.pierce ? other.impact : Infinity;
+      // The resolved damage also preserves the behaviour of old match replays.
+      p.pierceGuard = p.kind === 'foresight' && !p.disabled && (options.foresightShield === true || options.foresightShield !== false && p.damage === 0);
+      p.breakAt = p.action.type === 'block' && other.attack && other.action.pierce && !p.pierceGuard ? other.impact : Infinity;
     }
     const events = players.filter(p => p.damage > 0).map(p => {
       const other = players[2-p.side];
@@ -206,7 +208,7 @@
     const origin = layout.points[player.side-1], target = layout.points[opponent.side-1];
     const direction = Math.atan2(target.y-origin.y,target.x-origin.x), toward = {x:Math.cos(direction),y:Math.sin(direction)};
     const guarded = opponent.action.type === 'block' && !opponent.disabled, reflected = opponent.counter;
-    const blocked = guarded && !player.action.pierce || reflected;
+    const blocked = guarded && (!player.action.pierce || opponent.pierceGuard) || reflected;
     const contact = guarded || reflected ? {x:target.x-toward.x*74,y:target.y-toward.y*74} : target;
     const bonus = kind === 'punish' && opponent.action.type === 'charge', boost = player.boost;
     const color = player.special ? violet : bonus ? '#ff2949' : colors[kind], white = player.special ? violetWhite : bonus ? '#ffb5c3' : '#fff6f0';
@@ -290,7 +292,7 @@
         circle(target.x,target.y,42,blue,1,.18,7);
       }
       if(guarded){
-        const broken=kind==='breach'&&ms>=impact,r=91*ease(ms/160),alpha=broken?(1-hit)*fade:fade;
+        const broken=kind==='breach'&&!blocked&&ms>=impact,r=91*ease(ms/160),alpha=broken?(1-hit)*fade:fade;
         if(broken){
           glass.forEach((shard,i)=>{
             const a=Math.atan2(shard.seed.y-24,shard.seed.x+74),d=ease(hit)*shard.speed,x=target.x+shard.seed.x+Math.cos(a)*d+hit*24,y=target.y+shard.seed.y+Math.sin(a)*d+hit*hit*58;

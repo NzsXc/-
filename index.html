@@ -2068,6 +2068,8 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
 <link rel="stylesheet" href="mode-menu.css?v=account-update-20261024">
 <link rel="stylesheet" href="notice-guide.css?v=mobile-controls-20261025">
 <link rel="stylesheet" href="account-update.css?v=mobile-controls-20261025">
+<link rel="stylesheet" href="titles-skill-fixes.css?v=battle-frames-20261025">
+<link rel="stylesheet" href="battle-frames.css?v=battle-frames-20261025">
 </head>
 
 
@@ -2180,6 +2182,7 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
   <div class="titles-actions"><button id="titleClear" class="titles-button" onclick="clearTitleSlot()">この枠を外す</button><button id="titleSave" class="titles-button" onclick="saveTitles()">保存する</button></div>
   <div id="titlesStatus" class="titles-status" role="status"></div>
   <div id="titleCollection" hidden></div>
+  <section id="battleFramePanel" aria-label="バトルカードのフレーム"></section>
  </div>
 </div>
 <div id="onlineScreen" class="screen">
@@ -2735,12 +2738,14 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
 </div>
 
 
-<script src="titles-catalog.js?v=account-update-20261024"></script>
+<script src="titles-catalog.js?v=battle-frames-20261025"></script>
+<script src="battle-frames.js?v=battle-frames-20261025"></script>
+<script src="battle-frame-picker.js?v=battle-frames-20261025"></script>
 <script src="titles-prestige-effects.js?v=account-update-20261024"></script>
 <script src="titles-season2-art.js?v=account-update-20261024"></script>
 <script src="titles-season2-effects.js?v=account-update-20261024"></script>
 <script src="player-intro.js?v=account-update-20261024"></script>
-<script src="titles-client.js?v=account-update-20261024"></script>
+<script src="titles-client.js?v=battle-frames-20261025"></script>
 <script src="player-lightning.js?v=account-update-20261024"></script>
 <script src="combat-v4.js?v=account-update-20261024"></script>
 <script src="bot-engine.js?v=account-update-20261024"></script>
@@ -2750,18 +2755,19 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
 <script src="advanced/special.js?v=account-update-20261024"></script>
 <script src="room-rules.js?v=account-update-20261024"></script>
 <script src="battle-timeline.js?v=account-update-20261024"></script>
-<script src="ranked-client.js?v=account-update-20261024"></script>
+<script src="ranked-client.js?v=battle-frames-20261025"></script>
 <script src="advanced/client.js?v=account-update-20261024"></script>
 <script src="advanced/cutin.js?v=account-update-20261024"></script>
 <script src="battle-inspector.js?v=account-update-20261024"></script>
 <script src="lobby-client.js?v=account-update-20261024"></script>
 <script src="battle-action-art.js?v=account-update-20261024"></script>
 <script src="battle-new-effects.js?v=account-update-20261024"></script>
-<script src="battle-effects.js?v=account-update-20261024"></script>
+<script src="battle-effects.js?v=battle-frames-20261025"></script>
 <script type="module">
   import {createTitleService} from "./title-service.js?v=account-update-20261024";
+  import {createBattleFrameService} from "./battle-frame-service.js?v=battle-frames-20261025";
   import {createProtectedRooms} from "./protected-rooms.js?v=account-update-20261024";
-  import {createFreeTransport} from "./free-transport.js?v=account-update-20261024";
+  import {createFreeTransport} from "./free-transport.js?v=battle-frames-20261025";
   import {createBattleHistory} from "./battle-history.js?v=account-update-20261024";
   import {createPlayerProfile} from "./player-profile.js?v=account-update-20261024";
   import {createHistoryScreen} from "./battle-history-client.js?v=account-update-20261024";
@@ -2807,6 +2813,7 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
   window.dispatchEvent(new Event("community-ratings-ready"));
   window.battleHistory=createBattleHistory(db,auth);
   window.titleService=createTitleService(db,auth,window.battleHistory);
+  window.battleFrameService=createBattleFrameService(db,auth);
   window.rankedTransport=createFreeTransport(db,auth,window.battleHistory);
   window.protectedRooms=createProtectedRooms(db,auth,window.rankedTransport,window.battleHistory);
   const historyScreen=createHistoryScreen(window.battleHistory);
@@ -2912,6 +2919,7 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
 
   setPersistence(auth,browserLocalPersistence).catch(console.error);
   onAuthStateChanged(auth,async user=>{
+    window.BattleFrames?.refresh();
     if(!user || user.isAnonymous){
       loggedInPlayerData=null;
       window.loggedInPlayerData=null;
@@ -5844,7 +5852,7 @@ if(window.PlayerIntro?.start){
 }
 
 // バトルSEの発生条件。攻撃演出そのものとは分離しておく。
-function playBattleSituationSE(a1,a2,damageTo1=0,damageTo2=0){
+function playBattleSituationSE(a1,a2,damageTo1=0,damageTo2=0,foresightShield){
   const raw1=a1,raw2=a2;
   if(raw1?.skill==="tech12")a1=raw2?.skill==="tech12"?null:raw2;
   if(raw2?.skill==="tech12")a2=raw1?.skill==="tech12"?null:raw1;
@@ -5901,8 +5909,8 @@ function playBattleSituationSE(a1,a2,damageTo1=0,damageTo2=0){
   // ブリーチがシールド系に当たった場合はガラス割れ。
   const block1=a1?.type==="block" && !blockSeal[1];
   const block2=a2?.type==="block" && !blockSeal[2];
-  if(breach1 && block2) playBattleSE("seShieldBreak");
-  if(breach2 && block1) playBattleSE("seShieldBreak");
+  if(breach1 && block2 && (!foresight2 || foresightShield!==true && (foresightShield===false || Number(damageTo2)>0))) playBattleSE("seShieldBreak");
+  if(breach2 && block1 && (!foresight1 || foresightShield!==true && (foresightShield===false || Number(damageTo1)>0))) playBattleSE("seShieldBreak");
 
   // カウンターが攻撃を受けて成立した場合。
   if(counter1 && attack2) playBattleSE("seCounter");
@@ -5943,7 +5951,7 @@ function playBattleSituationSE(a1,a2,damageTo1=0,damageTo2=0){
 
 function playBattleEffect(a1,a2,callback,damageTo1=0,damageTo2=0,isSpectator=false,resources=null){
   const raw=window.confirmedRevealedActions||[a1,a2];
-  const resourcePlan=window.BattleEffects?.createPlan([a1,a2],{rawActions:raw,damage:[damageTo1,damageTo2]});
+  const resourcePlan=window.BattleEffects?.createPlan([a1,a2],{foresightShield:resources?.foresightShield,rawActions:raw,damage:[damageTo1,damageTo2]});
   const view=resources&&window.BattleResources?.begin({...resources,actions:resourcePlan?.players.map(p=>p.action)||[a1,a2],rawActions:raw,damage:[damageTo1,damageTo2],impacts:resourcePlan?.events,maxGauge:battleLimits().maxGauge});
   let resourceSignature="";
   const paintFrame=ms=>{if(!view?.current())return;view.tick(ms);const next=JSON.stringify(view.current());if(next!==resourceSignature){resourceSignature=next;updateBattleUI();}};
@@ -5955,7 +5963,7 @@ function playBattleEffect(a1,a2,callback,damageTo1=0,damageTo2=0,isSpectator=fal
     const rawActions=window.confirmedRevealedActions||[a1,a2];
     window.confirmedRevealedActions=null;
     const played=window.BattleEffects.play({
-      layer:confirmedLayer,actions:[a1,a2],rawActions,damage:[damageTo1,damageTo2],
+      layer:confirmedLayer,actions:[a1,a2],foresightShield:resources?.foresightShield,rawActions,damage:[damageTo1,damageTo2],
       sealed:[blockSeal[1],blockSeal[2]],momentum:[momentumBonus[1],momentumBonus[2]],
       onImpact(player,damage){createDamageNumber(document.getElementById("battleScreen"),player,damage);flashHitPlayer(player,isSpectator);},
       onFrame:paintFrame,onCancel:()=>view?.cancel(),onComplete:complete
@@ -5985,6 +5993,8 @@ function playBattleEffect(a1,a2,callback,damageTo1=0,damageTo2=0,isSpectator=fal
   const attack2=a2.type==="attack";
   const block1=a1.type==="block"&&!blockSeal[1];
   const block2=a2.type==="block"&&!blockSeal[2];
+  const pierce1=a1.pierce && (a2.skill!=="tech5" || resources?.foresightShield!==true && (resources?.foresightShield===false || Number(damageTo2)>0));
+  const pierce2=a2.pierce && (a1.skill!=="tech5" || resources?.foresightShield!==true && (resources?.foresightShield===false || Number(damageTo1)>0));
   const ranged1=a1.skill==="tech6";
   const ranged2=a2.skill==="tech6";
 
@@ -6114,8 +6124,8 @@ function playBattleEffect(a1,a2,callback,damageTo1=0,damageTo2=0,isSpectator=fal
     if(a1.skill==="tech5" && a2.type==="charge") createChargeEffectAt(layer,"p2");
     if(a2.skill==="tech5" && a1.type==="charge") createChargeEffectAt(layer,"p1");
 
-    // ブリーチだけはブロックを貫通。斬撃が盾を割る演出を追加。
-    if(attack1 && block2 && a1.pierce){
+    // 貫通が有効な場合だけ盾を割る。フォーサイトの貫通無効と旧履歴を反映。
+    if(attack1 && block2 && pierce1){
       createSlashAt(layer,"p2", "#ff5266");
       setTimeout(()=>{
         if(shield2){
@@ -6126,7 +6136,7 @@ function playBattleEffect(a1,a2,callback,damageTo1=0,damageTo2=0,isSpectator=fal
         showImpact(layer,"BREAK!","hit");
       },260);
     }
-    if(attack2 && block1 && a2.pierce){
+    if(attack2 && block1 && pierce2){
       createSlashAt(layer,"p1", "#5da5ff");
       setTimeout(()=>{
         if(shield1){
@@ -6137,7 +6147,7 @@ function playBattleEffect(a1,a2,callback,damageTo1=0,damageTo2=0,isSpectator=fal
         showImpact(layer,"BREAK!","hit");
       },260);
     }
-    if((attack1&&!a1.pierce&&block2)||(attack2&&!a2.pierce&&block1)) showImpact(layer,"BLOCK!","blocked");
+    if((attack1&&!pierce1&&block2)||(attack2&&!pierce2&&block1)) showImpact(layer,"BLOCK!","blocked");
 
     setTimeout(()=>{layer.innerHTML="";finishEffect();},900);
     return;
@@ -6192,7 +6202,7 @@ function playBattleEffect(a1,a2,callback,damageTo1=0,damageTo2=0,isSpectator=fal
       layer.appendChild(projectile);
       animateProjectile(projectile,false,720,()=>{
         projectile.remove();
-        if(block2 && !a1.pierce){
+        if(block2 && !pierce1){
           showImpact(layer,"BLOCK!","blocked");
           createRing(layer,"#65b5ff");
         }else{
@@ -6213,7 +6223,7 @@ function playBattleEffect(a1,a2,callback,damageTo1=0,damageTo2=0,isSpectator=fal
       }else{
         createSlashAt(layer,side,"#ff5266");
         setTimeout(()=>{
-          if(block2 && !a1.pierce) showImpact(layer,"BLOCK!","blocked");
+          if(block2 && !pierce1) showImpact(layer,"BLOCK!","blocked");
           else {showImpact(layer,"HIT!","hit");flashScreen();}
         },350);
       }
@@ -6230,7 +6240,7 @@ function playBattleEffect(a1,a2,callback,damageTo1=0,damageTo2=0,isSpectator=fal
       layer.appendChild(projectile);
       animateProjectile(projectile,true,720,()=>{
         projectile.remove();
-        if(block1 && !a2.pierce){
+        if(block1 && !pierce2){
           showImpact(layer,"BLOCK!","blocked");
           createRing(layer,"#65b5ff");
         }else{
@@ -6250,7 +6260,7 @@ function playBattleEffect(a1,a2,callback,damageTo1=0,damageTo2=0,isSpectator=fal
       }else{
         createSlashAt(layer,side,"#5da5ff");
         setTimeout(()=>{
-          if(block1 && !a2.pierce) showImpact(layer,"BLOCK!","blocked");
+          if(block1 && !pierce2) showImpact(layer,"BLOCK!","blocked");
           else {showImpact(layer,"HIT!","hit");flashScreen();}
         },350);
       }
@@ -6836,6 +6846,8 @@ function syncConfirmedActionArt(){
       selected[localPlayer]=id===-1?null:id<3?["charge","attack","block"][id]:"tech"+loadout.indexOf(BattleV4.indexOf(id));
     }else if(!rankedActive){for(const player of [1,2])if(!localPlayer||player===localPlayer)selected[player]=selectedAction[player]?.id;}
     window.BattleActionArt.update({loadouts:{1:player1Techs,2:player2Techs},selected,localPlayer,spectator:gameMode==="spectator"});
+    const framePlayers=rankedActive?rankedMatch?.players:(gameMode==="offline"||botMatch?{1:{uid:window.loggedInPlayerData?.uid}}:gameMode==="online"?{[localPlayer]:{uid:window.loggedInPlayerData?.uid}}:{});
+    window.BattleFrames?.syncPlayers(framePlayers,rankedActive?rankedMatch?.id:gameMode||"");
   }catch(error){console.warn("技ボタンの表示更新に失敗しました",error);}
 }
 function syncBattleInspector(){
