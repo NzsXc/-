@@ -2066,8 +2066,8 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
 <link rel="stylesheet" href="battle-compact.css?v=account-update-20261024">
 <link rel="stylesheet" href="neon-controls.css?v=account-update-20261024">
 <link rel="stylesheet" href="mode-menu.css?v=account-update-20261024">
-<link rel="stylesheet" href="notice-guide.css?v=account-update-20261024">
-<link rel="stylesheet" href="account-update.css?v=account-update-20261024">
+<link rel="stylesheet" href="notice-guide.css?v=fix-20261025">
+<link rel="stylesheet" href="account-update.css?v=fix-20261025">
 </head>
 
 
@@ -2153,7 +2153,7 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
      オンラインメニュー
 ========================= -->
 
-<div id="helpScreen" class="screen utilityScreen"><div class="utilityPanel"><nav class="helpNav"><button onclick="showHelpPage(1)" id="helpTab1" aria-pressed="true">p1 遊び方</button><button onclick="showHelpPage(2)" id="helpTab2" aria-pressed="false">p2 技・スキル効果</button></nav><section id="helpPage1" class="helpPage"><header class="guideHeader"><h1>詳しい遊び方</h1></header><div id="helpTopics"><button type="button" class="helpTopic" data-topic="0" ><span>01</span><strong>基本の遊び方</strong><span>→</span></button><button type="button" class="helpTopic" data-topic="1" aria-disabled="true"><span>02</span><strong>準備中</strong><span>—</span></button><button type="button" class="helpTopic" data-topic="2" aria-disabled="true"><span>03</span><strong>準備中</strong><span>—</span></button><button type="button" class="helpTopic" data-topic="3" aria-disabled="true"><span>04</span><strong>準備中</strong><span>—</span></button><button type="button" class="helpTopic" data-topic="4" aria-disabled="true"><span>05</span><strong>準備中</strong><span>—</span></button><button type="button" class="helpTopic" data-topic="5" aria-disabled="true"><span>06</span><strong>準備中</strong><span>—</span></button><button type="button" class="helpTopic" data-topic="6" aria-disabled="true"><span>07</span><strong>準備中</strong><span>—</span></button><button type="button" class="helpTopic" data-topic="7" aria-disabled="true"><span>08</span><strong>準備中</strong><span>—</span></button><button type="button" class="helpTopic" data-topic="8" aria-disabled="true"><span>09</span><strong>準備中</strong><span>—</span></button><button type="button" class="helpTopic" data-topic="9" aria-disabled="true"><span>10</span><strong>準備中</strong><span>—</span></button></div><section id="helpArticle" class="helpArticle" hidden><div class="tipPageInner guidePage">
+<div id="helpScreen" class="screen utilityScreen"><div class="utilityPanel"><nav class="helpNav" aria-label="詳しい遊び方のページ"><button class="tipNavButton active" onclick="showHelpPage(1)" id="helpTab1" aria-pressed="true" aria-current="page"><small>p1</small>遊び方</button><button class="tipNavButton" onclick="showHelpPage(2)" id="helpTab2" aria-pressed="false"><small>p2</small>技・スキル効果</button></nav><section id="helpPage1" class="helpPage"><header class="guideHeader"><h1>詳しい遊び方</h1></header><div id="helpTopics"><button type="button" class="helpTopic" data-topic="0" ><span>01</span><strong>基本の遊び方</strong><span>→</span></button><button type="button" class="helpTopic" data-topic="1" aria-disabled="true"><span>02</span><strong>準備中</strong><span>—</span></button><button type="button" class="helpTopic" data-topic="2" aria-disabled="true"><span>03</span><strong>準備中</strong><span>—</span></button><button type="button" class="helpTopic" data-topic="3" aria-disabled="true"><span>04</span><strong>準備中</strong><span>—</span></button><button type="button" class="helpTopic" data-topic="4" aria-disabled="true"><span>05</span><strong>準備中</strong><span>—</span></button><button type="button" class="helpTopic" data-topic="5" aria-disabled="true"><span>06</span><strong>準備中</strong><span>—</span></button><button type="button" class="helpTopic" data-topic="6" aria-disabled="true"><span>07</span><strong>準備中</strong><span>—</span></button><button type="button" class="helpTopic" data-topic="7" aria-disabled="true"><span>08</span><strong>準備中</strong><span>—</span></button><button type="button" class="helpTopic" data-topic="8" aria-disabled="true"><span>09</span><strong>準備中</strong><span>—</span></button><button type="button" class="helpTopic" data-topic="9" aria-disabled="true"><span>10</span><strong>準備中</strong><span>—</span></button></div><section id="helpArticle" class="helpArticle" hidden><div class="tipPageInner guidePage">
         <header class="guideHeader"><span class="guideEyebrow">HOW TO PLAY</span><h1>遊び方</h1><p>相手の行動を読み、HPを0にしたら勝利。</p></header>
         <ol class="guideSteps">
           <li><h2>対戦モードを選ぶ</h2><p>ひとりでCPUと練習するほか、オンライン対戦や、1台の端末で2人対戦ができます。友達対戦ではStandard・Custom・Advancedを選べます。</p></li>
@@ -2331,7 +2331,7 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
 ========================= -->
 
 <div id="tipScreen" class="screen"><nav class="tipNav" aria-label="お知らせのページ"><button id="tipNav0" class="tipNavButton tipContentsButton active" onclick="showTipPage(0)">目次</button><button id="tipNav1" class="tipNavButton" onclick="showTipPage(1)"><small>p1</small>お知らせ</button><button id="tipNav2" class="tipNavButton" onclick="showTipPage(2)"><small>p2</small>みんなの評価</button></nav><div class="tipViewport"><div class="tipPages" id="tipPages"><section id="tipPage0" class="tipPage"><div class="tipPageInner guidePage"><header class="guideHeader"><span class="guideEyebrow">NEWS</span><h1>目次</h1></header><div class="guideContents"><button onclick="showTipPage(1)"><span class="guidePageNumber">p1</span><strong>お知らせ</strong><span>→</span></button><button onclick="showTipPage(2)"><span class="guidePageNumber">p2</span><strong>みんなの評価</strong><span>→</span></button></div></div></section><section id="tipPage1" class="tipPage" aria-labelledby="tipNav1" aria-hidden="true" inert><div class="tipPageInner guidePage">
-        <header class="guideHeader"><span class="guideEyebrow">NEWS</span><h1>お知らせ</h1></header><article class="guideNotice"><header class="guideNoticeHeader"><time datetime="2026-10-24">2026/10/24</time><h2>新しい技を7種類追加</h2></header><p>フォーカス・コンバート・ブラスト・フリーズ・リファンド・ヴェノム・ドレインが登場。詳しい遊び方のp2で効果を確認できます。</p></article><article class="guideNotice"><header class="guideNoticeHeader"><time datetime="2026-10-24">2026/10/24</time><h2>ブリーチ下方修正</h2></header><p>ブロックを貫通したときの基本ダメージを2から1に変更しました。防御していない相手への基本ダメージは2のままです。フォーサイトは引き続き貫通攻撃を防ぎます。</p></article>
+        <header class="guideHeader"><span class="guideEyebrow">NEWS</span><h1>お知らせ</h1></header><article class="guideNotice"><header class="guideNoticeHeader"><time datetime="2026-10-24">2026/10/24</time><h2>新しい技を7種類追加</h2></header><p>フォーカス・コンバート・ブラスト・フリーズ・リファンド・ヴェノム・ドレインが登場。詳しい遊び方のp2で効果を確認できます。</p></article><article class="guideNotice" aria-labelledby="breachNoticeTitle"><header class="guideNoticeHeader"><time datetime="2026-10-24">2026/10/24</time><h2 id="breachNoticeTitle">ブリーチ下方修正</h2></header><div class="guideNoticeBody"><div class="guideNoticeVisual"><img class="guideArt" src="assets/actions/breach.png" alt="ブリーチの技アイコン" width="80" height="80"><svg class="guideNerfArrow" viewBox="0 0 32 40" role="img" aria-label="下向きの赤矢印"><path d="M10 2h12v21h8L16 38 2 23h8Z" fill="currentColor"/></svg></div><ul><li>ブロック貫通時のダメージ2→1</li></ul></div></article>
         <article class="guideNotice" aria-labelledby="foresightNoticeTitle">
           <header class="guideNoticeHeader"><time datetime="2026-10-22">2026/10/22</time><h2 id="foresightNoticeTitle">フォーサイト上方修正</h2></header>
           <div class="guideNoticeBody">
@@ -2766,7 +2766,7 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
   import {createPlayerProfile} from "./player-profile.js?v=account-update-20261024";
   import {createHistoryScreen} from "./battle-history-client.js?v=account-update-20261024";
   import {createCommunityRatings} from "./community-ratings.js?v=account-update-20261024";
-  import {createEconomyService} from "./economy-service.js?v=account-update-20261024";
+  import {createEconomyService} from "./economy-service.js?v=fix-20261025";
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
   import {
     getAuth,
@@ -2862,6 +2862,7 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
     window.titleService.claimRatings().catch(console.warn);
     if(protectedProfile.active)setTimeout(()=>{if(!rankedActive)startRanked(true);},0);
     updatePlayerLoginButton();
+    window.dispatchEvent(new Event('player-login-ready'));
   }
 
   window.openPlayerLogin=async function(){
@@ -3411,7 +3412,7 @@ function showTipPage(page){
   if(index===2)window.NoticeGuide?.loadRatings();
   const pages=document.getElementById("tipPages");
   if(pages)pages.style.transform=`translateX(-${index*100}%)`;
-  document.querySelectorAll(".tipNavButton").forEach((button,i)=>{
+  document.querySelectorAll("#tipScreen .tipNavButton").forEach((button,i)=>{
     button.classList.toggle("active",i===index);
     if(i===index)button.setAttribute('aria-current','page');
     else button.removeAttribute('aria-current');
@@ -5748,6 +5749,7 @@ function unlockBattleSE(){
       });
     }
     const context=battleSEContext;
+    window.GameAudio?.useContext(context);
     // Call resume and start a silent buffer synchronously during the gesture.
     // Setting a flag or calling play() on muted <audio> is not enough on mobile.
     if(context.state!=="running"){
@@ -5802,7 +5804,7 @@ function playBattleSE(id){
         window.GameAudio?GameAudio.track(gain,.75):gain.gain.value=.75;
         source.connect(gain);
         gain.connect(context.destination);
-        source.onended=()=>{source.disconnect();gain.disconnect();};
+        source.onended=()=>{source.disconnect();gain.disconnect();window.GameAudio?.untrack(gain);};
         source.start(0);
       }).catch(()=>playBattleSEElement(el,.75))
       .catch(error=>console.warn("SE再生失敗:",id,error));
@@ -7095,7 +7097,8 @@ updateTechniqueDisplay();
 })();
 </script>
 <script src="community-rating-core.js?v=account-update-20261024"></script>
-<script src="account-ui.js?v=account-update-20261024"></script>
+<script src="audio-settings.js?v=fix-20261025"></script>
+<script src="account-ui.js?v=fix-20261025"></script>
 <script src="notice-guide.js?v=account-update-20261024"></script>
 <!-- PWA registration -->
 <script src="./pwa-register.js" defer></script>
