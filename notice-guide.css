@@ -1,10 +1,11 @@
 /* Contents and four-page notice guide. All layout overrides stay inside the notice screen. */
 #tipScreen{height:100vh;height:100dvh;min-height:0;padding:18px max(14px,var(--safe-right)) 72px max(14px,var(--safe-left));gap:14px;justify-content:flex-start;overflow:hidden}
 #tipScreen .tipNav{position:static;transform:none;width:min(1040px,100%);flex:none;grid-template-columns:clamp(44px,6vw,64px) repeat(2,minmax(0,1fr));gap:6px}
-#tipScreen .tipNavButton{aspect-ratio:auto;min-height:58px;padding:8px 6px;font-size:14px;line-height:1.35;border-radius:5px;transform:none;background:#182e45;color:#b6cde0}
+:is(#tipScreen,#helpScreen) .tipNavButton{aspect-ratio:auto;min-height:58px;padding:8px 6px;font-size:14px;line-height:1.35;border-radius:5px;transform:none;background:#182e45;color:#b6cde0}
 #tipScreen .tipContentsButton{font-size:12px;padding:6px 2px;letter-spacing:0}
-#tipScreen .tipNavButton small{display:block;font-size:10px;letter-spacing:.14em;color:#92bad3;margin-bottom:3px}
-#tipScreen .tipNavButton.active{background:#315776;border-color:#acdfff;color:#fff;box-shadow:inset 0 -2px #84d8f6}
+:is(#tipScreen,#helpScreen) .tipNavButton small{display:block;font-size:10px;letter-spacing:.14em;color:#92bad3;margin-bottom:3px}
+:is(#tipScreen,#helpScreen) .tipNavButton{margin:0}
+:is(#tipScreen,#helpScreen) .tipNavButton.active{background:#315776;border-color:#acdfff;color:#fff;box-shadow:inset 0 -2px #84d8f6}
 #tipScreen .tipViewport{width:min(1040px,100%);height:auto;min-height:0;flex:1;margin:0;border-radius:6px}
 #tipScreen .tipPage{min-width:0;padding:0}
 :is(#tipScreen,#helpScreen) .guidePage{display:block;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;scrollbar-gutter:stable;padding:26px 30px;border-radius:6px;font-size:14px;font-weight:400;line-height:1.75;color:#d5e6f2;text-align:left}
@@ -64,11 +65,11 @@
 :is(#tipScreen,#helpScreen) .guideNoticeBody{display:flex;flex-wrap:wrap;align-items:center;gap:16px 24px}
 :is(#tipScreen,#helpScreen) .guideNoticeVisual{display:flex;align-items:center;gap:14px;flex:none}
 :is(#tipScreen,#helpScreen) .guideNoticeVisual .guideArt{width:80px;height:80px;object-fit:contain}
-:is(#tipScreen,#helpScreen) .guideBuffArrow{display:block;width:32px;height:40px;color:#57dc83;flex:none}
+:is(#tipScreen,#helpScreen) :is(.guideBuffArrow,.guideNerfArrow){display:block;width:32px;height:40px;color:#57dc83;flex:none}
 :is(#tipScreen,#helpScreen) .guideNoticeBody ul{min-width:0;flex:1 1 240px;margin:0;padding-left:22px;font-size:15px;line-height:1.8;overflow-wrap:anywhere}
 @media(max-width:640px){
   #tipScreen{padding-top:max(10px,var(--safe-top));gap:10px}
-  #tipScreen .tipNavButton{font-size:11px;min-width:0;min-height:54px;padding:7px 2px}
+  :is(#tipScreen,#helpScreen) .tipNavButton{font-size:11px;min-width:0;min-height:54px;padding:7px 2px}
   #tipScreen .tipContentsButton{font-size:10px}
   :is(#tipScreen,#helpScreen) .guideNotice{padding:16px 14px}
   :is(#tipScreen,#helpScreen) .guideNoticeHeader{margin-bottom:16px;gap:6px 12px}
@@ -92,8 +93,8 @@
 }
 @media(max-height:480px) and (min-width:641px){
   #tipScreen{padding-top:8px;padding-bottom:62px;gap:6px}
-  #tipScreen .tipNavButton{min-height:44px;padding:4px}
-  #tipScreen .tipNavButton small{display:inline;margin-right:7px}
+  :is(#tipScreen,#helpScreen) .tipNavButton{min-height:44px;padding:4px}
+  :is(#tipScreen,#helpScreen) .tipNavButton small{display:inline;margin-right:7px}
   :is(#tipScreen,#helpScreen) .guidePage{padding:18px 24px}
   #tipScreen .tipBackButton{bottom:8px}
 }
@@ -147,3 +148,5 @@
 :is(#tipScreen,#helpScreen) .guideSpecialArt::after{content:"";position:absolute;inset:0;padding:2px;pointer-events:none;border-radius:inherit;background:conic-gradient(from var(--special-edge-angle),#7536a8,#d8b2fa 80deg,#9e52d2 150deg,#f2dcff 210deg,#8b3ac2 280deg,#7536a8);-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);mask-composite:exclude;animation:specialEdgeFlow 3s linear infinite}
 #tipScreen #guideVoteSpecialTechniques{white-space:normal}
 @media(prefers-reduced-motion:reduce){:is(#tipScreen,#helpScreen) .guideSpecialArt::after{animation:none;--special-edge-angle:45deg}}
+
+#tipScreen .guideNerfArrow{color:#ff6b7f}
