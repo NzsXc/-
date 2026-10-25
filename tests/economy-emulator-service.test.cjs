@@ -26,5 +26,21 @@ function service(uid){
  await request('.settings/rules','PUT',old);writes=0;
  await assert.rejects(()=>service('p3').start(),e=>e.code==='PERMISSION_DENIED');assert.equal(writes,1,'a permanent rules rejection is sent only once');
  await request('.settings/rules','PUT',rules);result=await service('p3').start();assert.equal(result.own,50);assert.equal(result.balance,70,'publishing the full rules restores receipt of pending coins');
- console.log('PASS official emulator + real economy service: daily/pending gifts, duplicate claims, tampering, old-rule permission rejection (one attempt) and recovery after rule publication');
+ // Legacy registered accounts predate the optional guest metadata.
+ await request('','PUT',{users:{legacy:{name:'Legacy'},other:{name:'Other'},guest:{name:'Guest'}},freeAccounts:{legacy:{name:'Legacy',rating:1000,games:0,active:'',lastSettled:''},other:account('Other'),guest:{...account('Guest'),guest:true}}});
+ const legacy=service('legacy'),secondTab=service('legacy');
+ const first=await legacy.start(),second=await secondTab.start();
+ assert.equal(first.own,50);assert.equal(first.balance,50);assert.equal(second.balance,50);
+ // Both tabs can close their notification, including overlapping receipt batches.
+ await Promise.all([legacy.acknowledge(first.receipts,'legacy'),secondTab.acknowledge(second.receipts,'legacy')]);
+ await legacy.acknowledge(first.receipts,'legacy');
+ assert.equal((await legacy.start()).own,0);assert.equal(await request('coinWallets/legacy/balance','GET',undefined,'legacy'),50);
+ const day=legacy.day(),ack='coinAcknowledgements/legacy/'+day+'/legacy';
+ for(const value of [false,null,'true'])await assert.rejects(()=>request(ack,'PUT',value,'legacy'),/Permission denied/);
+ await assert.rejects(()=>request(ack,'PUT',true,'other'),/Permission denied/);
+ await assert.rejects(()=>request('coinAcknowledgements/legacy/'+day+'/other','PUT',true,'legacy'),/Permission denied/,'unclaimed coins cannot be acknowledged');
+ await assert.rejects(()=>service('guest').start(),e=>e.code==='PERMISSION_DENIED','explicit guest accounts remain ineligible');
+ await request('freeAccounts/unregistered','PUT',{name:'Unknown',rating:1000,games:0,active:'',lastSettled:''});
+ await assert.rejects(()=>service('unregistered').start(),e=>e.code==='PERMISSION_DENIED','a missing guest flag alone never grants access');
+ console.log('PASS official emulator + real economy service: daily/pending gifts, duplicate claims, legacy registered accounts, concurrent/repeated acknowledgements, tampering, guest/unregistered denial and rule publication recovery');
 })().catch(e=>{console.error(e);process.exitCode=1;});
