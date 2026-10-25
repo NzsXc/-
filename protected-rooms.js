@@ -1,6 +1,6 @@
 import {ref,get,set,update,remove,push,onValue,onDisconnect,serverTimestamp} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js';
 import {signInAnonymously} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js';
-import {spectatorSkillMatch} from './advanced/spectator.js?v=custom-options-1';
+import {spectatorSkillMatch} from './advanced/spectator.js?v=spectator-special-skills-20261025';
 export function createProtectedRooms(db,auth,transport,history){
  let offset=0,hostRoom=null,heartbeat=null,disconnect=null,stopHostWatch=null;onValue(ref(db,'.info/serverTimeOffset'),s=>offset=Number(s.val()||0));
  const now=()=>Date.now()+offset,read=async p=>(await get(ref(db,p))).val();
@@ -44,11 +44,21 @@ export function createProtectedRooms(db,auth,transport,history){
   stopHostWatch=stop;return stop;
  }
  const specialStates=s=>Object.fromEntries(['specialSeal','specialRuin','specialMomentum'].map(k=>[k,{1:s[k+'1']||0,2:s[k+'2']||0}]));
+ const publicState=s=>({turn:s.turn,skillsExhausted:!!s.skillsExhausted,hp:{1:s.hp1,2:s.hp2},gauge:{1:s.gauge1,2:s.gauge2},enhanceTurns:{1:s.enhance1,2:s.enhance2},blockSeal:{1:!!s.seal1,2:!!s.seal2},ruinTurns:{1:s.ruin1||0,2:s.ruin2||0},momentumBonus:{1:!!s.momentum1,2:!!s.momentum2},frozen:{1:s.frozen1||0,2:s.frozen2||0},poison:{1:s.poison1||0,2:s.poison2||0},...specialStates(s),lastAction:{1:s.last1?{data:{type:s.last1}}:null,2:s.last2?{data:{type:s.last2}}:null}});
+ const revealedAction=(id,special)=>id<3?window.BattleAI.ACTIONS[id]:window.SpecialRules.actionData(id,window.BattleAI.techniques,null,special?.version);
+ function beforeAction(reveal,state){
+  if(![1,2].every(p=>Number.isFinite(reveal['inputHp'+p])&&Number.isFinite(reveal['inputGauge'+p])))return null;
+  const before={...state,turn:reveal.turn-1};
+  for(const p of [1,2])for(const field of ['hp','gauge','seal','enhance','momentum','ruin','last','specialSeal','specialRuin','specialMomentum','frozen','poison']){
+   const value=reveal['input'+field[0].toUpperCase()+field.slice(1)+p];if(value!=null)before[field+p]=value;
+  }
+  return publicState(before);
+ }
  const observedGames=new Map();
  function archivedSnapshot(h){
   const raw=h?.finalState;if(!raw)return null;const s=window.AdvancedRules.isAdvanced(h.roomRules)?window.AdvancedRules.preview(raw,h.advanced?.selected,window.AdvancedRules.forTurn(h.advanced,raw.turn),h.roomRules):raw,people={};
   for(const p of [1,2])people[p]={name:h.players[p].name,joined:true,online:false,techniques:h.players[p].loadout?[0,1,2].map(i=>h.players[p].loadout[i]):[]};
-  return {players:people,battle:{special:h.special||null,...specialStates(s),skillMatch:spectatorSkillMatch(h.id||'archive',raw,h.advanced,h.roomRules,people,true,now()),roomRules:h.roomRules||null,phase:'finished',turn:s.turn,updatedAt:now(),result:h.settled.winner?h.settled.winner+'P WIN':'DRAW',hp:{1:s.hp1,2:s.hp2},gauge:{1:s.gauge1,2:s.gauge2},enhanceTurns:{1:s.enhance1,2:s.enhance2},blockSeal:{1:s.seal1,2:s.seal2},ruinTurns:{1:s.ruin1||0,2:s.ruin2||0}}};
+  return {players:people,battle:{matchId:h.id||'archive',foresightShield:h.foresightShield===true,special:h.special||null,...publicState(s),skillMatch:spectatorSkillMatch(h.id||'archive',raw,h.advanced,h.roomRules,people,true,now()),roomRules:h.roomRules||null,phase:'finished',updatedAt:now(),result:h.settled.winner?h.settled.winner+'P WIN':'DRAW'}};
  }
  const validId=id=>typeof id==='string'&&/^[A-Za-z0-9_-]+$/.test(id);
  async function snapshot(roomId,accounts){
@@ -58,7 +68,7 @@ export function createProtectedRooms(db,auth,transport,history){
   const archived=async()=>{const h=await history?.find(id);return random&&h?.kind!=='random'?null:archivedSnapshot(h);};
   if(!random&&!room?.game)return archived();const path='freeGames/'+id;
   // Read public children separately: a live game root includes private moves.
-  const [players,rawState,ready,settled,reveal,kind]=await Promise.all(['players','state','ready','settled','transition','kind'].map(k=>read(path+'/'+k)));
+  const [players,rawState,ready,settled,reveal,kind,foresightShield]=await Promise.all(['players','state','ready','settled','transition','kind','foresightShield'].map(k=>read(path+'/'+k)));
   if(!players||!rawState)return archived();if(random&&kind!=='random')return null;
   const roomRules=await transport.supportsRoomRules?.()?await read(path+'/roomRules'):null;
   const advanced=window.RoomRules.hasSkills(roomRules)?await read(path+'/advanced'):null;
@@ -70,9 +80,14 @@ export function createProtectedRooms(db,auth,transport,history){
   if(skillMatch)skillMatch.players=people;
   // Settlement can archive/delete the live node between these reads.
   if(!await read(path+'/players'))return archived();
-  const battle={roomRules,special,...specialStates(s),phase:settled?'finished':'battle',turn:s.turn,updatedAt:now(),result:settled?(settled.winner?settled.winner+'P WIN':'DRAW'):'',hp:{1:s.hp1,2:s.hp2},gauge:{1:s.gauge1,2:s.gauge2},enhanceTurns:{1:s.enhance1,2:s.enhance2},blockSeal:{1:s.seal1,2:s.seal2},ruinTurns:{1:s.ruin1||0,2:s.ruin2||0},lastAction:{1:s.last1?{data:{type:s.last1}}:null,2:s.last2?{data:{type:s.last2}}:null}};
+  const battle={matchId:id,foresightShield:foresightShield===true,roomRules,special,...publicState(s),phase:settled?'finished':'battle',updatedAt:now(),result:settled?(settled.winner?settled.winner+'P WIN':'DRAW'):''};
   const countdownEnd=Number.isFinite(s.previousDeadline)?Math.max(s.startedAt,Math.min(s.startedAt+3000,s.previousDeadline)):s.startedAt+3000;
-  if(!settled&&reveal?.turn===s.turn&&s.turn>1&&now()<countdownEnd+3000){const action=id=>id>=15?window.SpecialRules.actionData(id,window.BattleAI.ACTIONS.slice(3)):window.BattleAI.ACTIONS[id];battle.phase='effect';battle.resolvedTurn=reveal.turn-1;battle.countdownEndsAt=countdownEnd;battle.revealAt=countdownEnd+500;battle.effectStartAt=countdownEnd+1800;battle.damageTo1=reveal.damage1;battle.damageTo2=reveal.damage2;battle.resources={after:{hp:{1:reveal.hp1,2:reveal.hp2},gauge:{1:reveal.gauge1,2:reveal.gauge2},...(special?{special:special.gauge}:{})},outcome:Object.fromEntries(['paid','charged','foresight','healed','rampage','stolen','specialGain'].flatMap(key=>[1,2].filter(p=>Number.isFinite(reveal[key+p])).map(p=>[key+p,reveal[key+p]])))};battle.actions={1:{id:reveal.action1,data:action(reveal.action1)},2:{id:reveal.action2,data:action(reveal.action2)}};}
+  if(!settled&&reveal?.turn===s.turn&&s.turn>1&&now()<countdownEnd+3000){
+   battle.phase='effect';battle.resolvedTurn=reveal.turn-1;battle.countdownEndsAt=countdownEnd;battle.revealAt=countdownEnd+500;battle.effectStartAt=countdownEnd+1800;
+   battle.damageTo1=reveal.damage1;battle.damageTo2=reveal.damage2;battle.before=beforeAction(reveal,rawState);
+   battle.resources={foresightShield:foresightShield===true,...(battle.before?{before:{hp:battle.before.hp,gauge:battle.before.gauge}}:{}),after:{hp:{1:reveal.hp1,2:reveal.hp2},gauge:{1:reveal.gauge1,2:reveal.gauge2},...(special?{special:special.gauge}:{})},outcome:Object.fromEntries(['paid','charged','foresight','healed','rampage','stolen','specialGain'].flatMap(key=>[1,2].filter(p=>Number.isFinite(reveal[key+p])).map(p=>[key+p,reveal[key+p]])))};
+   battle.actions={1:{id:reveal.action1,data:revealedAction(reveal.action1,special)},2:{id:reveal.action2,data:revealedAction(reveal.action2,special)}};
+  }
   if(skillMatch)battle.skillMatch=skillMatch;
   return {players:people,battle};
  }
