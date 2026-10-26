@@ -36,7 +36,7 @@
     copy.append(node('h3', '', item.name));
     copy.append(node('span', 'guideBadge', item.special ? `Sゲージ追加消費+${item.specialCost}` : skill ? `1試合 ${item.limit}回` : `消費ゲージ ${item.cost}`));
     copy.append(node('p', '', item.description));
-    const more=node('button','guideTextLink','詳しく見る');more.type='button';more.dataset.detail=item.id;more.addEventListener('click',()=>{});copy.append(more);article.append(illustration(item, skill), copy);
+    const more=node('button','guideTextLink','詳しく見る');more.type='button';more.dataset.detail=item.id;more.addEventListener('click',()=>window.GuideDetails.open(item.id));copy.append(more);article.append(illustration(item, skill), copy);
     return article;
   }
 
@@ -105,9 +105,9 @@
   const cancel = node('button', 'guideVoteCancel', 'キャンセル'); cancel.type = 'button'; cancel.onclick = () => dialog.close();
   const submit = node('button', 'guideVoteButton', '保存する'); submit.type = 'submit';
   const login = node('button', 'guideVoteButton', 'ログイン'); login.type = 'button';
-  login.onclick = () => { dialog.close(); window.openPlayerLogin?.(); };
+  login.onclick = () => { dialog.close(); document.getElementById('guideDetailDialog')?.close(); window.openPlayerLogin?.(); };
   actions.append(cancel, login, submit); form.append(fields, message, actions); dialog.append(header, help, form);
-  document.getElementById('tipScreen').append(dialog);
+  document.body.append(dialog);
 
   const draft = () => Object.fromEntries([...fields.querySelectorAll('select')].filter(input => input.value).map(input => [input.name, Number(input.value)]));
   function updateForm() {
@@ -149,6 +149,7 @@
     const changedUser = current.uid !== value.uid;
     const justLoaded = category && !current.loaded[category] && value.loaded[category];
     current = value;
+    window.dispatchEvent(new CustomEvent('guide-ratings-change', {detail:value}));
     for (const category of Object.keys(lists)) tierTable(category);
     const errors = Object.entries(current.errors).filter(([,text]) => text);
     status.replaceChildren();
@@ -200,6 +201,6 @@
   document.getElementById('guideVoteSpecialTechniques').onclick = () => openVote('specialTechniques');
   document.getElementById('guideVoteSkills').onclick = () => openVote('skills');
   window.addEventListener('community-ratings-ready', () => { if (requested) loadRatings(); });
-  window.NoticeGuide = Object.freeze({loadRatings});
+  window.NoticeGuide = Object.freeze({loadRatings,openVote});
   for (const category of Object.keys(lists)) tierTable(category);
 })();

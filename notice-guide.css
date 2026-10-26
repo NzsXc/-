@@ -32,14 +32,14 @@
 :is(#tipScreen,#helpScreen) .guideCardCopy{min-width:0;overflow-wrap:anywhere}
 :is(#tipScreen,#helpScreen) .guideCard p{font-size:13px;line-height:1.7;margin:7px 0 0}
 :is(#tipScreen,#helpScreen) .guideBadge{display:inline-block;font-size:11px;line-height:1.5;padding:2px 7px;background:#36557170;color:#b5def3;border:1px solid #91cde637;border-radius:3px}
-:is(#tipScreen,#helpScreen) .guideArt{position:relative;display:block;flex:none;width:68px;height:68px;overflow:hidden;border:1px solid #85c5e140;border-radius:8px;background:radial-gradient(ellipse at 40% 32%,#28516c,#102338 72%)}
-:is(#tipScreen,#helpScreen) .guideArt img{width:100%;height:100%;object-fit:contain;display:block}
-:is(#tipScreen,#helpScreen) .guideArt.advancedSkillOrb{--orb-scale:.515625;--orb-ink:#f3fcff;--energy:#56bcf2;border-radius:50%}
-:is(#tipScreen,#helpScreen) .guideArt[data-skill="heal"]{--energy:#49d5a1}
-:is(#tipScreen,#helpScreen) .guideArt[data-skill="chain"]{--energy:#f0b75b}
-:is(#tipScreen,#helpScreen) .guideArt[data-skill="cleanse"]{--energy:#b696ff}
-:is(#tipScreen,#helpScreen) .guideArt[data-skill="invincible"]{--energy:#ffe06b}
-:is(#tipScreen,#helpScreen) .guideArt[data-skill="stance"]{--energy:#ff8b72}
+:is(#tipScreen,#helpScreen,.guideVoteDialog) .guideArt{position:relative;display:block;flex:none;width:68px;height:68px;overflow:hidden;border:1px solid #85c5e140;border-radius:8px;background:radial-gradient(ellipse at 40% 32%,#28516c,#102338 72%)}
+:is(#tipScreen,#helpScreen,.guideVoteDialog) .guideArt img{width:100%;height:100%;object-fit:contain;display:block}
+:is(#tipScreen,#helpScreen,.guideVoteDialog) .guideArt.advancedSkillOrb{--orb-scale:.515625;--orb-ink:#f3fcff;--energy:#56bcf2;border-radius:50%}
+:is(#tipScreen,#helpScreen,.guideVoteDialog) .guideArt[data-skill="heal"]{--energy:#49d5a1}
+:is(#tipScreen,#helpScreen,.guideVoteDialog) .guideArt[data-skill="chain"]{--energy:#f0b75b}
+:is(#tipScreen,#helpScreen,.guideVoteDialog) .guideArt[data-skill="cleanse"]{--energy:#b696ff}
+:is(#tipScreen,#helpScreen,.guideVoteDialog) .guideArt[data-skill="invincible"]{--energy:#ffe06b}
+:is(#tipScreen,#helpScreen,.guideVoteDialog) .guideArt[data-skill="stance"]{--energy:#ff8b72}
 :is(#tipScreen,#helpScreen) .guideBasics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:4px 0 20px}
 :is(#tipScreen,#helpScreen) .guideBasics .guideCard{flex-direction:column}
 :is(#tipScreen,#helpScreen) .guideCallout{margin-top:14px;padding:16px 18px;border-left:3px solid #82c9e7;background:#142c42}
@@ -64,7 +64,7 @@
 :is(#tipScreen,#helpScreen) .guideNotice h2{font-size:19px;margin:0;overflow-wrap:anywhere}
 :is(#tipScreen,#helpScreen) .guideNoticeBody{display:flex;flex-wrap:wrap;align-items:center;gap:16px 24px}
 :is(#tipScreen,#helpScreen) .guideNoticeVisual{display:flex;align-items:center;gap:14px;flex:none}
-:is(#tipScreen,#helpScreen) .guideNoticeVisual .guideArt{width:80px;height:80px;object-fit:contain}
+:is(#tipScreen,#helpScreen,.guideVoteDialog) .guideNoticeVisual .guideArt{width:80px;height:80px;object-fit:contain}
 :is(#tipScreen,#helpScreen) :is(.guideBuffArrow,.guideNerfArrow){display:block;width:32px;height:40px;color:#57dc83;flex:none}
 :is(#tipScreen,#helpScreen) .guideNoticeBody ul{min-width:0;flex:1 1 240px;margin:0;padding-left:22px;font-size:15px;line-height:1.8;overflow-wrap:anywhere}
 @media(max-width:640px){
@@ -88,7 +88,7 @@
   :is(#tipScreen,#helpScreen) .guideTierRank{font-size:21px}
   :is(#tipScreen,#helpScreen) .guideTierItems{gap:12px 4px;padding:10px 6px}
   :is(#tipScreen,#helpScreen) .guideTierTile{width:64px}
-  :is(#tipScreen,#helpScreen) .guideTierTile .guideArt{width:56px;height:56px;--orb-scale:.421875}
+  :is(#tipScreen,#helpScreen,.guideVoteDialog) .guideTierTile .guideArt{width:56px;height:56px;--orb-scale:.421875}
   :is(#tipScreen,#helpScreen) .guideTierTile figcaption{font-size:10px}
 }
 @media(max-height:480px) and (min-width:641px){
@@ -102,42 +102,42 @@
 
 :is(#tipScreen,#helpScreen) .guideTierHeading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:26px 0 12px}
 :is(#tipScreen,#helpScreen) .guideTierHeading .guideSectionTitle{margin:0}
-:is(#tipScreen,#helpScreen) .guideVoteButton{flex:none;min-height:44px;padding:9px 15px;border:1px solid #91d5f1;border-radius:5px;background:#315e7b;color:#f1fbff;font:inherit;font-size:13px;cursor:pointer}
-:is(#tipScreen,#helpScreen) .guideVoteButton:hover:not(:disabled){background:#427c9d}
-:is(#tipScreen,#helpScreen) .guideVoteButton:disabled{opacity:.45;cursor:default}
+:is(#tipScreen,#helpScreen,.guideVoteDialog) .guideVoteButton{flex:none;min-height:44px;padding:9px 15px;border:1px solid #91d5f1;border-radius:5px;background:#315e7b;color:#f1fbff;font:inherit;font-size:13px;cursor:pointer}
+:is(#tipScreen,#helpScreen,.guideVoteDialog) .guideVoteButton:hover:not(:disabled){background:#427c9d}
+:is(#tipScreen,#helpScreen,.guideVoteDialog) .guideVoteButton:disabled{opacity:.45;cursor:default}
 :is(#tipScreen,#helpScreen) .guideTierScore{font-size:12px;font-variant-numeric:tabular-nums;line-height:1.3;color:#b3e6ff;font-weight:700}
 :is(#tipScreen,#helpScreen) .guideTierEmpty{align-self:center;color:#91aec4;font-size:12px}
 #tipScreen [data-rank="unrated"] .guideTierRank{background:#8ca6ba;font-size:12px;writing-mode:vertical-rl;letter-spacing:.15em}
-:is(#tipScreen,#helpScreen) .guideVoteDialog{width:min(680px,calc(100vw - 24px));max-height:min(85vh,800px);max-height:min(85dvh,800px);padding:0;border:1px solid #8bc8e2;border-radius:8px;background:#172e45;color:#e7f3fc;box-shadow:0 20px 80px #0009;line-height:1.65;text-align:left;overflow:hidden}
-:is(#tipScreen,#helpScreen) .guideVoteDialog[open]{display:flex;flex-direction:column}
-:is(#tipScreen,#helpScreen) .guideVoteDialog::backdrop{background:#050d1cba}
-:is(#tipScreen,#helpScreen) .guideVoteHeader{display:flex;flex:none;align-items:center;justify-content:space-between;gap:14px;padding:16px 20px 6px}
-:is(#tipScreen,#helpScreen) .guideVoteHeader h2{margin:0;font-size:21px}
-:is(#tipScreen,#helpScreen) .guideVoteClose{width:44px;min-height:44px;border:0;border-radius:4px;background:#34536c;color:#fff;font-size:25px;cursor:pointer}
-#tipScreen #guideVoteHelp{flex:none;margin:0;padding:0 20px 14px;font-size:12px}
-:is(#tipScreen,#helpScreen) .guideVoteForm{display:flex;flex-direction:column;min-height:0;overflow:hidden}
-:is(#tipScreen,#helpScreen) .guideVoteFields{min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:0 20px}
-:is(#tipScreen,#helpScreen) .guideVoteField{display:grid;grid-template-columns:56px minmax(0,1fr) 92px;gap:14px;align-items:center;padding:12px 0;border-top:1px solid #91b6cc42}
-:is(#tipScreen,#helpScreen) .guideVoteItemName{font-size:14px;font-weight:700;overflow-wrap:anywhere}
-:is(#tipScreen,#helpScreen) .guideVoteField .guideArt{width:56px;height:56px;--orb-scale:.421875}
-:is(#tipScreen,#helpScreen) .guideVoteField select{width:100%;min-height:44px;border:1px solid #86b3ce;border-radius:4px;padding:6px;color:#effaff;background:#233f58;font:inherit;font-size:14px}
-:is(#tipScreen,#helpScreen) .guideVoteField select:focus-visible{outline:2px solid #b3ebff;outline-offset:2px}
-:is(#tipScreen,#helpScreen) .guideVoteField select:disabled{opacity:.6}
-:is(#tipScreen,#helpScreen) .guideVoteMessage{flex:none;min-height:24px;padding:8px 20px 0;font-size:12px;color:#f4d9a3}
-:is(#tipScreen,#helpScreen) .guideVoteActions{flex:none;display:flex;align-items:center;justify-content:flex-end;gap:12px;padding:12px 20px 18px}
-:is(#tipScreen,#helpScreen) .guideVoteCancel{min-height:44px;border:1px solid #678ca7;border-radius:4px;padding:8px 14px;background:#203a52;color:#d8ebf7;font:inherit;cursor:pointer}
-:is(#tipScreen,#helpScreen) .guideVoteActions [hidden]{display:none}
+.guideVoteDialog{width:min(680px,calc(100vw - 24px));max-height:min(85vh,800px);max-height:min(85dvh,800px);padding:0;border:1px solid #8bc8e2;border-radius:8px;background:#172e45;color:#e7f3fc;box-shadow:0 20px 80px #0009;line-height:1.65;text-align:left;overflow:hidden}
+.guideVoteDialog[open]{display:flex;flex-direction:column}
+.guideVoteDialog::backdrop{background:#050d1cba}
+:is(#tipScreen,#helpScreen,.guideVoteDialog) .guideVoteHeader{display:flex;flex:none;align-items:center;justify-content:space-between;gap:14px;padding:16px 20px 6px}
+:is(#tipScreen,#helpScreen,.guideVoteDialog) .guideVoteHeader h2{margin:0;font-size:21px}
+:is(#tipScreen,#helpScreen,.guideVoteDialog) .guideVoteClose{width:44px;min-height:44px;border:0;border-radius:4px;background:#34536c;color:#fff;font-size:25px;cursor:pointer}
+.guideVoteDialog #guideVoteHelp{flex:none;margin:0;padding:0 20px 14px;font-size:12px}
+:is(#tipScreen,#helpScreen,.guideVoteDialog) .guideVoteForm{display:flex;flex-direction:column;min-height:0;overflow:hidden}
+:is(#tipScreen,#helpScreen,.guideVoteDialog) .guideVoteFields{min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:0 20px}
+:is(#tipScreen,#helpScreen,.guideVoteDialog) .guideVoteField{display:grid;grid-template-columns:56px minmax(0,1fr) 92px;gap:14px;align-items:center;padding:12px 0;border-top:1px solid #91b6cc42}
+:is(#tipScreen,#helpScreen,.guideVoteDialog) .guideVoteItemName{font-size:14px;font-weight:700;overflow-wrap:anywhere}
+:is(#tipScreen,#helpScreen,.guideVoteDialog) .guideVoteField .guideArt{width:56px;height:56px;--orb-scale:.421875}
+:is(#tipScreen,#helpScreen,.guideVoteDialog) .guideVoteField select{width:100%;min-height:44px;border:1px solid #86b3ce;border-radius:4px;padding:6px;color:#effaff;background:#233f58;font:inherit;font-size:14px}
+:is(#tipScreen,#helpScreen,.guideVoteDialog) .guideVoteField select:focus-visible{outline:2px solid #b3ebff;outline-offset:2px}
+:is(#tipScreen,#helpScreen,.guideVoteDialog) .guideVoteField select:disabled{opacity:.6}
+:is(#tipScreen,#helpScreen,.guideVoteDialog) .guideVoteMessage{flex:none;min-height:24px;padding:8px 20px 0;font-size:12px;color:#f4d9a3}
+:is(#tipScreen,#helpScreen,.guideVoteDialog) .guideVoteActions{flex:none;display:flex;align-items:center;justify-content:flex-end;gap:12px;padding:12px 20px 18px}
+:is(#tipScreen,#helpScreen,.guideVoteDialog) .guideVoteCancel{min-height:44px;border:1px solid #678ca7;border-radius:4px;padding:8px 14px;background:#203a52;color:#d8ebf7;font:inherit;cursor:pointer}
+:is(#tipScreen,#helpScreen,.guideVoteDialog) .guideVoteActions [hidden]{display:none}
 #tipScreen #guideRatingsStatus .guideTextLink{margin:0 0 0 8px;padding:4px;min-height:32px}
 @media(max-width:420px){
   :is(#tipScreen,#helpScreen) .guideTierHeading{gap:8px}
-  :is(#tipScreen,#helpScreen) .guideVoteButton{font-size:12px;padding:8px 10px}
-  :is(#tipScreen,#helpScreen) .guideVoteField{grid-template-columns:44px minmax(0,1fr) 80px;gap:9px}
-  :is(#tipScreen,#helpScreen) .guideVoteField .guideArt{width:44px;height:44px;--orb-scale:.328125}
-  :is(#tipScreen,#helpScreen) .guideVoteItemName{font-size:12px}
-  :is(#tipScreen,#helpScreen) .guideVoteFields{padding:0 12px}
-  :is(#tipScreen,#helpScreen) .guideVoteHeader{padding:10px 12px 6px}
-  #tipScreen #guideVoteHelp{padding:0 12px 10px}
-  :is(#tipScreen,#helpScreen) .guideVoteHeader h2{font-size:18px}
+  :is(#tipScreen,#helpScreen,.guideVoteDialog) .guideVoteButton{font-size:12px;padding:8px 10px}
+  :is(#tipScreen,#helpScreen,.guideVoteDialog) .guideVoteField{grid-template-columns:44px minmax(0,1fr) 80px;gap:9px}
+  :is(#tipScreen,#helpScreen,.guideVoteDialog) .guideVoteField .guideArt{width:44px;height:44px;--orb-scale:.328125}
+  :is(#tipScreen,#helpScreen,.guideVoteDialog) .guideVoteItemName{font-size:12px}
+  :is(#tipScreen,#helpScreen,.guideVoteDialog) .guideVoteFields{padding:0 12px}
+  :is(#tipScreen,#helpScreen,.guideVoteDialog) .guideVoteHeader{padding:10px 12px 6px}
+  .guideVoteDialog #guideVoteHelp{padding:0 12px 10px}
+  :is(#tipScreen,#helpScreen,.guideVoteDialog) .guideVoteHeader h2{font-size:18px}
 }
 
 /* S definitions and voting remain pending until their effects are specified. */
@@ -159,3 +159,6 @@
 #tipScreen .guideNoticeVisual .guideArt{width:44px;height:44px;border-radius:5px}
 #tipScreen :is(.guideBuffArrow,.guideNerfArrow){width:16px;height:22px}
 #tipScreen .guideNoticeBody ul{min-width:0;margin:0;padding:0;list-style:none;font-size:13px;line-height:1.5}
+.guideVoteDialog h2{margin:0;font-size:21px;color:#eff9ff}
+.guideVoteDialog p{margin:6px 0}
+.guideVoteDialog .guideNote{color:#b2cada;font-size:13px}
