@@ -28,7 +28,11 @@ const profileSource=fs.readFileSync(path.join(root,'player-profile.js'),'utf8').
   await page.evaluate(()=>{document.getElementById('battleScreen').classList.remove('spectatorMode');showBattleResult('DRAW');});assert.equal(await page.locator('.gameResultOverlay').count(),0);
   await page.evaluate(()=>{showBattleResult('1P WIN');showScreen('modeScreen');});assert.equal(await page.locator('.gameResultOverlay').count(),0,'screen exits cancel result ornament');
   await page.evaluate(()=>openTitles());
-  assert(await page.locator('#titleCollection').isVisible(),'collection opens with title screen');
+  assert(await page.locator('#titleCollection').isHidden(),'collection stays closed until a title slot is pressed');
+  assert(await page.locator('#playerCardStyleShop .playerCardStyleGrid').isVisible(),'card backgrounds are shown initially');
+  assert(await page.locator('#battleFramePanel .battleFrameGrid').isVisible(),'battle frames are shown initially');
+  await page.getByRole('button',{name:'称号1を変更',exact:true}).click();
+  assert(await page.locator('#titleCollection').isVisible(),'title slot opens the collection');
   assert.equal(await page.locator('#titleCollection .titleIndexMeta').count(),await page.evaluate(()=>TitleCatalog.items.length));
   assert.equal(await page.locator('#titleCollection .title-entry[data-title-id="s2_champion"]').getAttribute('aria-pressed'),'true');
   assert.equal(await page.locator('#titleCollection .title-entry[data-title-id="s2_champion"] .titleIndexCode').innerText(),'TOURNAMENT / SEASON 2');
@@ -57,9 +61,9 @@ const profileSource=fs.readFileSync(path.join(root,'player-profile.js'),'utf8').
   assert.equal(await page.locator('.playerCardPanel').getAttribute('data-card-style'),'obsidian');assert.equal(await page.locator('#playerCardTitles>.badge-item').count(),3);
   assert.deepEqual(await page.locator('.playerCardTechniqueCount').allTextContents(),['382回','241回','168回']);assert.equal(await page.locator('#playerCardTotalWins').innerText(),'128');assert.equal(await page.locator('#playerCardPeakRate').innerText(),'1,245');
   const bounds=await page.locator('.playerCardPanel').evaluate(n=>({overflow:n.scrollWidth>n.clientWidth+1}));assert(!bounds.overflow,'all profile data fit '+width);
-  await page.evaluate(()=>{shopFixture.wallet.balance=99;shopFixture.styles={owned:{},selected:''};return openTitles();});assert(await page.getByRole('button',{name:'黒曜プラチナ：100コインで購入して装備',exact:true}).isDisabled());
+  await page.evaluate(()=>{shopFixture.wallet.balance=99;shopFixture.styles={owned:{},selected:''};return openTitles();});assert(await page.locator('#titleCollection').isHidden(),'reopening resets the collection to closed');assert(await page.getByRole('button',{name:'黒曜プラチナ：100コインで購入して装備',exact:true}).isDisabled());
   await page.emulateMedia({reducedMotion:'reduce'});await page.evaluate(()=>{showScreen('battleScreen');showBattleResult('1P WIN');});assert.equal(await page.locator('.gameResultPanel').evaluate(n=>getComputedStyle(n).animationName),'none');
-  await page.evaluate(()=>openTitles());assert.equal(await page.locator('#titleCollection .title-entry').first().evaluate(n=>getComputedStyle(n,'::after').animationName),'none');
+  await page.evaluate(()=>openTitles());await page.getByRole('button',{name:'称号1を変更',exact:true}).click();assert.equal(await page.locator('#titleCollection .title-entry').first().evaluate(n=>getComputedStyle(n,'::after').animationName),'none');
   await page.waitForTimeout(100);assert.deepEqual(errors,[]);console.log('PASS '+width+'x'+height+': home, cartridges, result perspective/cancellation, 100-coin shop, all profile fields and reduced motion');
   await page.close();
  }
