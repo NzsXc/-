@@ -13,11 +13,11 @@
  function close(){open=false;panel.hidden=true;button.setAttribute('aria-expanded','false');}
  function render(){
   const heading=node('div','battle-inspector-heading');heading.append(node('h2','','両者の3技'));
-  const dismiss=node('button','battle-inspector-close','閉じる');dismiss.type='button';dismiss.onclick=()=>{close();button.focus();};heading.append(dismiss);
+  const dismiss=node('button','battle-inspector-close','閉じる');dismiss.type='button';dismiss.onclick=()=>{close();button.focus({preventScroll:true});};heading.append(dismiss);
   const columns=node('div','battle-inspector-columns');
   for(const side of [state.side,3-state.side]){
    const section=node('section','battle-inspector-player');
-   section.append(node('h3','',(side===state.side?'自分':'相手')+'：'+(state.names?.[side]||side+'P')));
+   section.append(node('h3','',(state.shared?side+'P':side===state.side?'自分':'相手')+'：'+(state.names?.[side]||side+'P')));
    const list=node('ol','battle-inspector-techniques');
    for(const tech of state.loadouts[side].slice(0,3)){
     const item=node('li','');item.append(node('strong','',tech.name),node('p','',tech.description));list.append(item);
@@ -26,8 +26,8 @@
   }
   panel.replaceChildren(heading,columns);
  }
- button.onclick=()=>{if(!state?.enabled)return;if(open){close();return;}render();open=true;panel.hidden=false;button.setAttribute('aria-expanded','true');};
- document.addEventListener('keydown',e=>{if(open&&e.key==='Escape'){e.preventDefault();close();button.focus();}});
+ button.onclick=()=>{if(!state?.enabled)return;if(open){close();return;}render();open=true;panel.hidden=false;button.setAttribute('aria-expanded','true');panel.querySelector('.battle-inspector-close').focus({preventScroll:true});};
+ document.addEventListener('keydown',e=>{if(open&&e.key==='Escape'){e.preventDefault();close();button.focus({preventScroll:true});}});
  function update(next){
   const enabled=!!next.enabled&&[1,2].includes(next.side)&&[1,2].every(p=>next.loadouts?.[p]?.length===3);
   state={...next,enabled};
@@ -39,7 +39,7 @@
   area.classList.add('has-battle-inspector');
   if(button.parentElement!==area)area.append(button);
   button.dataset.player=String(next.side);
-  const nextKey=JSON.stringify([next.side,next.loadouts,next.names]);if(open&&nextKey!==key)render();key=nextKey;
+  const nextKey=JSON.stringify([next.side,next.shared,next.loadouts,next.names]);if(open&&nextKey!==key)render();key=nextKey;
  }
  window.BattleInspector={update,close,isOpen:()=>open};
 })();

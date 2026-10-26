@@ -28,6 +28,9 @@ jobs:
           node --check game-motion-art.js
           node --check game-motion.js
           node --check titles-layout.js
+          node --check battle-inspector.js
+          node tests/battle-audio.test.cjs
+          node tests/audio-settings.test.cjs
           node tests/titles-release.test.cjs
           node tests/titles-season2-effects.test.cjs
           node tests/titles-profile-effects.test.cjs
@@ -42,5 +45,6 @@ jobs:
         run: FIREBASE_DATABASE_EMULATOR_JAR="$RUNNER_TEMP/database-emulator.jar" node tests/card-style-emulator.test.cjs
       - name: Verify production UI
         run: |
+          node tests/inspector-lobby-music.test.cjs
           node tests/game-motion-ui.test.cjs
           node tests/title-plate-layout.test.cjs
