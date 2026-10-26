@@ -5,7 +5,7 @@ const rules=JSON.parse(read('firebase-database.rules.json')).rules,roomRules={mo
 const calculate=vm.runInNewContext(read('free-calculator.js').replaceAll('export ','')+'\ncalculate');
 const base=()=>({turn:1,startedAt:0,hp1:9,hp2:9,gauge1:8,gauge2:8,seal1:false,seal2:false,enhance1:0,enhance2:0,momentum1:false,momentum2:false,ruin1:0,ruin2:0,last1:'',last2:'',misses1:0,misses2:0,...S.extraState()});
 const resolve=(a,b,extra={})=>plain(calculate({...base(),...extra},{1:a,2:b},3,roomRules));
-assert.deepEqual(S.definitions.slice(0,12).map(d=>d.cost),[12,8,8,12,12,8,12,12,16,8,6,6]);
+assert.deepEqual(S.definitions.slice(0,12).map(d=>d.cost),[12,8,10,12,12,10,12,12,16,8,6,6]);
 assert.deepEqual([resolve(15,17).damage1,resolve(15,17).damage2],[0,2]);
 assert.deepEqual([resolve(15,15).damage1,resolve(15,15).damage2],[0,0]);
 assert.equal(resolve(16,1).damage2,2);assert.equal(resolve(17,0).damage2,3);assert.equal(resolve(17,9).damage2,5);assert.equal(resolve(17,2).damage2,0);assert.equal(resolve(17,0).gauge2,9);

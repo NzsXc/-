@@ -2335,7 +2335,10 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
 ========================= -->
 
 <div id="tipScreen" class="screen"><nav class="tipNav" aria-label="お知らせのページ"><button id="tipNav0" class="tipNavButton tipContentsButton active" onclick="showTipPage(0)">目次</button><button id="tipNav1" class="tipNavButton" onclick="showTipPage(1)"><small>p1</small>お知らせ</button><button id="tipNav2" class="tipNavButton" onclick="showTipPage(2)"><small>p2</small>みんなの評価</button></nav><div class="tipViewport"><div class="tipPages" id="tipPages"><section id="tipPage0" class="tipPage"><div class="tipPageInner guidePage"><header class="guideHeader"><span class="guideEyebrow">NEWS</span><h1>目次</h1></header><div class="guideContents"><button onclick="showTipPage(1)"><span class="guidePageNumber">p1</span><strong>お知らせ</strong><span>→</span></button><button onclick="showTipPage(2)"><span class="guidePageNumber">p2</span><strong>みんなの評価</strong><span>→</span></button></div></div></section><section id="tipPage1" class="tipPage" aria-labelledby="tipNav1" aria-hidden="true" inert><div class="tipPageInner guidePage">
-        <header class="guideHeader"><span class="guideEyebrow">NEWS</span><h1>お知らせ</h1></header><article class="guideNotice"><header class="guideNoticeHeader"><time datetime="2026-10-24">2026/10/24</time><h2>新しい技を7種類追加</h2></header><p>フォーカス・コンバート・ブラスト・フリーズ・リファンド・ヴェノム・ドレインが登場。詳しい遊び方のp2で効果を確認できます。</p></article><article class="guideNotice" aria-labelledby="breachNoticeTitle"><header class="guideNoticeHeader"><time datetime="2026-10-24">2026/10/24</time><h2 id="breachNoticeTitle">ブリーチ下方修正</h2></header><div class="guideNoticeBody"><div class="guideNoticeVisual"><img class="guideArt" src="assets/actions/breach.png" alt="ブリーチの技アイコン" width="80" height="80"><svg class="guideNerfArrow" viewBox="0 0 32 40" role="img" aria-label="下向きの赤矢印"><path d="M10 2h12v21h8L16 38 2 23h8Z" fill="currentColor"/></svg></div><ul><li>ブロック貫通時のダメージ2→1</li></ul></div></article>
+        <header class="guideHeader"><span class="guideEyebrow">NEWS</span><h1>お知らせ</h1></header>
+        <article class="guideNotice" aria-labelledby="sExpansionNoticeTitle"><header class="guideNoticeHeader"><time datetime="2026-10-26">2026/10/26</time><h2 id="sExpansionNoticeTitle">S技5種類の追加効果を実装</h2></header><p>通常効果に加えて、以下のS追加効果が発動します。</p><ul><li>Sドレイン：Sゲージ8消費／敵の通常ゲージ−2</li><li>Sブラスト：Sゲージ10消費／攻撃力＋1</li><li>Sフリーズ：Sゲージ16消費／次の2ターン、敵を凍結</li><li>Sリファンド：Sゲージ4消費／両プレイヤーの通常ゲージ＋3</li><li>Sヴェノム：Sゲージ12消費／毒の効果中、敵の攻撃力−1（最低0）</li></ul></article>
+        <article class="guideNotice" aria-labelledby="sCostNoticeTitle"><header class="guideNoticeHeader"><time datetime="2026-10-26">2026/10/26</time><h2 id="sCostNoticeTitle">Sパニッシュ・Sモーメンタム下方修正</h2></header><div class="guideNoticeBody"><div class="guideNoticeVisual"><img class="guideArt" src="assets/actions/punish.png" alt="Sパニッシュの技アイコン" width="80" height="80"><img class="guideArt" src="assets/actions/momentum.png" alt="Sモーメンタムの技アイコン" width="80" height="80"><svg class="guideNerfArrow" viewBox="0 0 32 40" role="img" aria-label="下向きの赤矢印"><path d="M10 2h12v21h8L16 38 2 23h8Z" fill="currentColor"/></svg></div><ul><li>Sパニッシュ：Sゲージ消費8→10</li><li>Sモーメンタム：Sゲージ消費8→10</li></ul></div></article>
+        <article class="guideNotice"><header class="guideNoticeHeader"><time datetime="2026-10-24">2026/10/24</time><h2>新しい技を7種類追加</h2></header><p>フォーカス・コンバート・ブラスト・フリーズ・リファンド・ヴェノム・ドレインが登場。詳しい遊び方のp2で効果を確認できます。</p></article><article class="guideNotice" aria-labelledby="breachNoticeTitle"><header class="guideNoticeHeader"><time datetime="2026-10-24">2026/10/24</time><h2 id="breachNoticeTitle">ブリーチ下方修正</h2></header><div class="guideNoticeBody"><div class="guideNoticeVisual"><img class="guideArt" src="assets/actions/breach.png" alt="ブリーチの技アイコン" width="80" height="80"><svg class="guideNerfArrow" viewBox="0 0 32 40" role="img" aria-label="下向きの赤矢印"><path d="M10 2h12v21h8L16 38 2 23h8Z" fill="currentColor"/></svg></div><ul><li>ブロック貫通時のダメージ2→1</li></ul></div></article>
         <article class="guideNotice" aria-labelledby="foresightNoticeTitle">
           <header class="guideNoticeHeader"><time datetime="2026-10-22">2026/10/22</time><h2 id="foresightNoticeTitle">フォーサイト上方修正</h2></header>
           <div class="guideNoticeBody">
@@ -2748,15 +2751,15 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
 <script src="player-intro.js?v=account-update-20261024"></script>
 <script src="titles-client.js?v=battle-frames-20261025"></script>
 <script src="player-lightning.js?v=account-update-20261024"></script>
-<script src="combat-v4.js?v=account-update-20261024"></script>
+<script src="combat-v4.js?v=s-special-expansion-20261026"></script>
 <script src="bot-engine.js?v=account-update-20261024"></script>
 <script src="bot-client.js?v=freeze-reveal-20261026"></script>
 <script src="advanced/rules.js?v=account-update-20261024"></script>
-<script src="advanced/special-rules.js?v=account-update-20261024"></script>
-<script src="advanced/special.js?v=account-update-20261024"></script>
+<script src="advanced/special-rules.js?v=s-special-expansion-20261026"></script>
+<script src="advanced/special.js?v=s-special-expansion-20261026"></script>
 <script src="room-rules.js?v=account-update-20261024"></script>
 <script src="battle-timeline.js?v=account-update-20261024"></script>
-<script src="ranked-client.js?v=freeze-reveal-20261026"></script>
+<script src="ranked-client.js?v=s-special-expansion-20261026"></script>
 <script src="advanced/client.js?v=account-update-20261024"></script>
 <script src="advanced/cutin.js?v=account-update-20261024"></script>
 <script src="battle-inspector.js?v=account-update-20261024"></script>
@@ -2767,9 +2770,9 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
 <script type="module">
   import {createTitleService} from "./title-service.js?v=account-update-20261024";
   import {createBattleFrameService} from "./battle-frame-service.js?v=battle-frames-20261025";
-  import {createProtectedRooms} from "./protected-rooms.js?v=spectator-special-skills-20261025";
-  import {createFreeTransport} from "./free-transport.js?v=battle-frames-20261025";
-  import {createBattleHistory} from "./battle-history.js?v=account-update-20261024";
+  import {createProtectedRooms} from "./protected-rooms.js?v=s-special-expansion-20261026";
+  import {createFreeTransport} from "./free-transport.js?v=s-special-expansion-20261026";
+  import {createBattleHistory} from "./battle-history.js?v=s-special-expansion-20261026";
   import {createPlayerProfile} from "./player-profile.js?v=account-update-20261024";
   import {createHistoryScreen} from "./battle-history-client.js?v=account-update-20261024";
   import {createCommunityRatings} from "./community-ratings.js?v=account-update-20261024";
@@ -3576,7 +3579,7 @@ function renderSpectatorLoadouts(room){
       description.textContent=tech.description;
       item.append(summary,description);
       section.appendChild(item);
-      if(window.RoomRules?.hasSpecial(room.battle?.roomRules)&&[2,3].includes(room.battle?.special?.version)){
+      if(window.RoomRules?.hasSpecial(room.battle?.roomRules)&&[2,3,4].includes(room.battle?.special?.version)){
         const special=window.SpecialRules.actionData(window.BattleV4.specialId(Number(indices[index])),techniquePool,null,room.battle?.special?.version);
         if(special){
           const detail=document.createElement("details");detail.className="spectatorTechnique";
@@ -5231,7 +5234,7 @@ function isBattleActionAvailable(player,action,data){
   if(rankedActive&&window.SpecialGauge?.isSpecialView(rankedMatch)&&['charge','attack','block'].includes(action))return false;
   if(rankedActive)data=window.SpecialGauge?.battleData(rankedMatch,player,action,data)||data;
   if(rankedActive&&rankedMatch?.state?.specialSeal?.[player]>0&&(action.startsWith('tech')||action==='block'))return false;
-  if(data?.special&&(![2,3].includes(rankedMatch?.special?.version)||data.specialCost>(rankedMatch?.special?.gauge?.[player]||0)))return false;
+  if(data?.special&&(![2,3,4].includes(rankedMatch?.special?.version)||data.specialCost>(rankedMatch?.special?.gauge?.[player]||0)))return false;
   if(!data||!Number.isFinite(data.cost)||data.cost<0||data.cost>gauge[player])return false;
   if(blockSeal[player]&&(data.type==="block"||data.skill==="tech2"))return false;
   if(data.type==="block"&&lastAction[player]?.data?.type==="block")return false;

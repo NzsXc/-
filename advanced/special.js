@@ -82,14 +82,14 @@
    if(specialView){
     const index=m.loadouts?.[m.you]?.[slot],tech=techniquePool[index],definition=window.SpecialRules.definition(BattleV4.specialId(index),m.special?.version);if(!tech||!definition)continue;
     let box=button.querySelector('.specialMoveExplanation');if(!box){box=node('span','specialMoveExplanation');box.append(node('strong',''),node('span',''));button.append(box);}
-    box.querySelector('strong').textContent='S'+tech.name;box.querySelector('span').textContent=explanations[index]||'追加効果なし。';
+    box.querySelector('strong').textContent='S'+tech.name;box.querySelector('span').textContent=(m.special?.version>=4&&index>=12?definition.description:explanations[index]||'追加効果なし。');
     button.setAttribute('aria-label','S'+tech.name+'：Sゲージ追加消費'+definition.cost+'。'+definition.description);button.setAttribute('aria-disabled','true');
    }else{button.removeAttribute('aria-label');button.removeAttribute('aria-disabled');}
   }
   for(let slot=0;slot<3;slot++){
    const button=document.getElementById('p'+m.you+'tech'+slot),tech=typeof techniquePool==='undefined'?null:techniquePool[m.loadouts?.[m.you]?.[slot]];if(!button||!tech)continue;
    button.dataset.normalName=tech.name;button.classList.toggle('specialTechniqueAction',specialView);
-   const usable=typeof isBattleActionAvailable==='function'?isBattleActionAvailable(m.you,'tech'+slot):false,ready=[2,3].includes(m.special?.version);
+   const usable=typeof isBattleActionAvailable==='function'?isBattleActionAvailable(m.you,'tech'+slot):false,ready=[2,3,4].includes(m.special?.version);
    button.disabled=specialView&&!ready;button.classList.toggle('disabled',!usable||button.disabled);
    button.querySelector('.actionName').textContent=(specialView?'S':'')+tech.name;
    if(specialView){const d=window.SpecialRules.definition(BattleV4.specialId(m.loadouts[m.you][slot]),m.special?.version);button.title=ready?'Sゲージ追加消費+'+d.cost+' / '+d.description:'この対戦は旧スペシャル仕様です。新しく部屋を作るとS技を使えます。';
@@ -105,10 +105,10 @@
   const index=m.loadouts?.[player]?.[Number(action.slice(4))];return window.SpecialRules.actionData(BattleV4.specialId(index),techniquePool,null,m.special?.version);
  }
  function paintStatuses(m){
-  for(const side of [1,2])for(const [key,title,description]of [['specialSeal','Sアンチガード','装備技3つとブロックを封印'],['specialMomentum','次のモーメンタム+1','次のモーメンタムの攻撃力+1']]){
+  for(const side of [1,2])for(const [key,title,description]of [['specialSeal','Sアンチガード','装備技3つとブロックを封印'],['specialMomentum','次のモーメンタム+1','次のモーメンタムの攻撃力+1'],['weaken','攻撃力−1','Sヴェノム：毒の効果中、攻撃力−1（最低0）']]){
    const name=document.getElementById('player'+side+'Statuses')||document.querySelector('#player'+side+'Area .playerName');let el=document.getElementById('p'+side+key);
    if(!el&&name){el=node('span','enhanceIndicator blockSealIndicator');el.id='p'+side+key;name.append(el);}if(!el)continue;
-   const value=Number(m?.state?.[key]?.[side]||0);el.hidden=value<=0;el.textContent=title+(key==='specialSeal'?' '+value+'T':'');el.title=description;el.setAttribute('role','status');
+   const value=Number(m?.state?.[key]?.[side]||0);el.hidden=value<=0;el.textContent=title+(key==='specialSeal'||key==='weaken'?' '+value+'T':'');el.title=description;el.setAttribute('role','status');
   }
  }
  function place(m){

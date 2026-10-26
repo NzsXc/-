@@ -9,7 +9,7 @@ const plain=x=>JSON.parse(JSON.stringify(x));
 for(let a=0;a<41;a++)for(let b=0;b<41;b++){
  const state=base(),moves={1:a,2:b},result=catalog.resolve(calculate,state,moves,rules);
  for(const side of [1,2])for(const field of ['hp','gauge'])assert(Number.isFinite(result[field+side])&&result[field+side]>=0&&result[field+side]<=10,`${a}/${b} ${field}${side}`);
- assert.deepEqual(plain(result),plain(require('../combat-v4.js').calculate({...require('../combat-v4.js').extraState(),...state},moves,4,rules,{},true)),'preview uses live v4 balance');
+ assert.deepEqual(plain(result),plain(require('../combat-v4.js').calculate({...require('../combat-v4.js').extraState(),...state},moves,4,{...rules,specialVersion:special.MOVE_VERSION},{},true)),'preview uses live v4 balance');
 }
 const resolve=(a,b,extra={})=>catalog.resolve(calculate,{...base(),...extra},{1:a,2:b},rules);
 assert.equal(resolve(27,0,{gauge1:2}).gauge1,5);assert.equal(resolve(27,1,{gauge1:2}).gauge1,2);
@@ -18,5 +18,6 @@ assert.equal(resolve(29,0).damage2,3);assert.equal(resolve(29,2).damage2,0);
 assert.equal(resolve(30,2).frozen2,1);assert.equal(resolve(31,2).damage2,1);assert.equal(resolve(31,7).damage2,0);
 assert.equal(resolve(32,0).poison2,2);assert.equal(resolve(33,0).gauge1,7);assert.equal(resolve(33,2).gauge1,6);
 assert.equal(resolve(14,30).frozen1,1,'Mirror copies new effects');
-for(let i=34;i<41;i++){assert(catalog.action(i).special);assert.equal(resolve(i,0).specialCost1,0,'new S has no assigned balance');}
-console.log('PASS 1681 preview pairs, 729 unchanged existing pairs, seven new normal conditions and visual-only S entries');
+for(let i=34;i<41;i++){assert(catalog.action(i).special);assert.equal(resolve(i,0).specialCost1,[0,0,10,16,4,12,8][i-34],'new S cost matches live definition');}
+assert.equal(resolve(36,0).damage2,4);assert.equal(resolve(37,0).frozen2,2);assert.equal(resolve(39,0).weaken2,2);
+console.log('PASS 1681 preview pairs, 729 unchanged existing pairs, seven new normal conditions and five implemented S effects');

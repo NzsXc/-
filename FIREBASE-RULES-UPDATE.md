@@ -1,3 +1,11 @@
+## 2026/10/26：S技5つの追加効果・S消費変更
+
+このリポジトリの `firebase-database.rules.json` 全文を、Firebase Console → Realtime Database → ルールへ貼り付けて公開してください。GitHubへの反映だけではFirebase側のルールは更新されません。
+
+新しいスペシャル対戦は `rulesVersion:4`・`special.version:4`。Sドレイン8、Sブラスト10、Sフリーズ16、Sリファンド4、Sヴェノム12を追加し、Sパニッシュ・SモーメンタムはS消費10です。ルール側でも消費・装備・各効果・弱体の残りターンを検証します。既存のspecial.version 1〜3の対戦・履歴は旧仕様を保持します。
+
+`freeGames/_protocol/advanced/specialMovesV3` の読取権限で公開済みか確認します。対応ルールが未公開の場合、新しいスペシャル部屋の作成・参加時に更新を案内します。通常モードは引き続き利用できます。
+
 # Turn synchronization rules update
 
 ## スキル発動時の permission_denied（2026/10/24）

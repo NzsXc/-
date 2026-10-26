@@ -50,8 +50,8 @@ function core(s,moves,rulesVersion=2,roomRules={},powerBonus={},foresightShield=
  if(modern&&e2.special&&e2.skill==='tech5')out.foresight2=clamp(out.foresight2+3,0,maxGauge);
  out.healed1=e1.skill==='tech4'?clamp(s.hp1+(modern&&e1.special?2:1),0,maxHp):s.hp1;out.healed2=e2.skill==='tech4'?clamp(s.hp2+(modern&&e2.special?2:1),0,maxHp):s.hp2;
  out.basePower1=e1.power;out.basePower2=e2.power;
- out.power1=out.attack1?((e1.skill==='tech6'?(s.momentum1?2:1)+(modern?(s.specialMomentum1||0):0):(modern&&e1.special&&e1.skill==='tech3'?3:e1.power))+(s.enhance1>0?1:0)+(powerBonus[1]===1?1:0)):0;
- out.power2=out.attack2?((e2.skill==='tech6'?(s.momentum2?2:1)+(modern?(s.specialMomentum2||0):0):(modern&&e2.special&&e2.skill==='tech3'?3:e2.power))+(s.enhance2>0?1:0)+(powerBonus[2]===1?1:0)):0;
+ out.power1=out.attack1?Math.max(0,(e1.skill==='tech6'?(s.momentum1?2:1)+(modern?(s.specialMomentum1||0):0):(modern&&e1.special&&e1.skill==='tech3'?3:e1.power))+(s.enhance1>0?1:0)+(powerBonus[1]===1?1:0)-(roomRules.specialVersion>=4&&s.weaken1>0?1:0)):0;
+ out.power2=out.attack2?Math.max(0,(e2.skill==='tech6'?(s.momentum2?2:1)+(modern?(s.specialMomentum2||0):0):(modern&&e2.special&&e2.skill==='tech3'?3:e2.power))+(s.enhance2>0?1:0)+(powerBonus[2]===1?1:0)-(roomRules.specialVersion>=4&&s.weaken2>0?1:0)):0;
  out.pierce1=!!e1.pierce;out.pierce2=!!e2.pierce;
  let d1=(s.ruin1>0&&e1.type==='charge'?1:0),d2=(s.ruin2>0&&e2.type==='charge'?1:0);
  if(out.reflect1&&out.attack2)d2+=modern&&e1.special?2:1;if(out.reflect2&&out.attack1)d1+=modern&&e2.special?2:1;
@@ -91,9 +91,15 @@ const additions=[
 ].map(([name,cost,power,kind,description],i)=>({name,cost,power,kind,description:'ゲージ'+cost+'消費 / '+description,skill:'tech'+(i+13),type:power?'attack':kind,pierce:kind==='refund'}));
 const normalId=i=>i<12?i+3:i+15,specialId=i=>i<12?i+15:i+22,indexOf=id=>id>=34?id-22:id>=27?id-15:id>=15?id-15:id-3;
 const fields=['frozen1','frozen2','poison1','poison2'];
+const specialFields=['weaken1','weaken2'];
 ACTIONS.push(...additions,...additions.map(a=>({...a,special:true,specialCost:0})));
 ACTIONS[-1]={cost:0,power:0,type:'',skill:'',pierce:false};
-function calculate(state,moves,rulesVersion=4,rules={},bonus={},shield=true,catalog=ACTIONS){
+const expansionCosts={17:10,20:10,36:10,37:16,38:4,39:12,40:8};
+const expandedActions=ACTIONS.map((a,id)=>({...a,...(expansionCosts[id]!=null?{specialCost:expansionCosts[id]}:{}),...(id===36?{power:4}:{})}));
+expandedActions[-1]=ACTIONS[-1];
+function calculate(state,moves,rulesVersion=4,rules={},bonus={},shield=true,catalog=null){
+ const expanded=rules.specialVersion>=4;
+ catalog||=expanded?expandedActions:ACTIONS;
  const picked={...moves};for(const p of [1,2])if(state['frozen'+p]>0)picked[p]=-1;
  const out=core(state,picked,3,rules,bonus,shield,catalog),raw={},eff={};
  for(const p of [1,2])raw[p]=catalog[out['action'+p]]||ACTIONS[-1];
@@ -102,23 +108,27 @@ function calculate(state,moves,rulesVersion=4,rules={},bonus={},shield=true,cata
   const q=3-p,e=eff[p];out['baseAction'+p]=out['action'+p]>=34?out['action'+p]-7:out['action'+p]>=27?out['action'+p]:out['action'+p]>=15?out['action'+p]-12:out['action'+p];
   out['effectBase'+p]=out['effective'+p]>=34?out['effective'+p]-7:out['effective'+p]>=27?out['effective'+p]:out['effective'+p]>=15?out['effective'+p]-12:out['effective'+p];
   out['inputFrozen'+p]=state['frozen'+p]||0;out['inputPoison'+p]=state['poison'+p]||0;
+  if(expanded)out['inputWeaken'+p]=state['weaken'+p]||0;
   if(eff[q].skill==='tech1'&&!eff[q].special&&out['blocking'+p]&&!(shield&&e.skill==='tech5'))out['damage'+p]=Math.max(0,out['damage'+p]-1);
-  out['hit'+p]=!!(out['attack'+p]&&!out['reflect'+q]&&(out['attack'+q]?eff[p].special&&eff[p].skill==='tech1'&&!(eff[q].special&&eff[q].skill==='tech1')||(!(eff[q].special&&eff[q].skill==='tech1')||eff[p].special&&eff[p].skill==='tech1')&&out['power'+p]>out['power'+q]:!out['blocking'+q]||out['pierce'+p]&&!(shield&&eff[q].skill==='tech5')));
+  out['hit'+p]=!!(out['attack'+p]&&out['power'+p]>0&&!out['reflect'+q]&&(out['attack'+q]?eff[p].special&&eff[p].skill==='tech1'&&!(eff[q].special&&eff[q].skill==='tech1')||(!(eff[q].special&&eff[q].skill==='tech1')||eff[p].special&&eff[p].skill==='tech1')&&out['power'+p]>out['power'+q]:!out['blocking'+q]||out['pierce'+p]&&!(shield&&eff[q].skill==='tech5')));
  }
+ for(const p of [1,2])if(bonus['invincible'+(3-p)])out['hit'+p]=false;
  for(const p of [1,2]){
-  const q=3-p,e=eff[p],enemy=eff[q];if(bonus['invincible'+q])out['hit'+p]=false;
+  const q=3-p,e=eff[p],enemy=eff[q];
   if(state['poison'+p]>0)out['damage'+p]++;
   if(bonus['invincible'+p])out['damage'+p]=e.skill==='tech7'?2:0;
   out['poison'+p]=enemy.kind==='venom'?2:Math.max(0,(state['poison'+p]||0)-1);
-  out['frozen'+p]=enemy.kind==='freeze'?1:0;
+  out['frozen'+p]=enemy.kind==='freeze'?(expanded&&enemy.special?2:1):Math.max(0,(state['frozen'+p]||0)-1);
+  if(expanded){out['weaken'+p]=enemy.kind==='venom'?(enemy.special?2:0):Math.max(0,(state['weaken'+p]||0)-1);out['specialDrain'+p]=e.special&&e.kind==='drain'?2:0;}
   out['gain'+p]=e.kind==='focus'&&!out['hit'+q]?3:e.kind==='convert'&&out['hit'+q]?5:e.kind==='refund'&&out['hit'+p]?3:0;
   out['drained'+p]=e.kind==='drain'&&out['hit'+p]?Math.min(1,out['gauge'+q]):0;
  }
  const gauges={1:out.gauge1,2:out.gauge2};
- for(const p of [1,2]){out['normalGauge'+p]=gauges[p];out['gauge'+p]=clamp(gauges[p]+out['gain'+p]+out['drained'+p]-out['drained'+(3-p)],0,rules.maxGauge??10);out['hp'+p]=out['misses'+p]>=2?0:clamp(out['healed'+p]-out['damage'+p],0,rules.hp??10);out['seal'+p]=out['sealed'+p]&&out['gauge'+p]<7;}
+ if(expanded)out.specialRefund=[1,2].reduce((sum,p)=>sum+(eff[p].special&&eff[p].kind==='refund'?3:0),0);
+ for(const p of [1,2]){out['normalGauge'+p]=gauges[p];out['gauge'+p]=clamp(gauges[p]+out['gain'+p]+out['drained'+p]-out['drained'+(3-p)]+(expanded?out.specialRefund-out['specialDrain'+(3-p)]:0),0,rules.maxGauge??10);out['hp'+p]=out['misses'+p]>=2?0:clamp(out['healed'+p]-out['damage'+p],0,rules.hp??10);out['seal'+p]=out['sealed'+p]&&out['gauge'+p]<7;}
  return out;
 }
-const api={additions,normalId,specialId,indexOf,fields,extraState:()=>Object.fromEntries(fields.map(k=>[k,0])),calculate};
+const api={additions,normalId,specialId,indexOf,fields,specialFields,extraState:()=>Object.fromEntries(fields.map(k=>[k,0])),extraSpecialState:()=>Object.fromEntries(specialFields.map(k=>[k,0])),calculate};
 if(typeof window!=='undefined')window.BattleV4=api;if(typeof module!=='undefined')module.exports=api;else globalThis.BattleV4=api;
 
 })();

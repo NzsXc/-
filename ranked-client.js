@@ -180,7 +180,7 @@ function rankedReveal(m,previous){
  rankedVisualCountdownEnd=countdownEnd;
  rankedVisualRevealAt=revealAt;
  const valid=()=>rankedActive&&token===rankedVisualToken;
- const action=p=>m.reveal.actions[p]===-1?{name:'凍結',type:'',cost:0,power:0,skill:''}:m.reveal.actions[p]<3?basicActions[['charge','attack','block'][m.reveal.actions[p]]]:window.SpecialRules.actionData(m.reveal.actions[p],techniquePool);
+ const action=p=>m.reveal.actions[p]===-1?{name:'凍結',type:'',cost:0,power:0,skill:''}:m.reveal.actions[p]<3?basicActions[['charge','attack','block'][m.reveal.actions[p]]]:window.SpecialRules.actionData(m.reveal.actions[p],techniquePool,null,m.special?.version);
  const a1=action(1),a2=action(2);
  document.getElementById('resultMessage').textContent='';
  locked[1]=true;locked[2]=true;

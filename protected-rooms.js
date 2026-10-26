@@ -13,6 +13,7 @@ export function createProtectedRooms(db,auth,transport,history){
   if(window.RoomRules.hasSpecial(rules)&&!await transport.supportsSpecialGauge?.())throw Error('スペシャルゲージを利用するには、対戦ルールを更新してください。');
   if(rules.mode==='advanced'&&window.RoomRules.hasSpecial(rules)&&!await transport.supportsSpecialHp?.())throw Error('HP10のスペシャル対戦を利用するには、Firebaseの対戦ルールを更新・公開してください。');
   if(window.RoomRules.hasSpecial(rules)&&!await transport.supportsSpecialMoves?.())throw Error('S技を利用するには、Firebaseの対戦ルールを更新・公開してください。');
+  if(window.RoomRules.hasSpecial(rules)&&!await transport.supportsSpecialExpansion?.())throw Error('新しいS技を利用するには、Firebaseの対戦ルールを更新・公開してください。');
   const roomPatch=rules.mode!=='standard'?{roomRules:rules}:{};
   const id=push(ref(db,'friendRooms')).key;await set(ref(db,'friendRooms/'+id),{host:who,name:account.name,createdAt:serverTimestamp(),heartbeat:serverTimestamp(),game:'',...roomPatch});hostRoom=id;
   disconnect=onDisconnect(ref(db,'friendRooms/'+id));await disconnect.remove();
@@ -43,13 +44,13 @@ export function createProtectedRooms(db,auth,transport,history){
   const stop=()=>{cancelled=true;clearTimeout(timer);timer=null;unsubscribe();if(stopHostWatch===stop)stopHostWatch=null;};
   stopHostWatch=stop;return stop;
  }
- const specialStates=s=>Object.fromEntries(['specialSeal','specialRuin','specialMomentum'].map(k=>[k,{1:s[k+'1']||0,2:s[k+'2']||0}]));
+ const specialStates=s=>Object.fromEntries(['specialSeal','specialRuin','specialMomentum','weaken'].map(k=>[k,{1:s[k+'1']||0,2:s[k+'2']||0}]));
  const publicState=s=>({turn:s.turn,skillsExhausted:!!s.skillsExhausted,hp:{1:s.hp1,2:s.hp2},gauge:{1:s.gauge1,2:s.gauge2},enhanceTurns:{1:s.enhance1,2:s.enhance2},blockSeal:{1:!!s.seal1,2:!!s.seal2},ruinTurns:{1:s.ruin1||0,2:s.ruin2||0},momentumBonus:{1:!!s.momentum1,2:!!s.momentum2},frozen:{1:s.frozen1||0,2:s.frozen2||0},poison:{1:s.poison1||0,2:s.poison2||0},...specialStates(s),lastAction:{1:s.last1?{data:{type:s.last1}}:null,2:s.last2?{data:{type:s.last2}}:null}});
  const revealedAction=(id,special)=>id<3?window.BattleAI.ACTIONS[id]:window.SpecialRules.actionData(id,window.BattleAI.techniques,null,special?.version);
  function beforeAction(reveal,state){
   if(![1,2].every(p=>Number.isFinite(reveal['inputHp'+p])&&Number.isFinite(reveal['inputGauge'+p])))return null;
   const before={...state,turn:reveal.turn-1};
-  for(const p of [1,2])for(const field of ['hp','gauge','seal','enhance','momentum','ruin','last','specialSeal','specialRuin','specialMomentum','frozen','poison']){
+  for(const p of [1,2])for(const field of ['hp','gauge','seal','enhance','momentum','ruin','last','specialSeal','specialRuin','specialMomentum','frozen','poison','weaken']){
    const value=reveal['input'+field[0].toUpperCase()+field.slice(1)+p];if(value!=null)before[field+p]=value;
   }
   return publicState(before);

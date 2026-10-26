@@ -8,6 +8,13 @@ export function createAdvancedProtocol({read,writeUpdate,now,serverTimestamp}){
   });return customSupported;
  }
  let specialMovesSupported=null;
+ let specialExpansionSupported=null;
+ function supportsSpecialExpansion(){
+  if(!specialExpansionSupported)specialExpansionSupported=read('freeGames/_protocol/advanced/specialMovesV3').then(()=>true).catch(error=>{
+   if(/permission.?denied/i.test(String(error.code||'')+' '+error.message))return false;
+   specialExpansionSupported=null;throw error;
+  });return specialExpansionSupported;
+ }
  function supportsSpecialMoves(){
   if(!specialMovesSupported)specialMovesSupported=read('freeGames/_protocol/advanced/specialMovesV2').then(()=>true).catch(error=>{
    if(/permission.?denied/i.test(String(error.code||'')+' '+error.message))return false;
@@ -67,5 +74,5 @@ export function createAdvancedProtocol({read,writeUpdate,now,serverTimestamp}){
   try{await writeUpdate(path,{['advanced/uses/'+me+'/'+(count+1)]:receipt,['advanced/current/'+me]:current});}
   catch(error){const accepted=await read(path+'/advanced/current/'+me);if(accepted?.id!==skill||accepted.turn!==turn)throw error;}
  }
- return {supportsCustomOptions,supportsSpecialMoves,supports,supportsOptions,supportsSpecialGauge,supportsSpecialHp,snapshot,loadoutPatch,activate};
+ return {supportsCustomOptions,supportsSpecialExpansion,supportsSpecialMoves,supports,supportsOptions,supportsSpecialGauge,supportsSpecialHp,snapshot,loadoutPatch,activate};
 }

@@ -14,7 +14,7 @@ function paintResources(state,special=30){
   const side=i+1,hp=state['hp'+side],gauge=state['gauge'+side];
   card.querySelector('.hpValue').textContent=hp+' / 10';card.querySelector('.hpBar i').style.width=hp*10+'%';
   card.querySelector('.gaugeValue').textContent=gauge+' / 10';card.querySelector('.gaugeBar i').style.width=gauge*10+'%';
-  card.querySelector('.previewCardStatus').textContent=state['frozen'+side]?'次のターン：凍結':state['poison'+side]?'毒 '+state['poison'+side]+'T':'';
+  card.querySelector('.previewCardStatus').textContent=state['frozen'+side]?'凍結 '+state['frozen'+side]+'T':state['poison'+side]?'毒 '+state['poison'+side]+'T'+(state['weaken'+side]?' / 攻撃力−1':''):'';
  });
  $('previewSelf').querySelector('.sValue').textContent=special+' / 30';$('previewSelf').querySelector('.sBar i').style.width=special/30*100+'%';
 }
@@ -24,7 +24,7 @@ function paintEnemy(){
 }
 function paintSelection(){
  const move=current(),isSpecial=!!move.special;
- for(const button of $('moveLibrary').children){const i=Number(button.dataset.index),a=techniques[i];button.setAttribute('aria-pressed',String(basicId===null&&i===selected));button.querySelector('.moveChoiceName').textContent=(specialView?'S':'')+a.name;button.querySelector('small').textContent=specialView?(i<12?SpecialRules.definition(i+15).cost:'S'):a.cost;}
+ for(const button of $('moveLibrary').children){const i=Number(button.dataset.index),a=techniques[i];button.setAttribute('aria-pressed',String(basicId===null&&i===selected));button.querySelector('.moveChoiceName').textContent=(specialView?'S':'')+a.name;button.querySelector('small').textContent=specialView?SpecialRules.definition(a.specialId).cost:a.cost;}
  for(const button of $('previewBasics').children)button.setAttribute('aria-pressed',String(Number(button.dataset.action)===basicId));
  $('normalMode').setAttribute('aria-pressed',String(!specialView));$('specialMode').setAttribute('aria-pressed',String(specialView));
  $('moveTitle').textContent=move.name;$('fireSpecial').querySelector('.actionName').textContent=move.name;
@@ -48,7 +48,7 @@ function fire(){
  if(busy)return;
  const own=current(),enemy=catalog.action(Number($('opponentAction').value)),before=initial();
  const result=catalog.resolve(calculate,before,{1:currentId(),2:Number($('opponentAction').value)},rules);
- const special=SpecialRules.advance({...SpecialRules.initial(3),gauge:{1:30,2:30}},result);
+ const special=SpecialRules.advance({...SpecialRules.initial(SpecialRules.MOVE_VERSION),gauge:{1:30,2:30}},result);
  const board=s=>({hp:{1:s.hp1,2:s.hp2},gauge:{1:s.gauge1,2:s.gauge2}}),actions=[own,enemy],damage=[result.damage1,result.damage2];
  const plan=BattleEffects.createPlan(actions,{damage});
  const view=BattleResources.begin({before:{...board(before),special:{1:30,2:30}},after:{...board(result),special:special.gauge},actions:plan.players.map(p=>p.action),rawActions:actions,damage,impacts:plan.events,outcome:result});
