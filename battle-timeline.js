@@ -18,7 +18,7 @@
    const healed=finite('healed'+p,before.hp[p]);
    if(healed!==before.hp[p])jobs.push({at:140,run:()=>{view.hp[p]=healed;}});
    const hit=impacts.find(e=>e.side===p);
-   if(damage[p-1]>0)jobs.push({at:hit?.at??440,run:()=>{view.hp[p]=Math.max(0,view.hp[p]-damage[p-1]);if(view.special)view.special[p]=Math.min(30,view.special[p]+damage[p-1]);}});
+   if(damage[p-1]>0)jobs.push({at:hit?.at??440,run:()=>{view.hp[p]=Math.max(0,view.hp[p]-damage[p-1]+finite('recoveredAttack'+p,0));if(view.special)view.special[p]=Math.min(30,view.special[p]+damage[p-1]);}});
    if(view.special&&a.type==='charge')jobs.push({at:300,run:()=>{view.special[p]=Math.min(30,view.special[p]+1);}});
    if(view.special&&outcome['specialGain'+p])jobs.push({at:420,run:()=>{view.special[p]=Math.min(30,view.special[p]+outcome['specialGain'+p]);}});
    const stolen=finite('stolen'+p,0);

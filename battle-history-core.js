@@ -51,7 +51,7 @@ export function replayHistory(h){
  if(h.rulesVersion!=null&&![2,3,4].includes(h.rulesVersion))throw Error('この戦闘ルールの履歴には対応していません');
  const current=(...args)=>calculateV2(args[0],args[1],args[2],{...args[3],specialVersion:h.special?.version||0},args[4]||{},h.foresightShield===true);
  const calculate=h.rulesVersion>=2?current:calculateV1;
- let state={...(h.special?.version>=4?window.BattleV4.extraSpecialState():{}),...(h.rulesVersion>=4?window.BattleV4.extraState():{}),...initialReplayState(h.roomRules),...(h.rulesVersion>=3?window.SpecialRules.extraState():{})},special=[1,2,3,4].includes(h.special?.version)?window.SpecialRules.initial(h.special.version):null;const turns=[];
+ let state={...(h.special?.version>=4?window.BattleV4.extraSpecialState():{}),...(h.rulesVersion>=4?window.BattleV4.extraState():{}),...initialReplayState(h.roomRules),...(h.rulesVersion>=3?window.SpecialRules.extraState():{})},special=[1,2,3,4,5].includes(h.special?.version)?window.SpecialRules.initial(h.special.version):null;const turns=[];
  for(let turn=1;turn<=h.turnCount;turn++){
   const moves=h.moves?.[turn];
   if(![1,2].every(p=>Number.isInteger(moves?.[p])&&moves[p]>=(h.rulesVersion===4?-1:0)&&moves[p]<=(h.rulesVersion===4?40:h.rulesVersion===3?26:14)))throw Error('バトルデータが不足しています');

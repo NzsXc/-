@@ -14,6 +14,7 @@ export function createProtectedRooms(db,auth,transport,history){
   if(rules.mode==='advanced'&&window.RoomRules.hasSpecial(rules)&&!await transport.supportsSpecialHp?.())throw Error('HP10のスペシャル対戦を利用するには、Firebaseの対戦ルールを更新・公開してください。');
   if(window.RoomRules.hasSpecial(rules)&&!await transport.supportsSpecialMoves?.())throw Error('S技を利用するには、Firebaseの対戦ルールを更新・公開してください。');
   if(window.RoomRules.hasSpecial(rules)&&!await transport.supportsSpecialExpansion?.())throw Error('新しいS技を利用するには、Firebaseの対戦ルールを更新・公開してください。');
+  if(window.RoomRules.hasSpecial(rules)&&!await transport.supportsSpecialCompletion?.())throw Error('Sフォーカス・Sコンバートを利用するには、Firebaseの対戦ルールを更新・公開してください。');
   const roomPatch=rules.mode!=='standard'?{roomRules:rules}:{};
   const id=push(ref(db,'friendRooms')).key;await set(ref(db,'friendRooms/'+id),{host:who,name:account.name,createdAt:serverTimestamp(),heartbeat:serverTimestamp(),game:'',...roomPatch});hostRoom=id;
   disconnect=onDisconnect(ref(db,'friendRooms/'+id));await disconnect.remove();
@@ -86,7 +87,7 @@ export function createProtectedRooms(db,auth,transport,history){
   if(!settled&&reveal?.turn===s.turn&&s.turn>1&&now()<countdownEnd+3000){
    battle.phase='effect';battle.resolvedTurn=reveal.turn-1;battle.countdownEndsAt=countdownEnd;battle.revealAt=countdownEnd+500;battle.effectStartAt=countdownEnd+1800;
    battle.damageTo1=reveal.damage1;battle.damageTo2=reveal.damage2;battle.before=beforeAction(reveal,rawState);
-   battle.resources={foresightShield:foresightShield===true,...(battle.before?{before:{hp:battle.before.hp,gauge:battle.before.gauge}}:{}),after:{hp:{1:reveal.hp1,2:reveal.hp2},gauge:{1:reveal.gauge1,2:reveal.gauge2},...(special?{special:special.gauge}:{})},outcome:Object.fromEntries(['paid','charged','foresight','healed','rampage','stolen','specialGain'].flatMap(key=>[1,2].filter(p=>Number.isFinite(reveal[key+p])).map(p=>[key+p,reveal[key+p]])))};
+   battle.resources={foresightShield:foresightShield===true,...(battle.before?{before:{hp:battle.before.hp,gauge:battle.before.gauge}}:{}),after:{hp:{1:reveal.hp1,2:reveal.hp2},gauge:{1:reveal.gauge1,2:reveal.gauge2},...(special?{special:special.gauge}:{})},outcome:Object.fromEntries(['paid','charged','foresight','healed','rampage','stolen','specialGain','recoveredAttack'].flatMap(key=>[1,2].filter(p=>Number.isFinite(reveal[key+p])).map(p=>[key+p,reveal[key+p]])))};
    battle.actions={1:{id:reveal.action1,data:revealedAction(reveal.action1,special)},2:{id:reveal.action2,data:revealedAction(reveal.action2,special)}};
   }
   if(skillMatch)battle.skillMatch=skillMatch;

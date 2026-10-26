@@ -89,7 +89,7 @@
   for(let slot=0;slot<3;slot++){
    const button=document.getElementById('p'+m.you+'tech'+slot),tech=typeof techniquePool==='undefined'?null:techniquePool[m.loadouts?.[m.you]?.[slot]];if(!button||!tech)continue;
    button.dataset.normalName=tech.name;button.classList.toggle('specialTechniqueAction',specialView);
-   const usable=typeof isBattleActionAvailable==='function'?isBattleActionAvailable(m.you,'tech'+slot):false,ready=[2,3,4].includes(m.special?.version);
+   const usable=typeof isBattleActionAvailable==='function'?isBattleActionAvailable(m.you,'tech'+slot):false,ready=[2,3,4,5].includes(m.special?.version);
    button.disabled=specialView&&!ready;button.classList.toggle('disabled',!usable||button.disabled);
    button.querySelector('.actionName').textContent=(specialView?'S':'')+tech.name;
    if(specialView){const d=window.SpecialRules.definition(BattleV4.specialId(m.loadouts[m.you][slot]),m.special?.version);button.title=ready?'Sゲージ追加消費+'+d.cost+' / '+d.description:'この対戦は旧スペシャル仕様です。新しく部屋を作るとS技を使えます。';

@@ -18,6 +18,6 @@ assert.equal(resolve(29,0).damage2,3);assert.equal(resolve(29,2).damage2,0);
 assert.equal(resolve(30,2).frozen2,1);assert.equal(resolve(31,2).damage2,1);assert.equal(resolve(31,7).damage2,0);
 assert.equal(resolve(32,0).poison2,2);assert.equal(resolve(33,0).gauge1,7);assert.equal(resolve(33,2).gauge1,6);
 assert.equal(resolve(14,30).frozen1,1,'Mirror copies new effects');
-for(let i=34;i<41;i++){assert(catalog.action(i).special);assert.equal(resolve(i,0).specialCost1,[0,0,10,16,4,12,8][i-34],'new S cost matches live definition');}
+for(let i=34;i<41;i++){assert(catalog.action(i).special);assert.equal(resolve(i,0).specialCost1,[6,8,10,16,4,12,8][i-34],'new S cost matches live definition');}
 assert.equal(resolve(36,0).damage2,4);assert.equal(resolve(37,0).frozen2,2);assert.equal(resolve(39,0).weaken2,2);
 console.log('PASS 1681 preview pairs, 729 unchanged existing pairs, seven new normal conditions and five implemented S effects');

@@ -97,9 +97,12 @@ ACTIONS[-1]={cost:0,power:0,type:'',skill:'',pierce:false};
 const expansionCosts={17:10,20:10,36:10,37:16,38:4,39:12,40:8};
 const expandedActions=ACTIONS.map((a,id)=>({...a,...(expansionCosts[id]!=null?{specialCost:expansionCosts[id]}:{}),...(id===36?{power:4}:{})}));
 expandedActions[-1]=ACTIONS[-1];
+const completedActions=expandedActions.map((a,id)=>({...a,...(id===34?{specialCost:6}:id===35?{specialCost:8}:{})}));
+completedActions[-1]=ACTIONS[-1];
 function calculate(state,moves,rulesVersion=4,rules={},bonus={},shield=true,catalog=null){
  const expanded=rules.specialVersion>=4;
- catalog||=expanded?expandedActions:ACTIONS;
+ const completed=rules.specialVersion>=5;
+ catalog||=completed?completedActions:expanded?expandedActions:ACTIONS;
  const picked={...moves};for(const p of [1,2])if(state['frozen'+p]>0)picked[p]=-1;
  const out=core(state,picked,3,rules,bonus,shield,catalog),raw={},eff={};
  for(const p of [1,2])raw[p]=catalog[out['action'+p]]||ACTIONS[-1];
@@ -120,12 +123,13 @@ function calculate(state,moves,rulesVersion=4,rules={},bonus={},shield=true,cata
   out['poison'+p]=enemy.kind==='venom'?2:Math.max(0,(state['poison'+p]||0)-1);
   out['frozen'+p]=enemy.kind==='freeze'?(expanded&&enemy.special?2:1):Math.max(0,(state['frozen'+p]||0)-1);
   if(expanded){out['weaken'+p]=enemy.kind==='venom'?(enemy.special?2:0):Math.max(0,(state['weaken'+p]||0)-1);out['specialDrain'+p]=e.special&&e.kind==='drain'?2:0;}
-  out['gain'+p]=e.kind==='focus'&&!out['hit'+q]?3:e.kind==='convert'&&out['hit'+q]?5:e.kind==='refund'&&out['hit'+p]?3:0;
+  out['gain'+p]=e.kind==='focus'&&!out['hit'+q]?(completed&&e.special?5:3):e.kind==='convert'&&out['hit'+q]?5:e.kind==='refund'&&out['hit'+p]?3:0;
+  if(completed)out['recoveredAttack'+p]=e.special&&e.kind==='convert'&&out['hit'+q]?out['power'+q]:0;
   out['drained'+p]=e.kind==='drain'&&out['hit'+p]?Math.min(1,out['gauge'+q]):0;
  }
  const gauges={1:out.gauge1,2:out.gauge2};
  if(expanded)out.specialRefund=[1,2].reduce((sum,p)=>sum+(eff[p].special&&eff[p].kind==='refund'?3:0),0);
- for(const p of [1,2]){out['normalGauge'+p]=gauges[p];out['gauge'+p]=clamp(gauges[p]+out['gain'+p]+out['drained'+p]-out['drained'+(3-p)]+(expanded?out.specialRefund-out['specialDrain'+(3-p)]:0),0,rules.maxGauge??10);out['hp'+p]=out['misses'+p]>=2?0:clamp(out['healed'+p]-out['damage'+p],0,rules.hp??10);out['seal'+p]=out['sealed'+p]&&out['gauge'+p]<7;}
+ for(const p of [1,2]){out['normalGauge'+p]=gauges[p];out['gauge'+p]=clamp(gauges[p]+out['gain'+p]+out['drained'+p]-out['drained'+(3-p)]+(expanded?out.specialRefund-out['specialDrain'+(3-p)]:0),0,rules.maxGauge??10);out['hp'+p]=out['misses'+p]>=2?0:clamp(out['healed'+p]-out['damage'+p]+(completed?out['recoveredAttack'+p]:0),0,rules.hp??10);out['seal'+p]=out['sealed'+p]&&out['gauge'+p]<7;}
  return out;
 }
 const api={additions,normalId,specialId,indexOf,fields,specialFields,extraState:()=>Object.fromEntries(fields.map(k=>[k,0])),extraSpecialState:()=>Object.fromEntries(specialFields.map(k=>[k,0])),calculate};

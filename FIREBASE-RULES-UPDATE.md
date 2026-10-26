@@ -1,3 +1,11 @@
+## 2026/10/26：S技7種類・光沢購入を追加更新
+
+`firebase-database.rules.json` 全文を再度Realtime Databaseのルールへ公開してください。Sフォーカス（S消費6）とSコンバート（S消費8）を含む新しい対戦は `special.version:5` です。version 4以前の対戦・履歴は当時の計算を保持します。
+
+名前色は100コイン、光沢は名前色の購入後に追加200コインで解放します。コインの保存ルールも200コインに更新しています。購入済みの権利は保持します。
+
+新規S部屋は `freeGames/_protocol/advanced/specialMovesV4` の読取で対応済みか確認します。GitHubへの反映だけではFirebase側のルールは更新されません。
+
 ## 2026/10/26：S技5つの追加効果・S消費変更
 
 このリポジトリの `firebase-database.rules.json` 全文を、Firebase Console → Realtime Database → ルールへ貼り付けて公開してください。GitHubへの反映だけではFirebase側のルールは更新されません。
