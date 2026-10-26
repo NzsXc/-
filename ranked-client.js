@@ -113,7 +113,7 @@ function rankedScheduleAuto(delay){
 }
 function rankedAutoSelect(){
  const m=rankedMatch,localNow=performance.now();
- if(!rankedActive||!m?.state||m.closed||m.ownAction!=null||rankedTurnClockKey!==m.id+':'+m.state.turn||localNow<rankedTurnDeadline)return;
+ if(!rankedActive||!m?.state||m.closed||m.state.frozen?.[m.you]>0||m.ownAction!=null||rankedTurnClockKey!==m.id+':'+m.state.turn||localNow<rankedTurnDeadline)return;
  if(window.AdvancedRules.isAdvanced(m.roomRules)&&m.skillWindow&&m.serverNow<(m.skillWindow.confirmAt??m.skillWindow.endAt)){rankedScheduleAuto(1000);return;}
  if(rankedAnimating||rankedSending||localNow<rankedAutoRetryAt){rankedScheduleAuto(1000);return;}
  rankedAutoRetryAt=localNow+1000;
@@ -129,6 +129,7 @@ function rankedTick(){
  if(skillConfirmed&&!rankedAnimating&&!m.closed&&m.skillResult&&now>=m.opensAt&&m.state!==m.skillResult){m.state=m.skillResult;rankedPaintState(m);}
  if(!skillConfirmed&&now>=skillConfirmedAt&&!rankedSending&&rankedTick.skillBoundary!==m.id+':'+m.state.turn){rankedTick.skillBoundary=m.id+':'+m.state.turn;rankedRefresh(rankedEpoch);}
  const turnOpen=skillConfirmed&&!!m.state&&rankedTurnClockKey===m.id+':'+m.state.turn&&localNow>=rankedTurnOpensAt;
+ const frozen=m.state?.frozen?.[m.you]>0;
  const inputExpired=turnOpen&&localNow>=rankedTurnDeadline;
  if(inputExpired&&!m.closed&&!rankedAnimating&&m.ownAction==null&&!rankedSending&&localNow>=rankedAutoRetryAt)rankedAutoSelect();
  const turnRemaining=turnOpen?Math.max(0,Math.ceil((rankedTurnDeadline-localNow)/1000)):10;
@@ -144,6 +145,10 @@ function rankedTick(){
    const el=document.getElementById('countdown');
    if(el&&el.textContent!==text){el.className='';void el.offsetWidth;el.className=left>0?'countPulse':text?'battleCall':'';el.textContent=text;}
   }else if(!m.closed&&!rankedAnimating)put('countdown','');
+ }else if(frozen){
+  stopCountdownRing();stopTurnCountdownSE();
+  put('countdown','');
+  put('resultMessage','相手の行動を待っています');
  }else{
   const countdownEl=document.getElementById('countdown');
   const reconnectExpired=now>=m.deadline+5000;
@@ -154,7 +159,7 @@ function rankedTick(){
   if(inputExpired){stopCountdownRing();stopTurnCountdownSE();put('resultMessage',rankedSending?'自動選択を送信中…':m.ownAction!=null?(reconnectExpired?'相手の復帰を待っています':'相手の行動を待っています…'):'自動選択を再送しています…');}
   else{ring?.classList.add('active','step');setCountdownRingStep(10-turnRemaining);startTurnCountdownSE();}
  }
- if(m.state){locked[m.you]=rankedAnimating||m.closed||rankedSending||m.ownAction!==null||!turnOpen||inputExpired;document.getElementById('player'+m.you+'Area').classList.toggle('locked',locked[m.you]);}
+ if(m.state){locked[m.you]=frozen||rankedAnimating||m.closed||rankedSending||m.ownAction!==null||!turnOpen||inputExpired;document.getElementById('player'+m.you+'Area').classList.toggle('locked',locked[m.you]);}
  window.AdvancedSkills?.sync(rankedVisualMatch||m,now);
  window.SpecialGauge?.place(m);
  if(!m.closed||rankedAnimating)rankedFrame=requestAnimationFrame(rankedTick);
@@ -202,7 +207,12 @@ function rankedReveal(m,previous){
   // Only presentation waits here; the shared turn/input deadlines stay unchanged.
   },typeof ONLINE_REVEAL_MS==='number'?ONLINE_REVEAL_MS:1300);
  };
- if(window.BattleCountdown){
+ if(m.reveal.actions[1]===-1||m.reveal.actions[2]===-1){
+  window.BattleCountdown?.cancel();
+  rankedVisualCountdownEnd=0;rankedVisualRevealAt=0;
+  stopCountdownRing();stopTurnCountdownSE();
+  reveal();
+ }else if(window.BattleCountdown){
   rankedVisualCountdownEnd=Infinity;
   window.BattleCountdown.start('ranked:'+m.id+':'+m.reveal.turn,{show(digit){if(!valid())return;const el=document.getElementById('countdown');el.textContent=String(digit);el.className='countPulse';startTurnCountdownSE();},onComplete(){if(!valid())return;rankedVisualCountdownEnd=0;rankedVisualRevealAt=performance.now()+500;stopTurnCountdownSE();document.getElementById('countdown').textContent='BATTLE!';document.getElementById('countdown').className='battleCall';rankedEffectTimer=setTimeout(reveal,500);}});
  }else rankedEffectTimer=setTimeout(reveal,Math.max(0,revealAt-performance.now()));
@@ -255,11 +265,11 @@ function rankedApply(m,visualCommit=false){
   PlayerIntro.start({key:'ranked:'+m.id,startAt:(window.AdvancedRules.isAdvanced(m.roomRules)?m.skillWindow.startAt:m.opensAt)-PlayerIntro.DURATION_MS,now:()=>rankedClockServer+performance.now()-rankedClockAt,players:m.players});
  }else PlayerIntro.cancel();
  const localTurnOpen=(!window.AdvancedRules.isAdvanced(m.roomRules)||!m.skillWindow||m.serverNow>=(m.skillWindow.confirmAt??m.skillWindow.endAt))&&rankedTurnClockKey===m.id+':'+m.state.turn&&performance.now()>=rankedTurnOpensAt;
- locked[me]=m.ownAction!==null||rankedSending||m.closed||!localTurnOpen||performance.now()>=rankedTurnDeadline;locked[3-me]=true;
+ locked[me]=m.state.frozen?.[me]>0||m.ownAction!==null||rankedSending||m.closed||!localTurnOpen||performance.now()>=rankedTurnDeadline;locked[3-me]=true;
  for(const p of [1,2])document.getElementById('player'+p+'Area').classList.toggle('locked',locked[p]);
  document.getElementById('battleHomeButton').hidden=false;document.getElementById('battleHomeButton').textContent=m.closed?'ホームへ':'降参して戻る';
  if(m.closed||rankedAnimating||m.serverNow<m.opensAt)document.getElementById('countdown').textContent='';
- if(!m.closed){document.getElementById('resultMessage').textContent=inGrace?(m.ownAction!==null?'相手の復帰を待っています':'復帰しました。期限内に行動を確定してください'):m.ownAction!==null?'行動を確定しました':'';}
+ if(!m.closed){document.getElementById('resultMessage').textContent=m.state.frozen?.[me]>0?'相手の行動を待っています':inGrace?(m.ownAction!==null?'相手の復帰を待っています':'復帰しました。期限内に行動を確定してください'):m.ownAction!==null?'行動を確定しました':'';}
 
  if(m.closed&&!rankedAnimating){rankedWatchStop?.();rankedWatchStop=null;showBattleResult(m.result.winner===0?'DRAW':m.result.winner+'P WIN');rankedResult(m);}
 

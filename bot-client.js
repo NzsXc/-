@@ -69,6 +69,7 @@ async function startBotTurn(){
   botThinking=false;botTurn++;startTurnCore();
   selectedAction[2]={id:action,data:getActionData(2,action)};locked[2]=true;
   document.getElementById('player2Area').classList.add('locked');
+  finishFrozenTurnIfReady();
  }catch(error){
   if(!botMatch||epoch!==botEpoch)return;
   botThinking=false;document.getElementById('countdown').textContent='Botの読み込みエラー';

@@ -2750,13 +2750,13 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
 <script src="player-lightning.js?v=account-update-20261024"></script>
 <script src="combat-v4.js?v=account-update-20261024"></script>
 <script src="bot-engine.js?v=account-update-20261024"></script>
-<script src="bot-client.js?v=account-update-20261024"></script>
+<script src="bot-client.js?v=freeze-reveal-20261026"></script>
 <script src="advanced/rules.js?v=account-update-20261024"></script>
 <script src="advanced/special-rules.js?v=account-update-20261024"></script>
 <script src="advanced/special.js?v=account-update-20261024"></script>
 <script src="room-rules.js?v=account-update-20261024"></script>
 <script src="battle-timeline.js?v=account-update-20261024"></script>
-<script src="ranked-client.js?v=battle-frames-20261025"></script>
+<script src="ranked-client.js?v=freeze-reveal-20261026"></script>
 <script src="advanced/client.js?v=account-update-20261024"></script>
 <script src="advanced/cutin.js?v=account-update-20261024"></script>
 <script src="battle-inspector.js?v=account-update-20261024"></script>
@@ -4985,6 +4985,7 @@ function startTurnCore(){
   // 10を最初の丸1秒間表示してから、一定間隔で9へ進める。
   countdownTimer=setTimeout(tickInputCountdown,1000);
   syncBattleInspector();
+  finishFrozenTurnIfReady();
 }
 
 /* =========================
@@ -5315,6 +5316,7 @@ function chooseAction(player,action){
     return;
   }
 
+  if(finishFrozenTurnIfReady())return;
   // 両者が決定したら、残り時間を待たず3秒カウントへ移行
   if(selectedAction[1] && selectedAction[2]){
     // The current deadline keeps advancing when fewer than three seconds remain.
@@ -5408,6 +5410,17 @@ function getActionData(player,action){
 /* =========================
    ターン終了
 ========================= */
+
+function finishFrozenTurnIfReady(){
+  if(gameMode!=='offline'||!selectedAction[1]||!selectedAction[2])return false;
+  if(selectedAction[1].id!=='frozen'&&selectedAction[2].id!=='frozen')return false;
+  clearInterval(countdownTimer);countdownTimer=null;
+  clearTimeout(countdownFinishTimeout);countdownFinishTimeout=null;
+  countdown=0;
+  document.getElementById('countdown').textContent='';
+  finishTurn();
+  return true;
+}
 
 function finishTurn(){
   // 10秒行動選択の演出は、ターン確定時に必ず停止。
