@@ -4,6 +4,7 @@
  function visible(fx){return fx.badge.isConnected&&fx.inView&&!document.hidden&&!fx.badge.closest('[hidden]')&&fx.canvas.clientWidth>0&&fx.canvas.clientHeight>0;}
  function draw(fx){if(!fx.width||!fx.height)return;fx.context.setTransform(fx.dpr,0,0,fx.dpr,0,0);window.Season2TitleArt.draw(fx.context,fx.width,fx.height,fx.time,fx.design);}
  function fitLabel(fx){
+  if(window.TitlePlateLayout){window.TitlePlateLayout.fit(fx.badge);return;}
   const {badge}=fx,label=badge.querySelector('.title-badge');if(!label||!badge.clientWidth||!badge.clientHeight)return;
   // Offset/scroll sizes are layout coordinates, unaffected by profile scale-in.
   const left=badge.querySelector('.s2-crown-medal')||badge.querySelector('.s2-left'),right=badge.querySelector('.s2-right');

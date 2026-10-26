@@ -1,0 +1,60 @@
+/* One geometry contract for every title skin. Important rules below own layout
+   only; the older skin files continue to own colours, materials and animation. */
+.badge-item[data-title-id]{
+ --title-width:360px;--title-height:48px;
+ --title-frame-height:calc(var(--title-height)*.9);--title-face-height:calc(var(--title-height)*.78);
+ --title-cut:calc(var(--title-height)*.25);
+ --title-outline:polygon(var(--title-cut) 0,calc(100% - var(--title-cut)) 0,100% 50%,calc(100% - var(--title-cut)) 100%,var(--title-cut) 100%,0 50%);
+ --title-face:polygon(calc(var(--title-cut) - 2px) 0,calc(100% - var(--title-cut) + 2px) 0,100% 50%,calc(100% - var(--title-cut) + 2px) 100%,calc(var(--title-cut) - 2px) 100%,0 50%);
+ --title-effect-top:calc((100% - var(--title-face-height))/2);
+ --title-effect-bottom:calc((100% + var(--title-face-height))/2);
+ --title-effect-clip:polygon(var(--title-cut) var(--title-effect-top),calc(100% - var(--title-cut)) var(--title-effect-top),calc(100% - 2px) 50%,calc(100% - var(--title-cut)) var(--title-effect-bottom),var(--title-cut) var(--title-effect-bottom),2px 50%);
+ box-sizing:border-box!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;
+ width:min(100%,var(--title-width))!important;max-width:100%!important;height:var(--title-height)!important;min-height:0!important;
+ aspect-ratio:auto!important;flex-shrink:0;padding:0!important;border:0!important;margin:0!important;vertical-align:middle;overflow:visible;
+}
+.title-entry .badge-item[data-title-id],.title-slot .badge-item[data-title-id]{--title-width:360px;--title-height:48px;align-self:center}
+#titleCollection .title-entry>.badge-item[data-title-id]{width:min(calc(100% - 24px),var(--title-width))!important;margin:4px 12px!important}
+.playerCardTitles>.badge-item[data-title-id]{--title-width:270px;--title-height:36px;justify-self:center}
+.intro-title-value .badge-item[data-title-id]{--title-width:360px;--title-height:36px}
+.historyTitles .badge-item[data-title-id]{--title-width:270px;--title-height:36px}
+.badge-item[data-title-id]::before,.badge-item[data-title-id]::after{
+ inset:auto 0!important;top:50%!important;bottom:auto!important;width:auto!important;
+ height:var(--title-frame-height)!important;transform:translateY(-50%)!important;clip-path:var(--title-outline)!important;
+}
+.badge-item[data-title-id]::after{left:2px!important;right:2px!important;height:var(--title-face-height)!important;clip-path:var(--title-face)!important}
+.badge-item[data-title-id]>.title-badge{
+ position:absolute!important;left:var(--title-label-center,50%)!important;top:50%!important;right:auto!important;bottom:auto!important;
+ width:max-content!important;max-width:none!important;min-width:0!important;margin:0!important;padding:0!important;border:0!important;
+ transform:translate(-50%,-50%)!important;flex-shrink:0;white-space:nowrap!important;overflow:visible!important;text-overflow:clip!important;
+ font-family:"Arial Black","Noto Sans JP","Yu Gothic UI",sans-serif!important;font-weight:900!important;
+ font-size:var(--title-fitted-size,calc(var(--title-height)*.46))!important;line-height:1.1!important;letter-spacing:.015em!important;text-align:center!important;
+}
+.badge-item[data-title-id]>.skill-motif,.badge-item[data-title-id]>.crystal-overlay,.badge-item[data-title-id]>.crystal-overlay-more,
+.badge-item[data-title-id]>.s2-surface,.badge-item[data-title-id]>.crown-shine{
+ inset:auto 2px!important;top:50%!important;bottom:auto!important;height:var(--title-face-height)!important;transform:translateY(-50%)!important;clip-path:var(--title-face)!important;
+}
+.badge-item[data-title-id]>:is(.title-rising-charge-canvas,.title-ember-canvas,.title-wrap-front-canvas){
+ inset:0!important;width:100%!important;height:100%!important;clip-path:var(--title-effect-clip)!important;
+}
+.badge-item[data-title-id]>:is(.prestige-medallion,.crown-medal,.s2-crown-medal){
+ left:3%!important;right:auto!important;top:50%!important;width:min(26px,8%)!important;height:60%!important;max-height:none!important;
+ transform:translateY(-50%)!important;
+}
+.badge-item[data-title-id]>.prestige-gems{
+ right:3%!important;left:auto!important;top:50%!important;width:min(26px,8%)!important;height:60%!important;
+ transform:translateY(-50%)!important;
+}
+.badge-item[data-title-id]>.prestige-gems>.faceted-gem{left:30%!important;top:0!important;width:44%!important;height:100%!important}
+.badge-item[data-title-id]>.prestige-gems>.faceted-gem:nth-child(2){left:0!important;top:18%!important;width:32%!important;height:70%!important}
+.badge-item[data-title-id]>.prestige-gems>.faceted-gem:nth-child(3){left:76%!important;top:22%!important;width:25%!important;height:63%!important}
+.badge-item[data-title-id]>.prestige-rank{top:8%!important;height:10%!important;gap:3px!important;transform:translateX(-50%)!important}
+.badge-item[data-title-id]>.prestige-rank>.rank-stone{width:3px!important;height:80%!important}
+.badge-item[data-title-id]>.prestige-rank>.rank-stone:nth-child(2){width:4px!important;height:100%!important}
+.badge-item[data-title-id]>.prestige-inlay{inset:14% 6%!important;clip-path:var(--title-face)!important}
+.badge-item[data-title-id]>.prestige-flare{top:14%!important;right:12%!important;width:5px!important;height:5px!important}
+.badge-item[data-title-id]>.crown-right-gem{right:3%!important;top:50%!important;width:min(12px,4%)!important;height:48%!important;transform:translateY(-50%)!important}
+.badge-item[data-title-id]>.s2-ornament{left:3%!important;top:28%!important;bottom:28%!important;width:min(15px,4%)!important}
+.badge-item[data-title-id]>.s2-right{left:auto!important;right:3%!important}
+.badge-item[data-title-id]>.s2-rule,.badge-item[data-title-id]>.crown-edge-line{left:7%!important;right:7%!important;top:18%!important}
+.badge-item[data-title-id]>.s2-bottom,.badge-item[data-title-id]>.crown-edge-line.bottom{top:auto!important;bottom:18%!important}
