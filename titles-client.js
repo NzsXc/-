@@ -4,7 +4,7 @@ window.PlayerIntro.start=function(options){originalPlayerIntroStart(options);con
 async function openTitles(){
  const epoch=++titleViewEpoch;showScreen('titlesScreen');titleViewData=null;titleWallet=null;titleFrames=null;titleCardStyles=null;document.getElementById('titleCollection').hidden=true;document.getElementById('nameColorPanel').hidden=true;renderTitles();
  const status=document.getElementById('titlesStatus');if(!window.titleService?.uid()){status.textContent='称号と名前色の保存にはログインが必要です。';return;}status.textContent='プレイヤーデータを読み込んでいます…';
- try{const [data,wallet,name,frames,cardStyles]=await Promise.all([window.titleService.readOwn(),window.economyService.readOwn().catch(()=>null),window.economyService.playerName(),window.battleFrameService.readOwn().catch(error=>({frame:'',warnings:['フレーム情報を取得できません：'+error.message]})),window.economyService.readOwnCardStyles().catch(()=>({error:true}))]);if(epoch!==titleViewEpoch)return;titleViewData=data;titleWallet=wallet;titleFrames={...frames,uses:data.uses};titleCardStyles=cardStyles;titleDraft=[0,1,2].map(i=>TitleCatalog.byId[data.loadout?.[i]]?data.loadout[i]:'');document.getElementById('titlePlayerName').textContent=name;renderTitles();const warnings=[...(data.warnings||[]),...(frames.warnings||[])];status.textContent=warnings.length?warnings.join(' / '):'プレイヤー名・称号をタップして変更できます。';}
+ try{const [data,wallet,name,frames,cardStyles]=await Promise.all([window.titleService.readOwn(),window.economyService.readOwn().catch(()=>null),window.economyService.playerName(),window.battleFrameService.readOwn().catch(error=>({frame:'',warnings:['フレーム情報を取得できません：'+error.message]})),window.economyService.readOwnCardStyles().catch(()=>({error:true}))]);if(epoch!==titleViewEpoch)return;titleViewData=data;titleWallet=wallet;titleFrames={...frames,uses:data.uses};titleCardStyles=cardStyles;titleDraft=[0,1,2].map(i=>TitleCatalog.byId[data.loadout?.[i]]?data.loadout[i]:'');document.getElementById('titlePlayerName').textContent=name;document.getElementById('titleCollection').hidden=false;renderTitles();const warnings=[...(data.warnings||[]),...(frames.warnings||[])];status.textContent=warnings.length?warnings.join(' / '):'プレイヤー名・称号をタップして変更できます。';}
  catch(e){if(epoch===titleViewEpoch)status.textContent='読み込めません：'+e.message;}
 }
 function closeTitles(){if(titleSaving)return;titleViewEpoch++;showScreen('modeScreen');}
@@ -15,8 +15,23 @@ function renderTitles(){
  for(let i=0;i<3;i++){const button=node('button','title-slot'+(i===titleSlot?' selected':''));button.disabled=!titleViewData||titleSaving;button.setAttribute('aria-pressed',String(i===titleSlot));button.setAttribute('aria-label','称号'+(i+1)+'を変更');button.append(node('span','','称号 '+(i+1)),TitleCatalog.badge(titleViewData?titleDraft[i]:''));button.onclick=()=>{titleSlot=i;$('titleCollection').hidden=false;$('nameColorPanel').hidden=true;renderTitles();};slots.append(button);}
  $('titleSave').disabled=!titleViewData||titleSaving;$('titleClear').disabled=!titleViewData||titleSaving;$('titleBack').disabled=titleSaving;
  $('coinBalance').textContent=titleWallet?'所持コイン '+titleWallet.balance.toLocaleString('ja-JP'):'コイン情報を取得できません。Firebaseルールと通信を確認してください。';
- const list=$('titleCollection');list.replaceChildren();
- for(const won of [true,false]){list.append(node('h2','titleCollectionHeading',won?'所持済み':'未獲得'));const grid=node('div','title-grid');for(const item of TitleCatalog.items.filter(t=>(!!titleViewData&&TitleCatalog.unlocked(t,titleViewData))===won)){const button=node('button','title-entry');button.disabled=!won||titleSaving;button.append(TitleCatalog.badge(item.id),node('span','title-description',item.description),node('span','title-progress',won?(titleDraft.includes(item.id)?'装備中':'所持済み'):item.skill?Math.min(item.threshold,Number(titleViewData?.uses?.[item.skill]?.count||0))+' / '+item.threshold+' 回':'未獲得'));button.onclick=()=>{titleDraft=titleDraft.map(id=>id===item.id?'':id);titleDraft[titleSlot]=item.id;renderTitles();};grid.append(button);}list.append(grid);}
+ const list=$('titleCollection'),owned=TitleCatalog.items.filter(t=>titleViewData&&TitleCatalog.unlocked(t,titleViewData));list.replaceChildren();
+ const collectionHeader=node('div','titleIndexHeader');collectionHeader.append(node('h2','','称号コレクション'),node('span','',owned.length+' / '+TitleCatalog.items.length+' 所持'));list.append(collectionHeader);
+ list.append(node('p','titleIndexHint','称号 '+(titleSlot+1)+' に装備する称号を選択'));
+ for(const won of [true,false]){
+  const items=TitleCatalog.items.filter(t=>(!!titleViewData&&TitleCatalog.unlocked(t,titleViewData))===won);
+  list.append(node('h3','titleCollectionHeading',(won?'所持済み':'未獲得')+' · '+items.length));const grid=node('div','title-grid');
+  for(const item of items){
+   const selected=titleDraft[titleSlot]===item.id,equipped=titleDraft.includes(item.id),button=node('button','title-entry');button.type='button';button.dataset.titleId=item.id;button.dataset.equipped=String(equipped);button.disabled=!won||titleSaving;button.setAttribute('aria-pressed',String(selected));
+   const category=item.kind==='tournament'?'TOURNAMENT / SEASON '+(item.season||1):item.kind==='rating'?'RATING / '+item.threshold:(item.kind==='skill-prestige'?'MASTERY / ':'SKILL / ')+item.name.toUpperCase();
+   const top=node('span','titleIndexMeta');top.append(node('span','titleIndexCode',category),node('span','titleIndexOwnership',won?'所持':'未獲得'));
+   const bottom=node('span','titleIndexFooter'),progress=won?(equipped?'装備中':'所持済み'):item.skill?Math.min(item.threshold,Number(titleViewData?.uses?.[item.skill]?.count||0))+' / '+item.threshold+' 回':'未獲得';
+   bottom.append(node('span','title-progress',progress),node('span','titleIndexAction',!won?'未獲得':selected?'選択中':'この称号を装備'));
+   button.append(top,TitleCatalog.badge(item.id),node('span','title-description',item.description),bottom);
+   button.onclick=()=>{titleDraft=titleDraft.map(id=>id===item.id?'':id);titleDraft[titleSlot]=item.id;renderTitles();const chosen=list.querySelector('.title-entry[data-title-id="'+item.id+'"]');chosen?.focus({preventScroll:true});$('titlesStatus').textContent='称号 '+(titleSlot+1)+'：'+item.name+'（保存するで確定）';};grid.append(button);
+  }
+  list.append(grid);
+ }
  renderBattleFramePicker(titleFrames,titleSaving,saveBattleFrame);
  renderPlayerCardStyleShop(titleCardStyles,titleWallet,titleSaving,id=>changePlayerCardStyle(id,true),id=>changePlayerCardStyle(id,false));
  const panel=$('nameColorPanel');panel.replaceChildren(node('h2','titleCollectionHeading','名前色'));if(!titleWallet)return;

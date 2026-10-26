@@ -68,14 +68,47 @@
  #techScreen .techCard::after,#techScreen .techArrow::after,#techScreen .gameTechImage,#techScreen .gameTechChanged .techIcon,.gameResultPanel{animation:none!important;transition:none!important}
 }
 
-/* Collection index: the earned ribbon remains the focal point of each row. */
-#titleCollection .title-grid{grid-template-columns:minmax(0,1fr);gap:0}
-#titleCollection .title-entry{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.9fr);gap:10px 24px;align-items:center;min-height:110px;border:0;border-bottom:1px solid #66859e55;border-left:2px solid transparent;border-radius:0;background:#10283a;padding:18px}
-#titleCollection .title-entry>.badge-item{grid-column:1;grid-row:1/3}
-#titleCollection .title-entry .title-description{grid-column:2;grid-row:1}
-#titleCollection .title-entry .title-progress{grid-column:2;grid-row:2}
-#titleCollection .title-entry:not(:disabled):hover,#titleCollection .title-entry:not(:disabled):focus-visible{border-left-color:#b9eef2;background:#1b3c50}
-@media(max-width:550px){
- #titleCollection .title-entry{grid-template-columns:minmax(0,1fr);gap:10px;min-height:155px;padding:16px}
- #titleCollection .title-entry>.badge-item,#titleCollection .title-entry .title-description,#titleCollection .title-entry .title-progress{grid-column:auto;grid-row:auto}
+/* Collection index: quiet light passes behind the original title ribbons. */
+#titleCollection{min-width:0}
+#titleCollection .titleIndexHeader{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0;color:#c6e0eb}
+#titleCollection .titleIndexHeader h2{margin:0;font-size:18px;font-weight:500}
+#titleCollection .titleIndexHeader>span{font-size:12px;color:#adc9d9;font-variant-numeric:tabular-nums}
+#titleCollection .titleIndexHint{margin:2px 0 22px;font-size:12px;color:#aac9d8;line-height:1.6}
+#titleCollection .titleCollectionHeading{margin:24px 0 12px;font-size:12px;font-weight:500;letter-spacing:.07em;color:#a9cbdc}
+#titleCollection .title-grid{grid-template-columns:minmax(0,1fr);gap:0;border-top:1px solid #8ab9c688}
+#titleCollection .title-entry{position:relative;isolation:isolate;overflow:hidden;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.86fr);gap:12px 25px;align-items:center;min-height:150px;width:100%;margin:0;padding:20px;border:0;border-bottom:1px solid #66859e55;border-left:3px solid transparent;border-radius:0;background:#10283a;color:#e6f2fb;opacity:1;transition:background .2s,border-color .2s}
+#titleCollection .title-entry::after{content:"";position:absolute;z-index:0;inset:0;pointer-events:none;opacity:.55;background:linear-gradient(110deg,transparent 0 42%,#badfec1a 48%,transparent 55%);transform:translateX(-70%)}
+#titlesScreen.active #titleCollection .title-entry::after{animation:titleIndexLight 6s linear infinite}
+#titleCollection .title-entry:nth-child(3n+2)::after{animation-delay:-2s}
+#titleCollection .title-entry:nth-child(3n)::after{animation-delay:-4s}
+#titleCollection .title-entry>.titleIndexMeta,#titleCollection .title-entry>.title-description,#titleCollection .title-entry>.titleIndexFooter{position:relative;z-index:1;min-width:0}
+#titleCollection .titleIndexMeta{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:12px;color:#a7c8d7;font:500 11px/1.6 Arial,"Yu Gothic UI",sans-serif;letter-spacing:.07em}
+#titleCollection .titleIndexCode{overflow-wrap:anywhere}
+#titleCollection .titleIndexOwnership{flex:none;font-size:10px;letter-spacing:.04em;color:#b5d2db}
+#titleCollection .title-entry>.badge-item{grid-column:1;grid-row:2/4;justify-self:center;width:calc(100% - 32px);max-width:360px;margin:4px 16px}
+#titleCollection .title-entry .title-description{grid-column:2;grid-row:2;line-height:1.7;color:#c7dce8;overflow-wrap:anywhere}
+#titleCollection .titleIndexFooter{grid-column:2;grid-row:3;display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:11px;line-height:1.6}
+#titleCollection .titleIndexFooter .title-progress{font-size:11px;opacity:1;color:#b8deec}
+#titleCollection .titleIndexAction{color:#b4d5e3;text-align:right}
+#titleCollection .title-entry[aria-pressed=true]{background:linear-gradient(110deg,#244c5c,#152c42);border-left-color:#b8eff2;box-shadow:inset 0 1px 0 #8cc7d133}
+#titleCollection .title-entry[aria-pressed=true]::before{content:"";position:absolute;z-index:1;left:0;top:0;bottom:0;width:3px;background:linear-gradient(transparent,#e2fbf6,transparent);transform:translateY(-110%);pointer-events:none}
+#titlesScreen.active #titleCollection .title-entry[aria-pressed=true]::before{animation:titleIndexCurrent 2.6s linear infinite}
+#titleCollection .title-entry[aria-pressed=true] .titleIndexAction{color:#e0faf7}
+#titleCollection .title-entry:not(:disabled):hover{background:#1b3c50;border-left-color:#b9eef2}
+#titleCollection .title-entry:focus-visible{outline:2px solid #d4f6ff;outline-offset:-3px}
+#titleCollection .title-entry:disabled{background:#102333;color:#b7cdd9;cursor:default}
+#titleCollection .title-entry:disabled::after{opacity:.18;animation-duration:9s}
+#titleCollection .title-entry:disabled .titleIndexOwnership,#titleCollection .title-entry:disabled .titleIndexAction{color:#96b4c8}
+#titleCollection .title-entry:disabled .title-description{color:#adc7d8;opacity:1}
+@keyframes titleIndexLight{from{transform:translateX(-70%)}to{transform:translateX(95%)}}
+@keyframes titleIndexCurrent{from{transform:translateY(-110%)}to{transform:translateY(110%)}}
+@media(max-width:640px){
+ #titleCollection .title-entry{grid-template-columns:minmax(0,1fr);gap:10px;min-height:185px;padding:18px 14px}
+ #titleCollection .title-entry>.badge-item,#titleCollection .title-entry>.title-description,#titleCollection .title-entry>.titleIndexFooter,#titleCollection .title-entry>.titleIndexMeta{grid-column:1;grid-row:auto}
+ #titleCollection .titleIndexMeta{font-size:10px;gap:8px}
+ #titleCollection .titleIndexFooter{gap:12px}
+}
+@media(prefers-reduced-motion:reduce){
+ #titlesScreen.active #titleCollection .title-entry::after,#titlesScreen.active #titleCollection .title-entry[aria-pressed=true]::before{animation:none;transform:none}
+ #titleCollection .title-entry{transition:none}
 }
