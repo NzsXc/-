@@ -22,3 +22,12 @@
 /* Reserve the inspector's space below the opponent card on compact screens. */
 @media(max-width:1100px),(max-height:680px){#battleScreen:not(.advancedMode):not(.specialMode) #battleCenter{padding-top:54px;}}
 @media(min-width:640px) and (max-height:680px){#battleScreen:not(.advancedMode):not(.specialMode) #battleCenter{padding-top:6px;}}
+
+/* The information panel is an overlay; opening it never resizes the arena. */
+#battleInspectorPanel{position:fixed;z-index:200;display:flex;flex-direction:column;box-sizing:border-box;width:min(720px,calc(100vw - 24px - var(--safe-left,0px) - var(--safe-right,0px)));max-height:calc(100dvh - 24px - var(--safe-top,0px) - var(--safe-bottom,0px));overflow:hidden;pointer-events:auto}
+#battleInspectorPanel .battle-inspector-heading{flex:none;min-width:0}
+#battleInspectorPanel .battle-inspector-close{flex:none;margin:0}
+#battleInspectorPanel .battle-inspector-columns{min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;scrollbar-gutter:stable;touch-action:pan-y}
+#battleScreen .battle-inspector-toggle{pointer-events:auto}
+
+#battleInspectorPanel{left:calc(50% + (var(--safe-left,0px) - var(--safe-right,0px))/2);top:calc(50% + (var(--safe-top,0px) - var(--safe-bottom,0px))/2)}

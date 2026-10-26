@@ -2062,7 +2062,7 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
 <link rel="stylesheet" href="titles-champion-crown.css?v=account-update-20261024">
 <link rel="stylesheet" href="titles-prestige.css?v=account-update-20261024">
 <link rel="stylesheet" href="titles-season2.css?v=account-update-20261024">
-<link rel="stylesheet" href="battle-inspector.css?v=account-update-20261024">
+<link rel="stylesheet" href="battle-inspector.css?v=countdown-inspector-20261026">
 <link rel="stylesheet" href="battle-action-art.css?v=account-update-20261024">
 <link rel="stylesheet" href="battle-compact.css?v=account-update-20261024">
 <link rel="stylesheet" href="neon-controls.css?v=account-update-20261024">
@@ -2767,7 +2767,7 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
 <script src="ranked-client.js?v=s-special-expansion-20261026"></script>
 <script src="advanced/client.js?v=account-update-20261024"></script>
 <script src="advanced/cutin.js?v=account-update-20261024"></script>
-<script src="battle-inspector.js?v=account-update-20261024"></script>
+<script src="battle-inspector.js?v=countdown-inspector-20261026"></script>
 <script src="lobby-client.js?v=account-update-20261024"></script>
 <script src="battle-action-art.js?v=account-update-20261024"></script>
 <script src="battle-new-effects.js?v=account-update-20261024"></script>
@@ -5180,7 +5180,7 @@ function updateOnlineTechniqueDescription(){
 }
 
 function showTechniqueReveal(a1,a2){
-  window.BattleInspector?.update({enabled:false});
+  syncBattleInspector();
   window.confirmedRevealedActions=[a1,a2];
   // カウントダウン終了後、技名を表示する瞬間にデータ解析SEを鳴らす。
   playBattleSE("seDataAnalysis");
@@ -6906,12 +6906,13 @@ function syncConfirmedActionArt(){
 }
 function syncBattleInspector(){
   if(!window.BattleInspector)return;
-  const side=rankedActive?Number(rankedMatch?.you):gameMode==="online"?Number(window.onlineBattle?.localPlayer):0;
+  const side=rankedActive?Number(rankedMatch?.you):gameMode==="online"?Number(window.onlineBattle?.localPlayer):gameMode==="offline"?1:0;
   const enabled=document.getElementById("battleScreen")?.classList.contains("active") && !PlayerIntro.isActive() &&
-    (rankedActive ? !!rankedMatch?.state && !rankedMatch.closed && !rankedAnimating : gameMode==="online" && onlineInputOpen && onlineTurnPhase==="input");
+    !document.getElementById("resultMessage")?.classList.contains("resultShow") &&
+    (rankedActive ? !!rankedMatch?.state && !rankedMatch.closed : gameMode==="online" ? onlineInputOpen || ["countdown","resolving"].includes(onlineTurnPhase) : gameMode==="offline");
   const inspectorLoadouts={1:player1Techs,2:player2Techs};
   if(rankedActive&&window.SpecialGauge?.isSpecialView(rankedMatch))for(const p of [1,2])inspectorLoadouts[p]=rankedMatch.loadouts[p].map(index=>{const action=window.SpecialRules.actionData(BattleV4.specialId(index),techniquePool,null,rankedMatch.special?.version);return {...action,description:'Sゲージ追加消費+'+action.specialCost+' / '+action.description};});
-  window.BattleInspector.update({enabled,side,loadouts:inspectorLoadouts,names:{1:getBattlePlayerName(1),2:getBattlePlayerName(2)}});
+  window.BattleInspector.update({enabled,side,shared:gameMode==="offline"&&!botMatch,loadouts:inspectorLoadouts,names:{1:getBattlePlayerName(1),2:getBattlePlayerName(2)}});
 }
 document.addEventListener("DOMContentLoaded",()=>syncConfirmedActionArt());
 
@@ -6969,7 +6970,7 @@ function updateDisabledActions(){
 
 function startMenuBGM(){
   const audio=document.getElementById("menuBGM");
-  if(!audio || document.getElementById("battleScreen")?.classList.contains("active"))return;
+  if(!audio || document.getElementById("battleScreen")?.classList.contains("active") || document.getElementById("onlineScreen")?.classList.contains("active"))return;
   audio.loop=true;
   window.GameAudio?GameAudio.element(audio,.208,'music'):audio.volume=.208;
   if(!audio.paused)return;
@@ -6980,6 +6981,21 @@ function startMenuBGM(){
 function pauseMenuBGM(){
   const audio=document.getElementById("menuBGM");
   if(audio)audio.pause();
+}
+
+function startOnlineMenuBGM(){
+  const audio=document.getElementById("onlineMenuBGM");
+  if(!audio || !document.getElementById("onlineScreen")?.classList.contains("active"))return;
+  audio.loop=true;
+  window.GameAudio?GameAudio.element(audio,.208,"music"):audio.volume=.208;
+  if(!audio.paused)return;
+  const promise=audio.play();
+  if(promise && typeof promise.catch==="function")promise.catch(()=>{});
+}
+
+function stopOnlineMenuBGM(){
+  const audio=document.getElementById("onlineMenuBGM");
+  if(audio){audio.pause();audio.currentTime=0;}
 }
 
 function startBattleBGM(){
@@ -7009,35 +7025,24 @@ function stopBattleBGM(){
   audio.currentTime=0;
 }
 
-// バトル画面以外では停止、バトル画面に入ったら再生
+// Each screen owns one music track; action sounds use their separate volume.
 function syncBattleBGM(screenId){
   if(screenId==="battleScreen"){
-    pauseMenuBGM();
-    startBattleBGM();
+    pauseMenuBGM();stopOnlineMenuBGM();startBattleBGM();
+  }else if(screenId==="onlineScreen"){
+    stopBattleBGM();pauseMenuBGM();startOnlineMenuBGM();
   }else{
-    stopBattleBGM();
-    startMenuBGM();
+    stopBattleBGM();stopOnlineMenuBGM();startMenuBGM();
   }
 }
-
-// 自動再生がブロックされた場合、次のユーザー操作で再試行
-document.addEventListener("pointerdown",()=>{
-  if(document.getElementById("battleScreen")?.classList.contains("active")){
-    startBattleBGM();
-  }else{
-    startMenuBGM();
-  }
-},{passive:true});
-
-document.addEventListener("keydown",()=>{
-  if(document.getElementById("battleScreen")?.classList.contains("active")){
-    startBattleBGM();
-  }else{
-    startMenuBGM();
-  }
-});
-
-
+function resumeScreenBGM(){
+  if(document.getElementById("battleScreen")?.classList.contains("active"))startBattleBGM();
+  else if(document.getElementById("onlineScreen")?.classList.contains("active"))startOnlineMenuBGM();
+  else startMenuBGM();
+}
+// Retry autoplay only for the currently visible screen, without restarting it.
+document.addEventListener("pointerdown",resumeScreenBGM,{passive:true});
+document.addEventListener("keydown",resumeScreenBGM);
 
 /* =========================
    初期化
@@ -7115,6 +7120,9 @@ updateTechniqueDisplay();
 
 <!-- メニューBGM：画面遷移をまたいで再生位置を維持する -->
 <audio id="menuBGM" preload="auto" loop src="sounds/心の中の小さな宇宙.mp3"></audio>
+
+<!-- 「だれかと」画面のBGM：心の詩 -->
+<audio id="onlineMenuBGM" preload="none" loop src="sounds/心の詩.mp3"></audio>
 
 <!-- バトル中BGM：Reflect.mp3 -->
 <audio id="battleBGM" preload="auto" loop>
