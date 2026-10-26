@@ -1,0 +1,23 @@
+/* The parent supplies the live game's styles and battleScreen markup unchanged. */
+html,body{width:800px;height:620px;overflow:hidden;margin:0;background:#0c1524}
+#battleScreen.screen.active{height:620px;min-height:620px;padding:20px;display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:90px}
+#battleScreen .playerArea{width:300px;max-width:300px;flex:none;position:relative;padding:14px;transform:none}
+#battleScreen #battleCenter{width:100px;pointer-events:none}
+#battleScreen #resultMessage{font-size:16px;line-height:1.5;height:auto;min-height:0}
+#battleScreen #countdown{font-size:24px}
+#battleScreen .actionList{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+#battleScreen .action{height:76px;min-height:76px;pointer-events:none;padding:5px}
+#battleScreen .actionName{font-size:12px;line-height:1.25}
+#battleScreen .actionKey{display:none}
+#battleScreen .action.guideReplayChosen{outline:3px solid #b5e9ff;outline-offset:2px;filter:brightness(1.15)}
+#battleScreen .playerName{font-size:20px}
+#battleScreen .statusTitle{font-size:12px;float:none;clear:none;width:auto;margin:5px 0}
+#battleScreen .statusBarRow{width:100%;margin:0 0 8px;height:auto}
+#battleScreen .statusValue{font-size:16px}
+#battleScreen .hpBar{height:14px}
+#battleScreen .gaugeBar{height:12px}
+#battleScreen .playerStatuses{height:auto;min-height:24px;font-size:11px;white-space:normal;overflow:visible}
+.guideReplaySpecial{font-size:12px;color:#c8abe9;margin:6px 0}
+#battleEffectLayer{position:absolute;inset:0;pointer-events:none;z-index:20}
+#battleScreen .guideReplaySkill{font-size:12px;color:#c9e7f3;text-align:center;margin-top:10px;min-height:20px}
+#advancedSkillPresentation{z-index:40}
