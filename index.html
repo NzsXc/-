@@ -2072,6 +2072,7 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
 <link rel="stylesheet" href="account-update.css?v=mobile-controls-20261025">
 <link rel="stylesheet" href="titles-skill-fixes.css?v=battle-frames-20261025">
 <link rel="stylesheet" href="battle-frames.css?v=frame-readability-20261026">
+<link rel="stylesheet" href="game-motion.css?v=motion-shop-20261026">
 </head>
 
 
@@ -2184,6 +2185,7 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
   <div class="titles-actions"><button id="titleClear" class="titles-button" onclick="clearTitleSlot()">この枠を外す</button><button id="titleSave" class="titles-button" onclick="saveTitles()">保存する</button></div>
   <div id="titlesStatus" class="titles-status" role="status"></div>
   <div id="titleCollection" hidden></div>
+  <section id="playerCardStyleShop" aria-label="プレイヤーカードの背景"></section>
   <section id="battleFramePanel" aria-label="バトルカードのフレーム"></section>
  </div>
 </div>
@@ -2750,7 +2752,7 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
 <script src="titles-season2-art.js?v=account-update-20261024"></script>
 <script src="titles-season2-effects.js?v=account-update-20261024"></script>
 <script src="player-intro.js?v=account-update-20261024"></script>
-<script src="titles-client.js?v=s-special-completion-20261026"></script>
+<script src="titles-client.js?v=motion-shop-20261026"></script>
 <script src="player-lightning.js?v=account-update-20261024"></script>
 <script src="combat-v4.js?v=s-special-completion-20261026"></script>
 <script src="bot-engine.js?v=account-update-20261024"></script>
@@ -2774,10 +2776,10 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
   import {createProtectedRooms} from "./protected-rooms.js?v=s-special-completion-20261026";
   import {createFreeTransport} from "./free-transport.js?v=s-special-completion-20261026";
   import {createBattleHistory} from "./battle-history.js?v=s-special-completion-20261026";
-  import {createPlayerProfile} from "./player-profile.js?v=account-update-20261024";
+  import {createPlayerProfile} from "./player-profile.js?v=motion-shop-20261026";
   import {createHistoryScreen} from "./battle-history-client.js?v=account-update-20261024";
   import {createCommunityRatings} from "./community-ratings.js?v=account-update-20261024";
-  import {createEconomyService} from "./economy-service.js?v=s-special-completion-20261026";
+  import {createEconomyService} from "./economy-service.js?v=motion-shop-20261026";
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
   import {
     getAuth,
@@ -2825,6 +2827,7 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
   const playerProfile=createPlayerProfile({
     history:{profileStats:(uid,rating)=>window.battleHistory.profileStats(uid,rating),open:player=>historyScreen.open(player)},
     loadTitles:uid=>window.titleService.loadoutFor(uid),
+    loadCardStyle:uid=>window.economyService.cardStyleFor(uid),
     showScreen:id=>showScreen(id),playSound:()=>playUISound("uiMenuOpenSE")
   });
 
@@ -3443,6 +3446,7 @@ function showTipPage(page){
 ========================= */
 
 function showScreen(id){
+  if(id!=="battleScreen")window.GameMotion?.clearResult();
   const techBack=document.getElementById('techBackButton');
   if(techBack)techBack.hidden=id!=='techScreen'||gameMode!=='offline'||rankedActive;
   if(id!=="battleScreen")window.BattleInspector?.close();
@@ -3469,6 +3473,7 @@ function showScreen(id){
   syncBattleBGM(id);
   updateRoomCodeButton(id);
   syncBattleInspector();
+  window.GameMotion?.sync();
 
 }
 
@@ -3947,6 +3952,7 @@ function updateTechniqueDisplay(){
     });
 
   window.SpecialGauge?.paintSelection();
+  window.GameMotion?.updateTechniques(selectedTechniques[selectingPlayer].map(index=>techniquePool[index]));
   // 旧UIとの互換用。現在は表示しない。
   const oldDescription = document.getElementById("techDescription");
   if(oldDescription){
@@ -6717,6 +6723,8 @@ function showBattleResult(text){
   else el.style.color="#fff";
   void el.offsetWidth;
   el.className="resultShow";
+  const won=/^([12])P WIN$/.exec(text),screen=document.getElementById("battleScreen");
+  window.GameMotion?.showResult({text,winnerName:won?getBattlePlayerName(Number(won[1])):"",localPlayer:Number(screen.dataset.localPlayer)||0,spectator:screen.classList.contains("spectatorMode")});
 }
 
 /* =========================
@@ -7160,5 +7168,8 @@ updateTechniqueDisplay();
 <script src="guide-details.js?v=guide-details-20261026"></script>
 <!-- PWA registration -->
 <script src="./pwa-register.js" defer></script>
+<script src="game-motion-art.js?v=motion-shop-20261026"></script>
+<script src="game-motion.js?v=motion-shop-20261026"></script>
+<script src="player-card-style-shop.js?v=motion-shop-20261026"></script>
 </body>
 </html>

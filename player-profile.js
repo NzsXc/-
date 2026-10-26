@@ -28,7 +28,7 @@ export function summarizePlayerHistories(histories,uid,currentRating){
 }
 
 const node=(tag,className,text)=>{const el=document.createElement(tag);el.className=className;if(text!=null)el.textContent=String(text);return el;};
-export function createPlayerProfile({history,loadTitles,showScreen,playSound=()=>{}}){
+export function createPlayerProfile({history,loadTitles,loadCardStyle=async()=>'',showScreen,playSound=()=>{}}){
  let request=0;
  const byId=id=>document.getElementById(id);
  function renderTechniques(techniques,state='ready'){
@@ -42,7 +42,7 @@ export function createPlayerProfile({history,loadTitles,showScreen,playSound=()=
  }
  async function open(player){
   if(!player?.uid)return;
-  const current=++request;byId('playerCardName').textContent=player.name;window.NameStyles?.paint(byId('playerCardName'),player.uid);
+  const current=++request;const panel=document.querySelector('#playerCardScreen .playerCardPanel');window.GameMotion?.applyCardStyle(panel,'');byId('playerCardName').textContent=player.name;window.NameStyles?.paint(byId('playerCardName'),player.uid);
   byId('playerCardRate').textContent=String(Math.max(1000,Number(player.rating)||1000));
   const winCount=value=>value!=null&&Number.isFinite(Number(value))?Math.max(0,Math.trunc(Number(value))):null;
   const onlineWins=winCount(player.onlineWins),friendWins=winCount(player.friendWins);
@@ -51,18 +51,22 @@ export function createPlayerProfile({history,loadTitles,showScreen,playSound=()=
   byId('playerCardRankedWins').textContent=displayWins(onlineWins);
   byId('playerCardFriendWins').textContent=displayWins(friendWins);
   byId('playerCardPeakRate').textContent='—';renderTechniques([],'loading');
-  const status=byId('playerCardStatus');status.textContent='技使用回数と最高レートを取得しています…';
+  const status=byId('playerCardStatus'),notices=[];const showNotices=()=>{if(current===request)status.textContent=notices.join(' / ');};status.textContent='技使用回数と最高レートを取得しています…';
   byId('playerCardHistoryButton').onclick=()=>history.open(player);
   byId('playerCardTitles').replaceChildren(...Array.from({length:3},()=>node('span','playerCardTitlePlaceholder','称号を読み込み中')));
   showScreen('playerCardScreen');playSound();
   await Promise.all([
    (async()=>{
+    try{const id=await loadCardStyle(player.uid);if(current===request)window.GameMotion?.applyCardStyle(panel,id);}
+    catch(error){if(current!==request)return;notices.push('カード背景を取得できませんでした。');showNotices();console.warn('カード背景を取得できませんでした',error);}
+   })(),
+   (async()=>{
     try{
      const stats=await history.profileStats(player.uid,player.rating);if(current!==request)return;
      renderTechniques(stats.techniques);byId('playerCardPeakRate').textContent=stats.peakRating.toLocaleString('ja-JP');
-     status.textContent='';
+     showNotices();
     }catch(error){
-     if(current!==request)return;renderTechniques([],'error');status.textContent='対戦履歴の集計を取得できませんでした。';console.warn('プロフィールの集計を取得できませんでした',error);
+     if(current!==request)return;renderTechniques([],'error');notices.push('対戦履歴の集計を取得できませんでした。');showNotices();console.warn('プロフィールの集計を取得できませんでした',error);
     }
    })(),
    (async()=>{

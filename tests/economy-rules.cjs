@@ -14,5 +14,5 @@ function addEconomy(doc){const r=doc.rules,A="auth!=null&&auth.token.firebase.si
  r.freeAccounts.$uid.createdAt={'.validate':"newData.isNumber()&&(!data.parent().exists()?newData.val()===now:data.exists()&&newData.val()===data.val())"};
  // Account settlement rewrites whole accounts. Require creation metadata to survive.
  r.freeAccounts.$uid['.validate']+="&&(!data.child('createdAt').exists()||newData.child('createdAt').val()===data.child('createdAt').val())&&(!data.exists()||data.child('createdAt').exists()||!newData.child('createdAt').exists())";
- r.coinAcknowledgements={'$uid':{'.read':A+'&&auth.uid===$uid','$day':{'$from':{'.write':A+"&&auth.uid===$uid&&(!data.exists()||data.val()===true)&&newData.val()===true&&root.child('coinClaims').child($uid).child($day).child($from).val()===true"}}}};return doc;}
+ r.coinAcknowledgements={'$uid':{'.read':A+'&&auth.uid===$uid','$day':{'$from':{'.write':A+"&&auth.uid===$uid&&(!data.exists()||data.val()===true)&&newData.val()===true&&root.child('coinClaims').child($uid).child($day).child($from).val()===true"}}}};return require('./card-style-rules.cjs').addCardStyles(doc);}
 module.exports={addEconomy};

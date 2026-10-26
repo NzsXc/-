@@ -1,0 +1,81 @@
+/* Approved game surfaces: travelling stars, monochrome cartridges and crystal results. */
+#modeScreen{background:#0b1729;background-image:none;overflow:hidden}
+#modeScreen::after{display:none}
+#modeScreen>.gameHomeCanvas{position:absolute;inset:0;width:100%;height:100%;z-index:-2;pointer-events:none}
+#modeScreen>.modeCards{position:relative;z-index:1}
+#techScreen{height:100dvh;min-height:0;overflow-y:auto;overscroll-behavior:contain;justify-content:flex-start;padding-top:calc(70px + var(--safe-top));padding-bottom:calc(32px + var(--safe-bottom))}
+#techScreen .techSelect{width:min(820px,100%);display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto;gap:12px;margin-top:0}
+#techScreen .techCard,#techScreen .techCard:nth-child(n){position:relative;isolation:isolate;overflow:hidden;grid-column:1;grid-row:auto;display:grid;grid-template-columns:44px minmax(0,1fr) 44px;align-items:center;gap:14px;min-height:142px;padding:15px 13px;border:1px solid #a69d82;border-radius:2px;background:#1e1e1e;box-shadow:inset 0 0 0 4px #101a20,inset 0 0 0 5px #9a9c8266}
+#techScreen .techCard::after{content:"";position:absolute;left:12px;right:12px;bottom:0;height:2px;pointer-events:none;background:linear-gradient(90deg,transparent,#d7bb84,#e4f6f5,transparent);opacity:.85;animation:gameCartridgeEdge 3.4s ease-in-out infinite}
+#techScreen .gameTechWater{position:absolute;inset:0;width:100%;height:100%;z-index:-1;pointer-events:none;opacity:.9}
+#techScreen .techCardBody{position:relative;min-width:0;text-align:left}
+#techScreen .gameTechMeta{position:relative;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:5px 12px;margin-bottom:5px;color:#c9bb97;font:500 11px/1.4 Consolas,"Yu Gothic UI",sans-serif;letter-spacing:.08em}
+#techScreen .gameTechCost{padding:4px 7px;color:#e5e1ce;background:#292929;border:1px solid #77796e88;border-radius:3px;letter-spacing:0}
+#techScreen .gameTechImage{position:absolute;right:0;top:10px;width:125px;height:100px;object-fit:contain;pointer-events:none;opacity:.2;z-index:-1;animation:gameTechFloat 5s ease-in-out infinite}
+#techScreen .techCard:nth-child(2) .gameTechImage{animation-delay:-1.8s}
+#techScreen .techCard:nth-child(3) .gameTechImage{animation-delay:-3.4s}
+#techScreen .techIcon{justify-content:flex-start;min-height:32px;font:500 22px/1.4 "BIZ UDPGothic","Yu Gothic UI",Arial,sans-serif;letter-spacing:.04em;color:#f0f7fb}
+#techScreen .techCardDescription{margin-top:5px;font-size:13px;line-height:1.6;color:#d0dce3;overflow-wrap:anywhere}
+#techScreen .techArrow{position:relative;overflow:hidden;width:44px;min-width:44px;height:72px;min-height:44px;padding:0;color:#eddbb5;border:1px solid #b2a27e;border-radius:0;background:linear-gradient(160deg,#3c4d50,#263947);box-shadow:inset 0 1px 0 #ead8af44;font:500 24px/1 Arial,sans-serif;clip-path:polygon(0 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%)}
+#techScreen .techArrow::after{content:"";position:absolute;inset:-20% -100%;background:linear-gradient(115deg,transparent 40%,#ffe5b72b 49%,transparent 56%);animation:gameArrowLight 4s ease-in-out infinite;pointer-events:none}
+#techScreen .techArrow:last-child::after{animation-delay:-2s}
+#techScreen .techArrow:focus-visible{outline:2px solid #eff9ff;outline-offset:-4px}
+#techScreen .techArrow:disabled{opacity:.5}
+#techScreen #techConfirmButton{position:relative;grid-column:1;grid-row:auto;width:100%;min-height:52px;margin:2px 0 0;padding:12px}
+#techScreen .specialSelectionBody .specialPreviewToggle{position:relative;float:right;margin-top:5px}
+#techScreen .gameTechChanged .techIcon{animation:gameTechChange .22s ease-out}
+.gameResultOverlay{position:absolute;inset:0;z-index:70;display:grid;place-items:center;padding:20px;pointer-events:none;background:radial-gradient(ellipse at 50% 50%,#06111e44,#07122122 65%);isolation:isolate}
+.gameResultPanel{position:relative;isolation:isolate;display:flex;flex-direction:column;align-items:center;justify-content:center;width:min(680px,100%);min-height:360px;padding:50px 22px;text-align:center;color:#e3f5fa;background:radial-gradient(ellipse,#0a1e2de8 20%,#091929ad 55%,transparent 73%);animation:gameResultEnter .55s ease-out}
+.gameResultCanvas{position:absolute;inset:0;z-index:-1;width:100%;height:100%;pointer-events:none}
+.gameResultEyebrow{font:500 11px/1.5 Arial,sans-serif;letter-spacing:.2em;color:#a2c3d0;margin-bottom:14px}
+.gameResultWord{font:500 clamp(34px,6vw,66px)/1.2 Arial,"Yu Gothic UI",sans-serif;letter-spacing:.08em;text-shadow:0 0 24px #80d7f342}
+.gameResultWinner{max-width:100%;margin-top:14px;font:500 clamp(15px,2.5vw,22px)/1.5 Arial,"Yu Gothic UI",sans-serif;overflow-wrap:anywhere}
+#battleScreen.hasGameResult #resultMessage{visibility:hidden;height:0;min-height:0;overflow:hidden}
+.playerCardPanel[data-card-style="obsidian"]{background:linear-gradient(135deg,#1b2c3a,#111d2c);border-color:#9bb3c3}
+.playerCardPanel[data-card-style="abyss"]{background:linear-gradient(125deg,#163947,#0b2335);border-color:#6ab9b7}
+.playerCardStyleCanvas{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+.playerCardPanel .playerCardContent{position:relative;z-index:1}
+.playerCardStyleHint{font-size:12px;line-height:1.7;color:#bbd2e2;margin:6px 0 14px}
+.playerCardStyleGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.playerCardStyleChoice{min-width:0;padding:12px;background:#10273a;border:1px solid #56778d;border-radius:8px;display:flex;flex-direction:column;gap:10px}
+.playerCardStyleChoice .titles-button{min-width:0;width:100%;font-size:12px;line-height:1.6;padding:9px 8px;white-space:normal;margin-top:auto}
+.playerCardStylePrice{font-size:12px;color:#c8dfe9}
+.playerCardStyleSample{position:relative;isolation:isolate;overflow:hidden;display:flex;flex-direction:column;justify-content:center;gap:16px;min-height:145px;padding:18px 12px;color:#e7f5fb;background:#172b3e;border:1px solid #69859a;border-radius:4px}
+.playerCardStyleSample[data-card-style="obsidian"]{background:#172432;border-color:#a0b4c2}
+.playerCardStyleSample[data-card-style="abyss"]{background:#11333e;border-color:#7bc7bc}
+.playerCardStyleSampleCode,.playerCardStyleSampleName,.playerCardStyleSampleRule{position:relative;z-index:1}
+.playerCardStyleSampleCode{font:500 10px/1.5 Arial,sans-serif;letter-spacing:.13em;color:#b8cfde}
+.playerCardStyleSampleName{font-size:17px;font-weight:500;overflow-wrap:anywhere}
+.playerCardStyleSampleRule{height:1px;background:linear-gradient(90deg,#a6d4df99,transparent)}
+@keyframes gameCartridgeEdge{0%,100%{transform:translateX(-55%)}50%{transform:translateX(55%)}}
+@keyframes gameArrowLight{0%,40%{transform:translateX(-55%);opacity:0}55%{opacity:1}100%{transform:translateX(65%);opacity:0}}
+@keyframes gameTechFloat{50%{transform:translateY(-5px) rotate(2deg)}}
+@keyframes gameTechChange{from{opacity:.35;transform:translateX(8px)}to{opacity:1;transform:none}}
+@keyframes gameResultEnter{from{opacity:.25;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media(max-width:640px){
+ #techScreen .techCard,#techScreen .techCard:nth-child(n){min-height:150px;gap:8px;padding:13px 9px}
+ #techScreen .techIcon{font-size:19px}
+ #techScreen .techCardDescription{font-size:12px}
+ #techScreen .gameTechImage{width:95px;height:85px;top:24px}
+ #techScreen .gameTechMeta{gap:4px;font-size:11px}
+ .gameResultOverlay{padding:10px}
+ .gameResultPanel{min-height:310px;padding:38px 9px}
+ .gameResultWord{font-size:clamp(28px,9vw,45px)}
+ .playerCardStyleGrid{grid-template-columns:1fr}
+ .playerCardStyleSample{min-height:130px}
+}
+@media(prefers-reduced-motion:reduce){
+ #techScreen .techCard::after,#techScreen .techArrow::after,#techScreen .gameTechImage,#techScreen .gameTechChanged .techIcon,.gameResultPanel{animation:none!important;transition:none!important}
+}
+
+/* Collection index: the earned ribbon remains the focal point of each row. */
+#titleCollection .title-grid{grid-template-columns:minmax(0,1fr);gap:0}
+#titleCollection .title-entry{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.9fr);gap:10px 24px;align-items:center;min-height:110px;border:0;border-bottom:1px solid #66859e55;border-left:2px solid transparent;border-radius:0;background:#10283a;padding:18px}
+#titleCollection .title-entry>.badge-item{grid-column:1;grid-row:1/3}
+#titleCollection .title-entry .title-description{grid-column:2;grid-row:1}
+#titleCollection .title-entry .title-progress{grid-column:2;grid-row:2}
+#titleCollection .title-entry:not(:disabled):hover,#titleCollection .title-entry:not(:disabled):focus-visible{border-left-color:#b9eef2;background:#1b3c50}
+@media(max-width:550px){
+ #titleCollection .title-entry{grid-template-columns:minmax(0,1fr);gap:10px;min-height:155px;padding:16px}
+ #titleCollection .title-entry>.badge-item,#titleCollection .title-entry .title-description,#titleCollection .title-entry .title-progress{grid-column:auto;grid-row:auto}
+}
