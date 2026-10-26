@@ -1,0 +1,40 @@
+name: Game motion and card shop
+on:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install browser test dependency
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+      - name: Unit and compatibility checks
+        run: |
+          node --check game-motion-art.js
+          node --check game-motion.js
+          node tests/card-style-purchases.test.cjs
+          node tests/economy-security.test.cjs
+          node tests/battle-frames.test.cjs
+          node tests/profile-special-history.test.cjs
+          node tests/guide-details.test.cjs
+      - name: Download official Realtime Database emulator
+        run: curl --fail --location --retry 2 https://storage.googleapis.com/firebase-preview-drop/emulator/firebase-database-emulator-v4.11.2.jar -o "$RUNNER_TEMP/database-emulator.jar"
+      - name: Verify real Firebase compiler and purchase rules
+        run: FIREBASE_DATABASE_EMULATOR_JAR="$RUNNER_TEMP/database-emulator.jar" node tests/card-style-emulator.test.cjs
+      - name: Verify production UI
+        run: node tests/game-motion-ui.test.cjs
