@@ -35,7 +35,7 @@ async function startRanked(resume=false){
  const epoch=++rankedEpoch;gameMode='ranked';document.getElementById('randomSearchFeedback').textContent='';rankedButtons(true);rankedMessage('対戦相手を探しています…');
  try{
   let response=await rankedRpc({op:resume?'resume':'join'});
-  if(resume&&!response.match){rankedStop();return;}
+  if(resume&&(!response.match||response.match.closed)){if(response.match?.closed)window.MatchRewards?.finished(response.match);rankedStop();return;}
   while(rankedActive&&epoch===rankedEpoch&&!response.match){
    if(rankedCancelled){response=await rankedRpc({op:'cancel'});if(!response.match){rankedStop();rankedMessage('検索をキャンセルしました');return;}break;}
    rankedMessage('対戦相手を探しています…');

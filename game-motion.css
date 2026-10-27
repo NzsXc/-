@@ -5,7 +5,7 @@
 #modeScreen>.modeCards{position:relative;z-index:1}
 #techScreen{height:100dvh;min-height:0;overflow-y:auto;overscroll-behavior:contain;justify-content:flex-start;padding-top:calc(70px + var(--safe-top));padding-bottom:calc(32px + var(--safe-bottom))}
 #techScreen .techSelect{width:min(820px,100%);display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto;gap:12px;margin-top:0}
-#techScreen .techCard,#techScreen .techCard:nth-child(n){position:relative;isolation:isolate;overflow:hidden;grid-column:1;grid-row:auto;display:grid;grid-template-columns:44px minmax(0,1fr) 44px;align-items:center;gap:14px;min-height:142px;padding:15px 13px;border:1px solid #a69d82;border-radius:2px;background:#1e1e1e;box-shadow:inset 0 0 0 4px #101a20,inset 0 0 0 5px #9a9c8266}
+#techScreen .techCard,#techScreen .techCard:nth-child(n){position:relative;isolation:isolate;overflow:hidden;grid-column:1;grid-row:auto;display:grid;grid-template-columns:minmax(0,1fr);align-items:stretch;gap:0;min-height:0;padding:0;border:1px solid #a69d82;border-radius:2px;background:#1e1e1e;box-shadow:inset 0 0 0 4px #101a20,inset 0 0 0 5px #9a9c8266}
 #techScreen .techCard::after{content:"";position:absolute;left:12px;right:12px;bottom:0;height:2px;pointer-events:none;background:linear-gradient(90deg,transparent,#d7bb84,#e4f6f5,transparent);opacity:.85;animation:gameCartridgeEdge 3.4s ease-in-out infinite}
 #techScreen .gameTechWater{position:absolute;inset:0;width:100%;height:100%;z-index:-1;pointer-events:none;opacity:.9}
 #techScreen .techCardBody{position:relative;min-width:0;text-align:left}
@@ -53,7 +53,7 @@
 @keyframes gameTechChange{from{opacity:.35;transform:translateX(8px)}to{opacity:1;transform:none}}
 @keyframes gameResultEnter{from{opacity:.25;transform:translateY(8px)}to{opacity:1;transform:none}}
 @media(max-width:640px){
- #techScreen .techCard,#techScreen .techCard:nth-child(n){min-height:150px;gap:8px;padding:13px 9px}
+ #techScreen .techCard,#techScreen .techCard:nth-child(n){min-height:0;gap:0;padding:0}
  #techScreen .techIcon{font-size:19px}
  #techScreen .techCardDescription{font-size:12px}
  #techScreen .gameTechImage{width:95px;height:85px;top:24px}

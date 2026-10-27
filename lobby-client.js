@@ -6,7 +6,7 @@ async function openFriendLobby(){
  stopBot();resetOnlineMatchState();stopProtectedLobby();protectedLobbyActive=true;protectedLobbyBusy=false;
  gameMode='online';showScreen('friendLobbyScreen');document.getElementById('friendCreateButton').hidden=false;document.getElementById('friendCreateButton').disabled=false;document.getElementById('friendLobbyBack').disabled=false;
  protectedStatus('部屋を選ぶか、新しく作ってください。ゲストも参加できます。');
- try{const response=await window.protectedRooms.resume();if(!protectedLobbyActive)return;if(response.match){enterProtectedMatch(response.match);return;}}catch(e){protectedStatus('接続できません：'+e.message);return;}
+ try{const response=await window.protectedRooms.resume();if(!protectedLobbyActive)return;if(response.match&&!response.match.closed){enterProtectedMatch(response.match);return;}if(response.match?.closed){window.MatchRewards?.finished(response.match);protectedStatus('前の対戦は終了しています。部屋を選ぶか、新しく作ってください。');}}catch(e){protectedStatus('接続できません：'+e.message);return;}
  protectedLobbyStop=window.protectedRooms.watchList(rooms=>{protectedLobbyRooms=rooms;renderProtectedRooms();},e=>protectedStatus('接続できません：'+e.message));protectedLobbyTimer=setInterval(renderProtectedRooms,5000);
 }
 function renderProtectedRooms(){
