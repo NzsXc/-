@@ -31,6 +31,7 @@ jobs:
           node --check battle-inspector.js
           node tests/battle-audio.test.cjs
           node tests/audio-settings.test.cjs
+          node tests/name-style-upgrade.test.cjs
           node tests/titles-release.test.cjs
           node tests/titles-season2-effects.test.cjs
           node tests/titles-profile-effects.test.cjs
@@ -54,5 +55,6 @@ jobs:
         run: |
           node tests/inspector-lobby-music.test.cjs
           node tests/game-motion-ui.test.cjs
+          node tests/online-music-background.test.cjs
           node tests/title-plate-layout.test.cjs
           node tests/battle-fixes-ui.test.cjs

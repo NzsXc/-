@@ -15,10 +15,10 @@ function render(wallet){ui.titleWallet=wallet;vm.runInContext('renderNamePanel()
  await assert.rejects(()=>service.unlock('gloss'),/先に/);assert.equal(h.get('coinWallets/p1/balance'),300);
  assert.throws(()=>h.commit({'coinWallets/p1':{...seed(),balance:0,colorUnlocked:true,glossUnlocked:true}},'p1'),/permission_denied/,'both rights cannot be forged in one payment');
  await service.unlock('color');let wallet=h.get('coinWallets/p1');assert.equal(wallet.balance,200);
- const after=render(wallet);assert.equal(after.children.length,2);assert.equal(after.children[1].textContent,'200コイン払って光沢色を解放');assert.equal(after.children[1].disabled,false);
+ const after=render(wallet);assert.equal(after.children.length,2);assert.equal(after.children[1].textContent,'200コイン払ってネオンを解放');assert.equal(after.children[1].disabled,false);
  h.put('coinWallets/p1/balance',199);await assert.rejects(()=>service.unlock('gloss'),/200/);assert.equal(render(h.get('coinWallets/p1')).children[1].disabled,true);
  h.put('coinWallets/p1/balance',200);await service.unlock('gloss');assert.equal(h.get('coinWallets/p1/balance'),0);assert.equal(h.get('coinWallets/p1/glossUnlocked'),true);
  await service.saveStyle('red',true);await service.unlock('gloss');assert.equal(h.get('coinWallets/p1/balance'),0,'owned gloss is never charged again');
- wallet=h.get('coinWallets/p1');assert.equal(render(wallet).children[1].textContent,'光沢色：解放済み');assert.equal(panel.children.find(n=>n.className==='glossChoice').children[0].disabled,false);
+ wallet=h.get('coinWallets/p1');assert.equal(render(wallet).children[1].textContent,'ネオン：解放済み');assert.equal(panel.children.find(n=>n.className==='glossChoice').children[0].disabled,false);
  console.log('PASS real shop rendering + payment rules: hidden until color purchased, 100+200 total, 199/200 boundary, forged combined purchase, preserved ownership and gloss selection');
 })().catch(e=>{console.error(e);process.exitCode=1;});
