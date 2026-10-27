@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>心理バトル</title>
 <link rel="stylesheet" href="battle-history.css?v=account-update-20261024">
-<link rel="stylesheet" href="advanced/advanced.css?v=account-update-20261024">
+<link rel="stylesheet" href="advanced/advanced.css?v=battle-fixes-20261027">
 <link rel="stylesheet" href="advanced/special.css?v=account-update-20261024">
 <link rel="stylesheet" href="advanced/button-art.css?v=account-update-20261024">
 <link rel="stylesheet" href="advanced/cutin.css?v=account-update-20261024">
@@ -2160,7 +2160,7 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
      オンラインメニュー
 ========================= -->
 
-<div id="helpScreen" class="screen utilityScreen"><div class="utilityPanel"><nav class="helpNav" aria-label="詳しい遊び方のページ"><button class="tipNavButton active" onclick="showHelpPage(1)" id="helpTab1" aria-pressed="true" aria-current="page"><small>p1</small>遊び方</button><button class="tipNavButton" onclick="showHelpPage(2)" id="helpTab2" aria-pressed="false"><small>p2</small>技・スキル効果</button></nav><section id="helpPage1" class="helpPage"><header class="guideHeader"><h1>詳しい遊び方</h1></header><div id="helpTopics"><button type="button" class="helpTopic" data-topic="0" ><span>01</span><strong>基本の遊び方</strong><span>→</span></button><button type="button" class="helpTopic" data-topic="1" aria-disabled="true"><span>02</span><strong>準備中</strong><span>—</span></button><button type="button" class="helpTopic" data-topic="2" aria-disabled="true"><span>03</span><strong>準備中</strong><span>—</span></button><button type="button" class="helpTopic" data-topic="3" aria-disabled="true"><span>04</span><strong>準備中</strong><span>—</span></button><button type="button" class="helpTopic" data-topic="4" aria-disabled="true"><span>05</span><strong>準備中</strong><span>—</span></button><button type="button" class="helpTopic" data-topic="5" aria-disabled="true"><span>06</span><strong>準備中</strong><span>—</span></button><button type="button" class="helpTopic" data-topic="6" aria-disabled="true"><span>07</span><strong>準備中</strong><span>—</span></button><button type="button" class="helpTopic" data-topic="7" aria-disabled="true"><span>08</span><strong>準備中</strong><span>—</span></button><button type="button" class="helpTopic" data-topic="8" aria-disabled="true"><span>09</span><strong>準備中</strong><span>—</span></button><button type="button" class="helpTopic" data-topic="9" aria-disabled="true"><span>10</span><strong>準備中</strong><span>—</span></button></div><section id="helpArticle" class="helpArticle" hidden><div class="tipPageInner guidePage">
+<div id="helpScreen" class="screen utilityScreen"><div class="utilityPanel"><nav class="helpNav" aria-label="詳しい遊び方のページ"><button class="tipNavButton active" onclick="showHelpPage(1)" id="helpTab1" aria-pressed="true" aria-current="page"><small>p1</small>遊び方</button><button class="tipNavButton" onclick="showHelpPage(2)" id="helpTab2" aria-pressed="false"><small>p2</small>技・スキル効果</button></nav><section id="helpPage1" class="helpPage"><header class="guideHeader"><h1>詳しい遊び方</h1></header><div id="helpTopics"><button type="button" class="helpTopic" data-topic="0" ><span>01</span><strong>基本の遊び方</strong><span>→</span></button><button type="button" class="helpTopic" data-topic="1"><span>02</span><strong>コイン</strong><span>→</span></button><button type="button" class="helpTopic" data-topic="2" aria-disabled="true"><span>03</span><strong>準備中</strong><span>—</span></button><button type="button" class="helpTopic" data-topic="3" aria-disabled="true"><span>04</span><strong>準備中</strong><span>—</span></button><button type="button" class="helpTopic" data-topic="4" aria-disabled="true"><span>05</span><strong>準備中</strong><span>—</span></button><button type="button" class="helpTopic" data-topic="5" aria-disabled="true"><span>06</span><strong>準備中</strong><span>—</span></button><button type="button" class="helpTopic" data-topic="6" aria-disabled="true"><span>07</span><strong>準備中</strong><span>—</span></button><button type="button" class="helpTopic" data-topic="7" aria-disabled="true"><span>08</span><strong>準備中</strong><span>—</span></button><button type="button" class="helpTopic" data-topic="8" aria-disabled="true"><span>09</span><strong>準備中</strong><span>—</span></button><button type="button" class="helpTopic" data-topic="9" aria-disabled="true"><span>10</span><strong>準備中</strong><span>—</span></button></div><section id="helpArticle" class="helpArticle" hidden><div class="tipPageInner guidePage">
         <header class="guideHeader"><span class="guideEyebrow">HOW TO PLAY</span><h1>遊び方</h1><p>相手の行動を読み、HPを0にしたら勝利。</p></header>
         <ol class="guideSteps">
           <li><h2>対戦モードを選ぶ</h2><p>ひとりでCPUと練習するほか、オンライン対戦や、1台の端末で2人対戦ができます。友達対戦ではStandard・Custom・Advancedを選べます。</p></li>
@@ -2172,7 +2172,19 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
         <aside class="guideCallout"><h2>Standardの初期設定</h2><p>HP 10 / 初期ゲージ 8 / 最大ゲージ 10。Customでは部屋の設定によって変わります。</p></aside>
         <aside class="guideCallout"><h2>Advanced：スキルを1つ追加</h2><p>技3つに加えて、6種類からスキルを1つ選択。各ターンの行動選択前にある3秒間に発動できます。ゲージ消費はなく、1ターン1回まで。スキルごとに1試合の使用回数が決まっています。両者が使い切ると、3秒間の受付は省かれます。</p></aside>
         <button class="guideTextLink" onclick="showHelpPage(2)">絵柄とすべての効果を確認する →</button>
-      </div></section><button id="helpContentsBack" hidden type="button">目次に戻る</button></section><section id="helpPage2" class="helpPage" hidden><div class="tipPageInner guidePage">
+      </div></section><section id="helpCoinArticle" class="helpArticle" hidden><div class="tipPageInner guidePage">
+<header class="guideHeader"><h2>コイン</h2><p>ログインして集めたコインで、名前やプレイヤーカードをカスタマイズできます。</p></header>
+<section><h3>獲得方法</h3><ul>
+<li>毎日のログイン：1日1回、50コイン。日付は日本時間の午前0時に切り替わります。</li>
+<li>ほかのユーザーのログイン：そのユーザーのログインにつき10コイン。自分のアカウント作成後のログインが対象です。</li>
+<li>ログインユーザー同士の対戦：設定HPが10以上の試合を終了すると、勝敗にかかわらず両者に10コイン。ランダム対戦・フレンド対戦が対象です。</li>
+</ul><p class="guideNote">ゲスト・BOT・同じ端末での対戦、設定HPが9以下の試合、技選択中に終了した試合は対戦報酬の対象外です。同じ試合の報酬は1回だけ受け取れます。</p></section>
+<section><h3>使い道</h3><ul>
+<li>名前の色変更を解放：100コイン。</li>
+<li>名前の光沢を解放：200コイン。先に色変更の解放が必要です。</li>
+<li>プレイヤーカード背景：各100コイン。</li>
+</ul><p>ホームの名前・カードの設定から購入できます。購入済みの色や背景は、追加のコインを使わずに切り替えられます。</p></section>
+</div></section><button id="helpContentsBack" hidden type="button">目次に戻る</button></section><section id="helpPage2" class="helpPage" hidden><div class="tipPageInner guidePage">
         <header class="guideHeader"><span class="guideEyebrow">TECHNIQUES &amp; SKILLS</span><h1>技・スキル効果</h1><p>ゲーム内と同じ絵柄で、消費ゲージと効果をチェック。</p></header>
         <h2 class="guideSectionTitle">基本行動 <small>3種類 / 共通</small></h2><div id="guideBasicActions" class="guideCatalog"></div>
         <h2 class="guideSectionTitle">選択技 <small>19種類から3つを装備</small></h2><div id="guideTechniques" class="guideCatalog"></div>
@@ -2777,15 +2789,15 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
 <script src="battle-new-effects.js?v=account-update-20261024"></script>
 <script src="battle-effects.js?v=battle-frames-20261025"></script>
 <script type="module">
-  import {createTitleService} from "./title-service.js?v=account-update-20261024";
+  import {createTitleService} from "./title-service.js?v=battle-fixes-20261027";
   import {createBattleFrameService} from "./battle-frame-service.js?v=battle-frames-20261025";
-  import {createProtectedRooms} from "./protected-rooms.js?v=custom-modes-20261027";
-  import {createFreeTransport} from "./free-transport.js?v=custom-modes-20261027";
+  import {createProtectedRooms} from "./protected-rooms.js?v=battle-fixes-20261027";
+  import {createFreeTransport} from "./free-transport.js?v=battle-fixes-20261027";
   import {createBattleHistory} from "./battle-history.js?v=s-special-completion-20261026";
-  import {createPlayerProfile} from "./player-profile.js?v=motion-shop-20261026";
+  import {createPlayerProfile} from "./player-profile.js?v=battle-fixes-20261027";
   import {createHistoryScreen} from "./battle-history-client.js?v=custom-modes-20261027";
   import {createCommunityRatings} from "./community-ratings.js?v=account-update-20261024";
-  import {createEconomyService} from "./economy-service.js?v=custom-modes-20261027";
+  import {createEconomyService} from "./economy-service.js?v=battle-fixes-20261027";
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
   import {
     getAuth,
@@ -6986,19 +6998,31 @@ function updateDisabledActions(){
    バトルBGM
 ========================= */
 
+const pendingMusicPlays=new WeakMap();
+function wantedMusicId(){
+  if(document.getElementById("battleScreen")?.classList.contains("active"))return document.getElementById("resultMessage")?.classList.contains("resultShow")?null:"battleBGM";
+  return window.onlineMusicContext?"onlineMenuBGM":"menuBGM";
+}
+function playScreenMusic(audio){
+  if(!audio.paused||pendingMusicPlays.has(audio))return;
+  const request={};pendingMusicPlays.set(audio,request);
+  let promise;try{promise=audio.play();}catch{pendingMusicPlays.delete(audio);return;}
+  Promise.resolve(promise).then(()=>{if(wantedMusicId()!==audio.id)audio.pause();},()=>{}).finally(()=>{if(pendingMusicPlays.get(audio)===request)pendingMusicPlays.delete(audio);});
+}
+function pauseScreenMusic(audio){if(audio){pendingMusicPlays.delete(audio);audio.pause();}}
+
 function startMenuBGM(){
   const audio=document.getElementById("menuBGM");
   if(!audio || document.getElementById("battleScreen")?.classList.contains("active") || window.onlineMusicContext)return;
   audio.loop=true;
   window.GameAudio?GameAudio.element(audio,.208,'music'):audio.volume=.208;
   if(!audio.paused)return;
-  const promise=audio.play();
-  if(promise && typeof promise.catch==="function")promise.catch(()=>{});
+  playScreenMusic(audio);
 }
 
 function pauseMenuBGM(){
   const audio=document.getElementById("menuBGM");
-  if(audio)audio.pause();
+  pauseScreenMusic(audio);
 }
 
 function startOnlineMenuBGM(){
@@ -7007,13 +7031,12 @@ function startOnlineMenuBGM(){
   audio.loop=true;
   window.GameAudio?GameAudio.element(audio,.208,"music"):audio.volume=.208;
   if(!audio.paused)return;
-  const promise=audio.play();
-  if(promise && typeof promise.catch==="function")promise.catch(()=>{});
+  playScreenMusic(audio);
 }
 
 function stopOnlineMenuBGM(){
   const audio=document.getElementById("onlineMenuBGM");
-  if(audio){audio.pause();if(!window.onlineMusicContext)audio.currentTime=0;}
+  if(audio){pauseScreenMusic(audio);if(!window.onlineMusicContext)audio.currentTime=0;}
 }
 
 function startBattleBGM(){
@@ -7027,19 +7050,14 @@ function startBattleBGM(){
   // すでに再生中なら頭出しせず、そのまま続ける
   if(!audio.paused)return;
 
-  const promise=audio.play();
-  if(promise && typeof promise.catch==="function"){
-    promise.catch(()=>{
-      // ブラウザの自動再生制限時は、次のユーザー操作で再試行する
-    });
-  }
+  playScreenMusic(audio);
 }
 
 function stopBattleBGM(){
   const audio=document.getElementById("battleBGM");
   if(!audio)return;
 
-  audio.pause();
+  pauseScreenMusic(audio);
   audio.currentTime=0;
 }
 
@@ -7054,9 +7072,7 @@ function syncBattleBGM(screenId){
   }
 }
 function resumeScreenBGM(){
-  if(document.getElementById("battleScreen")?.classList.contains("active"))startBattleBGM();
-  else if(window.onlineMusicContext)startOnlineMenuBGM();
-  else startMenuBGM();
+  syncBattleBGM(document.getElementById("battleScreen")?.classList.contains("active")?"battleScreen":null);
 }
 // Retry autoplay only for the currently visible screen, without restarting it.
 document.addEventListener("pointerdown",resumeScreenBGM,{passive:true});
@@ -7190,7 +7206,7 @@ updateTechniqueDisplay();
 </script>
 <script src="community-rating-core.js?v=account-update-20261024"></script>
 <script src="audio-settings.js?v=mobile-controls-20261025"></script>
-<script src="account-ui.js?v=custom-modes-20261027"></script>
+<script src="account-ui.js?v=battle-fixes-20261027"></script>
 <script src="match-rewards.js?v=custom-modes-20261027"></script>
 <script src="guide-detail-data.js?v=guide-details-20261026"></script>
 <script src="technique-picker.js?v=tech-arrows-20261027"></script>

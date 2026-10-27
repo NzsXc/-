@@ -19,8 +19,11 @@ export function summarizePlayerHistories(histories,uid,currentRating){
   for(let turn=1;turn<=h.turnCount;turn++){
    const action=h.moves?.[turn]?.[side];
    if(!Number.isInteger(action)||action<(h.rulesVersion===4?-1:0)||action>(h.rulesVersion===4?40:h.rulesVersion===3?26:14))throw Error('使用回数を集計できない対戦データがあります');
-   // S moves are valid history, but normal-technique usage has its own counter.
-   if(action>=3&&action<=14)counts[action-3]++;else if(action>=27&&action<=33)counts[action-15]++;
+   // Normal and S variants both count toward their equipped technique.
+   if(action>=3&&action<=14)counts[action-3]++;
+   else if(action>=15&&action<=26)counts[action-15]++;
+   else if(action>=27&&action<=33)counts[action-15]++;
+   else if(action>=34&&action<=40)counts[action-22]++;
   }
  }
  const techniques=counts.map((count,index)=>({action:index<12?index+3:index+15,name:ACTION_NAMES[index<12?index+3:index+15],count})).filter(t=>t.count>0).sort((a,b)=>b.count-a.count||a.action-b.action).slice(0,3);

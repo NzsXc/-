@@ -64,8 +64,8 @@ export function createTitleService(db,auth,history){
    catch(error){const h=await archivedProof(game);if(!h)throw error;action=h.moves?.[turn]?.[side];}
    if(action==null){const h=await archivedProof(game);action=h?.moves?.[turn]?.[side];}
   }
-  if(!Number.isInteger(action)||!(action>=3&&action<=14||action>=27&&action<=33))return;
-  const skill=action>=27?action-14:action-2,proof='titleReceipts/'+who+'/'+game+'/'+turn,total='titleProgress/'+who+'/uses/'+skill;
+  if(!Number.isInteger(action)||action<3||action>40)return;
+  const skill=action>=34?action-21:action>=15?action-14:action-2,proof='titleReceipts/'+who+'/'+game+'/'+turn,total='titleProgress/'+who+'/uses/'+skill;
   for(let attempt=0;attempt<4;attempt++){
    if(uid()!==who)return;
    const [done,previous]=await Promise.all([read(proof),read(total)]);if(done!==null)return;

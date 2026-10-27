@@ -106,6 +106,13 @@ function setup(){
  v.h.setClock(20901);await v.tick();b=specialViews.at(-1).battle;assert.equal(b.hp[1],7);assert.equal(b.gauge[2],13);assert.equal(b.specialRuin[2],0);assert.equal(b.skillMatch.displayState.frozen[1],1);
  v.h.put('freeGames/match/roomRules',{...rules,skills:false});v.reads.length=0;await v.tick();b=specialViews.at(-1).battle;assert.equal(b.skillMatch,undefined);assert(!v.reads.some(p=>p.endsWith('/advanced')),'S-only viewing does not read skills');
  assert.deepEqual(specialErrors,[]);assert.deepEqual(v.renderErrors,[]);assert(!v.reads.some(p=>/\/(moves|advance)(?:\/|$)/.test(p)));stopSpecial();
+ // A public spectator closes abandoned games without participant writes.
+ const stale=setup(),abandoned=[],closedViews=[];
+ const stopStale=stale.api.watchAllRooms(value=>abandoned.push(plain(value)),error=>{throw error;});await stale.flush();
+ assert(abandoned.at(-1)['random:match']);stale.h.setClock(45600);await stale.tick();assert(!abandoned.at(-1)['random:match'],'both-disconnected match leaves the list at the shared grace deadline');
+ const stopClosed=stale.api.watchRoom('random:match',value=>closedViews.push(plain(value)),error=>{throw error;});await stale.flush();
+ assert.equal(closedViews.at(-1).battle.phase,'finished');assert.equal(closedViews.at(-1).battle.result,'切断・復帰猶予切れ');assert.equal(stale.h.get('freeGames/match/state/turn'),1,'spectators never mutate the match');
+ stale.h.put('freeGames/match/state/startedAt',45600);await stale.tick();assert(abandoned.at(-1)['random:match'],'freshly advanced games remain visible');stopClosed();stopStale();
  console.log('PASS: random discovery, actual rules/UI filter, deduplication, dynamic lists, friend regression, hidden loadouts/moves, transition timing, archive races, error isolation and cancellation');
 })().catch(error=>{console.error(error);process.exitCode=1;});
 

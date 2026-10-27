@@ -150,7 +150,7 @@ const initialAccount = {
   try{return await job;}finally{if(advanceFlights.get(key)===job)advanceFlights.delete(key);}
  }
  const initial=(rules,version=2,specialVersion=0)=>({... (specialVersion>=4?window.BattleV4.extraSpecialState():{}),... (version>=4?window.BattleV4.extraState():{}),... (version>=3?window.SpecialRules.extraState():{}),...Object.fromEntries(stateFields.map(k=>[k,k==='turn'?1:k==='startedAt'?serverTimestamp():k.startsWith('hp')?rules.hp:k.startsWith('gauge')?rules.initialGauge:k.startsWith('seal')||k.startsWith('momentum')?false:k.startsWith('last')?'':0])),...(window.AdvancedRules.isAdvanced(rules)&&!window.RoomRules.hasSkills(rules)?{skillsExhausted:true}:{})});
- const matchMetadata=new Map(),titleRecorded=new Map(),ratingClaimed=new Set(),skillSnapshots=new Map();
+ const matchMetadata=new Map(),titleRecorded=new Map(),ratingClaimed=new Set(),matchSnapshots=new Map();
  const historyWarnings=new Set();
  async function archivedStatus(id,u){
   const h=await history?.find(id);
@@ -217,7 +217,7 @@ const initialAccount = {
   const advanced=window.AdvancedRules.isAdvanced(roomRules),opensAt=g.state?turnOpensAt(g.state,roomRules,g.advanced):0;
   const skillResult=advanced&&g.state&&window.AdvancedRules.presentationMs(g.advanced,g.state.turn)?window.AdvancedRules.preview(g.state,g.advanced?.selected,window.AdvancedRules.forTurn(g.advanced,g.state.turn),roomRules):null;
   const s=skillResult&&now()>=opensAt?skillResult:g.state;
-  const {players,loadouts}=g.ready[1]&&g.ready[2]?await metadata(id,g):{players:{},loadouts:{}};
+  const {players,loadouts}=s||g.ready[1]&&g.ready[2]?await metadata(id,g):{players:{},loadouts:{}};
   if(s&&(!loadouts[1]||!loadouts[2])){const saved=await archivedStatus(id,u);if(saved)return saved.match;throw Error('対戦情報を再取得してください');}
   const board=value=>value?{turn:value.turn,...(advanced?{skillsExhausted:!!value.skillsExhausted}:{}),...Object.fromEntries(['hp','gauge','seal','enhance','momentum','ruin','last',...(value.specialSeal1!=null?['specialSeal','specialRuin','specialMomentum']:[]),...(value.frozen1!=null?['frozen','poison']:[]),...(value.weaken1!=null?['weaken']:[])].map(k=>[k,[null,value[k+'1'],value[k+'2']]]))}:null;
   const state=board(s),closed=!!g.settled;
@@ -236,7 +236,7 @@ const initialAccount = {
   const draftView=g.draft?window.MatchModes.view(g.draft,now()):null;
   const selectionDeadline=draftView?(draftView.complete?g.createdAt+150000:draftView.deadline):g.createdAt+60000;
   const match={id,...(draftView?{draft:g.draft}:{}),foresightShield:g.foresightShield===true,rulesVersion:g.rulesVersion,kind:g.kind||'random',roomId:g.room||null,roomRules:window.RoomRules.normalize(g.roomRules),you:me,...(window.RoomRules.hasSpecial(roomRules)?{special:g.special}:{}),...(advanced?{advanced:g.advanced,skillResult:board(skillResult),skillWindow:s?{startAt:skillEndsAt(s)-window.AdvancedRules.windowMs(s),endAt:skillEndsAt(s),confirmAt:confirmAt(s)}:null}:{}),players,ready:g.ready,loadouts,state,closed,phase:closed?'finished':s?'turn':'select',revision:now(),serverNow:now(),opensAt,deadline:s?opensAt+10000:selectionDeadline,graceDeadline:s?opensAt+40000:selectionDeadline+30000,ownAction:g.own??null,reveal:g.transition?{turn:g.transition.turn-1,startedAt:s?.startedAt,countdownEndsAt:Number.isFinite(s?.previousDeadline)?countdownEndsAt(s):null,actions:{1:g.transition.action1,2:g.transition.action2},damage:{1:g.transition.damage1,2:g.transition.damage2},resources}:null,result:closed?{winner:g.settled.winner,rated:g.kind!=='friend',reason:g.resigned?'resigned':g.abandoned&&s?.hp1>0&&s?.hp2>0?'reconnect-timeout':!s?'selection-timeout':s.misses1>=2||s.misses2>=2?'idle-forfeit':s.turn>300?'turn-limit':'battle'}:null,rating:closed?{before:g.settled['before'+me],after:g.settled['after'+me],delta:g.settled['delta'+me]}:null};
-  if(window.RoomRules.hasSkills(roomRules)&&state&&!closed)skillSnapshots.set(u+':'+id,match);else skillSnapshots.delete(u+':'+id);
+  if(state&&!closed)matchSnapshots.set(u+':'+id,match);else matchSnapshots.delete(u+':'+id);
   return match;
  }
  async function resumeActive(account){
@@ -262,10 +262,19 @@ const initialAccount = {
   // The displayed match already contains the participant, skill, count and
   // window. Send its receipt before any profile/status round trips; RTDB still
   // validates ownership, the turn, timestamp, remaining uses and atomic proof.
-  const pressedAt=now(),cached=skillSnapshots.get(auth.currentUser?.uid+':'+d.matchId);
-  if(d.op==='advancedSkill'&&cached){
+  const pressedAt=now(),cached=matchSnapshots.get(auth.currentUser?.uid+':'+d.matchId);
+  if(d.op==='advancedSkill'&&cached&&window.RoomRules.hasSkills(cached.roomRules)){
    await advancedProtocol.activate(d.matchId,cached.you,d.turn,cached.skillWindow.endAt,{advanced:cached.advanced,state:cached.state,pressedAt});
    const match=await status(d.matchId);if(match.state&&match.state.turn!==d.turn)throw Error('ターンが切り替わりました。');return {match};
+  }
+  // Public state reads validate membership themselves; no account preflight.
+  if(d.op==='status')return {match:await status(d.matchId)};
+  // Submit the visible turn directly. Immutable database rules remain authoritative.
+  if(d.op==='action'&&cached&&!cached.closed&&cached.state?.turn===d.turn&&pressedAt>=cached.opensAt&&pressedAt<cached.graceDeadline){
+   const movePath='freeGames/'+d.matchId+'/moves/'+d.turn+'/'+cached.you;
+   try{await writeSet(movePath,d.action);}
+   catch(error){if(await read(movePath)==null)throw error;}
+   return {match:await status(d.matchId)};
   }
   const a=await profile(),u=auth.currentUser.uid;
   if(d.op==='profile')return a;

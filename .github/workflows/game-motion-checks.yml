@@ -39,12 +39,20 @@ jobs:
           node tests/battle-frames.test.cjs
           node tests/profile-special-history.test.cjs
           node tests/guide-details.test.cjs
+          node tests/battle-lifecycle.test.cjs
+          node tests/spectator.test.cjs
+          node tests/match-rewards.test.cjs
+          node tests/custom-options.test.cjs
+          node tests/custom-modes.test.cjs
       - name: Download official Realtime Database emulator
         run: curl --fail --location --retry 2 https://storage.googleapis.com/firebase-preview-drop/emulator/firebase-database-emulator-v4.11.2.jar -o "$RUNNER_TEMP/database-emulator.jar"
       - name: Verify real Firebase compiler and purchase rules
-        run: FIREBASE_DATABASE_EMULATOR_JAR="$RUNNER_TEMP/database-emulator.jar" node tests/card-style-emulator.test.cjs
+        run: |
+          FIREBASE_DATABASE_EMULATOR_JAR="$RUNNER_TEMP/database-emulator.jar" node tests/card-style-emulator.test.cjs
+          FIREBASE_DATABASE_EMULATOR_JAR="$RUNNER_TEMP/database-emulator.jar" node tests/battle-fixes-emulator.test.cjs
       - name: Verify production UI
         run: |
           node tests/inspector-lobby-music.test.cjs
           node tests/game-motion-ui.test.cjs
           node tests/title-plate-layout.test.cjs
+          node tests/battle-fixes-ui.test.cjs
