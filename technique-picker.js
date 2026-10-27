@@ -23,13 +23,14 @@
  const orderNote=node('p','draftOrder');
  const picked=node('div','draftPicks'),draftGrid=node('div','techniqueIconGrid'),status=node('p','techniquePickerDescription');status.setAttribute('role','status');draft.append(heading,orderNote,picked,draftGrid,status);$('techScreen').insertBefore(draft,$('techScreen').querySelector('.techSelect'));
  let signature='',draftSending=false,autoConfirm='',lastMatch=null;
- function closeDraft(){draft.hidden=true;$('techScreen').classList.remove('draftSelectionActive','classicSelection');signature='';lastMatch=null;document.querySelectorAll('.techSlotButton').forEach(b=>{b.setAttribute('aria-disabled','false');b.tabIndex=0;});}
+ function closeDraft(){draft.hidden=true;$('techScreen').classList.remove('draftSelectionActive','classicSelection');signature='';lastMatch=null;document.querySelectorAll('.techSlotButton').forEach(b=>{b.setAttribute('aria-disabled','false');b.tabIndex=0;});document.querySelectorAll('#techScreen .techArrow').forEach(b=>b.disabled=false);}
  function sync(m,now=m.serverNow){
   if(!m||m.phase!=='select'){closeDraft();return;}
   const rules=m.roomRules||{},classic=!!rules.classic,isDraft=!!rules.draft;lastMatch=m;
   $('techScreen').classList.toggle('classicSelection',classic);
   if(classic){selectedTechniques[m.you]=[0,1,2];updateTechniqueDisplay();if(!m.ready?.[m.you]&&!rankedSending&&autoConfirm!==m.id){autoConfirm=m.id;queueMicrotask(()=>{if(rankedMatch?.id===m.id)rankedConfirm().finally(()=>{if(!rankedMatch?.ready?.[m.you])autoConfirm='';});});}}
   document.querySelectorAll('.techSlotButton').forEach(b=>{const locked=classic||isDraft||!!m.ready?.[m.you]||rankedSending;b.setAttribute('aria-disabled',String(locked));b.tabIndex=locked?-1:0;});
+  document.querySelectorAll('#techScreen .techArrow').forEach(b=>b.disabled=selectionLocked());
   if(!isDraft){draft.hidden=true;$('techScreen').classList.remove('draftSelectionActive');return;}
   const view=MatchModes.view(m.draft,now);draft.hidden=false;$('techScreen').classList.toggle('draftSelectionActive',!view.complete);
   orderNote.textContent='選択順：'+view.sequence.map(p=>p+'P').join(' → ');
@@ -51,5 +52,5 @@
   catch(error){status.textContent='確定できません：'+error.message;}
   finally{draftSending=false;signature='';if(lastMatch)sync(rankedMatch,rankedClockServer+performance.now()-rankedClockAt);}
  }
- window.TechniquePicker={close:()=>{if(dialog.open)dialog.close();},choices,sync,tick:(m,now)=>{if(m?.phase!=='select'||!m.roomRules?.draft)return;const v=MatchModes.view(m.draft,now),text=v.complete?'':v.remaining+'秒';if(timer.textContent!==text)timer.textContent=text;if(!v.complete&&v.remaining===0)for(const b of draftGrid.querySelectorAll('button'))b.disabled=true;},reset:closeDraft};
+ window.TechniquePicker={locked:selectionLocked,close:()=>{if(dialog.open)dialog.close();},choices,sync,tick:(m,now)=>{if(m?.phase!=='select'||!m.roomRules?.draft)return;const v=MatchModes.view(m.draft,now),text=v.complete?'':v.remaining+'秒';if(timer.textContent!==text)timer.textContent=text;if(!v.complete&&v.remaining===0)for(const b of draftGrid.querySelectorAll('button'))b.disabled=true;},reset:closeDraft};
 })();

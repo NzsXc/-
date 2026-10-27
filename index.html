@@ -2069,11 +2069,11 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
 <link rel="stylesheet" href="mode-menu.css?v=account-update-20261024">
 <link rel="stylesheet" href="notice-guide.css?v=guide-details-20261026">
 <link rel="stylesheet" href="guide-details.css?v=guide-layout-20261026">
-<link rel="stylesheet" href="custom-modes.css?v=tech-layout-fix-20261027">
+<link rel="stylesheet" href="custom-modes.css?v=tech-arrows-20261027">
 <link rel="stylesheet" href="account-update.css?v=mobile-controls-20261025">
 <link rel="stylesheet" href="titles-skill-fixes.css?v=battle-frames-20261025">
 <link rel="stylesheet" href="battle-frames.css?v=frame-readability-20261026">
-<link rel="stylesheet" href="game-motion.css?v=tech-layout-fix-20261027">
+<link rel="stylesheet" href="game-motion.css?v=tech-arrows-20261027">
 <link rel="stylesheet" href="titles-layout.css?v=title-plates-20261026">
 </head>
 
@@ -2376,24 +2376,30 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
   <div class="techSelect">
 
     <div class="techCard">
+      <button type="button" class="techArrow" aria-label="前の技" onclick="changeTech(0,-1)">←</button>
       <div class="techCardBody techSlotButton" role="button" tabindex="0" onclick="openTechniquePicker(0)" onkeydown="if(event.target===this &amp;&amp; (event.key==='Enter'||event.key===' ')){event.preventDefault();openTechniquePicker(0);}">
         <div id="techIcon0" class="techIcon">技1</div>
         <div id="techCardDescription0" class="techCardDescription"></div>
       </div>
+      <button type="button" class="techArrow" aria-label="次の技" onclick="changeTech(0,1)">→</button>
     </div>
 
     <div class="techCard">
+      <button type="button" class="techArrow" aria-label="前の技" onclick="changeTech(1,-1)">←</button>
       <div class="techCardBody techSlotButton" role="button" tabindex="0" onclick="openTechniquePicker(1)" onkeydown="if(event.target===this &amp;&amp; (event.key==='Enter'||event.key===' ')){event.preventDefault();openTechniquePicker(1);}">
         <div id="techIcon1" class="techIcon">技2</div>
         <div id="techCardDescription1" class="techCardDescription"></div>
       </div>
+      <button type="button" class="techArrow" aria-label="次の技" onclick="changeTech(1,1)">→</button>
     </div>
 
     <div class="techCard">
+      <button type="button" class="techArrow" aria-label="前の技" onclick="changeTech(2,-1)">←</button>
       <div class="techCardBody techSlotButton" role="button" tabindex="0" onclick="openTechniquePicker(2)" onkeydown="if(event.target===this &amp;&amp; (event.key==='Enter'||event.key===' ')){event.preventDefault();openTechniquePicker(2);}">
         <div id="techIcon2" class="techIcon">技3</div>
         <div id="techCardDescription2" class="techCardDescription"></div>
       </div>
+      <button type="button" class="techArrow" aria-label="次の技" onclick="changeTech(2,1)">→</button>
     </div>
 
     <button id="techConfirmButton" class="confirmButton" onclick="confirmTech()">次へ</button>
@@ -3912,6 +3918,7 @@ let selectedTechniques = {
 
 
 function changeTech(slot,direction){
+  if(window.TechniquePicker?.locked())return;
 
   const current =
     selectedTechniques[selectingPlayer][slot];
@@ -7186,7 +7193,7 @@ updateTechniqueDisplay();
 <script src="account-ui.js?v=custom-modes-20261027"></script>
 <script src="match-rewards.js?v=custom-modes-20261027"></script>
 <script src="guide-detail-data.js?v=guide-details-20261026"></script>
-<script src="technique-picker.js?v=custom-modes-20261027"></script>
+<script src="technique-picker.js?v=tech-arrows-20261027"></script>
 <script src="notice-guide.js?v=menu-bugfix-20261027"></script>
 <script src="guide-details.js?v=menu-bugfix-20261027"></script>
 <!-- PWA registration -->
