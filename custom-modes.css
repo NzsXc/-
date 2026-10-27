@@ -1,5 +1,6 @@
 /* Icon selection reuses the BOT picker grid, including its existing artwork. */
-#techScreen .techArrow{display:none}
+#techScreen .techArrow{display:block}
+#techScreen.classicSelection .techArrow{display:none}
 #techScreen .techCard{grid-template-columns:minmax(0,1fr);padding:0;display:flex}
 #techScreen .techSlotButton{width:100%;min-width:0;margin:0;padding:12px 14px;min-height:0;display:block;box-sizing:border-box;text-align:left;cursor:pointer}
 #techScreen .techSlotButton::after{content:'タップして技を選択';display:block;margin-top:7px;font-size:11px;color:#a9cee2;font-weight:400}

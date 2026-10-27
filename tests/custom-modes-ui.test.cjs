@@ -14,7 +14,7 @@ const root=path.resolve(__dirname,'..'),html=fs.readFileSync(path.join(root,'ind
    const value=await page.evaluate(id=>{showScreen(id);return {online:!document.getElementById('onlineMenuBGM').paused,position:document.getElementById('onlineMenuBGM').currentTime,menu:!document.getElementById('menuBGM').paused};},screen);assert(value.online&&!value.menu&&value.position===9,screen+' '+JSON.stringify(value));
   }
   await page.evaluate(()=>showScreen('battleScreen'));assert(await page.evaluate(()=>!document.getElementById('battleBGM').paused&&document.getElementById('onlineMenuBGM').paused));await page.evaluate(()=>showScreen('onlineScreen'));assert.equal(await page.evaluate(()=>document.getElementById('onlineMenuBGM').currentTime),9);
-  await page.evaluate(()=>{showScreen('modeScreen');selectMode('offline');});assert.equal(await page.locator('#techScreen .techArrow').count(),0);
+  await page.evaluate(()=>{showScreen('modeScreen');selectMode('offline');});assert.equal(await page.locator('#techScreen .techArrow').count(),6);
   await page.locator('.techSlotButton').first().click();assert.equal(await page.locator('#techniquePickerDialog [data-technique]').count(),19);await page.locator('#techniquePickerDialog [data-technique="18"]').click();assert.equal(await page.evaluate(()=>selectedTechniques[1][0]),18);
   await page.locator('.techSlotButton').nth(1).click();assert(await page.locator('#techniquePickerDialog [data-technique="18"]').isDisabled());await page.locator('#techniquePickerDialog [data-technique="3"]').click();assert.equal(await page.evaluate(()=>selectedTechniques[1][1]),3);
   await page.evaluate(()=>{showScreen('friendRuleScreen');document.querySelector('[name=friendRuleMode][value=custom]').checked=true;updateFriendRuleSettings();});
