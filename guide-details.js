@@ -54,6 +54,7 @@
  }
  function stop(){ready=false;frame?.remove();frame=null;replay.disabled=true;item=null;}
  modal.addEventListener('close',()=>{if(!modal.open)stop();});
+ window.addEventListener('game-screen-change',()=>{if(modal.open)modal.close();stop();});
  window.addEventListener('pagehide',()=>{if(modal.open)modal.close();});
  window.addEventListener('message',event=>{
   if(event.source!==frame?.contentWindow||event.origin!==location.origin||!modal.open)return;

@@ -2852,9 +2852,14 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
     }
   }
 
+  let playerLoginLoadEpoch=0;
   async function loadLoggedInPlayer(user){
+    if(auth.currentUser?.uid!==user.uid)return false;
+    const epoch=++playerLoginLoadEpoch;
+    const isCurrent=()=>epoch===playerLoginLoadEpoch&&auth.currentUser?.uid===user.uid;
     const playerRef=ref(db,`users/${user.uid}`);
     let snapshot=await get(playerRef);
+    if(!isCurrent())return false;
 
     if(!snapshot.exists()){
       loggedInPlayerData=null;
@@ -2871,13 +2876,16 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
     };
     window.loggedInPlayerData=loggedInPlayerData;
     const protectedProfile=await window.rankedTransport({op:"profile"});
+    if(!isCurrent())return false;
     loggedInPlayerData.rankRate=protectedProfile.rating;
     await window.titleService.enableUnlimited().catch(error=>console.warn("技使用回数の上限解除を開始できません",error));
+    if(!isCurrent())return false;
     if(protectedProfile.lastSettled)window.battleHistory.archiveFinished(protectedProfile.lastSettled).catch(error=>console.warn("終了済み対戦の整理を再試行します",error));
     window.titleService.claimRatings().catch(console.warn);
-    if(protectedProfile.active)setTimeout(()=>{if(!rankedActive)startRanked(true);},0);
+    if(protectedProfile.active)setTimeout(()=>{if(isCurrent()&&!rankedActive)startRanked(true);},0);
     updatePlayerLoginButton();
     window.dispatchEvent(new Event('player-login-ready'));
+    return true;
   }
 
   window.openPlayerLogin=async function(){
@@ -2912,8 +2920,7 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
       await setPersistence(auth,browserLocalPersistence);
       const email=await passwordToLoginEmail(password);
       const credential=await signInWithEmailAndPassword(auth,email,password);
-      await loadLoggedInPlayer(credential.user);
-      window.closePlayerLogin();
+      if(await loadLoggedInPlayer(credential.user))window.closePlayerLogin();
     }catch(error){
       console.error("ログインに失敗しました",error);
       message.textContent="パスワードが違うか、アカウントがまだ登録されていません。";
@@ -2929,13 +2936,14 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
   onAuthStateChanged(auth,async user=>{
     window.BattleFrames?.refresh();
     if(!user || user.isAnonymous){
+      playerLoginLoadEpoch++;
       loggedInPlayerData=null;
       window.loggedInPlayerData=null;
       updatePlayerLoginButton();
       return;
     }
     try{
-      await loadLoggedInPlayer(user);
+      if(await loadLoggedInPlayer(user))window.closePlayerLogin();
     }catch(error){
       console.error("プレイヤーデータを取得できませんでした",error);
     }
@@ -7179,8 +7187,8 @@ updateTechniqueDisplay();
 <script src="match-rewards.js?v=custom-modes-20261027"></script>
 <script src="guide-detail-data.js?v=guide-details-20261026"></script>
 <script src="technique-picker.js?v=custom-modes-20261027"></script>
-<script src="notice-guide.js?v=guide-details-20261026"></script>
-<script src="guide-details.js?v=guide-details-20261026"></script>
+<script src="notice-guide.js?v=menu-bugfix-20261027"></script>
+<script src="guide-details.js?v=menu-bugfix-20261027"></script>
 <!-- PWA registration -->
 <script src="./pwa-register.js" defer></script>
 <script src="game-motion-art.js?v=motion-shop-20261026"></script>

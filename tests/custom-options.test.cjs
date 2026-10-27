@@ -2,7 +2,7 @@ const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),asse
 const {harness}=require('./rules-harness.cjs'),R=require('../room-rules.js'),A=require('../advanced/rules.js');
 const root=path.resolve(__dirname,'..'),read=f=>fs.readFileSync(path.join(root,f),'utf8'),plain=x=>JSON.parse(JSON.stringify(x));
 function protectedApi(h,supported=true){
- const transport=async data=>h.transports[1](data);transport.supportsCustomOptions=async()=>supported;transport.supportsRoomRules=async()=>true;transport.supportsAdvanced=async()=>true;transport.supportsAdvancedOptions=async()=>supported;transport.supportsSpecialGauge=async()=>true;transport.supportsSpecialHp=async()=>supported;transport.supportsSpecialMoves=async()=>supported;
+ const transport=async data=>h.transports[1](data);transport.supportsCustomOptions=async()=>supported;transport.supportsRoomRules=async()=>true;transport.supportsAdvanced=async()=>true;transport.supportsAdvancedOptions=async()=>supported;transport.supportsSpecialGauge=async()=>true;transport.supportsSpecialHp=async()=>supported;transport.supportsSpecialMoves=async()=>supported;transport.supportsSpecialExpansion=async()=>supported;transport.supportsSpecialCompletion=async()=>supported;
  const ctx=vm.createContext({window:{BattleV4:require('../combat-v4.js'),SpecialRules:require('../advanced/special-rules.js'),AdvancedRules:require('../advanced/rules.js'),RoomRules:R,AdvancedRules:A,BattleAI:require('../bot-engine.js')},console,Date:{now:h.now},
   ref:(_db,p)=>({p}),get:async r=>{assert(h.allowed('.read',r.p,'p2'));return {val:()=>structuredClone(h.get(r.p))};},
   set:async(r,v)=>h.commit({[r.p]:v},'p2'),update:async(r,p)=>h.commit(Object.fromEntries(Object.entries(p).map(([k,v])=>[r.p+'/'+k,v])),'p2'),
@@ -38,7 +38,7 @@ function archiveFunctions(h){
   h.setClock(latest.opensAt);await h.transports[0]({op:'action',matchId:id,turn:1,action:1});
   const next=(await h.transports[1]({op:'action',matchId:id,turn:1,action:1})).match;
   assert.equal(next.state.turn,2);assert.equal(next.state.gauge[1],(skills?Math.min(maxGauge,initialGauge+2):initialGauge)-1);assert.equal(next.state.hp[1],hp);
-  if(special)assert.deepEqual(plain(next.special),{max:30,version:3,gauge:{1:1,2:1}});
+  if(special)assert.deepEqual(plain(next.special),{max:30,version:require('../advanced/special-rules.js').MOVE_VERSION,gauge:{1:1,2:1}});
   const closed=(await h.transports[0]({op:'resign',matchId:id})).match;assert(closed.closed);
   const archive=archiveFunctions(h),saved=plain(archive.build(id,h.get(p),{1:h.get('freeAccounts/p1'),2:h.get('freeAccounts/p2')}));
   assert.equal(archive.replay(saved).length,1);h.commit({['battleHistory/'+id]:saved,['playerHistory/p1/'+id]:saved.endedAt,['playerHistory/p2/'+id]:saved.endedAt},'p1');

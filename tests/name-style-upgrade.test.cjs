@@ -8,7 +8,7 @@ vm.runInContext(fs.readFileSync('economy-service.js','utf8').replace(/^import[^\
 const service=vm.runInContext("createEconomyService({uid:'p1'},{currentUser:{uid:'p1',isAnonymous:false}})",ctx);
 function element(tag='div'){return {tagName:tag,children:[],style:{setProperty(){}},append(...v){this.children.push(...v)},replaceChildren(...v){this.children=v},setAttribute(){},hidden:false};}
 const panel=element(),ui=vm.createContext({titleWallet:null,titleSaving:false,window:{NameStyles:{colors:{white:'#fff',red:'#f00'}}},document:{createTextNode:s=>({textContent:s})},$:()=>panel,node:(tag,cls,text)=>Object.assign(element(tag),{className:cls,textContent:text}),saveNameColor(){},purchaseNameStyle(){}});
-const source=fs.readFileSync('titles-client.js','utf8'),start=source.indexOf(" const panel=$('nameColorPanel')"),end=source.indexOf('\n}\nasync function updateNameStyle',start);assert(start>0&&end>start);vm.runInContext('function renderNamePanel(){'+source.slice(start,end)+'\n}',ui);
+const source=fs.readFileSync('titles-client.js','utf8').replaceAll('\r\n','\n'),start=source.indexOf(" const panel=$('nameColorPanel')"),end=source.indexOf('\n}\nasync function updateNameStyle',start);assert(start>0&&end>start);vm.runInContext('function renderNamePanel(){'+source.slice(start,end)+'\n}',ui);
 function render(wallet){ui.titleWallet=wallet;vm.runInContext('renderNamePanel()',ui);return panel.children.find(n=>n.className==='nameUnlocks');}
 (async()=>{
  const before=render(seed());assert.equal(before.children.length,1,'gloss purchase is hidden before color purchase');

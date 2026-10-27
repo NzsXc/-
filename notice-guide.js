@@ -197,6 +197,7 @@
     }
   });
   dialog.addEventListener('cancel', event => { if (saving) event.preventDefault(); });
+  window.addEventListener('game-screen-change', () => { if (dialog.open) dialog.close(); });
   document.getElementById('guideVoteTechniques').onclick = () => openVote('techniques');
   document.getElementById('guideVoteSpecialTechniques').onclick = () => openVote('specialTechniques');
   document.getElementById('guideVoteSkills').onclick = () => openVote('skills');
