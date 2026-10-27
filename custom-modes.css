@@ -1,8 +1,8 @@
 /* Icon selection reuses the BOT picker grid, including its existing artwork. */
 #techScreen .techArrow{display:none}
 #techScreen .techCard{grid-template-columns:minmax(0,1fr);padding:0;display:flex}
-#techScreen .techSlotButton{width:100%;min-width:0;margin:0;padding:18px 14px;min-height:155px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;text-align:center;cursor:pointer}
-#techScreen .techSlotButton::after{content:'タップして技を選択';font-size:11px;color:#a9cee2;font-weight:400}
+#techScreen .techSlotButton{width:100%;min-width:0;margin:0;padding:12px 14px;min-height:0;display:block;box-sizing:border-box;text-align:left;cursor:pointer}
+#techScreen .techSlotButton::after{content:'タップして技を選択';display:block;margin-top:7px;font-size:11px;color:#a9cee2;font-weight:400}
 #techScreen.classicSelection .techSlotButton::after{content:'クラシック固定技'}
 #techScreen .techSlotButton[aria-disabled="true"]{cursor:default}
 #techScreen .techSlotButton[aria-disabled="true"]::after{content:'確定済み'}
@@ -35,7 +35,7 @@
 #titlesScreen .compactIdentity .title-slot.selected{border-color:#bdefff;box-shadow:0 0 0 2px #67c7eb50,inset 4px 0 #8addf8;background:linear-gradient(110deg,#21465e,#102b43)}
 #titlesScreen .compactIdentity .title-slot.selected::after{content:'選択中';color:#d6f5ff}
 #titlesScreen .compactIdentity .title-slot>span:first-child{font-size:11px;align-self:flex-start;color:#9ac8df;letter-spacing:.08em}
-@media(max-width:500px){#techScreen .techSlotButton{min-height:116px;padding:12px}.techniqueIconGrid{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.techniqueIconGrid .botTechniqueChoice{min-height:100px;font-size:11px}.techniqueIconGrid .botTechniqueArt{width:50px;height:50px}#titlesScreen .compactIdentity .title-slot{padding-right:30px}.draftHeading{align-items:flex-start;font-size:12px}.draftTimer{font-size:22px}}
+@media(max-width:500px){#techScreen .techSlotButton{min-height:0;padding:11px 12px}.techniqueIconGrid{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.techniqueIconGrid .botTechniqueChoice{min-height:100px;font-size:11px}.techniqueIconGrid .botTechniqueArt{width:50px;height:50px}#titlesScreen .compactIdentity .title-slot{padding-right:30px}.draftHeading{align-items:flex-start;font-size:12px}.draftTimer{font-size:22px}}
 
 .draftHeading{position:sticky;top:-14px;z-index:2;background:#11273b;padding:10px 0}
 .draftOrder{margin:0 0 12px;font-size:11px;line-height:1.6;color:#94bdd2}
