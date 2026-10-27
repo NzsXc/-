@@ -5,7 +5,7 @@ export function createProtectedRooms(db,auth,transport,history){
  let offset=0,hostRoom=null,heartbeat=null,disconnect=null,stopHostWatch=null;onValue(ref(db,'.info/serverTimeOffset'),s=>offset=Number(s.val()||0));
  const now=()=>Date.now()+offset,read=async p=>(await get(ref(db,p))).val();
  async function ensure(){await auth.authStateReady();if(!auth.currentUser)await signInAnonymously(auth);await transport({op:'profile'});}
- async function create(options){const rules=window.RoomRules.normalize(options);if(rules.mode==='advanced'&&window.RoomRules.hasSpecial(rules))rules.hp=10;await ensure();const who=auth.currentUser.uid;const account=await read('freeAccounts/'+who);if(account.active)throw Error('進行中の対戦を終了してください');
+ async function create(options){const rules=window.RoomRules.normalize(options);if(rules.mode==='advanced'&&window.RoomRules.hasSpecial(rules))rules.hp=10;await ensure();const who=auth.currentUser.uid;let account=await read('freeAccounts/'+who);if(account.active){const resumed=await transport({op:'resume'});if(resumed.match&&!resumed.match.closed)throw Error('進行中の対戦を終了してください');account=await read('freeAccounts/'+who);if(account.active)throw Error('進行中の対戦を終了してください');}
   if((rules.classic||rules.draft)&&!await transport.supportsCustomModes?.())throw Error('クラシック・ドラフト対応のFirebaseルールを更新・公開してください。');
   if(rules.mode==='custom'&&!await transport.supportsRoomRules?.())throw Error('カスタム対戦はまだ利用できません。更新後にお試しください。');
   if(rules.mode==='custom'&&window.AdvancedRules.isAdvanced(rules)&&!await transport.supportsCustomOptions?.())throw Error('Customの追加設定を利用するには、Firebaseの対戦ルールを更新・公開してください。');
@@ -77,15 +77,19 @@ export function createProtectedRooms(db,auth,transport,history){
   const advanced=window.RoomRules.hasSkills(roomRules)?await read(path+'/advanced'):null;
   const special=window.RoomRules.hasSpecial(roomRules)?await read(path+'/special'):null;
   const skillMatch=spectatorSkillMatch(id,rawState,advanced,roomRules,null,settled,now());
+  const baseOpen=Number.isFinite(rawState.previousDeadline)?Math.max(rawState.startedAt,Math.min(rawState.startedAt+3000,rawState.previousDeadline))+3100:rawState.startedAt+(rawState.turn>1?7500:5600);
+  const opensAt=baseOpen+(window.AdvancedRules.isAdvanced(roomRules)?(window.AdvancedRules.windowMs(rawState)?window.AdvancedRules.windowMs(rawState)+window.AdvancedRules.GRACE_MS:0)+window.AdvancedRules.presentationMs(advanced,rawState.turn):0);
+  const expiresAt=opensAt+40000;
+  const expired=!settled&&Number.isFinite(expiresAt)&&now()>=expiresAt;
   const s=skillMatch&&window.AdvancedRules.presentationComplete(skillMatch,skillMatch.serverNow)?window.AdvancedRules.preview(rawState,advanced?.selected,window.AdvancedRules.forTurn(advanced,rawState.turn),roomRules):rawState;
-  const people={};try{for(const p of [1,2]){const a=accounts?.[players[p]]||await read('freeAccounts/'+players[p]);people[p]={name:a?.name||'プレイヤー',joined:true,online:!settled,techniques:ready?.[1]===true&&ready?.[2]===true?await read(path+'/loadouts/'+p):[]};}}
+  const people={};try{for(const p of [1,2]){const a=accounts?.[players[p]]||await read('freeAccounts/'+players[p]);people[p]={name:a?.name||'プレイヤー',joined:true,online:!settled&&!expired,techniques:ready?.[1]===true&&ready?.[2]===true?await read(path+'/loadouts/'+p):[]};}}
   catch(error){if(!await read(path+'/players'))return archived();throw error;}
   if(skillMatch)skillMatch.players=people;
   // Settlement can archive/delete the live node between these reads.
   if(!await read(path+'/players'))return archived();
-  const battle={matchId:id,foresightShield:foresightShield===true,roomRules,special,...publicState(s),phase:settled?'finished':'battle',updatedAt:now(),result:settled?(settled.winner?settled.winner+'P WIN':'DRAW'):''};
+  const battle={matchId:id,foresightShield:foresightShield===true,roomRules,special,...publicState(s),phase:settled||expired?'finished':'battle',updatedAt:rawState.startedAt,expiresAt,result:settled?(settled.winner?settled.winner+'P WIN':'DRAW'):expired?'切断・復帰猶予切れ':''};
   const countdownEnd=Number.isFinite(s.previousDeadline)?Math.max(s.startedAt,Math.min(s.startedAt+3000,s.previousDeadline)):s.startedAt+3000;
-  if(!settled&&reveal?.turn===s.turn&&s.turn>1&&now()<countdownEnd+3000){
+  if(!settled&&!expired&&reveal?.turn===s.turn&&s.turn>1&&now()<countdownEnd+3000){
    battle.phase='effect';battle.resolvedTurn=reveal.turn-1;battle.countdownEndsAt=countdownEnd;battle.revealAt=countdownEnd+500;battle.effectStartAt=countdownEnd+1800;
    battle.damageTo1=reveal.damage1;battle.damageTo2=reveal.damage2;battle.before=beforeAction(reveal,rawState);
    battle.resources={foresightShield:foresightShield===true,...(battle.before?{before:{hp:battle.before.hp,gauge:battle.before.gauge}}:{}),after:{hp:{1:reveal.hp1,2:reveal.hp2},gauge:{1:reveal.gauge1,2:reveal.gauge2},...(special?{special:special.gauge}:{})},outcome:Object.fromEntries(['paid','charged','foresight','healed','rampage','stolen','specialGain','recoveredAttack'].flatMap(key=>[1,2].filter(p=>Number.isFinite(reveal[key+p])).map(p=>[key+p,reveal[key+p]])))};

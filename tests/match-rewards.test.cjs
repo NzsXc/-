@@ -12,6 +12,12 @@ const game=(id,{guest=false,finished=true,started=true,kind='friend'}={})=>{h.pu
  game('stranger');assert.equal(await service('p3').claimBattle('stranger'),false);
  game('random',{kind:'random'});assert.equal(await a.claimBattle('random'),true);assert.equal(h.get('coinWallets/p1/balance'),30);
  h.put('battleHistory/archived',{players:{1:{uid:'p1'},2:{uid:'p2'}},finalState:{hp1:0,hp2:2},settled:{winner:2}});assert.equal(await a.claimBattle('archived'),true);
+ for(const hp of [1,9,10,11,100])for(const archived of [false,true]){
+  const id='hp-'+hp+'-'+archived;game(id);h.put('freeGames/'+id+'/roomRules',{mode:'custom',hp,initialGauge:8,maxGauge:10});
+  if(archived){const g=h.get('freeGames/'+id);h.put('battleHistory/'+id,{players:{1:{uid:'p1'},2:{uid:'p2'}},roomRules:g.roomRules,finalState:g.state,settled:g.settled});h.put('freeGames/'+id,null);}
+  assert.equal(await a.claimBattle(id),hp>=10,'configured initial HP: '+id);
+  if(hp<10){const current=h.get('coinWallets/p1');assert.throws(()=>h.commit({'coinWallets/p1':{...current,balance:current.balance+10,claimFrom:id,claimDay:-1},['coinBattleClaims/p1/'+id]:true},'p1'),/permission_denied/,'direct writes cannot bypass HP limit');}
+ }
  for(const id of ['fake','active','guest']){
   if(id==='guest')h.put('freeAccounts/p2/guest',true);
   const current=h.get('coinWallets/p1');assert.throws(()=>h.commit({'coinWallets/p1':{...current,balance:current.balance+10,claimFrom:id,claimDay:-1},['coinBattleClaims/p1/'+id]:true},'p1'),/permission_denied/);

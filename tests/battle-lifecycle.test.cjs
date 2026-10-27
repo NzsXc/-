@@ -1,0 +1,22 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const {harness}=require('./rules-harness.cjs');
+(async()=>{
+ const h=harness(),transport=h.transports[0];
+ await transport({op:'status',matchId:'match'});
+ const events=[],get=h.ctx.get,set=h.ctx.set;
+ h.ctx.get=async r=>{events.push('read:'+r.p);return get(r);};h.ctx.set=async(r,v)=>{events.push('write:'+r.p);return set(r,v);};
+ await transport({op:'action',matchId:'match',turn:1,action:3});
+ assert.equal(events[0],'write:freeGames/match/moves/1/1','cached-turn action goes to RTDB without account/state round trips');
+ assert(!events.includes('read:freeAccounts/p1'),'routine status skips account preflight');
+ await transport({op:'action',matchId:'match',turn:1,action:4});assert.equal(h.get('freeGames/match/moves/1/1'),3,'retry preserves the immutable accepted move');
+ const race=harness(),raceGet=race.ctx.get;
+ race.ctx.get=async r=>r.p==='freeGames/match/ready'?{val:()=>({1:true})}:raceGet(r);
+ const m=(await race.transports[0]({op:'status',matchId:'match'})).match;assert(m.state&&m.loadouts[1]&&m.loadouts[2],'an already-started match tolerates a stale parallel ready snapshot');
+ const recovered=harness();for(const p of [1,2])recovered.put('freeAccounts/p'+p,{name:'P'+p,rating:1000,games:0,active:'match',lastSettled:'',guest:false});
+ recovered.setClock(50000);recovered.ctx.setInterval=()=>1;recovered.ctx.clearInterval=()=>{};recovered.ctx.onDisconnect=()=>({remove:async()=>{},cancel:async()=>{}});
+ vm.runInContext(fs.readFileSync('protected-rooms.js','utf8').replace(/^import[^\n]*\n/gm,'').replace('export function','function'),recovered.ctx);
+ recovered.ctx.roomTransport=recovered.transports[0];
+ const rooms=vm.runInContext("createProtectedRooms({uid:'p1'},{currentUser:{uid:'p1'},authStateReady:async()=>{}},roomTransport)",recovered.ctx);
+ await rooms.create({mode:'custom',hp:15,initialGauge:3,maxGauge:6});assert.equal(recovered.get('freeAccounts/p1/active'),'');assert.equal(recovered.get('friendRooms/unused/roomRules/hp'),15);
+ console.log('PASS action first-write latency, immutable retry, split ready/state race, and Custom creation after an expired match');
+})().catch(error=>{console.error(error);process.exitCode=1;});

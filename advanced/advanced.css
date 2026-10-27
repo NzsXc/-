@@ -2,9 +2,9 @@
 .advancedSkillSelection[hidden],.advancedSkillDock[hidden],.advancedSkillWindow[hidden]{display:none!important;}
 .advancedSkillSelection{min-width:0;margin:0;border-color:#7adac388;}
 #techScreen.advancedSelection{overflow:auto;justify-content:flex-start;}
-#techScreen.advancedSelection .techSelect{padding-bottom:18px;grid-template-rows:auto auto auto;}
-#techScreen.advancedSelection .advancedSkillSelection{grid-column:2;grid-row:2;}
-#techScreen.advancedSelection #techConfirmButton{grid-column:1 / -1;grid-row:3;min-height:54px;padding:12px;}
+#techScreen.advancedSelection .techSelect{padding-bottom:18px;grid-template-columns:minmax(0,1fr);grid-template-rows:none;grid-auto-flow:row;}
+#techScreen.advancedSelection .techCard:nth-child(n),#techScreen.advancedSelection #techConfirmButton{grid-column:1;grid-row:auto;}
+#techScreen.advancedSelection #techConfirmButton{min-height:54px;padding:12px;}
 .advancedSkillDock{--orb-size:56px;--orb-scale:.4;--orb-count-size:20px;position:absolute;z-index:35;width:var(--orb-size);height:var(--orb-size);}
 .advancedSkillDock.skillWindowOpen{--orb-size:80px;--orb-scale:.5875;--orb-count-size:28px;}
 .advancedSkillName,.advancedSkillDescription,.advancedOpponentSkill{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;}
@@ -30,10 +30,6 @@
  #battleScreen.advancedMode #battleCenter{padding-top:6px;padding-bottom:6px;}
  #battleScreen.advancedMode .advancedSkillWindow{padding:8px;}
  #battleScreen.advancedMode .advancedSkillWindowHeading{flex-direction:column;align-items:center;gap:4px;font-size:12px;}
-}
-@media(max-width:540px){
- #techScreen.advancedSelection .advancedSkillSelection{grid-column:1;grid-row:4;}
- #techScreen.advancedSelection #techConfirmButton{grid-row:5;}
 }
 
 /* Custom keeps its system switches compact and separate from numeric settings. */

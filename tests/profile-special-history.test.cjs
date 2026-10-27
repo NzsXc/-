@@ -21,17 +21,17 @@ function fixture(){
  return {data,summarize:vm.runInContext('summarizePlayerHistories',context),api:vm.runInContext('createBattleHistory({}, {currentUser:{uid:"p1"}})',context)};
 }
 function history(id,action,side=1,rulesVersion=3){return {id,version:1,rulesVersion,turnCount:1,players:{1:{uid:side===1?'p1':'other'},2:{uid:side===2?'p1':'other'}},settled:{['before'+side]:1100,['after'+side]:1150},moves:{1:{[side]:action,[3-side]:0}}};}
-test('every S move is valid in both player perspectives without adding normal-technique usage',()=>{
+test('every S move is valid in both player perspectives and contributes to its base-technique usage',()=>{
  const f=fixture();for(const side of [1,2])for(let action=15;action<=26;action++){
   const result=f.summarize([history('s',action,side)],'p1',1000);
-  assert.equal(result.peakRating,1150);assert.equal(result.matches,1);assert.equal(result.techniques.length,0);
+  assert.equal(result.peakRating,1150);assert.equal(result.matches,1);assert.equal(result.techniques.length,1);assert.equal(result.techniques[0].action,action-12);assert.equal(result.techniques[0].count,1);
  }
 });
 test('normal usage, duplicate histories and legacy validation retain their behavior',()=>{
  const f=fixture(),normal=history('normal',3,1,2),other=history('other',4,2,2);
  const result=f.summarize([normal,normal,other,history('s',26)],'p1',1200);
  assert.equal(result.matches,3);assert.equal(result.peakRating,1200);
- assert.deepEqual(Array.from(result.techniques,t=>[t.action,t.count]),[[3,1],[4,1]]);
+ assert.deepEqual(Array.from(result.techniques,t=>[t.action,t.count]),[[3,1],[4,1],[14,1]]);
  for(const action of [-1,27,3.5,null])assert.throws(()=>f.summarize([history('bad',action)],'p1',1000),/使用回数を集計できない/);
  for(const version of [undefined,2])assert.throws(()=>f.summarize([history('legacy',15,1,version??1)],'p1',1000),/使用回数を集計できない/);
 });

@@ -75,8 +75,8 @@ export function createEconomyService(db,auth){
   const live=await read('freeGames/'+id+'/players'),saved=live?null:await read('battleHistory/'+id);
   const players=live||{1:saved?.players?.[1]?.uid,2:saved?.players?.[2]?.uid};
   if(![1,2].some(p=>players[p]===who)||!players[1]||!players[2]||players[1]===players[2])return false;
-  const [a,b,settled,state]=await Promise.all([read('freeAccounts/'+players[1]),read('freeAccounts/'+players[2]),live?read('freeGames/'+id+'/settled'):Promise.resolve(saved?.settled),live?read('freeGames/'+id+'/state'):Promise.resolve(saved?.finalState)]);
-  if(!settled||!state||!a||!b||a.guest===true||b.guest===true)return false;
+  const [a,b,settled,state,roomRules]=await Promise.all([read('freeAccounts/'+players[1]),read('freeAccounts/'+players[2]),live?read('freeGames/'+id+'/settled'):Promise.resolve(saved?.settled),live?read('freeGames/'+id+'/state'):Promise.resolve(saved?.finalState),live?read('freeGames/'+id+'/roomRules'):Promise.resolve(saved?.roomRules)]);
+  if(!settled||!state||!a||!b||a.guest===true||b.guest===true||(roomRules?.hp??10)<10)return false;
   return retry(async()=>{
    if(uid()!==who)throw Error('ログイン状態が変わりました');if(await read(receipt))return false;
    const current=await wallet(who),next={...current,balance:current.balance+10,claimDay:-1,claimFrom:id};
