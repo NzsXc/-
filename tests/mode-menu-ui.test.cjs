@@ -2,7 +2,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 const root=path.resolve(__dirname,'..');
 const html=fs.readFileSync(path.join(root,'index.html'),'utf8').replace(/<script\b[^>]*type="module"[^>]*>[\s\S]*?<\/script>/g,'').replace(/<script\b[^>]*src="\.\/pwa-register[^>]*><\/script>/g,'');
-const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.json':'application/json','.png':'image/png'};
+const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.json':'application/json','.png':'image/png','.svg':'image/svg+xml'};
 (async()=>{
  const browser=await chromium.launch({headless:true,timeout:15000,...(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE?{executablePath:process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE}:{})});
  try{
@@ -44,19 +44,19 @@ const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.json
    await fit('#soloScreen .settingsPanel,[data-bot-difficulty]');
    await page.locator('#botLoadoutButton').click();
    assert.equal(await page.locator('#botTechniqueDialog').isVisible(),true);
-   assert.equal(await page.locator('#botTechniqueSettings input').count(),12);
+   assert.equal(await page.locator('#botTechniqueSettings input').count(),19);
    assert.equal(await page.locator('#botTechniqueSettings input:checked').count(),0,'random does not imply a custom loadout');
    assert.equal(await page.locator('#botTechniqueApply').isDisabled(),true);
-   assert.equal(await page.locator('#botTechniqueSettings img').count(),12);
+   assert.equal(await page.locator('#botTechniqueSettings img').count(),19);
    await page.waitForFunction(()=>[...document.querySelectorAll('#botTechniqueSettings img')].every(img=>img.complete&&img.naturalWidth>0));
    const names=await page.locator('.botTechniqueName').allTextContents();
    assert.deepEqual(names,await page.evaluate(()=>techniquePool.map(tech=>tech.name)));
    const boxes=await fit('#botTechniqueDialog,.botTechniqueChoice');
    assert(boxes.slice(1).every(r=>r.width>=44&&r.height>=44),'touch targets');
    const tiles=boxes.slice(1);
-   for(let index=0;index<tiles.length;index++)if(index%3!==2)assert(tiles[index].right<=tiles[index+1].x,'technique tiles must not overlap');
+   for(let index=0;index<tiles.length-1;index++)if(index%3!==2)assert(tiles[index].right<=tiles[index+1].x,'technique tiles must not overlap');
    for(const index of [3,5,9])await page.locator('#botTechniqueSettings input[value="'+index+'"]').check();
-   assert.equal(await page.locator('#botTechniqueSettings input:disabled').count(),9,'only three techniques allowed');
+   assert.equal(await page.locator('#botTechniqueSettings input:disabled').count(),16,'only three techniques allowed');
    assert.equal(await page.locator('#botTechniqueApply').isEnabled(),true);
    await page.locator('#botTechniqueSettings input[value="5"]').uncheck();
    assert.equal(await page.locator('#botTechniqueSettings input:disabled').count(),0);
@@ -77,7 +77,8 @@ const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.json
    assert.equal(await page.locator('#techScreen').isVisible(),true);
    assert.deepEqual(await page.evaluate(()=>selectedTechniques[2]),[3,9,5],'chosen techniques reach the bot match');
    await fit('#techScreen .techCard,#techConfirmButton,#techBackButton');
-   await page.locator('#techScreen .techArrow').first().click();
+   await page.locator('#techScreen .techSlotButton').first().click();
+   await page.locator('#techniquePickerDialog [data-technique]:not(:disabled)').last().click();
    const own=await page.evaluate(()=>selectedTechniques[1].slice());
    await page.locator('#techBackButton').click();
    assert.equal(await page.locator('#soloScreen').isVisible(),true);
@@ -90,15 +91,17 @@ const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.json
    assert.deepEqual(await page.evaluate(()=>selectedTechniques[1]),own,'own selection survives settings round trip');
    const random=await page.evaluate(()=>selectedTechniques[2]);
    assert.equal(new Set(random).size,3);
-   assert(random.every(index=>index>=0&&index<12));
+   assert(random.every(index=>index>=0&&index<19));
    await page.locator('#techBackButton').click();
    await page.locator('#soloScreen .onlineBackButton').click();
    await page.locator('#modeScreen .local').click();
-   await page.locator('#techScreen .techArrow').first().click();
+   await page.locator('#techScreen .techSlotButton').first().click();
+   await page.locator('#techniquePickerDialog [data-technique]:not(:disabled)').last().click();
    const first=await page.evaluate(()=>selectedTechniques[1].slice());
    await page.locator('#techConfirmButton').click();
    assert.equal(await page.evaluate(()=>selectingPlayer),2);
-   await page.locator('#techScreen .techArrow').first().click();
+   await page.locator('#techScreen .techSlotButton').first().click();
+   await page.locator('#techniquePickerDialog [data-technique]:not(:disabled)').last().click();
    const second=await page.evaluate(()=>selectedTechniques[2].slice());
    await page.locator('#techBackButton').click();
    assert.equal(await page.evaluate(()=>selectingPlayer),1);
@@ -138,7 +141,7 @@ const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.json
     await page.screenshot({path:path.join(process.env.MODE_SCREENSHOTS,'bot-techniques-mobile.png'),fullPage:true});
    }
    assert.deepEqual(errors,[]);
-   console.log('PASS '+width+'x'+height+': mode cards, labels, difficulty, all 12 icons, exact-three draft/confirm/cancel, random, retained settings and back navigation');
+   console.log('PASS '+width+'x'+height+': mode cards, labels, difficulty, all 19 icons, exact-three draft/confirm/cancel, random, retained settings and back navigation');
    await page.close();
   }
  }finally{await browser.close();}

@@ -84,7 +84,7 @@ function historyApi(){
  vm.runInContext(limits+available,input);assert(vm.runInContext('isBattleActionAvailable(1,"charge",{type:"charge",cost:0})',input));
  input.gauge[1]=20;assert(!vm.runInContext('isBattleActionAvailable(1,"charge",{type:"charge",cost:0})',input));
  const ranked=source('ranked-client.js'),autoSource=ranked.slice(ranked.indexOf('function rankedAutoSelect(){'),ranked.indexOf('function rankedTick(){'));
- const defaults=[],auto=vm.createContext({performance:{now:()=>1000},rankedMatch:{id:'test',you:1,state:{turn:2,gauge:{1:14}},roomRules:custom,ownAction:null},rankedActive:true,rankedAnimating:false,rankedSending:false,rankedTurnClockKey:'test:2',rankedTurnDeadline:900,rankedAutoRetryAt:0,rankedScheduleAuto(){},rankedSubmitAction:(_m,id)=>defaults.push(id)});
+ const defaults=[],auto=vm.createContext({window:{SpecialRules:require('../advanced/special-rules.js'),AdvancedRules:require('../advanced/rules.js')},performance:{now:()=>1000},rankedMatch:{id:'test',you:1,state:{turn:2,gauge:{1:14}},roomRules:custom,ownAction:null},rankedActive:true,rankedAnimating:false,rankedSending:false,rankedTurnClockKey:'test:2',rankedTurnDeadline:900,rankedAutoRetryAt:0,rankedScheduleAuto(){},rankedSubmitAction:(_m,id)=>defaults.push(id)});
  vm.runInContext(autoSource,auto);vm.runInContext('rankedAutoSelect()',auto);assert.equal(defaults.at(-1),0,'14/20 must still charge');
  auto.rankedMatch.state.gauge[1]=20;auto.rankedAutoRetryAt=0;vm.runInContext('rankedAutoSelect()',auto);assert.equal(defaults.at(-1),1,'20/20 defaults to attack');
  console.log('PASS: Standard compatibility, Custom validation/immutability, real create → join → loadout → turns → settlement/history, spectator metadata, forged joins and '+cases+' custom action-pair rule checks');

@@ -28,8 +28,9 @@ async function advance(f,match){
 (async()=>{
  const original=JSON.parse(cp.execFileSync('git',['show','da36ac480f5da3b93e0e5faa933c1e1459b5998f:firebase-database.rules.json'],{cwd:root,encoding:'utf8'}));
  // Isolate the historical null-comparison defect from the newer protocol gate.
- original.rules.freeGames.$game.advanced.attackStance=rules.rules.freeGames.$game.advanced.attackStance;
- const broken=await join(original);await assert.rejects(()=>advance(broken,broken.match),/permission_denied/);
+ const historical=structuredClone(rules);
+ historical.rules.freeGames.$game.state.skillsExhausted=original.rules.freeGames.$game.state.skillsExhausted;
+ const broken=await join(historical);await assert.rejects(()=>advance(broken,broken.match),/permission_denied/);
  assert.equal(broken.h.get('freeGames/'+broken.id+'/state/turn'),1,'the original rule reproduces a stalled first turn');
  for(const a of A.SKILLS)for(const b of A.SKILLS){
   const f=await join(rules,a.id,b.id);let match=f.match;

@@ -4,7 +4,7 @@ const core = require('../community-rating-core.js');
 const {harness, Snapshot} = require('./rules-harness.cjs');
 const root = path.resolve(__dirname, '..');
 const rules = JSON.parse(fs.readFileSync(path.join(root, 'firebase-database.rules.json'), 'utf8')).rules;
-assert.deepEqual(core.categories.techniques, Array.from({length:12}, (_, i) => 'tech' + (i+1)));
+assert.deepEqual(core.categories.techniques, Array.from({length:19}, (_, i) => 'tech' + (i+1)));
 assert.deepEqual(core.categories.skills, require('../advanced/rules.js').SKILLS.map(s => s.id));
 assert.deepEqual([10,9,8.999,8,7.999,7,6.999,1,null].map(core.rank), ['S','S','A','A','B','B','C','C','unrated']);
 assert.equal(core.summarize('techniques', {a:{tech1:4},b:{tech1:3}}).tech1.label, '(3.50)');
@@ -30,7 +30,7 @@ for (const category of Object.keys(core.categories)) {
     assert.equal(vm.runInNewContext(expression, {auth,$uid:'p1',root:new Snapshot(h.copy()),newData:new Snapshot(h.copy(),p)}), false);
   }
 }
-assert.deepEqual(core.categories.specialTechniques, Array.from({length:12}, (_, i) => 's-tech' + (i+1)));
+assert.deepEqual(core.categories.specialTechniques, Array.from({length:19}, (_, i) => 's-tech' + (i+1)));
 
 async function transportTests() {
   let user={uid:'p1',isAnonymous:false}, authCallback, callbacks=[], saves=[], connected=true;

@@ -4,7 +4,7 @@ function fixture(status=async id=>({match:{id}})){
  const data={'freeAccounts/host':{name:'Host',active:''}},subscriptions=new Map(),timers=new Map(),intervals=new Map(),requests=[],entered=[],errors=[];
  let next=0;
  const transport=async d=>{if(d.op==='profile')return {};assert.equal(d.op,'status');requests.push(d.matchId);return status(d.matchId,requests.length);};
- const context=vm.createContext({console,window:{RoomRules:require('../room-rules.js')},Date,
+ const context=vm.createContext({console,window:{RoomRules:require('../room-rules.js'),AdvancedRules:require('../advanced/rules.js')},Date,
   ref:(_db,p)=>p,get:async p=>({val:()=>data[p]??null}),set:async(p,value)=>{data[p]=value;},push:()=>({key:'room'}),
   onValue:(p,callback)=>{subscriptions.set(p,callback);if(p==='.info/serverTimeOffset')callback({val:()=>0});return ()=>{if(subscriptions.get(p)===callback)subscriptions.delete(p);};},
   onDisconnect:()=>({remove:async()=>{},cancel:async()=>{}}),serverTimestamp:Date.now,

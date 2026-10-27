@@ -28,8 +28,8 @@ async function panelFits(page){const bad=await page.locator('#battleInspectorPan
   const plays=await page.evaluate(()=>audioPlays.onlineMenuBGM);await page.evaluate(()=>{resumeScreenBGM();startMenuBGM();});assert.equal(await page.evaluate(()=>audioPlays.onlineMenuBGM),plays,'interaction does not restart the lobby track');
   await page.evaluate(()=>{musicVolume.value='25';musicVolume.dispatchEvent(new Event('input'));});assert(Math.abs(await page.evaluate(()=>GameAudio.scale('music',.208))-.052)<1e-9);
   await page.evaluate(()=>{musicVolume.value='0';musicVolume.dispatchEvent(new Event('input'));});assert(await page.locator('#onlineMenuBGM').evaluate(n=>n.muted));
-  await page.evaluate(()=>{musicVolume.value='100';musicVolume.dispatchEvent(new Event('input'));showScreen('rankingScreen');});assert(await page.locator('#onlineMenuBGM').evaluate(n=>n.paused&&n.currentTime===0));assert(await page.locator('#menuBGM').evaluate(n=>!n.paused));
-  await page.evaluate(()=>{window.rejectOnlineOnce=true;showScreen('onlineScreen');});assert(await page.locator('#onlineMenuBGM').evaluate(n=>n.paused));
+  await page.evaluate(()=>{musicVolume.value='100';musicVolume.dispatchEvent(new Event('input'));showScreen('rankingScreen');});assert(await page.locator('#onlineMenuBGM').evaluate(n=>!n.paused));assert(await page.locator('#menuBGM').evaluate(n=>n.paused));
+  await page.evaluate(()=>{showScreen('modeScreen');window.rejectOnlineOnce=true;showScreen('onlineScreen');});assert(await page.locator('#onlineMenuBGM').evaluate(n=>n.paused));
   await page.evaluate(()=>resumeScreenBGM());assert(await page.locator('#onlineMenuBGM').evaluate(n=>!n.paused));
   for(const you of [1,2])for(const special of [false,true]){
    await page.evaluate(({you,special})=>{
