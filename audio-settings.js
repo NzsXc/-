@@ -37,9 +37,24 @@
   function applyAudio() {
     for (const [gain, base] of gains) gain.gain.value = scale('se', base);
     for (const [el, record] of elements) applyElement(el, record);
+    window.dispatchEvent?.(new Event('game-audio-ready'));
   }
   window.GameAudio = {
     scale,
+    analysis(el) {
+      const record = elements.get(el);
+      if (!record?.source || !context || context.state !== 'running') return null;
+      if (!record.analysis) {
+        try {
+          const analyser = context.createAnalyser();
+          analyser.fftSize = 2048;
+          analyser.smoothingTimeConstant = 0;
+          record.source.connect(analyser);
+          record.analysis = {analyser, context};
+        } catch { return null; }
+      }
+      return record.analysis;
+    },
     track(gain, base) { gains.set(gain, base); gain.gain.value = scale('se', base); },
     untrack(gain) { gains.delete(gain); },
     element(el, base, kind = 'se') {
