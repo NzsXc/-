@@ -18,7 +18,7 @@ export function createHistoryScreen(history){
  function playerInfo(h,p){
   const player=h.players[p],box=element('section','historyPlayer'),name=element('h3',null,player.name),rate=element('span','historyRate','レート '+h.settled['before'+p]+' → '+h.settled['after'+p]);
   window.NameStyles?.paint(name,player.uid);box.append(name,rate);
-  const loadout=player.loadout?slots(player.loadout).map(i=>ACTION_NAMES[window.BattleV4.normalId(i)]||'不明').join(' / '):'技選択前';
+  const loadout=player.loadout?slots(player.loadout).map(i=>(h.roomRules?.classic?window.MatchModes.CLASSIC[i]?.name:ACTION_NAMES[window.BattleV4.normalId(i)])||'不明').join(' / '):'技選択前';
   box.append(element('p','historyLoadout','技構成：'+loadout));
   if(advanced(h)){
    const skill=skillFor(h,p),current=h.advanced?.current?.[p];
@@ -48,7 +48,7 @@ export function createHistoryScreen(history){
      const tr=element('tr'),label=element('th',null,'T'+turn.turn);label.scope='row';tr.append(label);
      for(const p of [1,2]){const cell=element('td');
       if(advanced(h)){const name=turnSkill(h,p,turn.turn);cell.append(element('span','historyTurnSkill',h.advanced?'スキル：'+(name||'使用なし'):'スキル：未記録'));}
-      cell.append(element('strong',null,ACTION_NAMES[turn.actions[p]]||'不明'),element('span','historyTurnState','HP '+turn.before.hp[p]+' → '+turn.after.hp[p]+' / ゲージ '+turn.before.gauge[p]+' → '+turn.after.gauge[p]));if(turn.special)cell.append(element('span','historyTurnState','スペシャル '+turn.special.before[p]+' → '+turn.special.after[p]));tr.append(cell);}
+      cell.append(element('strong',null,(h.roomRules?.classic&&turn.actions[p]>=3?window.MatchModes.CLASSIC[turn.actions[p]-3]?.name:ACTION_NAMES[turn.actions[p]])||'不明'),element('span','historyTurnState','HP '+turn.before.hp[p]+' → '+turn.after.hp[p]+' / ゲージ '+turn.before.gauge[p]+' → '+turn.after.gauge[p]));if(turn.special)cell.append(element('span','historyTurnState','スペシャル '+turn.special.before[p]+' → '+turn.special.after[p]));tr.append(cell);}
      body.append(tr);
     }
     table.append(caption,head,body);scroll.append(table);details.append(scroll);

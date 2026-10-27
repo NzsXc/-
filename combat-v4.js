@@ -60,15 +60,15 @@ function core(s,moves,rulesVersion=2,roomRules={},powerBonus={},foresightShield=
   d1+=win1&&!win2?0:win2&&!win1?out.power2:Math.max(0,out.power2-out.power1);d2+=win2&&!win1?0:win1&&!win2?out.power1:Math.max(0,out.power1-out.power2);
  }
  else{if(out.attack2&&!out.reflect1&&(!out.blocking1||(out.pierce2&&!(foresightShield&&e1.skill==='tech5'))))d1+=out.power2;if(out.attack1&&!out.reflect2&&(!out.blocking2||(out.pierce1&&!(foresightShield&&e2.skill==='tech5'))))d2+=out.power1;}
- if(e2.skill==='tech3'&&!(modern&&e2.special)&&e1.type==='charge'&&!out.blocking1&&!out.reflect1)d1+=rulesVersion>=2?1:2;
- if(e1.skill==='tech3'&&!(modern&&e1.special)&&e2.type==='charge'&&!out.blocking2&&!out.reflect2)d2+=rulesVersion>=2?1:2;
+ if(e2.skill==='tech3'&&!(modern&&e2.special)&&e1.type==='charge'&&!out.blocking1&&!out.reflect1)d1+=roomRules.classic?2:rulesVersion>=2?1:2;
+ if(e1.skill==='tech3'&&!(modern&&e1.special)&&e2.type==='charge'&&!out.blocking2&&!out.reflect2)d2+=roomRules.classic?2:rulesVersion>=2?1:2;
  if(e1.skill==='tech7')d1+=2;if(e2.skill==='tech7')d2+=2;
  out.damage1=d1;out.damage2=d2;
  out.rampage1=e1.skill==='tech7'?clamp(out.foresight1+8,0,maxGauge):out.foresight1;
  out.rampage2=e2.skill==='tech7'?clamp(out.foresight2+8,0,maxGauge):out.foresight2;
  out.stolen1=e1.skill==='tech10'?Math.min(modern&&e1.special?3:2,out.rampage2):0;out.stolen2=e2.skill==='tech10'?Math.min(modern&&e2.special?3:2,out.rampage1):0;
  out.gauge1=clamp(out.rampage1+out.stolen1-out.stolen2,0,maxGauge);out.gauge2=clamp(out.rampage2+out.stolen2-out.stolen1,0,maxGauge);
- if(rulesVersion>=2){out.gauge1=Math.max(0,out.gauge1-(e2.skill==='tech3'?1:0));out.gauge2=Math.max(0,out.gauge2-(e1.skill==='tech3'?1:0));}
+ if(rulesVersion>=2&&!roomRules.classic){out.gauge1=Math.max(0,out.gauge1-(e2.skill==='tech3'?1:0));out.gauge2=Math.max(0,out.gauge2-(e1.skill==='tech3'?1:0));}
  if(modern){out.normalGauge1=out.gauge1;out.normalGauge2=out.gauge2;}
  if(modern)for(const p of [1,2]){const raw=p===1?raw1:raw2,e=p===1?e1:e2,enemy=p===1?e2:e1,other=p===1?raw2:raw1;
   if(raw.special&&raw.skill==='tech12'&&['charge','attack','block'].includes(other.type)&&!other.skill)out['gauge'+p]=clamp(out['gauge'+p]+2,0,maxGauge);
@@ -112,7 +112,7 @@ function calculate(state,moves,rulesVersion=4,rules={},bonus={},shield=true,cata
   out['effectBase'+p]=out['effective'+p]>=34?out['effective'+p]-7:out['effective'+p]>=27?out['effective'+p]:out['effective'+p]>=15?out['effective'+p]-12:out['effective'+p];
   out['inputFrozen'+p]=state['frozen'+p]||0;out['inputPoison'+p]=state['poison'+p]||0;
   if(expanded)out['inputWeaken'+p]=state['weaken'+p]||0;
-  if(eff[q].skill==='tech1'&&!eff[q].special&&out['blocking'+p]&&!(shield&&e.skill==='tech5'))out['damage'+p]=Math.max(0,out['damage'+p]-1);
+  if(!rules.classic&&eff[q].skill==='tech1'&&!eff[q].special&&out['blocking'+p]&&!(shield&&e.skill==='tech5'))out['damage'+p]=Math.max(0,out['damage'+p]-1);
   out['hit'+p]=!!(out['attack'+p]&&out['power'+p]>0&&!out['reflect'+q]&&(out['attack'+q]?eff[p].special&&eff[p].skill==='tech1'&&!(eff[q].special&&eff[q].skill==='tech1')||(!(eff[q].special&&eff[q].skill==='tech1')||eff[p].special&&eff[p].skill==='tech1')&&out['power'+p]>out['power'+q]:!out['blocking'+q]||out['pierce'+p]&&!(shield&&eff[q].skill==='tech5')));
  }
  for(const p of [1,2])if(bonus['invincible'+(3-p)])out['hit'+p]=false;

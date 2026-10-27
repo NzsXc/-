@@ -93,6 +93,19 @@ const initialAccount = {
   if(!protocolFlights.has(id))protocolFlights.set(id,read('freeGames/'+id+'/advance').then(()=>true).catch(e=>{if(permissionDenied(e))return false;protocolFlights.delete(id);throw e;}));
   return protocolFlights.get(id);
  }
+ let customModesProtocol=null;
+ function supportsCustomModes(){if(!customModesProtocol)customModesProtocol=read('freeGames/_protocol/customModesV1').then(()=>true).catch(e=>{if(permissionDenied(e))return false;customModesProtocol=null;throw e;});return customModesProtocol;}
+ async function draftPick(id,draft,me,step,tech,automatic=false){
+  const view=window.MatchModes.view(draft,now());
+  if(view.complete||step!==view.count)return;
+  if(!automatic&&view.player!==me)throw Error('相手の選択を待っています。');
+  if(!Number.isInteger(tech)||tech<0||tech>=19||view.taken.includes(tech))throw Error('この技は選べません。');
+  if(automatic&&now()<view.deadline)throw Error('選択時間はまだ残っています。');
+  if(!automatic&&now()>=view.deadline)throw Error('選択時間が終了しました。');
+  const path='freeGames/'+id+'/draft/picks/'+step;
+  try{await writeSet(path,{tech,at:serverTimestamp(),automatic});}
+  catch(error){if(!await read(path))throw error;}
+ }
  async function advanceTurn(id,s,moves,u,rulesVersion,roomRules,advanced,foresightShield){
   const key=id+':'+s.turn;
   if(advanceFlights.has(key))return advanceFlights.get(key);
@@ -160,6 +173,7 @@ const initialAccount = {
   for(let attempt=0;attempt<4;attempt++){
    const keys=['players','createdAt','state','ready','resigned','settled','transition','kind','room',...(punishEnabled?['rulesVersion']:[]),...(roomRulesEnabled?['roomRules']:[]),...(await supportsForesightShield()?['foresightShield']:[])];g=Object.fromEntries(await Promise.all(keys.map(async k=>[k,await read(path+'/'+k)])));g.ready||={};const roomRules=window.RoomRules.normalize(g.roomRules);roomRulesCache.set(id,roomRules);
    const me=g.players?.[1]===u?1:g.players?.[2]===u?2:0;
+   if(roomRules.draft)g.draft=await read(path+'/draft');
    if(!me){const saved=await archivedStatus(id,u);if(saved)return saved.match;throw Error('参加者ではありません');}g.me=me;
    if(window.RoomRules.hasSkills(roomRules))g.advanced=await advancedProtocol.snapshot(id,g,me);
    if(window.RoomRules.hasSpecial(roomRules))g.special=await read(path+'/special');
@@ -172,10 +186,12 @@ const initialAccount = {
      matchMetadata.delete(id);return m;
     }catch(error){if(!historyWarnings.has(id)){historyWarnings.add(id);console.warn('対戦履歴を保存できないため、ルームを残します',error);}}
    }
+   if(roomRules.draft&&!g.state&&!g.settled&&!g.resigned){const view=window.MatchModes.view(g.draft,now());if(!view.complete&&now()>=view.deadline){const available=Array.from({length:19},(_,i)=>i).filter(i=>!view.taken.includes(i));await draftPick(id,g.draft,me,view.count,available[Math.floor(Math.random()*available.length)],true);continue;}}
+   const selectionEnd=g.createdAt+(roomRules.draft?180000:90000);
    const s=g.state;let finalMoves=null;const expires=s?turnOpensAt(s,roomRules,g.advanced)+40000:0;
    if(s&&now()>=expires)finalMoves=await read(path+'/moves/'+s.turn)||{};
    const abandoned=!!s&&now()>=expires&&(finalMoves?.[1]==null||finalMoves?.[2]==null);g.abandoned=abandoned;
-   const terminal=abandoned||!!g.resigned||s&&(s.hp1<=0||s.hp2<=0||s.turn>300)||!s&&now()>=g.createdAt+90000;
+   const terminal=abandoned||!!g.resigned||s&&(s.hp1<=0||s.hp2<=0||s.turn>300)||!s&&now()>=selectionEnd;
    if(terminal&&!g.settled){
     const winner=g.resigned?.[1]?2:g.resigned?.[2]?1:s&&s.hp1>0&&s.hp2>0&&s.turn<=300&&abandoned?(finalMoves[1]!=null?1:finalMoves[2]!=null?2:0):s?(s.hp1<=0?(s.hp2<=0?0:2):s.hp2<=0?1:0):g.ready[1]?(g.ready[2]?0:1):g.ready[2]?2:0;
     const accounts={1:await read('freeAccounts/'+g.players[1]),2:await read('freeAccounts/'+g.players[2])};
@@ -217,7 +233,9 @@ const initialAccount = {
   // A match that expires before either loadout still needs player names for results.
   if(closed&&!s)for(const p of [1,2]){const account=await read('freeAccounts/'+g.players[p]);players[p]={name:account?.name||'プレイヤー'};}
   const resources=g.transition?{after:{hp:{1:g.transition.hp1,2:g.transition.hp2},gauge:{1:g.transition.gauge1,2:g.transition.gauge2},...(g.special?{special:g.special.gauge}:{})},outcome:Object.fromEntries(['paid','charged','foresight','healed','rampage','stolen','specialGain','recoveredAttack'].flatMap(key=>[1,2].filter(p=>Number.isFinite(g.transition[key+p])).map(p=>[key+p,g.transition[key+p]])))}:null;
-  const match={id,foresightShield:g.foresightShield===true,rulesVersion:g.rulesVersion,kind:g.kind||'random',roomId:g.room||null,roomRules:window.RoomRules.normalize(g.roomRules),you:me,...(window.RoomRules.hasSpecial(roomRules)?{special:g.special}:{}),...(advanced?{advanced:g.advanced,skillResult:board(skillResult),skillWindow:s?{startAt:skillEndsAt(s)-window.AdvancedRules.windowMs(s),endAt:skillEndsAt(s),confirmAt:confirmAt(s)}:null}:{}),players,ready:g.ready,loadouts,state,closed,phase:closed?'finished':s?'turn':'select',revision:now(),serverNow:now(),opensAt,deadline:s?opensAt+10000:g.createdAt+60000,graceDeadline:s?opensAt+40000:g.createdAt+90000,ownAction:g.own??null,reveal:g.transition?{turn:g.transition.turn-1,startedAt:s?.startedAt,countdownEndsAt:Number.isFinite(s?.previousDeadline)?countdownEndsAt(s):null,actions:{1:g.transition.action1,2:g.transition.action2},damage:{1:g.transition.damage1,2:g.transition.damage2},resources}:null,result:closed?{winner:g.settled.winner,rated:g.kind!=='friend',reason:g.resigned?'resigned':g.abandoned&&s?.hp1>0&&s?.hp2>0?'reconnect-timeout':!s?'selection-timeout':s.misses1>=2||s.misses2>=2?'idle-forfeit':s.turn>300?'turn-limit':'battle'}:null,rating:closed?{before:g.settled['before'+me],after:g.settled['after'+me],delta:g.settled['delta'+me]}:null};
+  const draftView=g.draft?window.MatchModes.view(g.draft,now()):null;
+  const selectionDeadline=draftView?(draftView.complete?g.createdAt+150000:draftView.deadline):g.createdAt+60000;
+  const match={id,...(draftView?{draft:g.draft}:{}),foresightShield:g.foresightShield===true,rulesVersion:g.rulesVersion,kind:g.kind||'random',roomId:g.room||null,roomRules:window.RoomRules.normalize(g.roomRules),you:me,...(window.RoomRules.hasSpecial(roomRules)?{special:g.special}:{}),...(advanced?{advanced:g.advanced,skillResult:board(skillResult),skillWindow:s?{startAt:skillEndsAt(s)-window.AdvancedRules.windowMs(s),endAt:skillEndsAt(s),confirmAt:confirmAt(s)}:null}:{}),players,ready:g.ready,loadouts,state,closed,phase:closed?'finished':s?'turn':'select',revision:now(),serverNow:now(),opensAt,deadline:s?opensAt+10000:selectionDeadline,graceDeadline:s?opensAt+40000:selectionDeadline+30000,ownAction:g.own??null,reveal:g.transition?{turn:g.transition.turn-1,startedAt:s?.startedAt,countdownEndsAt:Number.isFinite(s?.previousDeadline)?countdownEndsAt(s):null,actions:{1:g.transition.action1,2:g.transition.action2},damage:{1:g.transition.damage1,2:g.transition.damage2},resources}:null,result:closed?{winner:g.settled.winner,rated:g.kind!=='friend',reason:g.resigned?'resigned':g.abandoned&&s?.hp1>0&&s?.hp2>0?'reconnect-timeout':!s?'selection-timeout':s.misses1>=2||s.misses2>=2?'idle-forfeit':s.turn>300?'turn-limit':'battle'}:null,rating:closed?{before:g.settled['before'+me],after:g.settled['after'+me],delta:g.settled['delta'+me]}:null};
   if(window.RoomRules.hasSkills(roomRules)&&state&&!closed)skillSnapshots.set(u+':'+id,match);else skillSnapshots.delete(u+':'+id);
   return match;
  }
@@ -261,6 +279,7 @@ const initialAccount = {
    const lobby=await read('friendRooms/'+d.roomId);
    if(!lobby||lobby.host===u||lobby.game||lobby.heartbeat<=now()-15000)throw Error('この部屋には参加できません');
    const roomRules=window.RoomRules.normalize(lobby.roomRules);
+   if((roomRules.classic||roomRules.draft)&&!await supportsCustomModes())throw Error('クラシック・ドラフト対応のFirebaseルールを更新・公開してください。');
    if(roomRules.mode==='custom'&&!await supportsRoomRules())throw Error('カスタム対戦はまだ利用できません。更新後にお試しください。');
    if(roomRules.mode==='custom'&&window.AdvancedRules.isAdvanced(roomRules)&&!await advancedProtocol.supportsCustomOptions())throw Error('Customの追加設定を利用するには、Firebaseの対戦ルールを更新・公開してください。');
    if(window.AdvancedRules.isAdvanced(roomRules)&&!await advancedProtocol.supports())throw Error('Advancedはまだ利用できません。更新後にお試しください。');
@@ -272,7 +291,7 @@ const initialAccount = {
    if(window.RoomRules.hasSpecial(roomRules)&&!await advancedProtocol.supportsSpecialCompletion())throw Error('Sフォーカス・Sコンバートを利用するには、Firebaseの対戦ルールを更新・公開してください。');
    if(!await supportsSeven())throw Error('7技に対応するFirebaseルールを更新・公開してください。');
    const id=push(ref(db,'freeGames')).key,versionPatch={['freeGames/'+id+'/rulesVersion']:4},roomPatch=roomRules.mode!=='standard'?{['freeGames/'+id+'/roomRules']:roomRules}:{};
-   try{await update(ref(db),{...(await supportsForesightShield()?{['freeGames/'+id+'/foresightShield']:true}:{}),...versionPatch,...roomPatch,...(window.RoomRules.hasSpecial(roomRules)?{['freeGames/'+id+'/special']:window.SpecialRules.initial(window.SpecialRules.MOVE_VERSION)}:{}),['freeGames/'+id+'/players']:{1:u,2:lobby.host},['freeGames/'+id+'/createdAt']:serverTimestamp(),['freeGames/'+id+'/kind']:'friend',['freeGames/'+id+'/room']:d.roomId,['freeAccounts/'+u+'/active']:id,['freeAccounts/'+lobby.host+'/active']:id,['friendRooms/'+d.roomId+'/game']:id});}
+   try{await update(ref(db),{...(await supportsForesightShield()?{['freeGames/'+id+'/foresightShield']:true}:{}),...versionPatch,...roomPatch,...(roomRules.draft?{['freeGames/'+id+'/draft']:{first:Math.random()<.5?1:2,startedAt:serverTimestamp()}}:{}),...(window.RoomRules.hasSpecial(roomRules)?{['freeGames/'+id+'/special']:window.SpecialRules.initial(window.SpecialRules.MOVE_VERSION)}:{}),['freeGames/'+id+'/players']:{1:u,2:lobby.host},['freeGames/'+id+'/createdAt']:serverTimestamp(),['freeGames/'+id+'/kind']:'friend',['freeGames/'+id+'/room']:d.roomId,['freeAccounts/'+u+'/active']:id,['freeAccounts/'+lobby.host+'/active']:id,['friendRooms/'+d.roomId+'/game']:id});}
    catch(e){
     const fresh=await profile();if(fresh.active)return {match:await status(fresh.active)};
     const current=await read('friendRooms/'+d.roomId);
@@ -309,7 +328,13 @@ const initialAccount = {
    const state=await read(path+'/state');if(!state)throw Error('対戦はまだ開始していません。');
    await advancedProtocol.activate(id,me,d.turn,skillEndsAt(state),{pressedAt});return {match:await status(id)};
   }
+  if(d.op==='draftPick'){
+   if(!roomRules?.draft||await read(path+'/state'))throw Error('ドラフト選択中ではありません。');
+   await draftPick(id,await read(path+'/draft'),me,d.step,d.tech,false);return {match:await status(id)};
+  }
   if(d.op==='loadout'){
+   if(roomRules?.classic&&JSON.stringify(d.loadout)!=='[0,1,2]')throw Error('クラシックは固定の3技です。');
+   if(roomRules?.draft){const view=window.MatchModes.view(await read(path+'/draft'),now());if(!view.complete||JSON.stringify(view.loadouts[me])!==JSON.stringify(d.loadout))throw Error('ドラフトで確定した3技を使用してください。');}
    const savedSkill=window.RoomRules.hasSkills(roomRules)?await read(path+'/advanced/selected/'+me):null;
    const skillPatch=window.RoomRules.hasSkills(roomRules)?advancedProtocol.loadoutPatch({selected:{[me]:savedSkill}},me,d.advancedSkill):{};
    // Snapshot before ready/state. A rules-first rollout also remains compatible
@@ -346,10 +371,11 @@ const initialAccount = {
  // Observe public children only; subscribing to the game root would expose
  // hidden moves and is denied by the existing database rules.
  request.watch=(id,onChange,onError)=>{
-  const keys=['state','ready','resigned','settled'];if(window.AdvancedRules.isAdvanced(roomRulesCache.get(id)))keys.push('advanced/current');
+  const keys=['state','ready','resigned','settled'];if(roomRulesCache.get(id)?.draft)keys.push('draft');if(window.AdvancedRules.isAdvanced(roomRulesCache.get(id)))keys.push('advanced/current');
   const stops=keys.map(key=>onValue(ref(db,'freeGames/'+id+'/'+key),onChange,onError));
   return ()=>stops.forEach(stop=>stop());
  };
+ request.supportsCustomModes=supportsCustomModes;
  request.supportsCustomOptions=advancedProtocol.supportsCustomOptions;
  request.supportsAdvanced=advancedProtocol.supports;
  request.supportsAdvancedOptions=advancedProtocol.supportsOptions;

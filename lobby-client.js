@@ -35,7 +35,12 @@ function validateFriendRuleGauge(){
  initial.max=max.value;
  initial.setCustomValidity(Number(initial.value)>Number(max.value)?'初期ゲージは最大ゲージ以下にしてください。':'');
 }
-function updateFriendRuleSettings(){
+function updateFriendRuleSettings(changed){
+ const classic=document.getElementById('friendCustomClassic'),draft=document.getElementById('friendCustomDraft'),skills=document.getElementById('friendCustomSkills'),special=document.getElementById('friendCustomSpecial');
+ if(changed===classic&&classic.checked){skills.checked=false;special.checked=false;draft.checked=false;}
+ if(changed&&changed!==classic&&changed.checked)classic.checked=false;
+ skills.disabled=special.disabled=draft.disabled=classic.checked;classic.disabled=skills.checked||special.checked||draft.checked;
+
  const custom=document.querySelector('input[name="friendRuleMode"]:checked')?.value==='custom';
  const fields=document.getElementById('friendCustomRules');fields.hidden=!custom;fields.disabled=!custom;
  const advanced=document.querySelector('input[name="friendRuleMode"]:checked')?.value==='advanced';
@@ -57,7 +62,7 @@ async function submitFriendRoom(event){
  let rules;
  try{
   const mode=document.querySelector('input[name="friendRuleMode"]:checked')?.value;
-  rules=window.RoomRules.normalize({mode,skills:document.getElementById(mode==='custom'?'friendCustomSkills':'friendRuleSkills').checked,special:document.getElementById(mode==='custom'?'friendCustomSpecial':'friendRuleSpecial').checked,hp:mode==='advanced'&&document.getElementById('friendRuleSpecial').checked?10:Number(document.getElementById('friendRuleHp').value),initialGauge:Number(document.getElementById('friendRuleInitialGauge').value),maxGauge:Number(document.getElementById('friendRuleMaxGauge').value)});
+  rules=window.RoomRules.normalize({mode,skills:document.getElementById(mode==='custom'?'friendCustomSkills':'friendRuleSkills').checked,special:document.getElementById(mode==='custom'?'friendCustomSpecial':'friendRuleSpecial').checked,classic:mode==='custom'&&document.getElementById('friendCustomClassic').checked,draft:mode==='custom'&&document.getElementById('friendCustomDraft').checked,hp:mode==='advanced'&&document.getElementById('friendRuleSpecial').checked?10:Number(document.getElementById('friendRuleHp').value),initialGauge:Number(document.getElementById('friendRuleInitialGauge').value),maxGauge:Number(document.getElementById('friendRuleMaxGauge').value)});
  }catch(error){status.textContent=error.message;return;}
  protectedLobbyBusy=true;status.textContent='部屋を作成しています…';
  document.getElementById('friendCreateButton').disabled=true;document.getElementById('friendLobbyBack').disabled=true;

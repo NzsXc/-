@@ -2069,6 +2069,7 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
 <link rel="stylesheet" href="mode-menu.css?v=account-update-20261024">
 <link rel="stylesheet" href="notice-guide.css?v=guide-details-20261026">
 <link rel="stylesheet" href="guide-details.css?v=guide-layout-20261026">
+<link rel="stylesheet" href="custom-modes.css?v=custom-modes-20261027">
 <link rel="stylesheet" href="account-update.css?v=mobile-controls-20261025">
 <link rel="stylesheet" href="titles-skill-fixes.css?v=battle-frames-20261025">
 <link rel="stylesheet" href="battle-frames.css?v=frame-readability-20261026">
@@ -2302,8 +2303,10 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
       <label>最大ゲージ<input id="friendRuleMaxGauge" type="number" min="1" max="100" step="1" value="10" required inputmode="numeric" oninput="validateFriendRuleGauge()"></label>
       <p class="settingsNote">HP・最大ゲージは1〜100、初期ゲージは0〜最大ゲージ。基礎技3種 ＋ 選択技3種。</p>
       <div class="friendCustomOptions" role="group" aria-label="Customの追加モード">
-        <label><input id="friendCustomSkills" type="checkbox"><span>スキルモード</span></label>
-        <label><input id="friendCustomSpecial" type="checkbox"><span>スペシャルモード</span></label>
+        <label><input id="friendCustomSkills" type="checkbox" onchange="updateFriendRuleSettings(this)"><span>スキルモード</span></label>
+        <label><input id="friendCustomSpecial" type="checkbox" onchange="updateFriendRuleSettings(this)"><span>スペシャルモード</span></label>
+        <label><input id="friendCustomClassic" type="checkbox" onchange="updateFriendRuleSettings(this)"><span>クラシック</span></label>
+        <label><input id="friendCustomDraft" type="checkbox" onchange="updateFriendRuleSettings(this)"><span>ドラフト</span></label>
       </div>
     </fieldset>
     <p id="friendRuleStatus" class="lobbyStatus" role="status" aria-live="polite"></p>
@@ -2373,30 +2376,24 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
   <div class="techSelect">
 
     <div class="techCard">
-      <button class="techArrow" onclick="changeTech(0,-1)" aria-label="前の技">＜</button>
-      <div class="techCardBody">
+      <div class="techCardBody techSlotButton" role="button" tabindex="0" onclick="openTechniquePicker(0)" onkeydown="if(event.target===this &amp;&amp; (event.key==='Enter'||event.key===' ')){event.preventDefault();openTechniquePicker(0);}">
         <div id="techIcon0" class="techIcon">技1</div>
         <div id="techCardDescription0" class="techCardDescription"></div>
       </div>
-      <button class="techArrow" onclick="changeTech(0,1)" aria-label="次の技">＞</button>
     </div>
 
     <div class="techCard">
-      <button class="techArrow" onclick="changeTech(1,-1)" aria-label="前の技">＜</button>
-      <div class="techCardBody">
+      <div class="techCardBody techSlotButton" role="button" tabindex="0" onclick="openTechniquePicker(1)" onkeydown="if(event.target===this &amp;&amp; (event.key==='Enter'||event.key===' ')){event.preventDefault();openTechniquePicker(1);}">
         <div id="techIcon1" class="techIcon">技2</div>
         <div id="techCardDescription1" class="techCardDescription"></div>
       </div>
-      <button class="techArrow" onclick="changeTech(1,1)" aria-label="次の技">＞</button>
     </div>
 
     <div class="techCard">
-      <button class="techArrow" onclick="changeTech(2,-1)" aria-label="前の技">＜</button>
-      <div class="techCardBody">
+      <div class="techCardBody techSlotButton" role="button" tabindex="0" onclick="openTechniquePicker(2)" onkeydown="if(event.target===this &amp;&amp; (event.key==='Enter'||event.key===' ')){event.preventDefault();openTechniquePicker(2);}">
         <div id="techIcon2" class="techIcon">技3</div>
         <div id="techCardDescription2" class="techCardDescription"></div>
       </div>
-      <button class="techArrow" onclick="changeTech(2,1)" aria-label="次の技">＞</button>
     </div>
 
     <button id="techConfirmButton" class="confirmButton" onclick="confirmTech()">次へ</button>
@@ -2756,32 +2753,33 @@ body.hasRoomCode #battleScreen,#battleScreen.spectatorMode{--battle-top-gap:64px
 <script src="player-intro.js?v=account-update-20261024"></script>
 <script src="titles-client.js?v=collection-slots-20261026"></script>
 <script src="player-lightning.js?v=account-update-20261024"></script>
-<script src="combat-v4.js?v=s-special-completion-20261026"></script>
+<script src="match-modes.js?v=custom-modes-20261027"></script>
+<script src="combat-v4.js?v=custom-modes-20261027"></script>
 <script src="bot-engine.js?v=account-update-20261024"></script>
 <script src="bot-client.js?v=freeze-reveal-20261026"></script>
 <script src="advanced/rules.js?v=account-update-20261024"></script>
 <script src="advanced/special-rules.js?v=s-special-completion-20261026"></script>
-<script src="advanced/special.js?v=s-special-completion-20261026"></script>
-<script src="room-rules.js?v=account-update-20261024"></script>
+<script src="advanced/special.js?v=custom-modes-20261027"></script>
+<script src="room-rules.js?v=custom-modes-20261027"></script>
 <script src="battle-timeline.js?v=s-special-completion-20261026"></script>
-<script src="ranked-client.js?v=s-special-expansion-20261026"></script>
+<script src="ranked-client.js?v=custom-modes-20261027"></script>
 <script src="advanced/client.js?v=account-update-20261024"></script>
 <script src="advanced/cutin.js?v=account-update-20261024"></script>
 <script src="battle-inspector.js?v=countdown-inspector-20261026"></script>
-<script src="lobby-client.js?v=account-update-20261024"></script>
+<script src="lobby-client.js?v=custom-modes-20261027"></script>
 <script src="battle-action-art.js?v=account-update-20261024"></script>
 <script src="battle-new-effects.js?v=account-update-20261024"></script>
 <script src="battle-effects.js?v=battle-frames-20261025"></script>
 <script type="module">
   import {createTitleService} from "./title-service.js?v=account-update-20261024";
   import {createBattleFrameService} from "./battle-frame-service.js?v=battle-frames-20261025";
-  import {createProtectedRooms} from "./protected-rooms.js?v=s-special-completion-20261026";
-  import {createFreeTransport} from "./free-transport.js?v=s-special-completion-20261026";
+  import {createProtectedRooms} from "./protected-rooms.js?v=custom-modes-20261027";
+  import {createFreeTransport} from "./free-transport.js?v=custom-modes-20261027";
   import {createBattleHistory} from "./battle-history.js?v=s-special-completion-20261026";
   import {createPlayerProfile} from "./player-profile.js?v=motion-shop-20261026";
-  import {createHistoryScreen} from "./battle-history-client.js?v=account-update-20261024";
+  import {createHistoryScreen} from "./battle-history-client.js?v=custom-modes-20261027";
   import {createCommunityRatings} from "./community-ratings.js?v=account-update-20261024";
-  import {createEconomyService} from "./economy-service.js?v=motion-shop-20261026";
+  import {createEconomyService} from "./economy-service.js?v=custom-modes-20261027";
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
   import {
     getAuth,
@@ -3448,6 +3446,10 @@ function showTipPage(page){
 ========================= */
 
 function showScreen(id){
+  window.TechniquePicker?.close();
+  const previousScreen=document.querySelector(".screen.active")?.id;
+  if(id==="onlineScreen")window.onlineMusicContext=true;
+  if(["modeScreen","startScreen","soloScreen"].includes(id))window.onlineMusicContext=false;
   if(id!=="battleScreen")window.GameMotion?.clearResult();
   const techBack=document.getElementById('techBackButton');
   if(techBack)techBack.hidden=id!=='techScreen'||gameMode!=='offline'||rankedActive;
@@ -3476,6 +3478,7 @@ function showScreen(id){
   updateRoomCodeButton(id);
   syncBattleInspector();
   window.GameMotion?.sync();
+  window.dispatchEvent(new CustomEvent("game-screen-change",{detail:{id,previousScreen}}));
 
 }
 
@@ -3570,7 +3573,7 @@ function renderSpectatorLoadouts(room){
   for(const side of [1,2]){
     const raw=room.players?.[side]?.techniques ?? room.battle?.techniques?.[side];
     const indices=Array.isArray(raw)?raw:Object.keys(raw||{}).sort((a,b)=>Number(a)-Number(b)).map(key=>raw[key]);
-    const techs=indices.map(index=>techniquePool[Number(index)]).filter(Boolean).slice(0,3);
+    const techs=indices.map(index=>window.MatchModes.action(room.battle?.roomRules,Number(index),techniquePool)).filter(Boolean).slice(0,3);
     if(side===1)player1Techs=techs; else player2Techs=techs;
     const section=document.createElement("section");
     section.className="spectatorLoadout";
@@ -3944,7 +3947,7 @@ function updateTechniqueDisplay(){
   selectedTechniques[selectingPlayer]
     .forEach((index,slot)=>{
 
-      const tech = techniquePool[index];
+      const tech = window.MatchModes.action(rankedActive?rankedMatch?.roomRules:null,index,techniquePool);
       const nameEl = document.getElementById("techIcon" + slot);
       const descEl = document.getElementById("techCardDescription" + slot);
 
@@ -3954,7 +3957,7 @@ function updateTechniqueDisplay(){
     });
 
   window.SpecialGauge?.paintSelection();
-  window.GameMotion?.updateTechniques(selectedTechniques[selectingPlayer].map(index=>techniquePool[index]));
+  window.GameMotion?.updateTechniques(selectedTechniques[selectingPlayer].map(index=>window.MatchModes.action(rankedActive?rankedMatch?.roomRules:null,index,techniquePool)));
   // 旧UIとの互換用。現在は表示しない。
   const oldDescription = document.getElementById("techDescription");
   if(oldDescription){
@@ -5247,7 +5250,7 @@ function isBattleActionAvailable(player,action,data){
   if(!data||!Number.isFinite(data.cost)||data.cost<0||data.cost>gauge[player])return false;
   if(blockSeal[player]&&(data.type==="block"||data.skill==="tech2"))return false;
   if(data.type==="block"&&lastAction[player]?.data?.type==="block")return false;
-  if(data.skill==="tech2"&&lastAction[player]?.data?.type==="reflect")return false;
+  if(data.skill==="tech2"&&!data.repeatable&&lastAction[player]?.data?.type==="reflect")return false;
   if(data.skill==="tech8"&&!data.special&&gauge[player===1?2:1]>=7)return false;
   if(data.type==="charge"&&gauge[player]>=battleLimits().maxGauge)return false;
   return true;
@@ -5286,7 +5289,7 @@ function chooseAction(player,action){
   }
 
   // カウンターの連続使用は禁止。
-  if(data.skill === "tech2" && lastAction[player]?.data?.type === "reflect")return;
+  if(data.skill === "tech2" && !data.repeatable && lastAction[player]?.data?.type === "reflect")return;
 
   // 技8：相手のゲージが7未満の場合のみ
   if(data.skill === "tech8"){
@@ -6820,7 +6823,7 @@ function updateActionChainIndicators(){
     blockLock.title="前ターンにブロック系技を使用したため、このターンは連続使用できません";
 
     const counterLock=ensureIndicator("CounterRepeat","enhanceIndicator blockSealIndicator");
-    counterLock.hidden=previous?.type!=="reflect";
+    counterLock.hidden=(rankedMatch?.roomRules||window._spectatorRoomRules)?.classic||previous?.type!=="reflect";
     counterLock.textContent="カウンター連続×";
     counterLock.title="前ターンにカウンターを使用したため、このターンは連続使用できません";
 
@@ -6928,7 +6931,7 @@ function updateDisabledActions(){
       if(tech.skill==="tech8" && gauge[opponent]>=7) disabled=true;
       if(blockSeal[player] && (tech.skill==="tech5" || tech.skill==="tech2")) disabled=true;
       if(tech.skill==="tech5" && lastAction[player]?.data?.type==="block") disabled=true;
-      if(tech.skill==="tech2" && lastAction[player]?.data?.type==="reflect") disabled=true;
+      if(tech.skill==="tech2" && !tech.repeatable && lastAction[player]?.data?.type==="reflect") disabled=true;
       el.classList.toggle("disabled",disabled);
     });
 
@@ -6970,7 +6973,7 @@ function updateDisabledActions(){
 
 function startMenuBGM(){
   const audio=document.getElementById("menuBGM");
-  if(!audio || document.getElementById("battleScreen")?.classList.contains("active") || document.getElementById("onlineScreen")?.classList.contains("active"))return;
+  if(!audio || document.getElementById("battleScreen")?.classList.contains("active") || window.onlineMusicContext)return;
   audio.loop=true;
   window.GameAudio?GameAudio.element(audio,.208,'music'):audio.volume=.208;
   if(!audio.paused)return;
@@ -6985,7 +6988,7 @@ function pauseMenuBGM(){
 
 function startOnlineMenuBGM(){
   const audio=document.getElementById("onlineMenuBGM");
-  if(!audio || !document.getElementById("onlineScreen")?.classList.contains("active"))return;
+  if(!audio || !window.onlineMusicContext || document.getElementById("battleScreen")?.classList.contains("active"))return;
   audio.loop=true;
   window.GameAudio?GameAudio.element(audio,.208,"music"):audio.volume=.208;
   if(!audio.paused)return;
@@ -6995,7 +6998,7 @@ function startOnlineMenuBGM(){
 
 function stopOnlineMenuBGM(){
   const audio=document.getElementById("onlineMenuBGM");
-  if(audio){audio.pause();audio.currentTime=0;}
+  if(audio){audio.pause();if(!window.onlineMusicContext)audio.currentTime=0;}
 }
 
 function startBattleBGM(){
@@ -7029,7 +7032,7 @@ function stopBattleBGM(){
 function syncBattleBGM(screenId){
   if(screenId==="battleScreen"){
     pauseMenuBGM();stopOnlineMenuBGM();startBattleBGM();
-  }else if(screenId==="onlineScreen"){
+  }else if(window.onlineMusicContext){
     stopBattleBGM();pauseMenuBGM();startOnlineMenuBGM();
   }else{
     stopBattleBGM();stopOnlineMenuBGM();startMenuBGM();
@@ -7037,7 +7040,7 @@ function syncBattleBGM(screenId){
 }
 function resumeScreenBGM(){
   if(document.getElementById("battleScreen")?.classList.contains("active"))startBattleBGM();
-  else if(document.getElementById("onlineScreen")?.classList.contains("active"))startOnlineMenuBGM();
+  else if(window.onlineMusicContext)startOnlineMenuBGM();
   else startMenuBGM();
 }
 // Retry autoplay only for the currently visible screen, without restarting it.
@@ -7172,8 +7175,10 @@ updateTechniqueDisplay();
 </script>
 <script src="community-rating-core.js?v=account-update-20261024"></script>
 <script src="audio-settings.js?v=mobile-controls-20261025"></script>
-<script src="account-ui.js?v=mobile-controls-20261025"></script>
+<script src="account-ui.js?v=custom-modes-20261027"></script>
+<script src="match-rewards.js?v=custom-modes-20261027"></script>
 <script src="guide-detail-data.js?v=guide-details-20261026"></script>
+<script src="technique-picker.js?v=custom-modes-20261027"></script>
 <script src="notice-guide.js?v=guide-details-20261026"></script>
 <script src="guide-details.js?v=guide-details-20261026"></script>
 <!-- PWA registration -->

@@ -31,9 +31,9 @@
   for(let slot=0;slot<3;slot++){
    const name=document.getElementById('techIcon'+slot),description=document.getElementById('techCardDescription'+slot);if(!name||!description)continue;
    const body=name.parentElement;body.classList.toggle('specialSelectionBody',!!selectionMatch);let button=body.querySelector('.specialPreviewToggle');
-   if(selectionMatch&&!button){button=node('button','specialPreviewToggle','⇋');button.type='button';button.onclick=()=>{preview[slot]=!preview[slot];paintSelection();};body.append(button);}
+   if(selectionMatch&&!button){button=node('button','specialPreviewToggle','⇋');button.type='button';button.onclick=event=>{event.stopPropagation();preview[slot]=!preview[slot];paintSelection();};body.append(button);}
    if(button){button.hidden=!selectionMatch;button.setAttribute('aria-label','通常技とスペシャル技の説明を切り替え');button.setAttribute('aria-pressed',String(!!selectionMatch&&preview[slot]));}
-   const tech=techniquePool[selectedTechniques[selectingPlayer][slot]],show=!!selectionMatch&&preview[slot];if(!tech)continue;
+   const tech=window.MatchModes?.action(typeof rankedMatch!=='undefined'&&rankedActive?rankedMatch?.roomRules:null,selectedTechniques[selectingPlayer][slot],techniquePool)||techniquePool[selectedTechniques[selectingPlayer][slot]],show=!!selectionMatch&&preview[slot];if(!tech)continue;
    if(selectionMatch){stableText(name,tech.name,'S'+tech.name,show);stableText(description,tech.description,'Sゲージ追加消費+'+window.SpecialRules.definition(BattleV4.specialId(selectedTechniques[selectingPlayer][slot]),selectionMatch.special?.version).cost+' / '+window.SpecialRules.definition(BattleV4.specialId(selectedTechniques[selectingPlayer][slot]),selectionMatch.special?.version).description,show);}
    else{name.textContent=tech.name;description.textContent=tech.description;}
    name.classList.toggle('specialTechniqueName',show);body.classList.toggle('specialTechniquePreview',show);
