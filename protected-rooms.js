@@ -6,6 +6,7 @@ export function createProtectedRooms(db,auth,transport,history){
  const now=()=>Date.now()+offset,read=async p=>(await get(ref(db,p))).val();
  async function ensure(){await auth.authStateReady();if(!auth.currentUser)await signInAnonymously(auth);await transport({op:'profile'});}
  async function create(options){const rules=window.RoomRules.normalize(options);if(rules.mode==='advanced'&&window.RoomRules.hasSpecial(rules))rules.hp=10;await ensure();const who=auth.currentUser.uid;const account=await read('freeAccounts/'+who);if(account.active)throw Error('進行中の対戦を終了してください');
+  if((rules.classic||rules.draft)&&!await transport.supportsCustomModes?.())throw Error('クラシック・ドラフト対応のFirebaseルールを更新・公開してください。');
   if(rules.mode==='custom'&&!await transport.supportsRoomRules?.())throw Error('カスタム対戦はまだ利用できません。更新後にお試しください。');
   if(rules.mode==='custom'&&window.AdvancedRules.isAdvanced(rules)&&!await transport.supportsCustomOptions?.())throw Error('Customの追加設定を利用するには、Firebaseの対戦ルールを更新・公開してください。');
   if(window.AdvancedRules.isAdvanced(rules)&&!await transport.supportsAdvanced?.())throw Error('Advancedはまだ利用できません。更新後にお試しください。');
@@ -47,7 +48,7 @@ export function createProtectedRooms(db,auth,transport,history){
  }
  const specialStates=s=>Object.fromEntries(['specialSeal','specialRuin','specialMomentum','weaken'].map(k=>[k,{1:s[k+'1']||0,2:s[k+'2']||0}]));
  const publicState=s=>({turn:s.turn,skillsExhausted:!!s.skillsExhausted,hp:{1:s.hp1,2:s.hp2},gauge:{1:s.gauge1,2:s.gauge2},enhanceTurns:{1:s.enhance1,2:s.enhance2},blockSeal:{1:!!s.seal1,2:!!s.seal2},ruinTurns:{1:s.ruin1||0,2:s.ruin2||0},momentumBonus:{1:!!s.momentum1,2:!!s.momentum2},frozen:{1:s.frozen1||0,2:s.frozen2||0},poison:{1:s.poison1||0,2:s.poison2||0},...specialStates(s),lastAction:{1:s.last1?{data:{type:s.last1}}:null,2:s.last2?{data:{type:s.last2}}:null}});
- const revealedAction=(id,special)=>id<3?window.BattleAI.ACTIONS[id]:window.SpecialRules.actionData(id,window.BattleAI.techniques,null,special?.version);
+ const revealedAction=(id,special,rules)=>rules?.classic&&id>=3?window.MatchModes.CLASSIC[id-3]:id<3?window.BattleAI.ACTIONS[id]:window.SpecialRules.actionData(id,window.BattleAI.techniques,null,special?.version);
  function beforeAction(reveal,state){
   if(![1,2].every(p=>Number.isFinite(reveal['inputHp'+p])&&Number.isFinite(reveal['inputGauge'+p])))return null;
   const before={...state,turn:reveal.turn-1};
@@ -88,7 +89,7 @@ export function createProtectedRooms(db,auth,transport,history){
    battle.phase='effect';battle.resolvedTurn=reveal.turn-1;battle.countdownEndsAt=countdownEnd;battle.revealAt=countdownEnd+500;battle.effectStartAt=countdownEnd+1800;
    battle.damageTo1=reveal.damage1;battle.damageTo2=reveal.damage2;battle.before=beforeAction(reveal,rawState);
    battle.resources={foresightShield:foresightShield===true,...(battle.before?{before:{hp:battle.before.hp,gauge:battle.before.gauge}}:{}),after:{hp:{1:reveal.hp1,2:reveal.hp2},gauge:{1:reveal.gauge1,2:reveal.gauge2},...(special?{special:special.gauge}:{})},outcome:Object.fromEntries(['paid','charged','foresight','healed','rampage','stolen','specialGain','recoveredAttack'].flatMap(key=>[1,2].filter(p=>Number.isFinite(reveal[key+p])).map(p=>[key+p,reveal[key+p]])))};
-   battle.actions={1:{id:reveal.action1,data:revealedAction(reveal.action1,special)},2:{id:reveal.action2,data:revealedAction(reveal.action2,special)}};
+   battle.actions={1:{id:reveal.action1,data:revealedAction(reveal.action1,special,roomRules)},2:{id:reveal.action2,data:revealedAction(reveal.action2,special,roomRules)}};
   }
   if(skillMatch)battle.skillMatch=skillMatch;
   return {players:people,battle};

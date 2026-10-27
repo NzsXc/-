@@ -69,8 +69,31 @@ export function createEconomyService(db,auth){
   window.dispatchEvent(new Event('player-card-style-changed'));return cardStyles(who);
  }
 
+ async function claimBattle(id){
+  const who=uid();if(!who||typeof id!=='string'||!/^[A-Za-z0-9_-]+$/.test(id))return false;
+  const receipt='coinBattleClaims/'+who+'/'+id;if(await read(receipt))return false;
+  const live=await read('freeGames/'+id+'/players'),saved=live?null:await read('battleHistory/'+id);
+  const players=live||{1:saved?.players?.[1]?.uid,2:saved?.players?.[2]?.uid};
+  if(![1,2].some(p=>players[p]===who)||!players[1]||!players[2]||players[1]===players[2])return false;
+  const [a,b,settled,state]=await Promise.all([read('freeAccounts/'+players[1]),read('freeAccounts/'+players[2]),live?read('freeGames/'+id+'/settled'):Promise.resolve(saved?.settled),live?read('freeGames/'+id+'/state'):Promise.resolve(saved?.finalState)]);
+  if(!settled||!state||!a||!b||a.guest===true||b.guest===true)return false;
+  return retry(async()=>{
+   if(uid()!==who)throw Error('ログイン状態が変わりました');if(await read(receipt))return false;
+   const current=await wallet(who),next={...current,balance:current.balance+10,claimDay:-1,claimFrom:id};
+   try{await update(ref(db),{['coinWallets/'+who]:next,[receipt]:true});}
+   catch(error){if(await read(receipt))return false;if(permissionDenied(error)&&!sameWallet(current,await wallet(who)))error.walletConflict=true;throw error;}
+   window.dispatchEvent(new Event('wallet-changed'));return true;
+  });
+ }
+ async function pendingBattles(){
+  const who=uid();if(!who)return {ids:[],amount:0,balance:null};
+  const account=await read('freeAccounts/'+who);if(account?.lastSettled)await claimBattle(account.lastSettled);
+  const [claims,ack]=await Promise.all([read('coinBattleClaims/'+who),read('coinBattleAcknowledgements/'+who)]);
+  const ids=Object.keys(claims||{}).filter(id=>!ack?.[id]);return {ids,amount:ids.length*10,balance:(await wallet(who)).balance,uid:who};
+ }
+ async function acknowledgeBattles(ids,expectedUid){const who=uid();if(!who||who!==expectedUid||!ids.length)return;await update(ref(db),Object.fromEntries(ids.map(id=>['coinBattleAcknowledgements/'+who+'/'+id,true])));}
  async function styleFor(who){if(!who)return {color:'white',gloss:false};const value=await wallet(who);return {color:value.colorUnlocked?value.color:'white',gloss:value.colorUnlocked&&value.glossUnlocked&&value.gloss};}
- return {readOwnCardStyles:()=>{const who=uid();if(!who)throw Error('ログインしてください');return cardStyles(who);},cardStyleFor:async who=>who?(await cardStyles(who)).selected:'',buyCardStyle:id=>enqueue(()=>purchaseCardStyle(id)),saveCardStyle:id=>enqueue(()=>selectCardStyle(id)),playerName:async()=>{const who=uid();return who?(await read('freeAccounts/'+who))?.name||'プレイヤー':'プレイヤー';},acknowledge:async (entries,expectedUid)=>{const who=uid();if(!who||(expectedUid&&who!==expectedUid)||!entries?.length)return;await update(ref(db),Object.fromEntries(entries.map(([d,from])=>['coinAcknowledgements/'+who+'/'+d+'/'+from,true])));},uid,day,start:()=>enqueue(start),readOwn:()=>{const who=uid();if(!who)throw Error('ログインしてください');return wallet(who);},styleFor,PALETTE,
+ return {claimBattle:id=>enqueue(()=>claimBattle(id)),pendingBattles:()=>enqueue(pendingBattles),acknowledgeBattles,readOwnCardStyles:()=>{const who=uid();if(!who)throw Error('ログインしてください');return cardStyles(who);},cardStyleFor:async who=>who?(await cardStyles(who)).selected:'',buyCardStyle:id=>enqueue(()=>purchaseCardStyle(id)),saveCardStyle:id=>enqueue(()=>selectCardStyle(id)),playerName:async()=>{const who=uid();return who?(await read('freeAccounts/'+who))?.name||'プレイヤー':'プレイヤー';},acknowledge:async (entries,expectedUid)=>{const who=uid();if(!who||(expectedUid&&who!==expectedUid)||!entries?.length)return;await update(ref(db),Object.fromEntries(entries.map(([d,from])=>['coinAcknowledgements/'+who+'/'+d+'/'+from,true])));},uid,day,start:()=>enqueue(start),readOwn:()=>{const who=uid();if(!who)throw Error('ログインしてください');return wallet(who);},styleFor,PALETTE,
   unlock:kind=>enqueue(()=>change(w=>{if(kind==='color'){if(w.colorUnlocked)return w;if(w.balance<100)throw Error('100コイン必要です');return {...w,balance:w.balance-100,colorUnlocked:true};}if(kind==='gloss'){if(!w.colorUnlocked)throw Error('先に名前色を解放してください');if(w.glossUnlocked)return w;if(w.balance<200)throw Error('200コイン必要です');return {...w,balance:w.balance-200,glossUnlocked:true};}throw Error('購入内容が不正です');})),
   saveStyle:(color,gloss)=>enqueue(()=>change(w=>{if(!PALETTE[color]||color!=='white'&&!w.colorUnlocked||gloss&&!w.glossUnlocked)throw Error('名前色を解放してください');return {...w,color,gloss:!!gloss};}))};
 }
