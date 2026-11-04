@@ -12,9 +12,10 @@
  const strength=el('p'),weakness=el('p');
  for(const [name,p]of [['強み',strength],['弱み',weakness]]){const section=el('section');section.append(el('h3','',name),p);notes.append(section);}
  const ratings=el('div','guideDetailRatings');
- function rating(kind,name){const section=el('section','guideDetailRating');section.dataset.rating=kind;const score=el('strong','guideDetailScore'),words=el('div'),text=el('p');words.append(el('h3','',name),text);section.append(score,words);ratings.append(section);return {score,text};}
- const vote=rating('vote','人評価 · 投票平均'),owner=rating('owner','人評価 · 指定評価'),ai=rating('ai','AI評価 · 仮');
- const provisional=el('p','guideDetailFootnote','AI評価は仮です。ゲームAIのデータを用いた評価は準備中です。');
+ function rating(kind,name){const section=el('section','guideDetailRating');section.dataset.rating=kind;const score=el('strong','guideDetailScore'),words=el('div'),text=el('p'),label=el('h3','',name);words.append(label,text);section.append(score,words);ratings.append(section);return {score,text,label};}
+ const vote=rating('vote','人評価 · 投票平均'),owner=rating('owner','人評価 · 指定評価'),ai=rating('ai','AI評価 · 解析に基づく評価');
+ const aiEvidence=el('p','guideDetailAiEvidence');ai.text.after(aiEvidence);
+ const provisional=el('p','guideDetailFootnote');
  const voteButton=el('button','guideDetailButton','投票する');voteButton.type='button';
  copy.append(notes,ratings,provisional,voteButton);
  const demo=el('section','guideDetailDemo');demo.setAttribute('aria-label','ゲーム実演');demo.append(el('h3','','ゲーム実演'),el('p','guideDetailDemoNote','CP対CP · 場面再生'));
@@ -49,7 +50,7 @@
  }
  function open(id){
   item=all.find(a=>a.id===id);if(!item)return;data=GuideDetailData.entry(id);title.textContent=item.name;description.textContent=item.description;
-  strength.textContent=data.strength;weakness.textContent=data.weakness;setScore(owner,data.ownerScore,data.ownerText);setScore(ai,data.aiScore,data.aiText);paintVotes();
+  strength.textContent=data.strength;weakness.textContent=data.weakness;setScore(owner,data.ownerScore,data.ownerText);setScore(ai,data.aiScore,data.aiText);ai.label.textContent=data.aiLabel;aiEvidence.textContent=data.aiEvidence;provisional.textContent=data.aiFootnote;if(data.aiScore==null)ai.score.setAttribute('aria-label','解析データ不足のため採点保留');paintVotes();
   ready=false;replay.disabled=true;voteButton.hidden=item.category==='basics';frame?.remove();frame=createFrame();stage.replaceChildren(frame);frame.srcdoc=source();modal.showModal();selectScene(0);resizeFrame();window.NoticeGuide.loadRatings();
  }
  function stop(){ready=false;frame?.remove();frame=null;replay.disabled=true;item=null;}

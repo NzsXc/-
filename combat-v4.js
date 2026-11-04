@@ -71,7 +71,7 @@ function core(s,moves,rulesVersion=2,roomRules={},powerBonus={},foresightShield=
  if(rulesVersion>=2&&!roomRules.classic){out.gauge1=Math.max(0,out.gauge1-(e2.skill==='tech3'?1:0));out.gauge2=Math.max(0,out.gauge2-(e1.skill==='tech3'?1:0));}
  if(modern){out.normalGauge1=out.gauge1;out.normalGauge2=out.gauge2;}
  if(modern)for(const p of [1,2]){const raw=p===1?raw1:raw2,e=p===1?e1:e2,enemy=p===1?e2:e1,other=p===1?raw2:raw1;
-  if(raw.special&&raw.skill==='tech12'&&['charge','attack','block'].includes(other.type)&&!other.skill)out['gauge'+p]=clamp(out['gauge'+p]+2,0,maxGauge);
+  if(raw.special&&raw.skill==='tech12'&&(roomRules.specialVersion>=6||['charge','attack','block'].includes(other.type)&&!other.skill))out['gauge'+p]=clamp(out['gauge'+p]+2,0,maxGauge);
   if(s['specialRuin'+p]>0&&e.type==='charge')out['gauge'+p]=Math.max(0,out['gauge'+p]-1);
   out['specialSeal'+p]=enemy.special&&enemy.skill==='tech8'?2:Math.max(0,s['specialSeal'+p]-1);
   out['specialRuin'+p]=enemy.skill==='tech11'?(enemy.special?3:0):Math.max(0,s['specialRuin'+p]-1);
@@ -99,10 +99,12 @@ const expandedActions=ACTIONS.map((a,id)=>({...a,...(expansionCosts[id]!=null?{s
 expandedActions[-1]=ACTIONS[-1];
 const completedActions=expandedActions.map((a,id)=>({...a,...(id===34?{specialCost:6}:id===35?{specialCost:8}:{})}));
 completedActions[-1]=ACTIONS[-1];
+const balancedActions=completedActions.map((a,id)=>({...a,...(id===40?{specialCost:10}:{})}));
+balancedActions[-1]=ACTIONS[-1];
 function calculate(state,moves,rulesVersion=4,rules={},bonus={},shield=true,catalog=null){
  const expanded=rules.specialVersion>=4;
  const completed=rules.specialVersion>=5;
- catalog||=completed?completedActions:expanded?expandedActions:ACTIONS;
+ catalog||=rules.specialVersion>=6?balancedActions:completed?completedActions:expanded?expandedActions:ACTIONS;
  const picked={...moves};for(const p of [1,2])if(state['frozen'+p]>0)picked[p]=-1;
  const out=core(state,picked,3,rules,bonus,shield,catalog),raw={},eff={};
  for(const p of [1,2])raw[p]=catalog[out['action'+p]]||ACTIONS[-1];

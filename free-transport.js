@@ -137,7 +137,7 @@ const initialAccount = {
    if(modern)state.previousDeadline=turnOpensAt(fresh,roomRules,advanced)+10000;
    if(window.AdvancedRules.isAdvanced(roomRules))state.skillsExhausted=window.AdvancedRules.exhausted(advanced,roomRules);
 
-   const specialPatch=[1,2,3,4,5].includes(special?.version)?{special:window.SpecialRules.advance(special,c)}:{};
+   const specialPatch=[1,2,3,4,5,6].includes(special?.version)?{special:window.SpecialRules.advance(special,c)}:{};
    try{await writeUpdate(path,{transition:c,state,...specialPatch});}
    catch(e){
     const accepted=await read(path+'/state');
@@ -298,6 +298,7 @@ const initialAccount = {
    if(window.RoomRules.hasSpecial(roomRules)&&!await advancedProtocol.supportsSpecialMoves())throw Error('S技を利用するには、Firebaseの対戦ルールを更新・公開してください。');
    if(window.RoomRules.hasSpecial(roomRules)&&!await advancedProtocol.supportsSpecialExpansion())throw Error('新しいS技を利用するには、Firebaseの対戦ルールを更新・公開してください。');
    if(window.RoomRules.hasSpecial(roomRules)&&!await advancedProtocol.supportsSpecialCompletion())throw Error('Sフォーカス・Sコンバートを利用するには、Firebaseの対戦ルールを更新・公開してください。');
+   if(window.RoomRules.hasSpecial(roomRules)&&!await advancedProtocol.supportsSpecialBalance())throw Error('Sミラー・Sドレインの新仕様を利用するには、Firebaseの対戦ルールを更新・公開してください。');
    if(!await supportsSeven())throw Error('7技に対応するFirebaseルールを更新・公開してください。');
    const id=push(ref(db,'freeGames')).key,versionPatch={['freeGames/'+id+'/rulesVersion']:4},roomPatch=roomRules.mode!=='standard'?{['freeGames/'+id+'/roomRules']:roomRules}:{};
    try{await update(ref(db),{...(await supportsForesightShield()?{['freeGames/'+id+'/foresightShield']:true}:{}),...versionPatch,...roomPatch,...(roomRules.draft?{['freeGames/'+id+'/draft']:{first:Math.random()<.5?1:2,startedAt:serverTimestamp()}}:{}),...(window.RoomRules.hasSpecial(roomRules)?{['freeGames/'+id+'/special']:window.SpecialRules.initial(window.SpecialRules.MOVE_VERSION)}:{}),['freeGames/'+id+'/players']:{1:u,2:lobby.host},['freeGames/'+id+'/createdAt']:serverTimestamp(),['freeGames/'+id+'/kind']:'friend',['freeGames/'+id+'/room']:d.roomId,['freeAccounts/'+u+'/active']:id,['freeAccounts/'+lobby.host+'/active']:id,['friendRooms/'+d.roomId+'/game']:id});}
@@ -391,6 +392,7 @@ const initialAccount = {
  request.supportsSpecialGauge=advancedProtocol.supportsSpecialGauge;
  request.supportsSpecialMoves=advancedProtocol.supportsSpecialMoves;
  request.supportsSpecialExpansion=advancedProtocol.supportsSpecialExpansion;
+ request.supportsSpecialBalance=advancedProtocol.supportsSpecialBalance;
  request.supportsSpecialCompletion=advancedProtocol.supportsSpecialCompletion;
  request.supportsSpecialHp=advancedProtocol.supportsSpecialHp;
  request.supportsRoomRules=supportsRoomRules;

@@ -1,0 +1,9 @@
+/* Battle-only presentation. Existing match clocks and controls retain ownership. */
+#battleScreen.battleAtmosphere{background:#0b1729;background-image:none}
+#battleScreen.battleAtmosphere::before,#battleScreen.battleAtmosphere::after{display:none}
+#battleScreen>.battleAtmosphereCanvas{position:absolute;inset:0;width:100%;height:100%;z-index:-2;pointer-events:none}
+#battleScreen>.battleSegmentTimer{position:absolute;z-index:3;pointer-events:none;transform:translate(-50%,-50%)}
+#battleScreen>.battleSegmentTimer[hidden]{display:none}
+#battleScreen.battleAtmosphere #countdownRing{display:none}
+#battleScreen #countdown.battleSegmentNumber{color:transparent!important;text-shadow:none!important;animation:none!important}
+@media(prefers-reduced-motion:reduce){#battleScreen #countdown.battleSegmentNumber{animation:none!important}}

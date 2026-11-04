@@ -2,7 +2,7 @@
 (()=>{
  'use strict';
  const art=window.GameMotionArt;if(!art)return;const records=new Set(),reduced=matchMedia('(prefers-reduced-motion: reduce)');
- let raf=0,last=0,time=0,resultKey='',overlay=null;
+ let raf=0,last=0,time=0,resultKey='',overlay=null,homeBackground=null;
  const node=(tag,cls,text)=>{const n=document.createElement(tag);n.className=cls||'';if(text!=null)n.textContent=text;return n;};
  const observer=typeof IntersectionObserver==='function'?new IntersectionObserver(entries=>{for(const entry of entries){const record=[...records].find(r=>r.canvas===entry.target);if(record){record.inView=entry.isIntersecting;record.dirty=true;}}wake();}):null;
  const sizes=typeof ResizeObserver==='function'?new ResizeObserver(entries=>{for(const entry of entries){const record=[...records].find(r=>r.canvas===entry.target);if(record)record.dirty=true;}wake();}):null;
@@ -11,7 +11,7 @@
   const record={owner,canvas,type,dirty:true,inView:true,...options};records.add(record);observer?.observe(canvas);sizes?.observe(canvas);wake();return record;
  }
  function remove(record){observer?.unobserve(record.canvas);sizes?.unobserve(record.canvas);record.canvas.remove();records.delete(record);}
- function visible(record){if(!record.canvas.isConnected)return false;const screen=record.owner.closest('.screen');return (!screen||screen.classList.contains('active'))&&!record.owner.closest('[hidden]')&&record.inView;}
+ function visible(record){if(!record.canvas.isConnected||record.type==='home'&&record.owner.classList.contains('musicReactiveBackground'))return false;const screen=record.owner.closest('.screen');return (!screen||screen.classList.contains('active'))&&!record.owner.closest('[hidden]')&&record.inView;}
  function wake(){if(!raf&&!document.hidden)raf=requestAnimationFrame(draw);}
  function draw(now){
   raf=0;if(!reduced.matches&&last&&now-last<40){raf=requestAnimationFrame(draw);return;}const dt=last?Math.min((now-last)/1000,.1):0;last=now;if(document.hidden)return;
@@ -33,7 +33,14 @@
   }
   if(animated&&!reduced.matches)raf=requestAnimationFrame(draw);
  }
- function sync(){for(const record of records)record.dirty=true;wake();}
+ function sync(){
+  const screen=document.querySelector('.screen.active');
+  if(homeBackground&&screen&&screen.id!=='battleScreen'&&homeBackground.owner!==screen){
+   homeBackground.owner.classList.remove('gameHomeBackground');homeBackground.owner=screen;
+   screen.classList.add('gameHomeBackground');screen.prepend(homeBackground.canvas);homeBackground.inView=true;
+  }
+  for(const record of records)record.dirty=true;wake();
+ }
  function clearResult(){
   resultKey='';if(overlay){for(const record of [...records])if(overlay.contains(record.canvas))remove(record);overlay.remove();overlay=null;}
   document.getElementById('battleScreen')?.classList.remove('hasGameResult');
@@ -44,7 +51,9 @@
   const winner=Number(match[1]),perspective=!spectator&&(localPlayer===1||localPlayer===2),loss=perspective&&winner!==localPlayer,key=[text,winnerName,perspective?localPlayer:0].join('|');
   if(key===resultKey&&overlay)return;clearResult();resultKey=key;
   overlay=node('div','gameResultOverlay');overlay.setAttribute('role','status');overlay.setAttribute('aria-live','polite');
-  const panel=node('div','gameResultPanel'),heading=node('div','gameResultWord',perspective?(loss?'DEFEAT':'VICTORY'):'WINNER');
+  const panel=node('div','gameResultPanel'),heading=node('button','gameResultWord',perspective?(loss?'DEFEAT':'VICTORY'):'WINNER');
+  heading.type='button';heading.setAttribute('aria-label',heading.textContent+'。タップしてホームに戻る');
+  heading.addEventListener('click',()=>{if(heading.isConnected&&screen.classList.contains('active')&&screen.classList.contains('hasGameResult'))window.returnBattleHome?.();});
   panel.append(node('div','gameResultEyebrow',loss?'NEXT CHALLENGE':'MATCH COMPLETE'),heading,node('div','gameResultWinner',winnerName+' WIN'));
   overlay.append(panel);screen.append(overlay);screen.classList.add('hasGameResult');register(panel,'result','gameResultCanvas',{loss,started:time});sync();
  }
@@ -74,11 +83,11 @@
   }
   sync();
  }
- const home=document.getElementById('modeScreen');if(home)register(home,'home','gameHomeCanvas');
+ const home=document.getElementById('modeScreen');if(home){home.classList.add('gameHomeBackground');homeBackground=register(home,'home','gameHomeCanvas');}
  document.querySelectorAll('#techScreen .techCard').forEach((card,i)=>register(card,'water','gameTechWater',{phase:i*1.6}));
  document.querySelectorAll('#techScreen .techArrow').forEach((button,i)=>{button.textContent=i%2?'→':'←';});
  const message=document.getElementById('resultMessage');if(message)new MutationObserver(()=>{if(!message.classList.contains('resultShow')||!message.textContent)clearResult();}).observe(message,{attributes:true,childList:true,subtree:true});
  document.addEventListener('visibilitychange',()=>{if(document.hidden){cancelAnimationFrame(raf);raf=0;last=0;}else sync();});
  reduced.addEventListener('change',sync);window.addEventListener('resize',sync);
- window.GameMotion=Object.freeze({sync,showResult,clearResult,applyCardStyle,preview,updateTechniques});
+ window.GameMotion=Object.freeze({sync,showResult,clearResult,applyCardStyle,preview,updateTechniques});sync();
 })();

@@ -25,6 +25,7 @@
 .guideDetailScore{font-size:32px;font-weight:600;line-height:1.35;text-align:center;color:#c2e9fb;font-variant-numeric:tabular-nums;letter-spacing:-.04em}
 .guideDetailRating p{font-size:12px;line-height:1.65;color:#bfd0dd;max-width:76ch}
 .guideDetailRating[data-rating="ai"] .guideDetailScore{color:#c7b5e7}
+.guideDetailDialog .guideDetailAiEvidence{margin-top:9px;padding-top:8px;border-top:1px solid #8aa8ba33;color:#b9dcea;font-size:11px;line-height:1.7;font-variant-numeric:tabular-nums}
 .guideDetailDialog .guideDetailFootnote{color:#8faabb;font-size:10px;margin:12px 0}
 .guideDetailDialog .guideDetailDemo{border-left:1px solid #779cb244;padding-left:18px}
 .guideDetailDemoNote{font-size:10px;color:#8da8bd}

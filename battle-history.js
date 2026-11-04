@@ -1,6 +1,7 @@
+import {enqueueHistory} from './remote-ai-client.mjs';
 import {ref,get,update,query,orderByValue,limitToLast,endBefore} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js';
 import {buildHistory,HISTORY_LIMIT,historySide} from './battle-history-core.js?v=s-special-completion-20261026';
-import {summarizePlayerHistories,techniquesFromUsage} from './player-profile.js?v=custom-options-1';
+import {summarizePlayerHistories,techniquesFromUsage} from './player-profile.js?v=secure-ai-20261029';
 
 export function createBattleHistory(db,auth){
  const flights=new Map(),markedClients=new Set();
@@ -60,6 +61,7 @@ export function createBattleHistory(db,auth){
    // The immutable history and both indexes have already committed. Cleanup failure
    // keeps the live room for a later retry; it never loses a result or a title proof.
    try{await cleanup(id,h);}catch(error){console.warn('履歴は保存済みです。終了済みルームの削除を再試行します',error);}
+   enqueueHistory(id).catch(error=>console.warn('戦績グラフの更新を開始できません',error));
    return h;
   })().finally(()=>flights.delete(key));
   flights.set(key,job);return job;
@@ -69,6 +71,17 @@ export function createBattleHistory(db,auth){
   const ids=Object.entries(snapshot.val()||{}).sort((a,b)=>b[1]-a[1]||b[0].localeCompare(a[0])).map(([id])=>id);
   const histories=await Promise.all(ids.map(find));
   return histories.filter(h=>h&&historySide(h,uid));
+ }
+ async function listAll(uid){
+  const histories=[],seen=new Set();let cursor=null;
+  while(true){
+   const constraints=[orderByValue(),limitToLast(HISTORY_LIMIT)];if(cursor)constraints.push(endBefore(cursor[1],cursor[0]));
+   const snapshot=await timed(get(query(ref(db,'playerHistory/'+uid),...constraints)));
+   const entries=Object.entries(snapshot.val()||{}).sort((a,b)=>a[1]-b[1]||(a[0]<b[0]?-1:a[0]>b[0]?1:0));
+   for(let start=0;start<entries.length;start+=4){const batch=await Promise.all(entries.slice(start,start+4).map(([id])=>find(id)));for(const h of batch){if(!h)throw Error('保存済みの履歴が不足しています');if(historySide(h,uid)&&!seen.has(h.id)){seen.add(h.id);histories.push(h);}}}
+   if(entries.length<HISTORY_LIMIT)break;if(cursor&&cursor[0]===entries[0][0])throw Error('対戦履歴の取得位置が進みません');cursor=entries[0];
+  }
+  return histories.sort((a,b)=>b.endedAt-a.endedAt);
  }
  async function profileStats(uid,currentRating){
   // Usage is the authoritative persistent counter, including pre-archive records.
@@ -87,7 +100,7 @@ export function createBattleHistory(db,auth){
   }
   return {...summarizePlayerHistories(histories,uid,currentRating),techniques};
  }
- return {find,list,profileStats,archiveFinished,markClient};
+ return {find,list,listAll,profileStats,archiveFinished,markClient};
 }
 
 

@@ -14,7 +14,7 @@ function renderTitles(){
  name.onclick=()=>{$('nameColorPanel').hidden=false;$('titleCollection').hidden=true;};
  for(let i=0;i<3;i++){const button=node('button','title-slot'+(i===titleSlot?' selected':''));button.disabled=!titleViewData||titleSaving;button.setAttribute('aria-pressed',String(i===titleSlot));button.setAttribute('aria-label','称号'+(i+1)+'を変更');button.append(node('span','','称号 '+(i+1)),TitleCatalog.badge(titleViewData?titleDraft[i]:''));button.onclick=()=>{titleSlot=i;$('titleCollection').hidden=false;$('nameColorPanel').hidden=true;renderTitles();};slots.append(button);}
  $('titleSave').disabled=!titleViewData||titleSaving;$('titleClear').disabled=!titleViewData||titleSaving;$('titleBack').disabled=titleSaving;
- $('coinBalance').textContent=titleWallet?'所持コイン '+titleWallet.balance.toLocaleString('ja-JP'):'コイン情報を取得できません。Firebaseルールと通信を確認してください。';
+ $('coinBalance').textContent=titleWallet?'所持コイン '+titleWallet.balance.toLocaleString('ja-JP'):'読み込み中…';
  const list=$('titleCollection'),owned=TitleCatalog.items.filter(t=>titleViewData&&TitleCatalog.unlocked(t,titleViewData));list.replaceChildren();
  const collectionHeader=node('div','titleIndexHeader');collectionHeader.append(node('h2','','称号コレクション'),node('span','',owned.length+' / '+TitleCatalog.items.length+' 所持'));list.append(collectionHeader);
  list.append(node('p','titleIndexHint','称号 '+(titleSlot+1)+' に装備する称号を選択'));

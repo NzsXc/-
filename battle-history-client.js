@@ -1,4 +1,5 @@
 import {ACTION_NAMES,HISTORY_REASONS,historySide,replayHistory,slots} from './battle-history-core.js?v=account-update-20261024';
+import {openProfileRadar} from './profile-radar.mjs';
 
 const element=(tag,className,text)=>{const node=document.createElement(tag);if(className)node.className=className;if(text!=null)node.textContent=String(text);return node;};
 const advanced=h=>h.roomRules?.mode==='advanced'&&h.roomRules.skills!==false||h.roomRules?.mode==='custom'&&h.roomRules.skills===true;
@@ -14,7 +15,7 @@ export function createHistoryScreen(history){
  const note=element('p','historyNote','直近10戦。履歴を押すと、対戦データ・称号・技構成・Advancedのスキルを表示します。'),status=element('p','historyStatus'),list=element('div','historyList');
  status.setAttribute('role','status');list.setAttribute('aria-label','直近10戦の対戦履歴');panel.append(heading,note,status,list);screen.append(panel);document.body.append(screen);
  let generation=0,owner=null;
- back.onclick=()=>{generation++;window.showScreen('playerCardScreen');document.getElementById('playerCardHistoryButton')?.focus();};
+ back.onclick=()=>{generation++;window.showScreen('playerCardScreen');if(owner)openProfileRadar(owner);document.getElementById('playerCardHistoryButton')?.focus();};
  function playerInfo(h,p){
   const player=h.players[p],box=element('section','historyPlayer'),name=element('h3',null,player.name),rate=element('span','historyRate','レート '+h.settled['before'+p]+' → '+h.settled['after'+p]);
   window.NameStyles?.paint(name,player.uid);box.append(name,rate);

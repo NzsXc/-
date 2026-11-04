@@ -1,0 +1,14 @@
+#soloScreen .settingsPanel{width:min(620px,calc(100vw - 28px));margin-block:12px;padding:18px;flex-shrink:0}
+#soloScreen .soloRuleModes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;border:0;padding:0;margin:0 0 12px}
+#soloScreen .soloRuleModes legend{font-weight:bold;margin-bottom:10px}
+#soloScreen .friendRuleChoice{display:flex;align-items:flex-start;gap:8px;padding:12px 8px;border:1px solid #7794b477;background:#223047;cursor:pointer;margin:0;min-width:0}
+#soloScreen .friendRuleChoice span{min-width:0}
+#soloScreen .friendRuleChoice small{font-size:11px;line-height:1.5}
+#soloScreen #soloAdvancedOptions{border:0;padding:0;margin:12px 0;display:grid;gap:8px}
+#soloScreen #soloAdvancedOptions[hidden],#soloScreen #soloCustomRules[hidden],#soloScreen #soloBotSkillField[hidden]{display:none}
+#soloScreen #soloCustomRules{margin:12px 0}
+#soloScreen #soloRuleSummary,#soloScreen #soloChoiceNote{line-height:1.7}
+#soloScreen #soloBotSkillField{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:12px 0}
+#soloScreen #soloBotSkill{max-width:65%;padding:8px;border-radius:8px;background:#142a36;color:#fff;border:1px solid #507489}
+#soloScreen .soloCustomHelp{grid-column:1/-1;margin:4px 0;font-size:12px;color:#b5c9da}
+@media(max-width:420px){#soloScreen .settingsPanel{padding:13px}#soloScreen .soloRuleModes{gap:5px}#soloScreen .friendRuleChoice{padding:8px 5px;font-size:12px}#soloScreen .friendRuleChoice small{font-size:10px}}

@@ -32,7 +32,9 @@
   }
   bass/=Math.max(1,bassN);const drive=active?clamp((rms*4.5+bass*.45)*strength):0;
   if(active){if(bass-previousBass>.045)pulse=clamp((bass-previousBass)*4)*strength;previousBass=bass;}else{previousBass=pulse=0;}
-  pulse*=Math.exp(-dt*7);if(!reduced.matches)time+=dt*(drive*3.8+pulse*2.2);
+  pulse*=Math.exp(-dt*7);if(!reduced.matches)time+=dt*(active?drive*3.8+pulse*2.2:1);
+  // Silent, paused and locked audio use the same moving trails as Home.
+  if(!active&&window.GameMotionArt){window.GameMotionArt.home(c,w,h,time);if(!reduced.matches)wake();return;}
   const glow=c.createRadialGradient(w*.5,h*.43,0,w*.5,h*.43,w*.65);glow.addColorStop(0,'rgba(105,126,220,.09)');glow.addColorStop(1,'rgba(30,66,104,0)');c.fillStyle=glow;c.fillRect(0,0,w,h);
   for(let i=0;i<strokes.length;i++){
    const s=strokes[i],p=mod(time*(.012+i%5*.002)+s.phase),a=s.angle,r=.07+p*p*.9,value=clamp(levels[(i*17)%count]*strength);

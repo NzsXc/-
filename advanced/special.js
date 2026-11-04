@@ -82,14 +82,14 @@
    if(specialView){
     const index=m.loadouts?.[m.you]?.[slot],tech=techniquePool[index],definition=window.SpecialRules.definition(BattleV4.specialId(index),m.special?.version);if(!tech||!definition)continue;
     let box=button.querySelector('.specialMoveExplanation');if(!box){box=node('span','specialMoveExplanation');box.append(node('strong',''),node('span',''));button.append(box);}
-    box.querySelector('strong').textContent='S'+tech.name;box.querySelector('span').textContent=(m.special?.version>=4&&index>=12?definition.description:explanations[index]||'追加効果なし。');
+    box.querySelector('strong').textContent='S'+tech.name;box.querySelector('span').textContent=(m.special?.version>=6&&index===11||m.special?.version>=4&&index>=12?definition.description:explanations[index]||'追加効果なし。');
     button.setAttribute('aria-label','S'+tech.name+'：Sゲージ追加消費'+definition.cost+'。'+definition.description);button.setAttribute('aria-disabled','true');
    }else{button.removeAttribute('aria-label');button.removeAttribute('aria-disabled');}
   }
   for(let slot=0;slot<3;slot++){
    const button=document.getElementById('p'+m.you+'tech'+slot),tech=typeof techniquePool==='undefined'?null:techniquePool[m.loadouts?.[m.you]?.[slot]];if(!button||!tech)continue;
    button.dataset.normalName=tech.name;button.classList.toggle('specialTechniqueAction',specialView);
-   const usable=typeof isBattleActionAvailable==='function'?isBattleActionAvailable(m.you,'tech'+slot):false,ready=[2,3,4,5].includes(m.special?.version);
+   const usable=typeof isBattleActionAvailable==='function'?isBattleActionAvailable(m.you,'tech'+slot):false,ready=[2,3,4,5,6].includes(m.special?.version);
    button.disabled=specialView&&!ready;button.classList.toggle('disabled',!usable||button.disabled);
    button.querySelector('.actionName').textContent=(specialView?'S':'')+tech.name;
    if(specialView){const d=window.SpecialRules.definition(BattleV4.specialId(m.loadouts[m.you][slot]),m.special?.version);button.title=ready?'Sゲージ追加消費+'+d.cost+' / '+d.description:'この対戦は旧スペシャル仕様です。新しく部屋を作るとS技を使えます。';

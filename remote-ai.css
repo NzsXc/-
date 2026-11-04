@@ -1,0 +1,17 @@
+.profileRadar{margin:18px 0 0;padding:18px;border:1px solid #6e9fb342;background:linear-gradient(140deg,#10283dc9,#09172bd9);min-width:0}
+.profileRadar h2{margin:0 0 8px;font-size:15px;font-weight:700;color:#d8f4ff;letter-spacing:.08em}
+.profileRadarLayout{display:grid;grid-template-columns:minmax(240px,1fr) minmax(240px,.9fr);gap:20px;align-items:center;min-width:0}
+.profileRadarLayout svg{display:block;width:100%;max-width:420px;margin:auto;overflow:visible}
+.profileRadarTable{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+.profileRadarTable th,.profileRadarTable td{border-bottom:1px solid #6e9fb32e;padding:10px 3px}.profileRadarTable th{text-align:left;font-weight:500;color:#adc8d9}.profileRadarTable td{text-align:right;color:#a4ecff;font-size:17px;font-weight:700}
+.profileRadarStatus,.profileRadarNote{font-size:11px;line-height:1.7;color:#a5c1d1;margin:10px 0 0;overflow-wrap:anywhere}.profileRadarNote{color:#829aaa}
+#spectatorEvaluation{width:min(230px,90%);box-sizing:border-box;margin:0 auto 14px;padding:10px 14px;border:1px solid #91b9d36b;background:#0a1b2bed;border-radius:5px;text-align:center;pointer-events:none;color:#ddf6ff;box-shadow:0 5px 22px #0004}
+#spectatorEvaluation[hidden]{display:none!important}.evaluationLabel{display:block;font-size:11px;color:#a9c8d9;letter-spacing:.08em}#spectatorEvaluation strong{display:block;margin:4px 0;font:700 27px/1.1 Inter,Arial,sans-serif;font-variant-numeric:tabular-nums}.evaluationTrack{height:5px;position:relative;background:#69adff80;overflow:hidden;border-radius:3px}.evaluationTrack:after{content:'';position:absolute;left:50%;top:0;height:100%;width:1px;background:#e5f5ff}.evaluationFill{height:100%;width:50%;background:#ff8a9c;transition:width .25s}.evaluationCaption{display:block;margin-top:6px;font-size:10px;line-height:1.4;color:#a9c8d9;overflow-wrap:anywhere}
+#battleScreen.spectatorMode #battleCenter #spectatorEvaluation{grid-area:1 / 1;margin:0;align-self:center}
+#battleScreen.spectatorMode #battleCenter #resultMessage:not(.resultShow){grid-area:3 / 1}
+#battleScreen.active.spectatorMode #battleCenter{grid-template-rows:90px 44px 42px}
+#battleScreen.spectatorMode #battleCenter>#battleHomeButton[hidden]{display:none!important}
+@media(max-width:600px){.profileRadar{padding:14px 10px}.profileRadarLayout{grid-template-columns:minmax(0,1fr);gap:0}.profileRadarLayout svg{max-width:350px}.profileRadarTable th,.profileRadarTable td{padding:7px 4px}#spectatorEvaluation{margin-bottom:7px;padding:7px 12px;width:min(200px,90%)}#spectatorEvaluation strong{font-size:23px}}
+@media(min-width:640px) and (max-height:680px){#spectatorEvaluation{width:100%;padding:8px 4px}#spectatorEvaluation strong{font-size:23px}}
+
+.profileRadarTable thead th{font-size:11px;color:#829aaa}.profileRadarTable thead th:not(:first-child){text-align:right}.profileRadarTable td.profileRadarMeasured{font-size:12px;font-weight:500;color:#adc8d9}.profileRadarReferences{margin-top:8px;font-size:11px;color:#829aaa}.profileRadarReferences summary{cursor:pointer}

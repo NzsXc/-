@@ -1,6 +1,7 @@
 let rankedActive=false,rankedMatch=null,rankedPolling=false,rankedSending=false,rankedCancelled=false,rankedEpoch=0,rankedSeenReveal=0,rankedQueue=Promise.resolve(),rankedLastRequest=0,rankedCommandGeneration=0;
 let rankedWatchStop=null,rankedStatusFlight=null,rankedStatusDirty=false,rankedAutoRetryAt=0,rankedAutoTimer=0;
 function rankedRpc(data){
+ if(window.SoloCPU?.active())return window.SoloCPU.command(data);
  const job=rankedQueue.catch(()=>{}).then(async()=>{
   await new Promise(r=>setTimeout(r,Math.max(0,400-(Date.now()-rankedLastRequest))));
   rankedLastRequest=Date.now();
@@ -11,6 +12,7 @@ function rankedRpc(data){
 // プレイヤーの確定操作はポーリング待ちにせず送信する。
 // 操作前に開始されたstatus応答は世代番号により破棄する。
 function rankedCommandRpc(data){
+ if(window.SoloCPU?.active()){rankedCommandGeneration++;rankedLastRequest=Date.now();return window.SoloCPU.command(data);}
  if(!window.rankedTransport)return Promise.reject(Error('ランク戦の接続を準備中です'));
  rankedCommandGeneration++;
  rankedLastRequest=Date.now();
@@ -56,7 +58,7 @@ async function startRanked(resume=false){
 async function rankedPoll(epoch){
  if(!rankedActive||epoch!==rankedEpoch||rankedMatch?.closed)return;
  rankedWatchStop?.();
- rankedWatchStop=window.rankedTransport?.watch?.(rankedMatch.id,()=>rankedRefresh(epoch),()=>{});
+ rankedWatchStop=rankedMatch.kind==='solo'?null:window.rankedTransport?.watch?.(rankedMatch.id,()=>rankedRefresh(epoch),()=>{});
  rankedPolling=true;
  try{
   while(rankedActive&&epoch===rankedEpoch&&!rankedMatch?.closed){
@@ -70,7 +72,7 @@ function rankedRefresh(epoch){
  if(!rankedActive||epoch!==rankedEpoch||rankedMatch?.closed)return Promise.resolve();
  if(rankedStatusFlight){rankedStatusDirty=true;return rankedStatusFlight;}
  const matchId=rankedMatch.id,commandGeneration=rankedCommandGeneration;
- const job=Promise.resolve().then(()=>window.rankedTransport({op:'status',matchId})).then(r=>{
+ const job=Promise.resolve().then(()=>window.SoloCPU?.active()?window.SoloCPU.command({op:'status',matchId}):window.rankedTransport({op:'status',matchId})).then(r=>{
   if(epoch===rankedEpoch&&commandGeneration===rankedCommandGeneration)rankedApply(r.match);
  }).catch(()=>{
   if(epoch===rankedEpoch&&commandGeneration===rankedCommandGeneration)rankedMessage('通信を再試行しています。制限時間はサーバー側で進みます。');
@@ -139,7 +141,7 @@ function rankedTick(){
  const grace=now>=m.deadline,remaining=Math.max(0,Math.ceil(((grace?m.graceDeadline:m.deadline)-now)/1000));
  if(m.closed||rankedAnimating||!m.state||!turnOpen){stopCountdownRing();
   if(rankedAnimating&&rankedVisualCountdownEnd>localNow)startTurnCountdownSE();else stopTurnCountdownSE();
-  if(!m.closed&&m.phase==='select'&&!m.roomRules?.draft)put('techTitle',rankedSending?'技を送信中…':grace?'復帰猶予：あと'+remaining+'秒（未確定側は期限後に敗北）':m.ready[m.you]?'技を確定しました。相手を待っています…':(m.kind==='friend'?window.RoomRules.label(m.roomRules)+' ルーム対戦':'ランダム対戦')+'：技選択（残り'+remaining+'秒）');
+  if(!m.closed&&m.phase==='select'&&!m.roomRules?.draft)put('techTitle',rankedSending?'技を送信中…':grace?'復帰猶予：あと'+remaining+'秒（未確定側は期限後に敗北）':m.ready[m.you]?'技を確定しました。相手を待っています…':(m.kind==='solo'?window.RoomRules.label(m.roomRules)+' CPU対戦':m.kind==='friend'?window.RoomRules.label(m.roomRules)+' ルーム対戦':'ランダム対戦')+'：技選択（残り'+remaining+'秒）');
   else if(rankedAnimating&&!window.BattleCountdown?.running('ranked:'+m.id+':'+rankedPresentationTurn)){
    const left=rankedVisualCountdownEnd-performance.now();
    const text=left>0?String(Math.min(3,Math.ceil(left/1000))):performance.now()<rankedVisualRevealAt?'BATTLE!':'';
@@ -248,7 +250,7 @@ function rankedApply(m,visualCommit=false){
   window.AdvancedSkills?.select(m);
   window.SpecialGauge?.select(m);
   if(entering){showScreen('techScreen');updateTechniqueDisplay();}
-  document.getElementById('techTitle').textContent=m.ready[me]?'技を確定しました。相手を待っています…':(m.kind==='friend'?window.RoomRules.label(m.roomRules)+' ルーム対戦':'ランダム対戦')+'：技選択（残り'+Math.max(0,Math.ceil((m.deadline-m.serverNow)/1000))+'秒）';
+  document.getElementById('techTitle').textContent=m.ready[me]?'技を確定しました。相手を待っています…':(m.kind==='solo'?window.RoomRules.label(m.roomRules)+' CPU対戦':m.kind==='friend'?window.RoomRules.label(m.roomRules)+' ルーム対戦':'ランダム対戦')+'：技選択（残り'+Math.max(0,Math.ceil((m.deadline-m.serverNow)/1000))+'秒）';
   if(inGrace)document.getElementById('techTitle').textContent='復帰猶予：あと'+remaining+'秒（未確定側は期限後に敗北）';
   document.querySelectorAll('#techScreen .techArrow').forEach(b=>{b.disabled=m.ready[me]||rankedSending;b.style.pointerEvents=(m.ready[me]||rankedSending)?'none':'auto';});
   const button=document.getElementById('techConfirmButton');button.disabled=m.ready[me]||rankedSending||window.AdvancedSkills?.ready(m)===false||m.roomRules?.draft&&!window.MatchModes.view(m.draft).complete;button.textContent=m.ready[me]?'確定済み':rankedSending?'送信中…':'決定';window.TechniquePicker?.sync(m);return;
@@ -278,6 +280,7 @@ function rankedApply(m,visualCommit=false){
 
 }
 function rankedResult(m){
+ if(m.kind==='solo'){document.getElementById('resultMessage').textContent='CPU対戦 · レート・コイン変動なし';return;}
  window.MatchRewards?.finished(m);
  const r=m.rating;const reason={'resigned':'降参','reconnect-timeout':'復帰猶予切れ','idle-forfeit':'連続無入力','selection-timeout':'技選択の時間切れ','turn-limit':'ターン上限','battle':''}[m.result.reason]||'';
  const el=document.createElement('div');el.style.fontSize='16px';el.textContent=(reason?reason+' / ':'')+(r?'レート '+r.before+' → '+r.after+'（'+(r.delta>=0?'+':'')+r.delta+'）':'');
@@ -338,7 +341,7 @@ async function rankedSubmitAction(m,id,automatic=false){
 function rankedStop(){window.TechniquePicker?.reset();window.SpecialGauge?.reset();window.AdvancedSkills?.reset();rankedWatchStop?.();rankedWatchStop=null;rankedStatusFlight=null;rankedStatusDirty=false;rankedVisualStop();rankedEpoch++;rankedActive=false;rankedMatch=null;rankedSending=false;rankedButtons(false);}
 async function rankedLeave(){
  if(rankedMatch&&!rankedMatch.closed){
-  if(!confirm(rankedMatch.kind==='friend'?'降参してホームに戻りますか？':'降参してホームに戻りますか？ レートに反映されます。'))return;
+  if(!confirm(['friend','solo'].includes(rankedMatch.kind)?'降参してホームに戻りますか？':'降参してホームに戻りますか？ レートに反映されます。'))return;
   try{const r=await rankedCommandRpc({op:'resign',matchId:rankedMatch.id});rankedApply(r.match);return;}catch(e){rankedMessage(e.message);return;}
  }
  rankedStop();returnBattleHomeCore();

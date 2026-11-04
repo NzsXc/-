@@ -1,7 +1,11 @@
 /* Approved game surfaces: travelling stars, monochrome cartridges and crystal results. */
 #modeScreen{background:#0b1729;background-image:none;overflow:hidden}
 #modeScreen::after{display:none}
-#modeScreen>.gameHomeCanvas{position:absolute;inset:0;width:100%;height:100%;z-index:-2;pointer-events:none}
+.screen.gameHomeBackground{background:#0b1729!important;background-image:none!important}
+.screen.gameHomeBackground::after{display:none}
+.screen.gameHomeBackground>.gameHomeCanvas{position:fixed;inset:0;width:100%;height:100vh;height:100dvh;z-index:-2;pointer-events:none}
+.screen.musicReactiveBackground>.gameHomeCanvas{visibility:hidden}
+#titlesScreen.gameHomeBackground::before{background:none;z-index:-1}
 #modeScreen>.modeCards{position:relative;z-index:1}
 #techScreen{height:100dvh;min-height:0;overflow-y:auto;overscroll-behavior:contain;justify-content:flex-start;padding-top:calc(70px + var(--safe-top));padding-bottom:calc(32px + var(--safe-bottom))}
 #techScreen .techSelect{width:min(820px,100%);display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto;gap:12px;margin-top:0}
@@ -29,8 +33,9 @@
 .gameResultPanel{position:relative;isolation:isolate;display:flex;flex-direction:column;align-items:center;justify-content:center;width:min(680px,100%);min-height:360px;padding:50px 22px;text-align:center;color:#e3f5fa;background:radial-gradient(ellipse,#0a1e2de8 20%,#091929ad 55%,transparent 73%);animation:gameResultEnter .55s ease-out}
 .gameResultCanvas{position:absolute;inset:0;z-index:-1;width:100%;height:100%;pointer-events:none}
 .gameResultEyebrow{font:500 11px/1.5 Arial,sans-serif;letter-spacing:.2em;color:#a2c3d0;margin-bottom:14px}
-.gameResultWord{font:500 clamp(34px,6vw,66px)/1.2 Arial,"Yu Gothic UI",sans-serif;letter-spacing:.08em;text-shadow:0 0 24px #80d7f342}
+.gameResultWord{appearance:none;pointer-events:auto;touch-action:manipulation;cursor:pointer;display:block;margin:0;padding:12px 18px;min-height:48px;border:0;border-radius:0;background:transparent;color:inherit;box-shadow:none;font:500 clamp(34px,6vw,66px)/1.2 Arial,"Yu Gothic UI",sans-serif;letter-spacing:.08em;text-shadow:0 0 24px #80d7f342}
 .gameResultWinner{max-width:100%;margin-top:14px;font:500 clamp(15px,2.5vw,22px)/1.5 Arial,"Yu Gothic UI",sans-serif;overflow-wrap:anywhere}
+#battleScreen.hasGameResult #battleHomeButton{display:none!important}
 #battleScreen.hasGameResult #resultMessage{visibility:hidden;height:0;min-height:0;overflow:hidden}
 .playerCardPanel[data-card-style="obsidian"]{background:linear-gradient(135deg,#1b2c3a,#111d2c);border-color:#9bb3c3}
 .playerCardPanel[data-card-style="abyss"]{background:linear-gradient(125deg,#163947,#0b2335);border-color:#6ab9b7}

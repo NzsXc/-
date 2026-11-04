@@ -1,30 +1,10 @@
-let botMatch=false,botThinking=false,botKnowledge=null,botWorker=null,botEpoch=0,botTurn=0;
-function botDisplayName(){return "Ai v"+(Number.isSafeInteger(botKnowledge?.displayVersion)&&botKnowledge.displayVersion>=1?botKnowledge.displayVersion:1);}
-function stopBot(){botEpoch++;botWorker?.terminate();botWorker=null;botThinking=false;botMatch=false;}
+let cpuSession=null,cpuFirst=null,cpuPending=null,cpuServerTurn=0;
+let botMatch=false,botThinking=false,botKnowledge=null,botWorker=null,botEpoch=0,botTurn=0,botMatchPack=null;
+function botDisplayName(){return botMatchPack?'Ai '+botMatchPack.id.slice(0,6):'Ai';}
+function stopBot(){cpuSession=null;cpuFirst=null;cpuPending=null;botEpoch++;botWorker?.terminate();botWorker=null;botThinking=false;botMatch=false;}
 async function loadBotKnowledge(){
- const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),15000);
- try{
-  const response=await fetch('bot-model.json',{cache:'no-store',signal:controller.signal});
-  if(!response.ok)throw Error('知識JSONを読み込めません（HTTP '+response.status+'）');
-  const data=await response.json();
-  if(data.schema!=='psy-training-v2'||data.rules!=='psy-20260924-resolver-v1'||!BattleAI.validModel(data.champion)||!Number.isSafeInteger(data.generation)||data.generation<0)throw Error('このゲームに対応した知識JSONではありません');
-  // Refuse mismatched move definitions rather than let the bot plan using different rules.
-  for(let i=0;i<techniquePool.length;i++){
-   for(const key of ['name','skill','type','cost','power','pierce']){
-    if(techniquePool[i][key]!==BattleAI.techniques[i]?.[key])throw Error('ゲームとBotの技定義が一致しません：'+techniquePool[i].name);
-   }
-  }
-  botKnowledge=data;
- }finally{clearTimeout(timer);}
-}
-function botState(){
- const state=BattleAI.initial(selectedTechniques[1],selectedTechniques[2]);
- for(const p of [1,2]){
-  state.hp[p]=hp[p];state.gauge[p]=gauge[p];state.seal[p]=blockSeal[p];
-  state.enhance[p]=enhanceTurns[p];state.momentum[p]=momentumBonus[p];state.ruin[p]=ruinTurns[p];
-  state.last[p]=lastAction[p]?.data?.type||'';
- }
- state.frozen=[0,window.localExtraState?.frozen1||0,window.localExtraState?.frozen2||0];state.poison=[0,window.localExtraState?.poison1||0,window.localExtraState?.poison2||0];state.turn=botTurn+1;return state;
+ const service=await import('./remote-ai-client.mjs');
+ botMatchPack=await service.requestAI('status');botMatchPack.id=botMatchPack.modelId;
 }
 function botActionId(id){
  if(id===-1)return 'frozen';
@@ -43,41 +23,49 @@ function prepareBotMatch(){
  document.getElementById('techTitle').textContent='あなた：技選択（BOT・'+BOT_LEVELS[botSettings.difficulty]+'）';
  showScreen('techScreen');updateTechniqueDisplay();
 }
-function confirmBotTech(){
- player1Techs=selectedTechniques[1].map(i=>techniquePool[i]);
- player2Techs=selectedTechniques[2].map(i=>techniquePool[i]);
- setupBattle();
- setPlayerNames(window.loggedInPlayerData?.name||'あなた',botDisplayName());
+async function confirmBotTech(){
+ const epoch=botEpoch;
+ const button=document.getElementById('techConfirmButton');button.disabled=true;button.textContent='CPU戦を準備中…';
+ try{
+  const {requestAI}=await import('./remote-ai-client.mjs');
+  const response=await requestAI('cpu/start',{method:'POST',body:{loadouts:{1:selectedTechniques[1].slice(),2:selectedTechniques[2].slice()},difficulty:botSettings.difficulty}});
+  if(!botMatch||epoch!==botEpoch)return;
+  cpuSession=response.session;cpuFirst=response;cpuServerTurn=response.turn;cpuPending=null;
+  player1Techs=selectedTechniques[1].map(i=>techniquePool[i]);player2Techs=selectedTechniques[2].map(i=>techniquePool[i]);
+  setupBattle();setPlayerNames(window.loggedInPlayerData?.name||'あなた',botDisplayName());
+ }catch(error){if(!botMatch||epoch!==botEpoch)return;button.disabled=false;button.textContent='再試行';document.getElementById('techTitle').textContent=error.message;}
 }
 async function startBotTurn(){
  const epoch=++botEpoch;botWorker?.terminate();botThinking=true;locked[1]=true;locked[2]=true;
- document.getElementById('countdown').textContent='Bot思考中…';
- document.getElementById('resultMessage').replaceChildren();
- const state=botState();
+ document.getElementById('countdown').textContent='Bot思考中…';document.getElementById('resultMessage').replaceChildren();
+ const controller=new AbortController();botWorker={terminate:()=>controller.abort()};
  try{
-  const id=await new Promise((resolve,reject)=>{
-    const worker=new Worker('bot-worker.js?v=account-update-20261024');botWorker=worker;
-   const timer=setTimeout(()=>{worker.terminate();reject(Error('Botの思考が時間内に完了しませんでした'));},15000);
-   worker.onmessage=({data})=>{clearTimeout(timer);worker.terminate();data.ok?resolve(data.action):reject(Error(data.error));};
-   worker.onerror=()=>{clearTimeout(timer);worker.terminate();reject(Error('Botの思考ファイルを読み込めません'));};
-   // Only the public start-of-turn state is sent. No selectedAction is sent.
-   worker.postMessage({state,model:botKnowledge?.champion||null,difficulty:botSettings.difficulty});
-  });
+  let response;
+  if(cpuFirst){response=cpuFirst;cpuFirst=null;}
+  else {
+   if(!cpuSession||!cpuPending)throw Error('CPU戦の状態を確認できません');
+   const {requestAI}=await import('./remote-ai-client.mjs');response=await requestAI('cpu/turn',{method:'POST',body:{session:cpuSession,...cpuPending},signal:controller.signal});
+  }
   if(!botMatch||epoch!==botEpoch)return;
-  if(!BattleAI.legal(state,2).includes(id))throw Error('Botの行動が不正です');
-  const action=botActionId(id);
-  botThinking=false;botTurn++;startTurnCore();
-  selectedAction[2]={id:action,data:getActionData(2,action)};locked[2]=true;
-  document.getElementById('player2Area').classList.add('locked');
-  finishFrozenTurnIfReady();
+  cpuServerTurn=response.turn;cpuPending=null;
+  const action=botActionId(response.action);
+  botThinking=false;botTurn++;startTurnCore();selectedAction[2]={id:action,data:getActionData(2,action)};locked[2]=true;
+  document.getElementById('player2Area').classList.add('locked');finishFrozenTurnIfReady();
  }catch(error){
   if(!botMatch||epoch!==botEpoch)return;
-  botThinking=false;document.getElementById('countdown').textContent='Botの読み込みエラー';
+  botThinking=false;document.getElementById('countdown').textContent='Botの接続エラー';
   const message=document.getElementById('resultMessage');message.textContent=error.message+' ';
-  const retry=document.createElement('button');retry.textContent='再試行';retry.style.pointerEvents='auto';retry.onclick=()=>startBotTurn();message.appendChild(retry);
-  document.getElementById('battleHomeButton').hidden=false;
+  const retry=document.createElement('button');retry.textContent='再試行';retry.style.pointerEvents='auto';retry.onclick=()=>startBotTurn();message.appendChild(retry);document.getElementById('battleHomeButton').hidden=false;
  }
 }
+window.SecureCPU={
+ recordTurn(){const id=selectedAction[1]?.id;let action;
+  if(id==='frozen')action=-1;else if(['charge','attack','block'].includes(id))action=['charge','attack','block'].indexOf(id);
+  else if(/^tech[012]$/.test(id)){const index=selectedTechniques[1][Number(id.slice(-1))];action=index<12?index+3:index+15;}
+  if(Number.isInteger(action))cpuPending={turn:cpuServerTurn,action};
+ },
+ async finish(){if(!cpuSession||!cpuPending)return;const submitted=cpuPending,body={session:cpuSession,...submitted};try{const {requestAI}=await import('./remote-ai-client.mjs');await requestAI('cpu/turn',{method:'POST',body});if(cpuSession===body.session&&cpuPending===submitted)cpuPending=null;}catch(error){console.warn('CPU戦の最終状態を保存できません',error);}}
+};
 // Compatibility for old callers; all online matching remains human-only.
 function startRandomMatch(){return startRanked();}
 
@@ -143,17 +131,9 @@ async function startSoloMatch(){
  const button=document.getElementById('soloStartButton'),status=document.getElementById('soloStatus');
  button.disabled=true;updateSoloSettings();
  try{
-  if(typeof BattleAI==='undefined')throw Error('bot-engine.jsを読み込めません。');
-  if(!botKnowledge && botSettings.difficulty!=='easy'){
-   status.textContent='BOTを準備しています…';
-   try{await loadBotKnowledge();}catch(error){
-    // The built-in evaluator supports all difficulty levels even without a trained model.
-    console.warn('学習済みモデルを読み込めないため標準AIを使います',error);
-    if(session!==soloSession)return;
-    status.textContent='学習データを読み込めません。標準AIで遊べます。もう一度「技選択へ」を押してください。';
-    botKnowledge={champion:null,displayVersion:1};return;
-   }
-  }
+  if(typeof BattleAI==='undefined')throw Error('技データを読み込めません。');
+  status.textContent='CPUに接続しています…';
+  await loadBotKnowledge();
   if(session!==soloSession)return;
   prepareBotMatch();
  }catch(error){status.textContent=error.message;}

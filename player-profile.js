@@ -1,3 +1,4 @@
+import {openProfileRadar} from './profile-radar.mjs';
 import {ACTION_NAMES,historySide} from './battle-history-core.js?v=account-update-20261024';
 
 export function techniquesFromUsage(uses){
@@ -56,8 +57,9 @@ export function createPlayerProfile({history,loadTitles,loadCardStyle=async()=>'
   byId('playerCardPeakRate').textContent='—';renderTechniques([],'loading');
   const status=byId('playerCardStatus'),notices=[];const showNotices=()=>{if(current===request)status.textContent=notices.join(' / ');};status.textContent='技使用回数と最高レートを取得しています…';
   byId('playerCardHistoryButton').onclick=()=>history.open(player);
+
   byId('playerCardTitles').replaceChildren(...Array.from({length:3},()=>node('span','playerCardTitlePlaceholder','称号を読み込み中')));
-  showScreen('playerCardScreen');playSound();
+  showScreen('playerCardScreen');playSound();openProfileRadar(player);
   await Promise.all([
    (async()=>{
     try{const id=await loadCardStyle(player.uid);if(current===request)window.GameMotion?.applyCardStyle(panel,id);}
