@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>心理バトル</title>
+<script>
+  // The game and its authenticated API share the Cloudflare origin.
+  if (location.hostname === 'nzsxc.github.io' && ['/-', '/-/', '/-/index', '/-/index.html'].includes(location.pathname)) {
+    location.replace('https://mind-battle.nzzs.workers.dev/' + location.search + location.hash);
+  }
+</script>
 <link rel="stylesheet" href="battle-history.css?v=account-update-20261024">
 <link rel="stylesheet" href="advanced/advanced.css?v=battle-fixes-20261027">
 <link rel="stylesheet" href="advanced/special.css?v=account-update-20261024">
